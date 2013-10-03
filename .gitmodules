@@ -1,0 +1,21 @@
+[submodule "chef/cookbooks/apt"]
+	path = chef/cookbooks/apt
+	url = http://github.com/opscode-cookbooks/apt
+[submodule "chef/cookbooks/build-essential"]
+	path = chef/cookbooks/build-essential
+	url = http://github.com/opscode-cookbooks/build-essential
+[submodule "chef/cookbooks/git"]
+	path = chef/cookbooks/git
+	url = http://github.com/opscode-cookbooks/git
+[submodule "chef/cookbooks/vim"]
+	path = chef/cookbooks/vim
+	url = http://github.com/opscode-cookbooks/vim
+[submodule "chef/cookbooks/varnish"]
+	path = chef/cookbooks/varnish
+	url = http://github.com/opscode-cookbooks/varnish
+[submodule "chef/cookbooks/golang"]
+	path = chef/cookbooks/golang
+	url = https://github.com/NOX73/chef-golang.git
+[submodule "chef/cookbooks/rabbitmq"]
+	path = chef/cookbooks/rabbitmq
+	url = http://github.com/opscode-cookbooks/rabbitmq

@@ -20,6 +20,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "vim"
 		chef.add_recipe "git"
 		chef.add_recipe "golang"
+		chef.add_recipe "rabbitmq"
 		chef.add_recipe "varnish"
 	end
 end
