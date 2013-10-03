@@ -13,9 +13,9 @@
 [submodule "chef/cookbooks/varnish"]
 	path = chef/cookbooks/varnish
 	url = http://github.com/opscode-cookbooks/varnish
-[submodule "chef/cookbooks/golang"]
-	path = chef/cookbooks/golang
-	url = https://github.com/NOX73/chef-golang.git
 [submodule "chef/cookbooks/rabbitmq"]
 	path = chef/cookbooks/rabbitmq
 	url = http://github.com/opscode-cookbooks/rabbitmq
+[submodule "chef/cookbooks/erlang"]
+	path = chef/cookbooks/erlang
+	url = http://github.com/opscode-cookbooks/erlang
