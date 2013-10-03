@@ -19,3 +19,6 @@
 [submodule "chef/cookbooks/erlang"]
 	path = chef/cookbooks/erlang
 	url = http://github.com/opscode-cookbooks/erlang
+[submodule "chef/cookbooks/golang"]
+	path = chef/cookbooks/golang
+	url = git@github.com:KoalityCode/chef-golang.git
