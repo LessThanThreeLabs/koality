@@ -8,13 +8,21 @@ import (
 var shellSafeCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@%_-+=:,./"
 
 func Quote(str string) string {
-	if str == "" {
+	switch {
+	case str == "":
 		return "''"
+	case containsUnsafeCharacters(str):
+		return fmt.Sprintf("'%s'", strings.Replace(str, "'", "'\"'\"'", -1))
+	default:
+		return str
 	}
+}
+
+func containsUnsafeCharacters(str string) bool {
 	for _, c := range str {
 		if !strings.ContainsRune(shellSafeCharacters, c) {
-			return fmt.Sprintf("'%s'", strings.Replace(str, "'", "'\"'\"'", -1))
+			return true
 		}
 	}
-	return str
+	return false
 }
