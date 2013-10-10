@@ -7,8 +7,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.box = "precise64"
 	config.vm.box_url = "http://files.vagrantup.com/precise64.box"
 
-	config.vm.network :forwarded_port, guest: 6080, host: 6080
-	config.vm.network :forwarded_port, guest: 6081, host: 6081
+	config.vm.network "public_network"
 
 	config.vm.provision :chef_solo do |chef|
 		chefRoot = "chef"
