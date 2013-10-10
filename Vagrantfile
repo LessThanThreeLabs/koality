@@ -23,5 +23,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "erlang"
 		chef.add_recipe "rabbitmq"
 		chef.add_recipe "varnish"
+
+		chef.json = {
+			:go => {
+				:version => "1.1.2"
+			}
+		}
 	end
 end
