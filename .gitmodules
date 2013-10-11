@@ -25,3 +25,6 @@
 [submodule "code/src/github.com/streadway/amqp"]
 	path = code/src/github.com/streadway/amqp
 	url = git@github.com:streadway/amqp.git
+[submodule "code/src/github.com/crowdmob/goamz"]
+	path = code/src/github.com/crowdmob/goamz
+	url = git@github.com:crowdmob/goamz
