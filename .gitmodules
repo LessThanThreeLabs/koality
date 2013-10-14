@@ -28,3 +28,6 @@
 [submodule "code/src/github.com/crowdmob/goamz"]
 	path = code/src/github.com/crowdmob/goamz
 	url = git@github.com:crowdmob/goamz
+[submodule "code/src/github.com/scale-it/go-log"]
+	path = code/src/github.com/scale-it/go-log
+	url = git@github.com:scale-it/go-log.git
