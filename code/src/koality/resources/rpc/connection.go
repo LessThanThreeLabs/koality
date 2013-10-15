@@ -25,7 +25,10 @@ type UsersReadRpcHandler struct {
 
 func (readHandler UsersReadRpcHandler) Get(id int) (resources.User, error) {
 	request := rpc.MakeRequest("getTime")
-	responseChan := readHandler.rpcClient.SendRequest(request)
+	responseChan, err := readHandler.rpcClient.SendRequest(request)
+	if err != nil {
+		return resources.User{}, err
+	}
 
 	response := <-responseChan
 	fmt.Printf("%f\n", response.Value)

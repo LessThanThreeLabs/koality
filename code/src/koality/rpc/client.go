@@ -5,78 +5,28 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/ugorji/go/codec"
 	"strconv"
+	"sync"
 	"time"
 )
-
-const (
-	amqpUri = "amqp://localhost:5672/"
-)
-
-const (
-	exchangeName       = "rpc"
-	exchangeType       = "direct"
-	exchangeDurable    = false // TODO: make durable?
-	exchangeAutoDelete = false
-	exchangeInternal   = false
-	exchangeNoWait     = false
-	exchangeMandatory  = true
-	exchangeImmediate  = false
-)
-
-const (
-	responseQueueName       = ""
-	responseQueueDurable    = false
-	responseQueueAutoDelete = true
-	responseQueueExclusive  = true
-	responseQueueNoWait     = false
-	responseQueueAutoAck    = true
-	responseQueueNoLocal    = true
-)
-
-var (
-	sendConnection    *amqp.Connection
-	receiveConnection *amqp.Connection
-)
-
-func init() {
-	var err error
-
-	sendConnection, err = amqp.Dial(amqpUri)
-	if err != nil {
-		panic(err)
-	}
-
-	receiveConnection, err = amqp.Dial(amqpUri)
-	if err != nil {
-		panic(err)
-	}
-}
 
 type Client struct {
 	route             string
 	sendChannel       *amqp.Channel
 	receiveChannel    *amqp.Channel
 	responseQueue     *amqp.Queue
+	correlationIdLock *sync.Mutex
 	nextCorrelationId uint64
 	responseChannels  map[uint64]chan<- *Response
 	msgpackHandle     *codec.MsgpackHandle
 }
 
 func NewClient(route string) *Client {
-	sendChannel, err := sendConnection.Channel()
+	sendChannel, err := getSendConnection().Channel()
 	if err != nil {
 		panic(err)
 	}
 
-	err = sendChannel.ExchangeDeclare(exchangeName, exchangeType, exchangeDurable,
-		exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	// need to add dead letter exchange
-
-	receiveChannel, err := receiveConnection.Channel()
+	receiveChannel, err := getReceiveConnection().Channel()
 	if err != nil {
 		panic(err)
 	}
@@ -87,52 +37,62 @@ func NewClient(route string) *Client {
 		panic(err)
 	}
 
+	// TODO: add dead letter queue here
+
 	deliveries, err := receiveChannel.Consume(responseQueue.Name, responseQueue.Name, responseQueueAutoAck,
 		responseQueueExclusive, responseQueueNoLocal, responseQueueNoWait, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	msgpackHandle := new(codec.MsgpackHandle)
+	client := Client{
+		route:             route,
+		sendChannel:       sendChannel,
+		receiveChannel:    receiveChannel,
+		responseQueue:     &responseQueue,
+		nextCorrelationId: 0,
+		correlationIdLock: new(sync.Mutex),
+		responseChannels:  make(map[uint64]chan<- *Response),
+		msgpackHandle:     new(codec.MsgpackHandle),
+	}
 
-	responseChannels := make(map[uint64]chan<- *Response)
-
-	client := Client{route, sendChannel, receiveChannel, &responseQueue, 0, responseChannels, msgpackHandle}
 	go client.handleDeliveries(deliveries)
+
 	return &client
 }
 
 func (client *Client) getNextCorrelationId() uint64 {
+	client.correlationIdLock.Lock()
 	correlationId := client.nextCorrelationId
 	client.nextCorrelationId++
+	client.correlationIdLock.Unlock()
 	return correlationId
 }
 
-func (client *Client) SendRequest(rpcRequest *Request) <-chan *Response {
+func (client *Client) SendRequest(rpcRequest *Request) (<-chan *Response, error) {
 	var buffer []byte
 	codec.NewEncoderBytes(&buffer, client.msgpackHandle).Encode(rpcRequest)
 
 	correlationId := client.getNextCorrelationId()
-	responseChannel := make(chan *Response)
-	client.responseChannels[correlationId] = responseChannel
 
 	message := amqp.Publishing{
-		Body:          buffer,
-		ContentType:   "application/x-msgpack",
-		DeliveryMode:  amqp.Transient, // TODO: this the right choice?
-		CorrelationId: strconv.FormatUint(correlationId, 36),
-		ReplyTo:       client.responseQueue.Name,
-		Timestamp:     time.Now(),
+		Body:            buffer,
+		ContentType:     "application/x-msgpack",
+		ContentEncoding: "binary",
+		DeliveryMode:    amqp.Transient,
+		CorrelationId:   strconv.FormatUint(correlationId, 36),
+		ReplyTo:         client.responseQueue.Name,
+		Timestamp:       time.Now(),
 	}
 
 	err := client.sendChannel.Publish(exchangeName, client.route, exchangeMandatory, exchangeImmediate, message)
 	if err != nil {
-		// should gracefully handle these, perhaps with a general
-		// defer that could catch any error and return "unable to send"
-		panic(err)
+		return nil, err
 	}
 
-	return responseChannel
+	responseChannel := make(chan *Response)
+	client.responseChannels[correlationId] = responseChannel
+	return responseChannel, nil
 }
 
 func (client *Client) handleDeliveries(deliveries <-chan amqp.Delivery) {
