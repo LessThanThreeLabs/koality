@@ -31,3 +31,6 @@
 [submodule "code/src/github.com/scale-it/go-log"]
 	path = code/src/github.com/scale-it/go-log
 	url = git@github.com:scale-it/go-log.git
+[submodule "code/src/github.com/ugorji/go"]
+	path = code/src/github.com/ugorji/go
+	url = git@github.com:ugorji/go.git
