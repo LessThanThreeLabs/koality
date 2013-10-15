@@ -7,12 +7,10 @@ import (
 )
 
 const (
-	AnsiReset = iota
-	AnsiBold
+	AnsiReset  = 0
+	AnsiBold   = 1
+	AnsiUnBold = 22
 )
-
-const AnsiUnBold = 22
-
 const (
 	AnsiFgBlack = 30 + iota
 	AnsiFgRed

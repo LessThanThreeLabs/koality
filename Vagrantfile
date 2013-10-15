@@ -17,9 +17,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code"
 	config.vm.synced_folder "varnish/", "#{VAGRANT_HOME_DIRECTORY}/varnish"
 
-	config.vm.network :forwarded_port, guest: 1080, host: 1080 # Webserver
-	config.vm.network :forwarded_port, guest: 5672, host: 5672 # RabbitMQ
-	config.vm.network :forwarded_port, guest: 6081, host: 6081 # Varnish
+	config.vm.network :forwarded_port, guest: 1080,  host: 1080  # Webserver
+	config.vm.network :forwarded_port, guest: 5672,  host: 5672  # RabbitMQ
+	config.vm.network :forwarded_port, guest: 15672, host: 15672 # RabbitMQ Management
+	config.vm.network :forwarded_port, guest: 6081,  host: 6081  # Varnish
 
 	config.vm.provision :chef_solo do |chef|
 		chefRoot = "chef"
@@ -40,6 +41,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				:version => "1.1.2",
 				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code",
 				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/bin"
+			},
+			:rabbitmq => {
+				:version => "3.1.5",
+				:enabled_plugins => ["rabbitmq_management"]
 			},
 			:varnish => {
 				:dir => "#{VAGRANT_HOME_DIRECTORY}/varnish",
