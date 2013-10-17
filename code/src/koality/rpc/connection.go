@@ -11,43 +11,71 @@ var (
 	receiveConnection  *amqp.Connection
 )
 
-func creatConnections() {
+func createConnections() error {
 	var err error
 
 	sendConnection, err = amqp.Dial(amqpUri)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	receiveConnection, err = amqp.Dial(amqpUri)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	go handleConnectionClose()
+
+	return nil
 }
 
-func createExchanges() {
+func handleConnectionClose() {
+	sendConnectionClose := make(chan *amqp.Error)
+	sendConnection.NotifyClose(sendConnectionClose)
+
+	receiveConnectionClose := make(chan *amqp.Error)
+	receiveConnection.NotifyClose(receiveConnectionClose)
+
+	select {
+	case <-sendConnectionClose:
+	case <-receiveConnectionClose:
+	}
+
+	panic("Lost connection to RabbitMQ")
+}
+
+func createExchanges() error {
 	exchangeChannel, err := sendConnection.Channel()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = exchangeChannel.ExchangeDeclare(exchangeName, exchangeType,
 		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = exchangeChannel.ExchangeDeclare(deadLetterExchangeName, deadLetterExchangeType,
 		deadLetterExchangeDurable, deadLetterExchangeAutoDelete,
 		deadLetterExchangeInternal, deadLetterExchangeNoWait, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 func initializeAmqp() {
-	creatConnections()
-	createExchanges()
+	err := createConnections()
+	if err != nil {
+		panic(err)
+	}
+
+	err = createExchanges()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getSendConnection() *amqp.Connection {

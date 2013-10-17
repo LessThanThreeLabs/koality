@@ -64,7 +64,6 @@ func NewClient(route string) *Client {
 	go client.handleDeliveries()
 	go client.handleDeadLetterDeliveries()
 	go client.handleReturns()
-	go client.handleClose()
 
 	return &client
 }
@@ -197,19 +196,4 @@ func (client *Client) handleReturns() {
 			delete(client.responseChannels, correlationId)
 		}(badReturn)
 	}
-}
-
-func (client *Client) handleClose() {
-	sendChannelCloseErrors := make(chan *amqp.Error)
-	client.sendChannel.NotifyClose(sendChannelCloseErrors)
-
-	receiveChannelCloseErrors := make(chan *amqp.Error)
-	client.receiveChannel.NotifyClose(receiveChannelCloseErrors)
-
-	select {
-	case <-sendChannelCloseErrors:
-	case <-receiveChannelCloseErrors:
-	}
-
-	panic("Lost rpc connection")
 }
