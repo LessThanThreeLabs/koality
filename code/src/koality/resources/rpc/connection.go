@@ -12,8 +12,7 @@ func NewConnection() *resources.Connection {
 }
 
 func createUsersHandler() resources.UsersHandler {
-	// usersReadRpcConnection := rpc.NewClient("users.read")
-	usersReadRpcConnection := rpc.NewClient("info")
+	usersReadRpcConnection := rpc.NewClient("rpc:users.read")
 	usersReadHandler := UsersReadRpcHandler{usersReadRpcConnection}
 
 	return resources.UsersHandler{usersReadHandler}
@@ -23,15 +22,15 @@ type UsersReadRpcHandler struct {
 	rpcClient *rpc.Client
 }
 
-func (readHandler UsersReadRpcHandler) Get(id int) (resources.User, error) {
-	request := rpc.MakeRequest("getTime")
+func (readHandler UsersReadRpcHandler) Get(id int) (*resources.User, error) {
+	request := rpc.NewRequest("get_user_from_id", id)
 	responseChan, err := readHandler.rpcClient.SendRequest(request)
 	if err != nil {
-		return resources.User{}, err
+		return nil, err
 	}
 
 	response := <-responseChan
-	fmt.Printf("%f\n", response.Value)
+	fmt.Printf("\n%v\n\n", response)
 
-	return resources.User{id, "JordanNPotter@gmail.com", "Jordan", "Potter"}, nil
+	return &resources.User{id, "JordanNPotter@gmail.com", "Jordan", "Potter"}, nil
 }

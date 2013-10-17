@@ -2,21 +2,52 @@ package main
 
 import (
 	"fmt"
-	"koality/resources/rpc"
+	// "koality/resources/rpc"
+	"koality/rpc"
 	"reflect"
+	"time"
 )
 
 func main() {
-	connection := rpc.NewConnection()
+	fmt.Println(">> ", time.Now())
+	testExample()
+	fmt.Println(">> ", time.Now())
+}
 
-	fmt.Printf("Getting user 17...\n")
-	user, err := connection.Users.Read.Get(17)
-	if err != nil {
-		fmt.Println("Error: %v", err)
-	} else {
-		fmt.Println(user)
+func testExample() {
+	rpcClient := rpc.NewClient("info")
+
+	numRequests := 10
+	completedRequest := make(chan *rpc.Response, numRequests)
+
+	for index := 0; index < numRequests; index++ {
+		go func() {
+			request := rpc.NewRequest("getTime")
+			responseChan, err := rpcClient.SendRequest(request)
+			if err != nil {
+				panic(err)
+			}
+
+			completedRequest <- <-responseChan
+		}()
+	}
+
+	for index := 0; index < numRequests; index++ {
+		fmt.Printf("%v\n", <-completedRequest)
 	}
 }
+
+// func testModelServer() {
+// 	connection := rpc.NewConnection()
+
+// 	fmt.Printf("Getting user 17...\n")
+// 	user, err := connection.Users.Read.Get(1000)
+// 	if err != nil {
+// 		fmt.Println("Error: %v", err)
+// 	} else {
+// 		fmt.Println(user)
+// 	}
+// }
 
 func testReflection() {
 	c := map[string]int{"there": 14}

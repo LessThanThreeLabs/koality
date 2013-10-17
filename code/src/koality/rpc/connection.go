@@ -31,11 +31,8 @@ func createExchanges() {
 		panic(err)
 	}
 
-	exchangeOptions := amqp.Table(map[string]interface{}{
-		"x-dead-letter-exchange": deadLetterExchangeName,
-	})
 	err = exchangeChannel.ExchangeDeclare(exchangeName, exchangeType,
-		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, exchangeOptions)
+		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
 	if err != nil {
 		panic(err)
 	}

@@ -13,7 +13,7 @@ type UsersHandler struct {
 }
 
 type UsersReadHandler interface {
-	Get(userId int) (User, error)
+	Get(userId int) (*User, error)
 	// GetFromEmail(email string) (User, error)
 	// GetAll() ([]User, error)
 }

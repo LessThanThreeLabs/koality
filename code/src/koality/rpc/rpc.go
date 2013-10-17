@@ -5,7 +5,7 @@ type Request struct {
 	Arguments []interface{} `codec:"args"`
 }
 
-func MakeRequest(method string, arguments ...interface{}) *Request {
+func NewRequest(method string, arguments ...interface{}) *Request {
 	return &Request{method, arguments}
 }
 
@@ -15,7 +15,7 @@ type Response struct {
 }
 
 type ResponseError struct {
-	Message   string `codec:"message"`
 	Type      string `codec:"type"`
+	Message   string `codec:"message"`
 	Traceback string `codec:"traceback"`
 }

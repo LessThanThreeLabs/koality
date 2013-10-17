@@ -5,9 +5,9 @@ const (
 )
 
 const (
-	exchangeName       = "rpc"
+	exchangeName       = "model:rpc" // TODO: change to "rpc"
 	exchangeType       = "direct"
-	exchangeDurable    = false
+	exchangeDurable    = false // TODO: make durable?
 	exchangeAutoDelete = false
 	exchangeInternal   = false
 	exchangeNoWait     = false
@@ -16,12 +16,13 @@ const (
 )
 
 const (
-	deadLetterExchangeName       = "rpc-dlx"
+	deadLetterExchangeName       = "model:rpc_dlx" // TODO: change to "rpc-dlx"
 	deadLetterExchangeType       = "fanout"
-	deadLetterExchangeDurable    = false
+	deadLetterExchangeDurable    = false // TODO: make durable?
 	deadLetterExchangeAutoDelete = false
 	deadLetterExchangeInternal   = false
 	deadLetterExchangeNoWait     = false
+	deadLetterExchangeTtl        = 10000
 )
 
 const (
@@ -40,6 +41,7 @@ const (
 	deadLetterQueueAutoDelete = true
 	deadLetterQueueExclusive  = true
 	deadLetterQueueNoWait     = false
+	deadLetterQueueBindNoWait = false
 	deadLetterQueueAutoAck    = true
 	deadLetterQueueNoLocal    = true
 )
