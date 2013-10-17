@@ -33,7 +33,7 @@ func testExample() {
 	}
 
 	for index := 0; index < numRequests; index++ {
-		fmt.Printf("%v\n", <-completedRequest)
+		fmt.Println(<-completedRequest)
 	}
 }
 
