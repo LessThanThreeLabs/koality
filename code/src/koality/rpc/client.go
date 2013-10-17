@@ -27,9 +27,6 @@ func NewClient(route string) *Client {
 		panic(err)
 	}
 
-	returns := make(chan amqp.Return)
-	sendChannel.NotifyReturn(returns)
-
 	receiveChannel, err := getReceiveConnection().Channel()
 	if err != nil {
 		panic(err)
@@ -52,18 +49,6 @@ func NewClient(route string) *Client {
 		panic(err)
 	}
 
-	deliveries, err := receiveChannel.Consume(responseQueue.Name, responseQueue.Name, responseQueueAutoAck,
-		responseQueueExclusive, responseQueueNoLocal, responseQueueNoWait, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	deadLetterDeliveries, err := receiveChannel.Consume(deadLetterQueue.Name, deadLetterQueue.Name, deadLetterQueueAutoAck,
-		deadLetterQueueExclusive, deadLetterQueueNoLocal, deadLetterQueueNoWait, nil)
-	if err != nil {
-		panic(err)
-	}
-
 	client := Client{
 		route:             route,
 		sendChannel:       sendChannel,
@@ -76,9 +61,10 @@ func NewClient(route string) *Client {
 		msgpackHandle:     new(codec.MsgpackHandle),
 	}
 
-	go client.handleReturns(returns)
-	go client.handleDeliveries(deliveries)
-	go client.handleDeadLetterDeliveries(deadLetterDeliveries)
+	go client.handleDeliveries()
+	go client.handleDeadLetterDeliveries()
+	go client.handleReturns()
+	go client.handleClose()
 
 	return &client
 }
@@ -120,9 +106,14 @@ func (client *Client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 	return responseChannel, nil
 }
 
-func (client *Client) handleDeliveries(deliveries <-chan amqp.Delivery) {
-	for delivery := range deliveries {
+func (client *Client) handleDeliveries() {
+	deliveries, err := client.receiveChannel.Consume(client.responseQueue.Name, client.responseQueue.Name, responseQueueAutoAck,
+		responseQueueExclusive, responseQueueNoLocal, responseQueueNoWait, nil)
+	if err != nil {
+		panic(err)
+	}
 
+	for delivery := range deliveries {
 		go func(delivery amqp.Delivery) {
 			if delivery.ContentType != "application/x-msgpack" {
 				panic(fmt.Sprintf("Unsupported content type: %s", delivery.ContentType))
@@ -147,7 +138,13 @@ func (client *Client) handleDeliveries(deliveries <-chan amqp.Delivery) {
 	}
 }
 
-func (client *Client) handleDeadLetterDeliveries(deadLetterDeliveries <-chan amqp.Delivery) {
+func (client *Client) handleDeadLetterDeliveries() {
+	deadLetterDeliveries, err := client.receiveChannel.Consume(client.deadLetterQueue.Name, client.deadLetterQueue.Name, deadLetterQueueAutoAck,
+		deadLetterQueueExclusive, deadLetterQueueNoLocal, deadLetterQueueNoWait, nil)
+	if err != nil {
+		panic(err)
+	}
+
 	for deadLetterDelivery := range deadLetterDeliveries {
 
 		go func(deadLetterDelivery amqp.Delivery) {
@@ -173,7 +170,10 @@ func (client *Client) handleDeadLetterDeliveries(deadLetterDeliveries <-chan amq
 	}
 }
 
-func (client *Client) handleReturns(returns <-chan amqp.Return) {
+func (client *Client) handleReturns() {
+	returns := make(chan amqp.Return)
+	client.sendChannel.NotifyReturn(returns)
+
 	for badReturn := range returns {
 
 		go func(badReturn amqp.Return) {
@@ -197,4 +197,19 @@ func (client *Client) handleReturns(returns <-chan amqp.Return) {
 			delete(client.responseChannels, correlationId)
 		}(badReturn)
 	}
+}
+
+func (client *Client) handleClose() {
+	sendChannelCloseErrors := make(chan *amqp.Error)
+	client.sendChannel.NotifyClose(sendChannelCloseErrors)
+
+	receiveChannelCloseErrors := make(chan *amqp.Error)
+	client.receiveChannel.NotifyClose(receiveChannelCloseErrors)
+
+	select {
+	case <-sendChannelCloseErrors:
+	case <-receiveChannelCloseErrors:
+	}
+
+	panic("Lost rpc connection")
 }
