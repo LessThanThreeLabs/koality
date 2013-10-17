@@ -25,7 +25,9 @@ type ResponseError struct {
 }
 
 func (err ResponseError) Error() string {
-	if err.Traceback == "" {
+	if err.Message == "" {
+		return err.Type
+	} else if err.Traceback == "" {
 		return fmt.Sprintf("%s: %s", err.Type, err.Message)
 	} else {
 		return fmt.Sprintf("%s: %s\n%s", err.Type, err.Message, err.Traceback)
