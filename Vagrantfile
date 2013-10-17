@@ -11,6 +11,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.provider "virtualbox" do |v|
 		v.customize ["modifyvm", :id, "--name", "koality"]
 		v.customize ["modifyvm", :id, "--cpus", "2"]
+		v.customize ["modifyvm", :id, "--cpuexecutioncap", "100"]
 		v.customize ["modifyvm", :id, "--memory", "1024"]
 	end
 
