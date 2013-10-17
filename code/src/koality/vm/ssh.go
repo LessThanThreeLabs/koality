@@ -3,27 +3,46 @@ package vm
 import (
 	"fmt"
 	"koality/shell"
-	"os/exec"
 	"strconv"
 	"strings"
 )
 
-type SshCaller interface {
-	SshCall(command shell.Command) exec.Cmd
+type SshExecutableMaker struct {
+	sshConfig       SshConfig
+	executableMaker shell.ExecutableMaker
 }
 
-type SshExecutor struct {
-	SshConfig
-	Executor
+func NewSshExecutableMaker(config SshConfig) *SshExecutableMaker {
+	return &SshExecutableMaker{
+		sshConfig:       config,
+		executableMaker: shell.NewShellExecutableMaker(),
+	}
 }
 
-func (sshExecutor SshExecutor) Execute(command shell.Command) exec.Cmd {
-	fullCommand := shell.Command(strings.Join(append(sshExecutor.SshConfig.ArgList(), string(command)), " "))
-	return sshExecutor.Executor.Execute(fullCommand)
+func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command) shell.Executable {
+	fullCommand := shell.Command(strings.Join(append(sshExecutableMaker.sshConfig.SshArgs(string(command))), " "))
+	return sshExecutableMaker.executableMaker.MakeExecutable(fullCommand)
 }
 
-type ScpCaller interface {
-	ScpCall(localFilePath, remoteFilePath string, retrieveFile bool) exec.Cmd
+type Scper interface {
+	Scp(localFilePath, remoteFilePath string, retrieveFile bool) shell.Executable
+}
+
+type ShellScper struct {
+	scpConfig       ScpConfig
+	executableMaker shell.ExecutableMaker
+}
+
+func NewScper(config ScpConfig) Scper {
+	return &ShellScper{
+		scpConfig:       config,
+		executableMaker: shell.NewShellExecutableMaker(),
+	}
+}
+
+func (shellScper *ShellScper) Scp(localFilePath, remoteFilePath string, retrieveFile bool) shell.Executable {
+	fullCommand := shell.Command(strings.Join(append(shellScper.scpConfig.ScpArgs(localFilePath, remoteFilePath, retrieveFile)), " "))
+	return shellScper.executableMaker.MakeExecutable(fullCommand)
 }
 
 type SshConfig struct {
@@ -33,12 +52,7 @@ type SshConfig struct {
 	Options  map[string]string
 }
 
-type ScpConfig struct {
-	SshConfig
-	LocalFilePath  string
-	RemoteFilePath string
-	RetrieveFile   bool
-}
+type ScpConfig SshConfig
 
 func toOptionsList(options map[string]string) []string {
 	optionsList := make([]string, len(options))
@@ -51,21 +65,21 @@ func toOptionsList(options map[string]string) []string {
 	return optionsList
 }
 
-func (sshConfig SshConfig) ArgList() []string {
+func (sshConfig SshConfig) SshArgs(remoteCommand string) []string {
 	options := toOptionsList(sshConfig.Options)
 	login := fmt.Sprintf("%s@%s", sshConfig.Username, sshConfig.Hostname)
-	args := append(options, login, "-p", strconv.Itoa(sshConfig.Port))
+	args := append(options, login, "-p", strconv.Itoa(sshConfig.Port), shell.Quote(remoteCommand))
 
 	return append([]string{"ssh"}, args...)
 }
 
-func (scpConfig ScpConfig) ArgList() []string {
-	options := toOptionsList(scpConfig.SshConfig.Options)
-	remotePath := fmt.Sprintf("%s@%s:%s", scpConfig.SshConfig.Username, scpConfig.SshConfig.Hostname, scpConfig.RemoteFilePath)
+func (scpConfig ScpConfig) ScpArgs(localFilePath, remoteFilePath string, retrieveFile bool) []string {
+	options := toOptionsList(scpConfig.Options)
+	remotePath := fmt.Sprintf("%s@%s:%s", scpConfig.Username, scpConfig.Hostname, remoteFilePath)
 
-	if scpConfig.RetrieveFile {
-		return append(options, "-P", strconv.Itoa(scpConfig.SshConfig.Port), remotePath, scpConfig.LocalFilePath)
+	if retrieveFile {
+		return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(remotePath), shell.Quote(localFilePath))
 	} else {
-		return append(options, "-P", strconv.Itoa(scpConfig.SshConfig.Port), scpConfig.LocalFilePath, remotePath)
+		return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(localFilePath), shell.Quote(remotePath))
 	}
 }

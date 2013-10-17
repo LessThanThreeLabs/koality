@@ -24,7 +24,7 @@ func Background(command Command) Command {
 }
 
 func Not(command Command) Command {
-	return Command(fmt.Sprintf("! %s", command))
+	return Command(fmt.Sprintf("! %s", Group(command)))
 }
 
 func Test(command Command) Command {
@@ -54,7 +54,7 @@ func IfElse(condition, thenCommand, elseCommand Command) Command {
 func join(commands []Command, joiner string) Command {
 	commandStrings := make([]string, len(commands))
 	for index, command := range commands {
-		commandStrings[index] = string(command)
+		commandStrings[index] = string(Group(command))
 	}
 	return Command(strings.Join(commandStrings, joiner))
 }
