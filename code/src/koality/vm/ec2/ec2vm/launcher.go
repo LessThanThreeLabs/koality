@@ -1,11 +1,11 @@
 package ec2vm
 
 import (
-	"koality/shell"
-	"github.com/crowdmob/goamz/ec2"
-	"koality/vm/ec2/ec2broker"
-	"koality/vm"
 	"fmt"
+	"github.com/crowdmob/goamz/ec2"
+	"koality/shell"
+	"koality/vm"
+	"koality/vm/ec2/ec2broker"
 	"time"
 )
 

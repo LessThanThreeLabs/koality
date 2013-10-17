@@ -9,13 +9,13 @@ import (
 
 type virtualMachinePool struct {
 	virtualMachineLauncher VirtualMachineLauncher
-	minReady  int
-	maxSize   int
-	startingCount int
-	readyCount int
-	allocatedCount int
-	readyChannel chan VirtualMachine
-	locker sync.Locker
+	minReady               int
+	maxSize                int
+	startingCount          int
+	readyCount             int
+	allocatedCount         int
+	readyChannel           chan VirtualMachine
+	locker                 sync.Locker
 }
 
 func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize int) *virtualMachinePool {
@@ -23,10 +23,10 @@ func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize in
 	locker := new(sync.Mutex)
 	pool := virtualMachinePool{
 		virtualMachineLauncher: virtualMachineLauncher,
-		minReady: minReady,
-		maxSize: maxSize,
-		readyChannel: readyChannel,
-		locker: locker,
+		minReady:               minReady,
+		maxSize:                maxSize,
+		readyChannel:           readyChannel,
+		locker:                 locker,
 	}
 	go pool.ensureReadyInstances()
 	return &pool
@@ -61,7 +61,7 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 		}
 		pool.startingCount += numToLaunch
 		return numToLaunch
-	} ()
+	}()
 
 	if numToLaunch <= 0 {
 		return nil
@@ -72,7 +72,7 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 	for x := 0; x < numToLaunch; x++ {
 		go func(doneChannel chan error) {
 			doneChannel <- pool.newReadyInstance()
-		} (doneChannel)
+		}(doneChannel)
 	}
 
 	for x := 0; x < numToLaunch; x++ {
@@ -153,7 +153,7 @@ func (pool *virtualMachinePool) newReadyInstance() error {
 
 		fmt.Printf("New instance: %#v\n", pool)
 
-		if pool.readyCount + pool.startingCount >= pool.maxSize {
+		if pool.readyCount+pool.startingCount >= pool.maxSize {
 			pool.readyCount--
 			return nil, newVm.Terminate()
 		}
