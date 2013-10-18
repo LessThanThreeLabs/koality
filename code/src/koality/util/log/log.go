@@ -6,17 +6,16 @@ import (
 	"log/syslog"
 )
 
-var (
-	// TODO(andrey) change to where we want the log files to go
-	fileName    = "log.txt"
-	formatter   = log.StdFormatter{"[root]", log.Lmicroseconds | log.Lshortfile, false}
-	maxFileSize = 1 << 20
-)
-
 var Logger *log.Logger
 
 func init() {
 	Logger = log.New()
+
+	// TODO(andrey) change to where we want the log files to go
+	fileName := "log.txt"
+
+	formatter := log.StdFormatter{"[root]", log.Lmicroseconds | log.Lshortfile, false}
+	maxFileSize := 1 << 20
 
 	// TODO(andrey) change myprog to deployment address or license key
 	logwriter, _ := syslog.New(syslog.LOG_NOTICE, "my_program")
