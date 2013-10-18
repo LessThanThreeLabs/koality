@@ -11,18 +11,12 @@ var (
 	fileName    = "log.txt"
 	formatter   = log.StdFormatter{"[root]", log.Lmicroseconds | log.Lshortfile, false}
 	maxFileSize = 1 << 20
-
-	counter = 0
 )
 
 var Logger *log.Logger
 
 func init() {
 	Logger = log.New()
-
-	counter++
-
-	fmt.Printf("%s\n", counter)
 
 	// TODO(andrey) change myprog to deployment address or license key
 	logwriter, _ := syslog.New(syslog.LOG_NOTICE, "my_program")
