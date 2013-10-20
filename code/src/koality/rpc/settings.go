@@ -26,13 +26,23 @@ const (
 )
 
 const (
-	responseQueueName       = ""
-	responseQueueDurable    = false
-	responseQueueAutoDelete = true
-	responseQueueExclusive  = true
-	responseQueueNoWait     = false
-	responseQueueAutoAck    = true
-	responseQueueNoLocal    = true
+	clientResponseQueueName       = ""
+	clientResponseQueueDurable    = false
+	clientResponseQueueAutoDelete = true
+	clientResponseQueueExclusive  = true
+	clientResponseQueueNoWait     = false
+	clientResponseQueueAutoAck    = true
+	clientResponseQueueNoLocal    = true
+)
+
+const (
+	serverResponseQueueDurable    = false
+	serverResponseQueueAutoDelete = true
+	serverResponseQueueExclusive  = true
+	serverResponseQueueNoWait     = false
+	serverResponseQueueBindNoWait = false
+	serverResponseQueueAutoAck    = true
+	serverResponseQueueNoLocal    = true
 )
 
 const (

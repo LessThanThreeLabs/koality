@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type Client struct {
+type client struct {
 	route             string
 	sendChannel       *amqp.Channel
 	receiveChannel    *amqp.Channel
@@ -21,7 +21,7 @@ type Client struct {
 	msgpackHandle     *codec.MsgpackHandle
 }
 
-func NewClient(route string) *Client {
+func NewClient(route string) *client {
 	sendChannel, err := getSendConnection().Channel()
 	if err != nil {
 		panic(err)
@@ -32,8 +32,8 @@ func NewClient(route string) *Client {
 		panic(err)
 	}
 
-	responseQueue, err := receiveChannel.QueueDeclare(responseQueueName, responseQueueDurable,
-		responseQueueAutoDelete, responseQueueExclusive, responseQueueNoWait, nil)
+	responseQueue, err := receiveChannel.QueueDeclare(clientResponseQueueName, clientResponseQueueDurable,
+		clientResponseQueueAutoDelete, clientResponseQueueExclusive, clientResponseQueueNoWait, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +49,7 @@ func NewClient(route string) *Client {
 		panic(err)
 	}
 
-	client := Client{
+	client := client{
 		route:             route,
 		sendChannel:       sendChannel,
 		receiveChannel:    receiveChannel,
@@ -68,15 +68,16 @@ func NewClient(route string) *Client {
 	return &client
 }
 
-func (client *Client) getNextCorrelationId() string {
+func (client *client) getNextCorrelationId() string {
 	client.correlationIdLock.Lock()
+	defer client.correlationIdLock.Unlock()
+
 	correlationId := strconv.FormatUint(client.nextCorrelationId, 36)
 	client.nextCorrelationId++
-	client.correlationIdLock.Unlock()
 	return correlationId
 }
 
-func (client *Client) SendRequest(rpcRequest *Request) (<-chan *Response, error) {
+func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error) {
 	var buffer []byte
 	err := codec.NewEncoderBytes(&buffer, client.msgpackHandle).Encode(rpcRequest)
 	if err != nil {
@@ -105,9 +106,10 @@ func (client *Client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 	return responseChannel, nil
 }
 
-func (client *Client) handleDeliveries() {
-	deliveries, err := client.receiveChannel.Consume(client.responseQueue.Name, client.responseQueue.Name, responseQueueAutoAck,
-		responseQueueExclusive, responseQueueNoLocal, responseQueueNoWait, nil)
+func (client *client) handleDeliveries() {
+	deliveries, err := client.receiveChannel.Consume(client.responseQueue.Name, client.responseQueue.Name,
+		clientResponseQueueAutoAck, clientResponseQueueExclusive,
+		clientResponseQueueNoLocal, clientResponseQueueNoWait, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -137,9 +139,10 @@ func (client *Client) handleDeliveries() {
 	}
 }
 
-func (client *Client) handleDeadLetterDeliveries() {
-	deadLetterDeliveries, err := client.receiveChannel.Consume(client.deadLetterQueue.Name, client.deadLetterQueue.Name, deadLetterQueueAutoAck,
-		deadLetterQueueExclusive, deadLetterQueueNoLocal, deadLetterQueueNoWait, nil)
+func (client *client) handleDeadLetterDeliveries() {
+	deadLetterDeliveries, err := client.receiveChannel.Consume(client.deadLetterQueue.Name, client.deadLetterQueue.Name,
+		deadLetterQueueAutoAck, deadLetterQueueExclusive,
+		deadLetterQueueNoLocal, deadLetterQueueNoWait, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -169,7 +172,7 @@ func (client *Client) handleDeadLetterDeliveries() {
 	}
 }
 
-func (client *Client) handleReturns() {
+func (client *client) handleReturns() {
 	returns := make(chan amqp.Return)
 	client.sendChannel.NotifyReturn(returns)
 
