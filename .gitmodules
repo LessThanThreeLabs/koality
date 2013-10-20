@@ -34,3 +34,6 @@
 [submodule "chef/cookbooks/nginx"]
 	path = chef/cookbooks/nginx
 	url = git@github.com:opscode-cookbooks/nginx.git
+[submodule "chef/cookbooks/ohai"]
+	path = chef/cookbooks/ohai
+	url = git@github.com:opscode-cookbooks/ohai.git

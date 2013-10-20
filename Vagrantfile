@@ -18,6 +18,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code"
 	config.vm.synced_folder "varnish/", "#{VAGRANT_HOME_DIRECTORY}/varnish"
 
+	config.vm.network :forwarded_port, guest: 80,    host: 80    # Nginx
+	config.vm.network :forwarded_port, guest: 443,   host: 443   # Nginx
 	config.vm.network :forwarded_port, guest: 1080,  host: 1080  # Webserver
 	config.vm.network :forwarded_port, guest: 5672,  host: 5672  # RabbitMQ
 	config.vm.network :forwarded_port, guest: 15672, host: 15672 # RabbitMQ Management
@@ -34,6 +36,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "golang"
 		chef.add_recipe "erlang"
 		chef.add_recipe "rabbitmq"
+		chef.add_recipe "ohai"
+		chef.add_recipe "nginx"
 
 		chef.json = {
 			:go => {
@@ -44,6 +48,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			:rabbitmq => {
 				:version => "3.1.5",
 				:enabled_plugins => ["rabbitmq_management"]
+			},
+			:nginx => {
+				:version => "1.4.0"
 			}
 		}
 	end
