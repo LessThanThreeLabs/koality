@@ -31,3 +31,6 @@
 [submodule "code/src/github.com/ugorji/go"]
 	path = code/src/github.com/ugorji/go
 	url = git@github.com:ugorji/go.git
+[submodule "chef/cookbooks/nginx"]
+	path = chef/cookbooks/nginx
+	url = git@github.com:opscode-cookbooks/nginx.git
