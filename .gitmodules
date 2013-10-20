@@ -10,9 +10,6 @@
 [submodule "chef/cookbooks/vim"]
 	path = chef/cookbooks/vim
 	url = http://github.com/opscode-cookbooks/vim
-[submodule "chef/cookbooks/varnish"]
-	path = chef/cookbooks/varnish
-	url = http://github.com/opscode-cookbooks/varnish
 [submodule "chef/cookbooks/rabbitmq"]
 	path = chef/cookbooks/rabbitmq
 	url = http://github.com/opscode-cookbooks/rabbitmq
