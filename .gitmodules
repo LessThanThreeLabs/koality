@@ -19,21 +19,9 @@
 [submodule "chef/cookbooks/golang"]
 	path = chef/cookbooks/golang
 	url = git@github.com:NOX73/chef-golang.git
-[submodule "code/src/github.com/streadway/amqp"]
-	path = code/src/github.com/streadway/amqp
-	url = git@github.com:streadway/amqp.git
-[submodule "code/src/github.com/crowdmob/goamz"]
-	path = code/src/github.com/crowdmob/goamz
-	url = git@github.com:crowdmob/goamz
-[submodule "code/src/github.com/scale-it/go-log"]
-	path = code/src/github.com/scale-it/go-log
-	url = git@github.com:scale-it/go-log.git
-[submodule "code/src/github.com/ugorji/go"]
-	path = code/src/github.com/ugorji/go
-	url = git@github.com:ugorji/go.git
-[submodule "chef/cookbooks/nginx"]
-	path = chef/cookbooks/nginx
-	url = git@github.com:opscode-cookbooks/nginx.git
 [submodule "chef/cookbooks/ohai"]
 	path = chef/cookbooks/ohai
 	url = git@github.com:opscode-cookbooks/ohai.git
+[submodule "chef/cookbooks/nginx"]
+	path = chef/cookbooks/nginx
+	url = git@github.com:opscode-cookbooks/nginx.git
