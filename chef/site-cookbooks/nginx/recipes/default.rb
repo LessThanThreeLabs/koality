@@ -9,6 +9,7 @@ apt_repository "nginx" do
 end
 
 apt_package "nginx" do
+	version	node["nginx"]["version"]
 	action	:install
 end
 
