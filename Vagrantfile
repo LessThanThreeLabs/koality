@@ -34,6 +34,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "vim"
 		chef.add_recipe "git"
 		chef.add_recipe "golang"
+		chef.add_recipe "nodejs"
 		chef.add_recipe "erlang"
 		chef.add_recipe "rabbitmq"
 		chef.add_recipe "nginx"
@@ -43,6 +44,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				:version => "1.1.2",
 				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code/back",
 				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/back/bin"
+			},
+			:nodejs => {
+				:version => "0.10.21",
 			},
 			:rabbitmq => {
 				:version => "3.1.5",
