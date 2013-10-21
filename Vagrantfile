@@ -41,8 +41,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.json = {
 			:go => {
 				:version => "1.1.2",
-				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code",
-				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/bin"
+				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code/back",
+				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/back/bin"
 			},
 			:rabbitmq => {
 				:version => "3.1.5",
