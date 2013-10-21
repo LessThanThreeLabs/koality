@@ -16,10 +16,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	end
 
 	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code"
+	config.vm.synced_folder "nginx/", "#{VAGRANT_HOME_DIRECTORY}/nginx"
 
-	config.vm.network :forwarded_port, guest: 80,    host: 80    # Nginx
-	config.vm.network :forwarded_port, guest: 443,   host: 443   # Nginx
-	config.vm.network :forwarded_port, guest: 1080,  host: 1080  # Webserver
+	config.vm.network :forwarded_port, guest: 80,    host: 1080  # Nginx
+	config.vm.network :forwarded_port, guest: 443,   host: 10443 # Nginx
+	config.vm.network :forwarded_port, guest: 8080,  host: 8080  # Webserver
 	config.vm.network :forwarded_port, guest: 5672,  host: 5672  # RabbitMQ
 	config.vm.network :forwarded_port, guest: 15672, host: 15672 # RabbitMQ Management
 
@@ -35,7 +36,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "golang"
 		chef.add_recipe "erlang"
 		chef.add_recipe "rabbitmq"
-		chef.add_recipe "ohai"
 		chef.add_recipe "nginx"
 
 		chef.json = {
@@ -49,7 +49,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				:enabled_plugins => ["rabbitmq_management"]
 			},
 			:nginx => {
-				:version => "1.4.0"
+				:conf_path => "#{VAGRANT_HOME_DIRECTORY}/nginx/nginx.conf"
 			}
 		}
 	end
