@@ -16,7 +16,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	end
 
 	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code"
-	config.vm.synced_folder "varnish/", "#{VAGRANT_HOME_DIRECTORY}/varnish"
 
 	config.vm.network :forwarded_port, guest: 80,    host: 80    # Nginx
 	config.vm.network :forwarded_port, guest: 443,   host: 443   # Nginx
