@@ -37,3 +37,6 @@
 [submodule "code/back/src/github.com/ugorji/go"]
 	path = code/back/src/github.com/ugorji/go
 	url = git@github.com:ugorji/go.git
+[submodule "chef/cookbooks/runit"]
+	path = chef/cookbooks/runit
+	url = git@github.com:opscode-cookbooks/runit.git
