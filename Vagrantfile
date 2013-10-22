@@ -33,6 +33,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "build-essential"
 		chef.add_recipe "vim"
 		chef.add_recipe "git"
+		chef.add_recipe "oh-my-zsh"
 		chef.add_recipe "golang"
 		chef.add_recipe "nodejs"
 		chef.add_recipe "erlang"
@@ -40,6 +41,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "nginx"
 
 		chef.json = {
+			:oh_my_zsh => {
+				:users => [
+					{
+					:login => "vagrant",
+					:theme => "minimal",
+					:plugins => ["git"]
+					}
+				]
+			},
 			:go => {
 				:version => "1.1.2",
 				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code/back",

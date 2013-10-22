@@ -34,3 +34,6 @@
 [submodule "chef/cookbooks/nodejs"]
 	path = chef/cookbooks/nodejs
 	url = git@github.com:mdxp/nodejs-cookbook.git
+[submodule "chef/cookbooks/oh-my-zsh"]
+	path = chef/cookbooks/oh-my-zsh
+	url = git@github.com:shingara/oh-my-zsh-chef.git
