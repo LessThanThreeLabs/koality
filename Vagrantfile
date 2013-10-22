@@ -46,7 +46,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 					{
 					:login => "vagrant",
 					:theme => "minimal",
-					:plugins => ["git"]
+					:plugins => ["git", "golang"]
 					}
 				]
 			},
