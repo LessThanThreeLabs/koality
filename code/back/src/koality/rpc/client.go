@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type client struct {
@@ -77,9 +78,23 @@ func (client *client) getNextCorrelationId() string {
 	return correlationId
 }
 
+func (client *client) checkRequestIsValid(rpcRequest *Request) error {
+	for arg := range rpcRequest.Args {
+		if !utf8.ValidString(arg.String()) {
+			return &InvalidRequestError{Message: "Request argument contains illegal character"}
+		}
+	}
+	return nil
+}
+
 func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error) {
+	err := client.checkRequestIsValid(rpcRequest)
+	if err != nil {
+		return nil, err
+	}
+
 	var buffer []byte
-	err := codec.NewEncoderBytes(&buffer, client.msgpackHandle).Encode(rpcRequest)
+	err = codec.NewEncoderBytes(&buffer, client.msgpackHandle).Encode(rpcRequest)
 	if err != nil {
 		return nil, err
 	}

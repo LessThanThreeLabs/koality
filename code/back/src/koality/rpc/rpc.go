@@ -5,12 +5,20 @@ import (
 )
 
 type Request struct {
-	Method    string        `codec:"method"`
-	Arguments []interface{} `codec:"args"`
+	Method string        `codec:"method"`
+	Args   []interface{} `codec:"args"`
 }
 
 func NewRequest(method string, arguments ...interface{}) *Request {
 	return &Request{method, arguments}
+}
+
+type InvalidRequestError struct {
+	Message string
+}
+
+func (err *InvalidRequestError) Error() string {
+	return err.Message
 }
 
 type Response struct {
