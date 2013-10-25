@@ -16,9 +16,6 @@
 [submodule "chef/cookbooks/erlang"]
 	path = chef/cookbooks/erlang
 	url = http://github.com/opscode-cookbooks/erlang
-[submodule "chef/cookbooks/golang"]
-	path = chef/cookbooks/golang
-	url = git@github.com:NOX73/chef-golang.git
 [submodule "code/back/src/github.com/crowdmob/goamz"]
 	path = code/back/src/github.com/crowdmob/goamz
 	url = git@github.com:crowdmob/goamz.git
