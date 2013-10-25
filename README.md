@@ -28,3 +28,5 @@
 * `vagrant reboot`
 	* Will restart the virtual machine
 	* Use this if the virtual machine is ever giving you trouble
+* `sudo /Library/StartupItems/VirtualBox/VirtualBox restart`
+	* When you see "Error while adding new interface..."
