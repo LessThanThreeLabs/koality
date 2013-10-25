@@ -15,7 +15,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		v.customize ["modifyvm", :id, "--memory", "1024"]
 	end
 
-	# config.vm.hostname = "local.koalitycode.com"
 	config.vm.network "private_network", ip: "10.10.10.137"
 
 	config.vm.network :forwarded_port, guest: 80,    host: 1080  # Nginx
