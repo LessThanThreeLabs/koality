@@ -15,14 +15,17 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		v.customize ["modifyvm", :id, "--memory", "1024"]
 	end
 
-	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code"
-	config.vm.synced_folder "nginx/", "#{VAGRANT_HOME_DIRECTORY}/nginx"
+	# config.vm.hostname = "local.koalitycode.com"
+	config.vm.network "private_network", ip: "10.10.10.137"
 
 	config.vm.network :forwarded_port, guest: 80,    host: 1080  # Nginx
 	config.vm.network :forwarded_port, guest: 443,   host: 10443 # Nginx
 	config.vm.network :forwarded_port, guest: 8080,  host: 8080  # Webserver
 	config.vm.network :forwarded_port, guest: 5672,  host: 5672  # RabbitMQ
 	config.vm.network :forwarded_port, guest: 15672, host: 15672 # RabbitMQ Management
+
+	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code", nfs: true
+	config.vm.synced_folder "nginx/", "#{VAGRANT_HOME_DIRECTORY}/nginx", nfs: true
 
 	config.vm.provision :chef_solo do |chef|
 		chefRoot = "chef"
