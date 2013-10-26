@@ -12,7 +12,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		v.customize ["modifyvm", :id, "--name", "koality"]
 		v.customize ["modifyvm", :id, "--cpus", "2"]
 		v.customize ["modifyvm", :id, "--cpuexecutioncap", "100"]
-		v.customize ["modifyvm", :id, "--memory", "1024"]
+		v.customize ["modifyvm", :id, "--memory", "2048"]
 	end
 
 	config.vm.network "private_network", ip: "10.10.10.10"
