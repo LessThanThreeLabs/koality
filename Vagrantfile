@@ -15,7 +15,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		v.customize ["modifyvm", :id, "--memory", "1024"]
 	end
 
-	config.vm.network "private_network", ip: "10.10.10.137"
+	config.vm.network "private_network", ip: "10.10.10.10"
 
 	config.vm.network :forwarded_port, guest: 80,    host: 1080  # Nginx
 	config.vm.network :forwarded_port, guest: 443,   host: 10443 # Nginx

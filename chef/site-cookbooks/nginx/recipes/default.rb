@@ -23,5 +23,5 @@ link "/etc/nginx/nginx.conf" do
 end
 
 service "nginx" do
-	action	:start
+	action	:restart
 end
