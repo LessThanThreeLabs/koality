@@ -26,6 +26,17 @@ const (
 )
 
 const (
+	deadLetterQueueName       = ""
+	deadLetterQueueDurable    = false
+	deadLetterQueueAutoDelete = true
+	deadLetterQueueExclusive  = true
+	deadLetterQueueNoWait     = false
+	deadLetterQueueBindNoWait = false
+	deadLetterQueueAutoAck    = true
+	deadLetterQueueNoLocal    = true
+)
+
+const (
 	clientResponseQueueName       = ""
 	clientResponseQueueDurable    = false
 	clientResponseQueueAutoDelete = true
@@ -36,22 +47,13 @@ const (
 )
 
 const (
+	serverResponseQueueName       = ""
 	serverResponseQueueDurable    = false
 	serverResponseQueueAutoDelete = true
 	serverResponseQueueExclusive  = true
 	serverResponseQueueNoWait     = false
 	serverResponseQueueBindNoWait = false
-	serverResponseQueueAutoAck    = true
+	serverResponseQueueAutoAck    = false
 	serverResponseQueueNoLocal    = true
-)
-
-const (
-	deadLetterQueueName       = ""
-	deadLetterQueueDurable    = false
-	deadLetterQueueAutoDelete = true
-	deadLetterQueueExclusive  = true
-	deadLetterQueueNoWait     = false
-	deadLetterQueueBindNoWait = false
-	deadLetterQueueAutoAck    = true
-	deadLetterQueueNoLocal    = true
+	serverResponseQueueQos        = 3
 )

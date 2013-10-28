@@ -80,6 +80,7 @@ func (client *client) getNextCorrelationId() string {
 
 func (client *client) checkRequestIsValid(rpcRequest *Request) error {
 	for arg := range rpcRequest.Args {
+		fmt.Println("need to check unicode better?...")
 		if !utf8.ValidString(fmt.Sprint(arg)) {
 			return &InvalidRequestError{Message: "Request argument contains illegal character"}
 		}

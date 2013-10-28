@@ -8,13 +8,14 @@ import (
 
 type server struct {
 	route          string
+	requestHandler interface{}
 	sendChannel    *amqp.Channel
 	receiveChannel *amqp.Channel
 	responseQueue  *amqp.Queue
 	msgpackHandle  *codec.MsgpackHandle
 }
 
-func NewServer(route string) *server {
+func NewServer(route string, requestHandler interface{}) *server {
 	sendChannel, err := getSendConnection().Channel()
 	if err != nil {
 		panic(err)
@@ -25,7 +26,12 @@ func NewServer(route string) *server {
 		panic(err)
 	}
 
-	responseQueue, err := receiveChannel.QueueDeclare(route, serverResponseQueueDurable,
+	err = receiveChannel.Qos(serverResponseQueueQos, 0, false)
+	if err != nil {
+		panic(err)
+	}
+
+	responseQueue, err := receiveChannel.QueueDeclare(serverResponseQueueName, serverResponseQueueDurable,
 		serverResponseQueueAutoDelete, serverResponseQueueExclusive, serverResponseQueueNoWait, nil)
 	if err != nil {
 		panic(err)
@@ -38,6 +44,7 @@ func NewServer(route string) *server {
 
 	server := server{
 		route:          route,
+		requestHandler: requestHandler,
 		sendChannel:    sendChannel,
 		receiveChannel: receiveChannel,
 		responseQueue:  &responseQueue,
@@ -63,13 +70,19 @@ func (server *server) handleDeliveries() {
 				panic(fmt.Sprintf("Unsupported content type: %s", delivery.ContentType))
 			}
 
-			response := new(Response)
-			err := codec.NewDecoderBytes(delivery.Body, server.msgpackHandle).Decode(response)
+			rpcRequest := new(Request)
+			err := codec.NewDecoderBytes(delivery.Body, server.msgpackHandle).Decode(rpcRequest)
 			if err != nil {
 				panic(err)
 			}
 
-			// TODO: handle request
+			server.handleRequest(rpcRequest, delivery.ReplyTo)
+			delivery.Ack(false)
 		}(delivery)
 	}
+}
+
+func (server *server) handleRequest(rpcRequest *Request, replyToQueueName string) {
+	fmt.Println(rpcRequest, replyToQueueName)
+	fmt.Println("Need to use reflection to call correct function of handler here")
 }
