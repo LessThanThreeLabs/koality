@@ -37,3 +37,6 @@
 [submodule "chef/cookbooks/golang"]
 	path = chef/cookbooks/golang
 	url = git@github.com:KoalityCode/chef-golang.git
+[submodule "code/back/src/github.com/dchest/goyaml"]
+	path = code/back/src/github.com/dchest/goyaml
+	url = git@github.com:dchest/goyaml.git
