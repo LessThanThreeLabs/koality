@@ -14,6 +14,9 @@
 * `git submodule update --init --recursive`
 	* This will pull down updates to submodules
 	* Use this if you're missing a library
+* `git submodule sync`
+	* This will update the remote urls for all your submodules
+	* Use this if updating submodules fails
 
 ###Vagrant
 
