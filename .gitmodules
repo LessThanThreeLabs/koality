@@ -34,9 +34,6 @@
 [submodule "chef/cookbooks/oh-my-zsh"]
 	path = chef/cookbooks/oh-my-zsh
 	url = git@github.com:shingara/oh-my-zsh-chef.git
-[submodule "code/back/src/github.com/soundcloud/goyaml"]
-	path = code/back/src/github.com/soundcloud/goyaml
-	url = git@github.com:soundcloud/goyaml.git
 [submodule "chef/cookbooks/golang"]
 	path = chef/cookbooks/golang
 	url = git@github.com:KoalityCode/chef-golang.git
