@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"fmt"
+	"reflect"
 )
 
 type Request struct {
@@ -9,15 +10,18 @@ type Request struct {
 	Args   []interface{} `codec:"args"`
 }
 
-func NewRequest(method string, arguments ...interface{}) *Request {
-	return &Request{method, arguments}
+func NewRequest(method string, args ...interface{}) *Request {
+	for _, arg := range args {
+		fmt.Println(reflect.TypeOf(arg))
+	}
+	return &Request{method, args}
 }
 
 type InvalidRequestError struct {
 	Message string
 }
 
-func (err *InvalidRequestError) Error() string {
+func (err InvalidRequestError) Error() string {
 	return err.Message
 }
 

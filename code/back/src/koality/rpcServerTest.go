@@ -22,3 +22,11 @@ func testExample() {
 
 type RequestHandler struct {
 }
+
+func (requestHandler *RequestHandler) GetTime() time.Time {
+	return time.Now()
+}
+
+func (requestHandler *RequestHandler) Add(first, second int64) int64 {
+	return first + second
+}

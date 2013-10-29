@@ -15,12 +15,15 @@ func main() {
 func testExample() {
 	rpcClient := rpc.NewClient("info")
 
-	numRequests := 10
+	numRequests := 1
 	completedRequest := make(chan *rpc.Response, numRequests)
 
 	for index := 0; index < numRequests; index++ {
 		go func() {
-			request := rpc.NewRequest("getTime")
+			var first int64 = 1
+			var second int64 = 2
+
+			request := rpc.NewRequest("Add", first, second)
 			responseChan, err := rpcClient.SendRequest(request)
 			if err != nil {
 				panic(err)
