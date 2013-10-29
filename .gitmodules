@@ -40,3 +40,6 @@
 [submodule "code/back/src/github.com/vmihailenco/msgpack"]
 	path = code/back/src/github.com/vmihailenco/msgpack
 	url = git@github.com:vmihailenco/msgpack.git
+[submodule "code/back/src/github.com/vmihailenco/bufio"]
+	path = code/back/src/github.com/vmihailenco/bufio
+	url = git@github.com:vmihailenco/bufio.git
