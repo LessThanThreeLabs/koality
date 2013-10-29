@@ -10,26 +10,6 @@ type ChangeVerifier struct {
 	vm.VirtualMachinePool
 }
 
-type VerificationConfig struct {
-	numMachines     int
-	setupCommands   []command
-	compileCommands []command
-	factoryCommands []command
-	testCommands    []command
-}
-
-type BuildVerifier struct {
-	virtualMachine vm.VirtualMachine
-	resultsChan    chan result
-}
-
-type result struct {
-	stageType string
-	passed    bool
-}
-
-type command struct{}
-
 func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 	verificationConfig, err := changeVerifier.getVerificationConfig(changeId)
 	if err != nil {
@@ -51,13 +31,13 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 		testCommandsChan <- testCommand
 	}
 
-	newBuildVerifiersChannel := make(chan *BuildVerifier, verificationConfig.numMachines)
+	newStageVerifiersChan := make(chan *StageVerifier, verificationConfig.numMachines)
 
 	launchNewMachineToRunTestsAndStuff := func() {
-		buildVerifier := NewBuildVerifier(changeVerifier.VirtualMachinePool.Get())
-		defer close(buildVerifier.resultsChan)
+		stageVerifier := NewStageVerifier(changeVerifier.VirtualMachinePool.Get())
+		defer close(stageVerifier.resultsChan)
 
-		newBuildVerifiersChannel <- buildVerifier
+		newStageVerifiersChan <- stageVerifier
 
 		// Populate pre-test commands
 		preTestCommandsChan := make(chan command, len(verificationConfig.setupCommands)+len(verificationConfig.compileCommands))
@@ -69,21 +49,7 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 		}
 		close(preTestCommandsChan)
 
-		shouldContinue, err := buildVerifier.runPreTestCommands(preTestCommandsChan)
-		if err != nil {
-			panic(err)
-		}
-		if !shouldContinue {
-			return
-		}
-
-		err = buildVerifier.runFactoryCommands(factoryCommandsChan, testCommandsChan, factoriesRun)
-		if err != nil {
-			panic(err)
-		}
-		factoriesRun.Wait()
-
-		err = buildVerifier.runTestCommands(testCommandsChan)
+		err := stageVerifier.RunChangeStages(preTestCommandsChan, factoryCommandsChan, testCommandsChan, factoriesRun)
 		if err != nil {
 			panic(err)
 		}
@@ -92,7 +58,7 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 		go launchNewMachineToRunTestsAndStuff() // Best name
 	}
 
-	resultsChan := changeVerifier.combineResults(newBuildVerifiersChannel)
+	resultsChan := changeVerifier.combineResults(newStageVerifiersChan)
 
 	testsStarted := false
 	failed := false
@@ -145,19 +111,19 @@ func (changeVerifier *ChangeVerifier) getVerificationConfig(changeId int) (Verif
 	panic(fmt.Sprintf("not implemented"))
 }
 
-func (changeVerifier *ChangeVerifier) combineResults(newBuildVerifiersChan <-chan *BuildVerifier) <-chan result {
+func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-chan *StageVerifier) <-chan result {
 	resultsChan := make(chan result)
-	go func(newBuildVerifiersChan <-chan *BuildVerifier) {
+	go func(newStageVerifiersChan <-chan *StageVerifier) {
 		combinedResults := make(chan result)
-		buildVerifiers := make([]*BuildVerifier, 0, cap(newBuildVerifiersChan))
-		buildVerifierDoneChan := make(chan error, cap(newBuildVerifiersChan))
-		buildVerifiersDoneCounter := 0
+		stageVerifiers := make([]*StageVerifier, 0, cap(newStageVerifiersChan))
+		stageVerifierDoneChan := make(chan error, cap(newStageVerifiersChan))
+		stageVerifiersDoneCounter := 0
 
-		handleNewBuildVerifier := func(buildVerifier *BuildVerifier) {
+		handleNewStageVerifier := func(stageVerifier *StageVerifier) {
 			for {
-				result, ok := <-buildVerifier.resultsChan
+				result, ok := <-stageVerifier.resultsChan
 				if !ok {
-					buildVerifierDoneChan <- nil
+					stageVerifierDoneChan <- nil
 					return
 				}
 				combinedResults <- result
@@ -166,22 +132,22 @@ func (changeVerifier *ChangeVerifier) combineResults(newBuildVerifiersChan <-cha
 
 		for {
 			select {
-			case buildVerifier, ok := <-newBuildVerifiersChan:
+			case stageVerifier, ok := <-newStageVerifiersChan:
 				if !ok {
-					panic("new build verifiers channel closed")
+					panic("new stage verifiers channel closed")
 				}
-				buildVerifiers = append(buildVerifiers, buildVerifier)
-				go handleNewBuildVerifier(buildVerifier)
+				stageVerifiers = append(stageVerifiers, stageVerifier)
+				go handleNewStageVerifier(stageVerifier)
 
-			case err, ok := <-buildVerifierDoneChan:
+			case err, ok := <-stageVerifierDoneChan:
 				if !ok {
-					panic("build verifier done channel closed")
+					panic("stage verifier done channel closed")
 				}
 				if err != nil {
 					panic(err)
 				}
-				buildVerifiersDoneCounter++
-				if buildVerifiersDoneCounter >= len(buildVerifiers) {
+				stageVerifiersDoneCounter++
+				if stageVerifiersDoneCounter >= len(stageVerifiers) {
 					fmt.Println("shit's done")
 					break
 				}
@@ -205,71 +171,14 @@ func (changeVerifier *ChangeVerifier) combineResults(newBuildVerifiersChan <-cha
 			}
 		}
 		// Drain any extra possible results that we don't care about
-		for _, buildVerifier := range buildVerifiers {
+		for _, stageVerifier := range stageVerifiers {
 			for {
-				_, ok := <-buildVerifier.resultsChan
+				_, ok := <-stageVerifier.resultsChan
 				if !ok {
 					break
 				}
 			}
 		}
-	}(newBuildVerifiersChan)
+	}(newStageVerifiersChan)
 	return resultsChan
-}
-
-func NewBuildVerifier(virtualMachine vm.VirtualMachine) *BuildVerifier {
-	return &BuildVerifier{
-		virtualMachine: virtualMachine,
-		resultsChan:    make(chan result),
-	}
-}
-
-func (buildVerifier *BuildVerifier) runPreTestCommands(commandChan <-chan command) (bool, error) {
-	for {
-		command, ok := <-commandChan
-		if !ok {
-			return true, nil
-		}
-		success, err := buildVerifier.runCommand(command)
-		if err != nil {
-			return false, err
-		}
-		if !success {
-			return false, nil
-		}
-		// Otherwise continue
-	}
-}
-
-func (buildVerifier *BuildVerifier) runFactoryCommands(inCommandChan <-chan command, outCommandChan chan<- command, doneTracker *sync.WaitGroup) error {
-	for {
-		c, ok := <-inCommandChan
-		if !ok {
-			return nil
-		}
-		_, err := buildVerifier.runCommand(c)
-		defer doneTracker.Done()
-		if err != nil {
-			return err
-		}
-		outCommandChan <- command{} // Yes, this makes NO sense
-	}
-}
-
-func (buildVerifier *BuildVerifier) runTestCommands(commandChan <-chan command) error {
-	for {
-		command, ok := <-commandChan
-		if !ok {
-			return nil
-		}
-		_, err := buildVerifier.runCommand(command)
-		if err != nil {
-			return err
-		}
-		// Otherwise continue
-	}
-}
-
-func (buildVerifier *BuildVerifier) runCommand(c command) (bool, error) {
-	return false, nil
 }
