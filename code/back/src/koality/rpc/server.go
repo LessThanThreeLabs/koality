@@ -5,6 +5,7 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/vmihailenco/msgpack"
 	"reflect"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -84,7 +85,7 @@ func (server *server) handleDeliveries() {
 				panic(err)
 			}
 
-			server.handleRequest(rpcRequest, delivery.ReplyTo)
+			server.handleRequest(rpcRequest, delivery.ReplyTo, delivery.CorrelationId)
 			delivery.Ack(false)
 		}(delivery)
 	}
@@ -127,31 +128,62 @@ func (server *server) getMethodArgs(method *reflect.Value, args []interface{}) (
 	return argValues, nil
 }
 
-func (server *server) handleRequest(rpcRequest *Request, replyToQueueName string) {
-	defer func() {
-		err := recover()
-		if err != nil {
-			fmt.Println("Handle unexpected error")
-		}
-	}()
+func (server *server) getReturnValues(method *reflect.Value, methodArgs []reflect.Value) ([]interface{}, error) {
+	returnValues := method.Call(methodArgs)
 
+	returnInterfaces := make([]interface{}, len(returnValues))
+	for index, returnValue := range returnValues {
+		if !returnValue.CanInterface() {
+			return nil, ResponseError{Type: "500", Message: "Received bad value for return type"}
+		}
+		returnInterfaces[index] = returnValue.Interface()
+	}
+
+	return returnInterfaces, nil
+}
+
+func (server *server) handleRequest(rpcRequest *Request, replyToQueueName, correlationId string) {
 	method, err := server.getMethod(rpcRequest.Method)
 	if err != nil {
-		fmt.Println(err)
+		server.sendResponse(nil, err, replyToQueueName, correlationId)
+		return
 	}
 
 	methodArgs, err := server.getMethodArgs(method, rpcRequest.Args)
 	if err != nil {
-		fmt.Println(err)
+		server.sendResponse(nil, err, replyToQueueName, correlationId)
+		return
 	}
 
-	returnValues := method.Call(methodArgs)
-	for index, returnValue := range returnValues {
-		if !returnValue.CanInterface() {
-			fmt.Printf("Received bad return type for return value %d", index)
-			return
-		}
+	returnValues, err := server.getReturnValues(method, methodArgs)
+	if err != nil {
+		server.sendResponse(nil, err, replyToQueueName, correlationId)
+		return
 	}
 
-	fmt.Printf("%d\n", returnValues[0].Interface())
+	server.sendResponse(returnValues, err, replyToQueueName, correlationId)
+}
+
+func (server *server) sendResponse(values []interface{}, err error, replyToQueueName, correlationId string) {
+	response := Response{values, err}
+	fmt.Println(response)
+
+	buffer, err := msgpack.Marshal(response)
+	if err != nil {
+		panic(err)
+	}
+
+	publishing := amqp.Publishing{
+		Body:            buffer,
+		ContentType:     "application/x-msgpack",
+		ContentEncoding: "binary",
+		DeliveryMode:    amqp.Transient,
+		CorrelationId:   correlationId,
+		Timestamp:       time.Now(),
+	}
+
+	err = server.sendChannel.Publish("", replyToQueueName, exchangeMandatory, exchangeImmediate, publishing)
+	if err != nil {
+		panic(err)
+	}
 }

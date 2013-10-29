@@ -169,11 +169,10 @@ func (client *client) handleDeadLetterDeliveries() {
 			}
 
 			response := Response{
-				Value: nil,
+				Values: nil,
 				Error: ResponseError{
-					Type:      "TimedOutError",
-					Message:   "Request ttl expired",
-					Traceback: "",
+					Type:    "TimedOutError",
+					Message: "Request ttl expired",
 				},
 			}
 
@@ -198,11 +197,10 @@ func (client *client) handleReturns() {
 			}
 
 			response := Response{
-				Value: nil,
+				Values: nil,
 				Error: ResponseError{
-					Type:      "BadRequestError",
-					Message:   fmt.Sprintf("Bad request - %s", badReturn.ReplyText),
-					Traceback: "",
+					Type:    "BadRequestError",
+					Message: fmt.Sprintf("Bad request - %s", badReturn.ReplyText),
 				},
 			}
 

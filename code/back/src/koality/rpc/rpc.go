@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"fmt"
-	"reflect"
 )
 
 type Request struct {
@@ -11,9 +10,6 @@ type Request struct {
 }
 
 func NewRequest(method string, args ...interface{}) *Request {
-	for _, arg := range args {
-		fmt.Println(reflect.TypeOf(arg))
-	}
 	return &Request{method, args}
 }
 
@@ -26,22 +22,19 @@ func (err RequestError) Error() string {
 }
 
 type Response struct {
-	Value interface{}   `codec:"value"`
-	Error ResponseError `codec:"error"`
+	Values []interface{} `codec:"values"`
+	Error  error         `codec:"error"`
 }
 
 type ResponseError struct {
-	Type      string `codec:"type"`
-	Message   string `codec:"message"`
-	Traceback string `codec:"traceback"`
+	Type    string `codec:"type"`
+	Message string `codec:"message"`
 }
 
 func (err ResponseError) Error() string {
 	if err.Message == "" {
 		return err.Type
-	} else if err.Traceback == "" {
-		return fmt.Sprintf("%s: %s", err.Type, err.Message)
 	} else {
-		return fmt.Sprintf("%s: %s\n%s", err.Type, err.Message, err.Traceback)
+		return fmt.Sprintf("%s: %s", err.Type, err.Message)
 	}
 }
