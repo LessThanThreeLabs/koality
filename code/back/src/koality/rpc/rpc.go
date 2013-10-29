@@ -17,11 +17,11 @@ func NewRequest(method string, args ...interface{}) *Request {
 	return &Request{method, args}
 }
 
-type InvalidRequestError struct {
+type RequestError struct {
 	Message string
 }
 
-func (err InvalidRequestError) Error() string {
+func (err RequestError) Error() string {
 	return err.Message
 }
 

@@ -3,7 +3,7 @@ package rpc
 import (
 	"fmt"
 	"github.com/streadway/amqp"
-	"github.com/ugorji/go/codec"
+	"github.com/vmihailenco/msgpack"
 	"reflect"
 	"unicode"
 	"unicode/utf8"
@@ -15,7 +15,6 @@ type server struct {
 	sendChannel    *amqp.Channel
 	receiveChannel *amqp.Channel
 	responseQueue  *amqp.Queue
-	msgpackHandle  *codec.MsgpackHandle
 }
 
 func NewServer(route string, requestHandler interface{}) *server {
@@ -58,7 +57,6 @@ func NewServer(route string, requestHandler interface{}) *server {
 		sendChannel:    sendChannel,
 		receiveChannel: receiveChannel,
 		responseQueue:  &responseQueue,
-		msgpackHandle:  new(codec.MsgpackHandle),
 	}
 
 	go server.handleDeliveries()
@@ -81,7 +79,7 @@ func (server *server) handleDeliveries() {
 			}
 
 			rpcRequest := new(Request)
-			err := codec.NewDecoderBytes(delivery.Body, server.msgpackHandle).Decode(rpcRequest)
+			err := msgpack.Unmarshal(delivery.Body, &rpcRequest)
 			if err != nil {
 				panic(err)
 			}
@@ -95,14 +93,14 @@ func (server *server) handleDeliveries() {
 func (server *server) getMethod(methodName string) (*reflect.Value, error) {
 	firstRuneOfMethod, _ := utf8.DecodeRune([]byte(methodName))
 	if firstRuneOfMethod == utf8.RuneError {
-		return nil, InvalidRequestError{"404 (method does not exist)"}
+		return nil, ResponseError{Type: "404", Message: "Method does not exist"}
 	} else if !unicode.IsUpper(firstRuneOfMethod) {
-		return nil, InvalidRequestError{"404 (method does not exist)"}
+		return nil, ResponseError{Type: "404", Message: "Method does not exist"}
 	}
 
 	method := server.requestHandler.MethodByName(methodName)
 	if !method.IsValid() {
-		return nil, InvalidRequestError{"404 (method does not exist)"}
+		return nil, ResponseError{Type: "404", Message: "Method does not exist"}
 	}
 
 	return &method, nil
@@ -110,7 +108,7 @@ func (server *server) getMethod(methodName string) (*reflect.Value, error) {
 
 func (server *server) getMethodArgs(method *reflect.Value, args []interface{}) ([]reflect.Value, error) {
 	if len(args) != method.Type().NumIn() {
-		return nil, InvalidRequestError{"400 (mismatched number of arguments)"}
+		return nil, ResponseError{Type: "404", Message: "Mismatched number of arguments"}
 	}
 
 	argValues := make([]reflect.Value, len(args))
@@ -120,8 +118,9 @@ func (server *server) getMethodArgs(method *reflect.Value, args []interface{}) (
 
 	for index, argValue := range argValues {
 		if argValue.Kind() != method.Type().In(index).Kind() {
-			return nil, InvalidRequestError{fmt.Sprintf("400 (mismatched parameter for index %d. Recevied %s but expected %s)",
-				index, argValue.Kind(), method.Type().In(index).Kind())}
+			errorMessage := fmt.Sprintf("Mismatched parameter for index %d. Recevied %s but expected %s)",
+				index, argValue.Kind(), method.Type().In(index).Kind())
+			return nil, ResponseError{Type: "400", Message: errorMessage}
 		}
 	}
 

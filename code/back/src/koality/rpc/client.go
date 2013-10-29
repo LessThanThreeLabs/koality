@@ -3,7 +3,7 @@ package rpc
 import (
 	"fmt"
 	"github.com/streadway/amqp"
-	"github.com/ugorji/go/codec"
+	"github.com/vmihailenco/msgpack"
 	"strconv"
 	"sync"
 	"time"
@@ -19,7 +19,6 @@ type client struct {
 	correlationIdLock *sync.Mutex
 	nextCorrelationId uint64
 	responseChannels  map[string]chan<- *Response
-	msgpackHandle     *codec.MsgpackHandle
 }
 
 func NewClient(route string) *client {
@@ -59,7 +58,6 @@ func NewClient(route string) *client {
 		nextCorrelationId: 0,
 		correlationIdLock: new(sync.Mutex),
 		responseChannels:  make(map[string]chan<- *Response),
-		msgpackHandle:     new(codec.MsgpackHandle),
 	}
 
 	go client.handleDeliveries()
@@ -80,9 +78,8 @@ func (client *client) getNextCorrelationId() string {
 
 func (client *client) checkRequestIsValid(rpcRequest *Request) error {
 	for arg := range rpcRequest.Args {
-		fmt.Println("need to check unicode better?...")
 		if !utf8.ValidString(fmt.Sprint(arg)) {
-			return &InvalidRequestError{Message: "Request argument contains illegal character"}
+			return RequestError{Message: "Request argument contains illegal character"}
 		}
 	}
 	return nil
@@ -94,8 +91,7 @@ func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 		return nil, err
 	}
 
-	var buffer []byte
-	err = codec.NewEncoderBytes(&buffer, client.msgpackHandle).Encode(rpcRequest)
+	buffer, err := msgpack.Marshal(rpcRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +132,8 @@ func (client *client) handleDeliveries() {
 				panic(fmt.Sprintf("Unsupported content type: %s", delivery.ContentType))
 			}
 
-			response := new(Response)
-			err := codec.NewDecoderBytes(delivery.Body, client.msgpackHandle).Decode(response)
+			rpcResponse := new(Response)
+			err := msgpack.Unmarshal(delivery.Body, &rpcResponse)
 			if err != nil {
 				panic(err)
 			}
@@ -148,7 +144,7 @@ func (client *client) handleDeliveries() {
 				panic(fmt.Sprintf("Unexpected correlation id: %s", correlationId))
 			}
 
-			responseChannel <- response
+			responseChannel <- rpcResponse
 			close(responseChannel)
 			delete(client.responseChannels, correlationId)
 		}(delivery)
