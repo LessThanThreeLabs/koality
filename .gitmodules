@@ -25,9 +25,6 @@
 [submodule "code/back/src/github.com/streadway/amqp"]
 	path = code/back/src/github.com/streadway/amqp
 	url = git@github.com:streadway/amqp.git
-[submodule "code/back/src/github.com/ugorji/go"]
-	path = code/back/src/github.com/ugorji/go
-	url = git@github.com:ugorji/go.git
 [submodule "chef/cookbooks/nodejs"]
 	path = chef/cookbooks/nodejs
 	url = git@github.com:mdxp/nodejs-cookbook.git
