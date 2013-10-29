@@ -37,3 +37,6 @@
 [submodule "code/back/src/github.com/dchest/goyaml"]
 	path = code/back/src/github.com/dchest/goyaml
 	url = git@github.com:dchest/goyaml.git
+[submodule "code/back/src/github.com/vmihailenco/msgpack"]
+	path = code/back/src/github.com/vmihailenco/msgpack
+	url = git@github.com:vmihailenco/msgpack.git
