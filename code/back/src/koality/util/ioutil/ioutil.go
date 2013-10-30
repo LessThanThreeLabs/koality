@@ -9,7 +9,7 @@ import (
 type combinedReader struct {
 	buffer    *bytes.Buffer
 	readers   []io.Reader
-	locker    sync.Mutex
+	locker    sync.Locker
 	exitError error
 }
 
@@ -24,7 +24,7 @@ func CombineReaders(readers ...io.Reader) io.Reader {
 }
 
 func (reader *combinedReader) Read(buffer []byte) (n int, err error) {
-	numBytes, err := reader.Buffer.read(buffer)
+	numBytes, err := reader.buffer.Read(buffer)
 	if err != io.EOF {
 		return numBytes, err
 	}
@@ -41,10 +41,9 @@ func (reader *combinedReader) combine() {
 	}
 
 	go reader.trackDone(doneChan)
-	return combinedOut
 }
 
-func (reader *combinedReader) trackDone(doneChan chan<- error) {
+func (reader *combinedReader) trackDone(doneChan <-chan error) {
 	doneCount := 0
 	for doneCount < len(reader.readers) {
 		err := <-doneChan
@@ -77,6 +76,6 @@ func (reader *combinedReader) syncWrite(buffer []byte) error {
 	reader.locker.Lock()
 	defer reader.locker.Unlock()
 
-	_, err := reader.Write(buffer)
+	_, err := reader.buffer.Write(buffer)
 	return err
 }
