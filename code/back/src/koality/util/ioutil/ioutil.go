@@ -23,8 +23,8 @@ func CombineReaders(readers ...io.Reader) io.Reader {
 	return combinedOut
 }
 
-func (reader *combinedReader) Read(p []byte) (n int, err error) {
-	numBytes, err := reader.Buffer.read(p)
+func (reader *combinedReader) Read(buffer []byte) (n int, err error) {
+	numBytes, err := reader.Buffer.read(buffer)
 	if err != io.EOF {
 		return numBytes, err
 	}
@@ -37,7 +37,7 @@ func (reader *combinedReader) combine() {
 	for _, subReader := range reader.readers {
 		go func(subReader io.Reader) {
 			doneChan <- reader.syncCopy(subReader)
-		}(reader)
+		}(subReader)
 	}
 
 	go reader.trackDone(doneChan)
