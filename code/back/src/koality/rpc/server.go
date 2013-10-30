@@ -48,8 +48,6 @@ func NewServer(route string, requestHandler interface{}) *server {
 	reflectedRequestHandler := reflect.ValueOf(requestHandler)
 	if !reflectedRequestHandler.IsValid() {
 		panic("RPC Server: Unable to reflect on request handler")
-	} else if reflectedRequestHandler.Elem().Kind() != reflect.Struct {
-		panic("Must pass a struct for the request handler")
 	}
 
 	server := server{
@@ -94,14 +92,14 @@ func (server *server) handleDeliveries() {
 func (server *server) getMethod(methodName string) (*reflect.Value, error) {
 	firstRuneOfMethod, _ := utf8.DecodeRune([]byte(methodName))
 	if firstRuneOfMethod == utf8.RuneError {
-		return nil, ResponseError{Type: "404", Message: "Method does not exist"}
+		return nil, ResponseError{Type: "MethodDoesNotExist", Message: "Method does not exist"}
 	} else if !unicode.IsUpper(firstRuneOfMethod) {
-		return nil, ResponseError{Type: "404", Message: "Method does not exist"}
+		return nil, ResponseError{Type: "MethodDoesNotExist", Message: "Method does not exist"}
 	}
 
 	method := server.requestHandler.MethodByName(methodName)
 	if !method.IsValid() {
-		return nil, ResponseError{Type: "404", Message: "Method does not exist"}
+		return nil, ResponseError{Type: "MethodDoesNotExist", Message: "Method does not exist"}
 	}
 
 	return &method, nil
@@ -109,19 +107,22 @@ func (server *server) getMethod(methodName string) (*reflect.Value, error) {
 
 func (server *server) getMethodArgs(method *reflect.Value, args []interface{}) ([]reflect.Value, error) {
 	if len(args) != method.Type().NumIn() {
-		return nil, ResponseError{Type: "404", Message: "Mismatched number of arguments"}
+		return nil, ResponseError{Type: "MethodCallFailed", Message: "Mismatched number of arguments"}
 	}
 
 	argValues := make([]reflect.Value, len(args))
 	for index, arg := range args {
 		argValues[index] = reflect.ValueOf(arg)
+		if !argValues[index].IsValid() {
+			return nil, ResponseError{Type: "MethodCallFailed", Message: "Failed to reflect on argument"}
+		}
 	}
 
 	for index, argValue := range argValues {
 		if argValue.Kind() != method.Type().In(index).Kind() {
 			errorMessage := fmt.Sprintf("Mismatched parameter for index %d. Recevied %s but expected %s)",
 				index, argValue.Kind(), method.Type().In(index).Kind())
-			return nil, ResponseError{Type: "400", Message: errorMessage}
+			return nil, ResponseError{Type: "MethodCallFailed", Message: errorMessage}
 		}
 	}
 
@@ -134,7 +135,7 @@ func (server *server) getReturnValues(method *reflect.Value, methodArgs []reflec
 	returnInterfaces := make([]interface{}, len(returnValues))
 	for index, returnValue := range returnValues {
 		if !returnValue.CanInterface() {
-			return nil, ResponseError{Type: "500", Message: "Received bad value for return type"}
+			return nil, ResponseError{Type: "MethodCallFailed", Message: "Received bad value for return type"}
 		}
 		returnInterfaces[index] = returnValue.Interface()
 	}
@@ -166,7 +167,6 @@ func (server *server) handleRequest(rpcRequest *Request, replyToQueueName, corre
 
 func (server *server) sendResponse(values []interface{}, err error, replyToQueueName, correlationId string) {
 	response := Response{values, err}
-	fmt.Println(response)
 
 	buffer, err := msgpack.Marshal(response)
 	if err != nil {
