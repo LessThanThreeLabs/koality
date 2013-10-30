@@ -83,3 +83,11 @@ func (scpConfig ScpConfig) ScpArgs(localFilePath, remoteFilePath string, retriev
 		return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(localFilePath), shell.Quote(remotePath))
 	}
 }
+
+type ScpFileCopier struct {
+	Scper
+}
+
+func (fileCopier *ScpFileCopier) FileCopy(localFilePath, remoteFilePath string) shell.Executable {
+	return fileCopier.Scper.Scp(localFilePath, remoteFilePath, false)
+}

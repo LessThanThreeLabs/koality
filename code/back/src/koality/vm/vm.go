@@ -13,8 +13,8 @@ type VirtualMachine interface {
 	shell.ExecutableMaker
 	Patcher
 	Provisioner
+	shell.FileCopier
 
-	FileCopy(sourcePath, destPath string) shell.Executable
 	Terminate() error
 }
 

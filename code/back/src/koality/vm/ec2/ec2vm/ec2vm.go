@@ -11,8 +11,8 @@ import (
 
 type EC2VirtualMachine struct {
 	sshExecutableMaker *vm.SshExecutableMaker
-	scper              vm.Scper
-	patcher            *vm.ScpPatcher
+	fileCopier         shell.FileCopier
+	patcher            vm.Patcher
 	instance           *ec2.Instance
 	ec2Broker          *ec2broker.EC2Broker
 }
@@ -30,14 +30,11 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) *
 		},
 	}
 	sshExecutableMaker := vm.NewSshExecutableMaker(sshConfig)
-	scper := vm.NewScper(vm.ScpConfig(sshConfig))
-	patcher := &vm.ScpPatcher{
-		Scper:           scper,
-		ExecutableMaker: sshExecutableMaker,
-	}
+	fileCopier := &vm.ScpFileCopier{vm.NewScper(vm.ScpConfig(sshConfig))}
+	patcher := vm.NewPatcher(fileCopier, sshExecutableMaker)
 	return &EC2VirtualMachine{
 		sshExecutableMaker: sshExecutableMaker,
-		scper:              scper,
+		fileCopier:         fileCopier,
 		patcher:            patcher,
 		instance:           instance,
 		ec2Broker:          broker,
@@ -58,7 +55,7 @@ func (ec2Vm *EC2VirtualMachine) Patch(patchConfig *vm.PatchConfig) (shell.Execut
 }
 
 func (ec2Vm *EC2VirtualMachine) FileCopy(sourceFilePath, destFilePath string) shell.Executable {
-	return ec2Vm.scper.Scp(sourceFilePath, destFilePath, false)
+	return ec2Vm.fileCopier.FileCopy(sourceFilePath, destFilePath)
 }
 
 func (ec2Vm *EC2VirtualMachine) Terminate() error {

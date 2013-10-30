@@ -16,12 +16,16 @@ type PatchConfig struct {
 	PatchContents string // Reader???????
 }
 
-type ScpPatcher struct {
-	Scper
+type patcher struct {
+	shell.FileCopier
 	shell.ExecutableMaker
 }
 
-func (patcher *ScpPatcher) Patch(config *PatchConfig) (shell.Executable, error) {
+func NewPatcher(fileCopier shell.FileCopier, executableMaker shell.ExecutableMaker) *patcher {
+	return &patcher{fileCopier, executableMaker}
+}
+
+func (p *patcher) Patch(config *PatchConfig) (shell.Executable, error) {
 	tempFile, err := ioutil.TempFile("", "")
 	if err != nil {
 		return nil, err
@@ -34,7 +38,7 @@ func (patcher *ScpPatcher) Patch(config *PatchConfig) (shell.Executable, error) 
 	if err != nil {
 		return nil, err
 	}
-	cmd := patcher.Scper.Scp(tempFile.Name(), ".koality_patch", false)
+	cmd := p.FileCopier.FileCopy(tempFile.Name(), ".koality_patch")
 	// TODO: RUN AND check results
 	cmd = cmd
 	tempFile.Close()
@@ -71,5 +75,5 @@ func (patcher *ScpPatcher) Patch(config *PatchConfig) (shell.Executable, error) 
 			),
 		),
 	)
-	return patcher.ExecutableMaker.MakeExecutable(patchCommand), nil
+	return p.ExecutableMaker.MakeExecutable(patchCommand), nil
 }
