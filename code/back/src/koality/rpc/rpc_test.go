@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -14,10 +13,6 @@ var (
 	shortString = makeTestString("short", 10)    // =60B
 	longString  = makeTestString("long", 200000) // =1MB
 )
-
-func init() {
-	runtime.GOMAXPROCS(4)
-}
 
 func makeTestString(text string, numRepeats int) string {
 	stringsArray := make([]string, numRepeats)
