@@ -34,7 +34,7 @@ func NewServer(route string, requestHandler interface{}) *server {
 		panic(err)
 	}
 
-	responseQueue, err := receiveChannel.QueueDeclare(serverResponseQueueName, serverResponseQueueDurable,
+	responseQueue, err := receiveChannel.QueueDeclare(serverResponseQueueNamePrefix+route, serverResponseQueueDurable,
 		serverResponseQueueAutoDelete, serverResponseQueueExclusive, serverResponseQueueNoWait, nil)
 	if err != nil {
 		panic(err)

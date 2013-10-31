@@ -47,10 +47,10 @@ const (
 )
 
 const (
-	serverResponseQueueName       = ""
+	serverResponseQueueNamePrefix = "rpc:"
 	serverResponseQueueDurable    = false
 	serverResponseQueueAutoDelete = true
-	serverResponseQueueExclusive  = true
+	serverResponseQueueExclusive  = false
 	serverResponseQueueNoWait     = false
 	serverResponseQueueBindNoWait = false
 	serverResponseQueueAutoAck    = false
