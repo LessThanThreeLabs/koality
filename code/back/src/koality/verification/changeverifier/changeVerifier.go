@@ -1,9 +1,12 @@
-package verification
+package changeverifier
 
 import (
 	"fmt"
+	"koality/verification"
+	"koality/verification/config"
+	"koality/verification/config/commandgroup"
+	"koality/verification/stageverifier"
 	"koality/vm"
-	"sync"
 )
 
 type ChangeVerifier struct {
@@ -17,44 +20,27 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 		return false, err
 	}
 
-	factoryCommandsChan := make(chan command, len(verificationConfig.factoryCommands))
-	for _, factoryCommand := range verificationConfig.factoryCommands {
-		factoryCommandsChan <- factoryCommand
-	}
-	close(factoryCommandsChan)
+	factoryCommands := commandgroup.New(verificationConfig.FactoryCommands)
+	testCommands := commandgroup.New(verificationConfig.TestCommands)
 
-	factoriesRun := new(sync.WaitGroup)
-	factoriesRun.Add(len(verificationConfig.factoryCommands))
-
-	testCommandsChan := make(chan command, len(verificationConfig.testCommands))
-	for _, testCommand := range verificationConfig.testCommands {
-		testCommandsChan <- testCommand
-	}
-
-	newStageVerifiersChan := make(chan *StageVerifier, verificationConfig.numMachines)
+	newStageVerifiersChan := make(chan *stageverifier.StageVerifier, verificationConfig.NumMachines)
 
 	launchNewMachineToRunTestsAndStuff := func() {
-		stageVerifier := NewStageVerifier(changeVerifier.VirtualMachinePool.Get())
-		defer close(stageVerifier.resultsChan)
+		stageVerifier := stageverifier.New(changeVerifier.VirtualMachinePool.Get())
+		defer close(stageVerifier.ResultsChan)
 
 		newStageVerifiersChan <- stageVerifier
 
 		// Populate pre-test commands
-		preTestCommandsChan := make(chan command, len(verificationConfig.setupCommands)+len(verificationConfig.compileCommands))
-		for _, setupCommand := range verificationConfig.setupCommands {
-			preTestCommandsChan <- setupCommand
-		}
-		for _, compileCommand := range verificationConfig.compileCommands {
-			preTestCommandsChan <- compileCommand
-		}
-		close(preTestCommandsChan)
+		setupCommands := commandgroup.New(verificationConfig.SetupCommands)
+		compileCommands := commandgroup.New(verificationConfig.CompileCommands)
 
-		err := stageVerifier.RunChangeStages(preTestCommandsChan, factoryCommandsChan, testCommandsChan, factoriesRun)
+		err := stageVerifier.RunChangeStages(setupCommands, compileCommands, factoryCommands, testCommands)
 		if err != nil {
 			panic(err)
 		}
 	}
-	for machineNum := 0; machineNum < verificationConfig.numMachines; machineNum++ {
+	for machineNum := 0; machineNum < verificationConfig.NumMachines; machineNum++ {
 		go launchNewMachineToRunTestsAndStuff() // Best name
 	}
 
@@ -73,8 +59,8 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 			}
 			return !failed, nil
 		}
-		if result.passed == false {
-			if result.stageType == "setup" || result.stageType == "compile" {
+		if result.Passed == false {
+			if result.StageType == "setup" || result.StageType == "compile" {
 				if !testsStarted {
 					failed = true
 					err := changeVerifier.failChange(changeId)
@@ -83,7 +69,7 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 					}
 				}
 				// changeDone <- nil
-			} else if result.stageType == "test" {
+			} else if result.StageType == "test" {
 				failed = true
 				err := changeVerifier.failChange(changeId)
 				if err != nil {
@@ -93,7 +79,7 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 				panic(fmt.Sprintf("Unexpected result %#v", result))
 			}
 		}
-		if result.stageType == "test" {
+		if result.StageType == "test" {
 			testsStarted = true // This is the WRONG place for this
 		}
 	}
@@ -107,21 +93,21 @@ func (changeVerifier *ChangeVerifier) passChange(changeId int) error {
 	panic(fmt.Sprintf("change %d passed", changeId))
 }
 
-func (changeVerifier *ChangeVerifier) getVerificationConfig(changeId int) (VerificationConfig, error) {
+func (changeVerifier *ChangeVerifier) getVerificationConfig(changeId int) (config.VerificationConfig, error) {
 	panic(fmt.Sprintf("not implemented"))
 }
 
-func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-chan *StageVerifier) <-chan result {
-	resultsChan := make(chan result)
-	go func(newStageVerifiersChan <-chan *StageVerifier) {
-		combinedResults := make(chan result)
-		stageVerifiers := make([]*StageVerifier, 0, cap(newStageVerifiersChan))
+func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-chan *stageverifier.StageVerifier) <-chan verification.Result {
+	resultsChan := make(chan verification.Result)
+	go func(newStageVerifiersChan <-chan *stageverifier.StageVerifier) {
+		combinedResults := make(chan verification.Result)
+		stageVerifiers := make([]*stageverifier.StageVerifier, 0, cap(newStageVerifiersChan))
 		stageVerifierDoneChan := make(chan error, cap(newStageVerifiersChan))
 		stageVerifiersDoneCounter := 0
 
-		handleNewStageVerifier := func(stageVerifier *StageVerifier) {
+		handleNewStageVerifier := func(stageVerifier *stageverifier.StageVerifier) {
 			for {
-				result, ok := <-stageVerifier.resultsChan
+				result, ok := <-stageVerifier.ResultsChan
 				if !ok {
 					stageVerifierDoneChan <- nil
 					return
@@ -173,7 +159,7 @@ func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-cha
 		// Drain any extra possible results that we don't care about
 		for _, stageVerifier := range stageVerifiers {
 			for {
-				_, ok := <-stageVerifier.resultsChan
+				_, ok := <-stageVerifier.ResultsChan
 				if !ok {
 					break
 				}
