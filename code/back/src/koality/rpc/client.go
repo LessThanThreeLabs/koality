@@ -11,14 +11,15 @@ import (
 )
 
 type client struct {
-	route             string
-	sendChannel       *amqp.Channel
-	receiveChannel    *amqp.Channel
-	responseQueue     *amqp.Queue
-	deadLetterQueue   *amqp.Queue
-	correlationIdLock *sync.Mutex
-	nextCorrelationId uint64
-	responseChannels  map[string]chan<- *Response
+	route                 string
+	sendChannel           *amqp.Channel
+	receiveChannel        *amqp.Channel
+	responseQueue         *amqp.Queue
+	deadLetterQueue       *amqp.Queue
+	nextCorrelationId     uint64
+	correlationIdLock     *sync.Mutex
+	responseChannels      map[string]chan<- *Response
+	responseChannelsMutex *sync.Mutex
 }
 
 func NewClient(route string) *client {
@@ -50,14 +51,15 @@ func NewClient(route string) *client {
 	}
 
 	client := client{
-		route:             route,
-		sendChannel:       sendChannel,
-		receiveChannel:    receiveChannel,
-		responseQueue:     &responseQueue,
-		deadLetterQueue:   &deadLetterQueue,
-		nextCorrelationId: 0,
-		correlationIdLock: new(sync.Mutex),
-		responseChannels:  make(map[string]chan<- *Response),
+		route:                 route,
+		sendChannel:           sendChannel,
+		receiveChannel:        receiveChannel,
+		responseQueue:         &responseQueue,
+		deadLetterQueue:       &deadLetterQueue,
+		nextCorrelationId:     0,
+		correlationIdLock:     new(sync.Mutex),
+		responseChannels:      make(map[string]chan<- *Response),
+		responseChannelsMutex: new(sync.Mutex),
 	}
 
 	go client.handleDeliveries()
@@ -114,7 +116,11 @@ func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 	}
 
 	responseChannel := make(chan *Response)
+
+	client.responseChannelsMutex.Lock()
 	client.responseChannels[correlationId] = responseChannel
+	client.responseChannelsMutex.Unlock()
+
 	return responseChannel, nil
 }
 
@@ -139,14 +145,18 @@ func (client *client) handleDeliveries() {
 			}
 
 			correlationId := delivery.CorrelationId
+
+			client.responseChannelsMutex.Lock()
 			responseChannel, ok := client.responseChannels[correlationId]
+			delete(client.responseChannels, correlationId)
+			client.responseChannelsMutex.Unlock()
+
 			if !ok {
 				panic(fmt.Sprintf("Unexpected correlation id: %s", correlationId))
 			}
 
 			responseChannel <- rpcResponse
 			close(responseChannel)
-			delete(client.responseChannels, correlationId)
 		}(delivery)
 	}
 }
@@ -163,7 +173,12 @@ func (client *client) handleDeadLetterDeliveries() {
 
 		go func(deadLetterDelivery amqp.Delivery) {
 			correlationId := deadLetterDelivery.CorrelationId
+
+			client.responseChannelsMutex.Lock()
 			responseChannel, ok := client.responseChannels[correlationId]
+			delete(client.responseChannels, correlationId)
+			client.responseChannelsMutex.Unlock()
+
 			if !ok {
 				return
 			}
@@ -178,7 +193,6 @@ func (client *client) handleDeadLetterDeliveries() {
 
 			responseChannel <- &response
 			close(responseChannel)
-			delete(client.responseChannels, correlationId)
 		}(deadLetterDelivery)
 	}
 }
@@ -191,7 +205,12 @@ func (client *client) handleReturns() {
 
 		go func(badReturn amqp.Return) {
 			correlationId := badReturn.CorrelationId
+
+			client.responseChannelsMutex.Lock()
 			responseChannel, ok := client.responseChannels[correlationId]
+			delete(client.responseChannels, correlationId)
+			client.responseChannelsMutex.Unlock()
+
 			if !ok {
 				panic(fmt.Sprintf("Unexpected correlation id: %d", correlationId))
 			}
@@ -206,7 +225,6 @@ func (client *client) handleReturns() {
 
 			responseChannel <- &response
 			close(responseChannel)
-			delete(client.responseChannels, correlationId)
 		}(badReturn)
 	}
 }
