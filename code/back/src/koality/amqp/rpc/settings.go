@@ -1,10 +1,6 @@
 package rpc
 
 const (
-	amqpUri = "amqp://localhost:5672/"
-)
-
-const (
 	exchangeName       = "model:rpc" // TODO: change to "rpc"
 	exchangeType       = "direct"
 	exchangeDurable    = false // TODO: make durable?

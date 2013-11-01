@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"github.com/vmihailenco/msgpack"
+	kamqp "koality/amqp"
 	"reflect"
 	"time"
 	"unicode"
@@ -19,17 +20,30 @@ type server struct {
 }
 
 func NewServer(route string, requestHandler interface{}) *server {
-	sendChannel, err := getSendConnection().Channel()
+	sendChannel, err := kamqp.GetSendConnection().Channel()
 	if err != nil {
 		panic(err)
 	}
 
-	receiveChannel, err := getReceiveConnection().Channel()
+	receiveChannel, err := kamqp.GetReceiveConnection().Channel()
 	if err != nil {
 		panic(err)
 	}
 
 	err = receiveChannel.Qos(serverResponseQueueQos, 0, false)
+	if err != nil {
+		panic(err)
+	}
+
+	err = sendChannel.ExchangeDeclare(exchangeName, exchangeType,
+		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	err = sendChannel.ExchangeDeclare(deadLetterExchangeName, deadLetterExchangeType,
+		deadLetterExchangeDurable, deadLetterExchangeAutoDelete,
+		deadLetterExchangeInternal, deadLetterExchangeNoWait, nil)
 	if err != nil {
 		panic(err)
 	}

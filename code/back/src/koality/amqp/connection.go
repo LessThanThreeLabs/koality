@@ -1,8 +1,12 @@
-package rpc
+package amqp
 
 import (
 	"github.com/streadway/amqp"
 	"sync"
+)
+
+const (
+	amqpUri = "amqp://localhost:5672/"
 )
 
 var (
@@ -44,46 +48,19 @@ func handleConnectionClose() {
 	panic("Lost connection to RabbitMQ")
 }
 
-func createExchanges() error {
-	exchangeChannel, err := sendConnection.Channel()
-	if err != nil {
-		return err
-	}
-
-	err = exchangeChannel.ExchangeDeclare(exchangeName, exchangeType,
-		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
-	if err != nil {
-		return err
-	}
-
-	err = exchangeChannel.ExchangeDeclare(deadLetterExchangeName, deadLetterExchangeType,
-		deadLetterExchangeDurable, deadLetterExchangeAutoDelete,
-		deadLetterExchangeInternal, deadLetterExchangeNoWait, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func initializeAmqp() {
 	err := createConnections()
 	if err != nil {
 		panic(err)
 	}
-
-	err = createExchanges()
-	if err != nil {
-		panic(err)
-	}
 }
 
-func getSendConnection() *amqp.Connection {
+func GetSendConnection() *amqp.Connection {
 	initializationSync.Do(initializeAmqp)
 	return sendConnection
 }
 
-func getReceiveConnection() *amqp.Connection {
+func GetReceiveConnection() *amqp.Connection {
 	initializationSync.Do(initializeAmqp)
 	return receiveConnection
 }

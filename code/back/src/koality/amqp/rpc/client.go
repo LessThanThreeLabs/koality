@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/streadway/amqp"
 	"github.com/vmihailenco/msgpack"
+	kamqp "koality/amqp"
 	"strconv"
 	"sync"
 	"time"
@@ -23,12 +24,25 @@ type client struct {
 }
 
 func NewClient(route string) *client {
-	sendChannel, err := getSendConnection().Channel()
+	sendChannel, err := kamqp.GetSendConnection().Channel()
 	if err != nil {
 		panic(err)
 	}
 
-	receiveChannel, err := getReceiveConnection().Channel()
+	receiveChannel, err := kamqp.GetReceiveConnection().Channel()
+	if err != nil {
+		panic(err)
+	}
+
+	err = sendChannel.ExchangeDeclare(exchangeName, exchangeType,
+		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	err = sendChannel.ExchangeDeclare(deadLetterExchangeName, deadLetterExchangeType,
+		deadLetterExchangeDurable, deadLetterExchangeAutoDelete,
+		deadLetterExchangeInternal, deadLetterExchangeNoWait, nil)
 	if err != nil {
 		panic(err)
 	}
