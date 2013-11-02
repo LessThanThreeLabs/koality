@@ -20,6 +20,8 @@ type server struct {
 }
 
 func NewServer(route string, requestHandler interface{}) *server {
+	createExchanges()
+
 	sendChannel, err := kamqp.GetSendConnection().Channel()
 	if err != nil {
 		panic(err)
@@ -31,19 +33,6 @@ func NewServer(route string, requestHandler interface{}) *server {
 	}
 
 	err = receiveChannel.Qos(serverResponseQueueQos, 0, false)
-	if err != nil {
-		panic(err)
-	}
-
-	err = sendChannel.ExchangeDeclare(exchangeName, exchangeType,
-		exchangeDurable, exchangeAutoDelete, exchangeInternal, exchangeNoWait, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	err = sendChannel.ExchangeDeclare(deadLetterExchangeName, deadLetterExchangeType,
-		deadLetterExchangeDurable, deadLetterExchangeAutoDelete,
-		deadLetterExchangeInternal, deadLetterExchangeNoWait, nil)
 	if err != nil {
 		panic(err)
 	}
