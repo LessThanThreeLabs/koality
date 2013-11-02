@@ -3,7 +3,7 @@ package rpc
 const (
 	exchangeName       = "model:rpc" // TODO: change to "rpc"
 	exchangeType       = "direct"
-	exchangeDurable    = false // TODO: make durable?
+	exchangeDurable    = false
 	exchangeAutoDelete = false
 	exchangeInternal   = false
 	exchangeNoWait     = false
@@ -14,7 +14,7 @@ const (
 const (
 	deadLetterExchangeName       = "model:rpc_dlx" // TODO: change to "rpc-dlx"
 	deadLetterExchangeType       = "fanout"
-	deadLetterExchangeDurable    = false // TODO: make durable?
+	deadLetterExchangeDurable    = false
 	deadLetterExchangeAutoDelete = false
 	deadLetterExchangeInternal   = false
 	deadLetterExchangeNoWait     = false

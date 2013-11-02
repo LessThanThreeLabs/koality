@@ -81,8 +81,12 @@ func (client *client) getNextCorrelationId() string {
 	return correlationId
 }
 
+type Stringer interface {
+	String() string
+}
+
 func (client *client) checkRequestIsValid(rpcRequest *Request) error {
-	for arg := range rpcRequest.Args {
+	for _, arg := range rpcRequest.Args {
 		if !utf8.ValidString(fmt.Sprint(arg)) {
 			return RequestError{Message: "Request argument contains illegal character"}
 		}
@@ -102,6 +106,11 @@ func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 	}
 
 	correlationId := client.getNextCorrelationId()
+	responseChannel := make(chan *Response)
+
+	client.responseChannelsMutex.Lock()
+	client.responseChannels[correlationId] = responseChannel
+	client.responseChannelsMutex.Unlock()
 
 	publishing := amqp.Publishing{
 		Body:            buffer,
@@ -115,14 +124,11 @@ func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 
 	err = client.sendChannel.Publish(exchangeName, client.route, exchangeMandatory, exchangeImmediate, publishing)
 	if err != nil {
+		client.responseChannelsMutex.Lock()
+		delete(client.responseChannels, correlationId)
+		client.responseChannelsMutex.Unlock()
 		return nil, err
 	}
-
-	responseChannel := make(chan *Response)
-
-	client.responseChannelsMutex.Lock()
-	client.responseChannels[correlationId] = responseChannel
-	client.responseChannelsMutex.Unlock()
 
 	return responseChannel, nil
 }
