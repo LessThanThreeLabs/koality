@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-type client struct {
+type Client struct {
 	route                 string
 	sendChannel           *amqp.Channel
 	receiveChannel        *amqp.Channel
@@ -23,7 +23,7 @@ type client struct {
 	responseChannelsMutex *sync.Mutex
 }
 
-func NewClient(route string) *client {
+func NewClient(route string) *Client {
 	createExchanges()
 
 	sendChannel, err := kamqp.GetSendConnection().Channel()
@@ -53,7 +53,7 @@ func NewClient(route string) *client {
 		panic(err)
 	}
 
-	client := client{
+	client := Client{
 		route:                 route,
 		sendChannel:           sendChannel,
 		receiveChannel:        receiveChannel,
@@ -72,7 +72,7 @@ func NewClient(route string) *client {
 	return &client
 }
 
-func (client *client) getNextCorrelationId() string {
+func (client *Client) getNextCorrelationId() string {
 	client.correlationIdLock.Lock()
 	defer client.correlationIdLock.Unlock()
 
@@ -85,7 +85,7 @@ type Stringer interface {
 	String() string
 }
 
-func (client *client) checkRequestIsValid(rpcRequest *Request) error {
+func (client *Client) checkRequestIsValid(rpcRequest *Request) error {
 	for _, arg := range rpcRequest.Args {
 		if !utf8.ValidString(fmt.Sprint(arg)) {
 			return RequestError{Message: "Request argument contains illegal character"}
@@ -94,7 +94,7 @@ func (client *client) checkRequestIsValid(rpcRequest *Request) error {
 	return nil
 }
 
-func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error) {
+func (client *Client) SendRequest(rpcRequest *Request) (<-chan *Response, error) {
 	err := client.checkRequestIsValid(rpcRequest)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (client *client) SendRequest(rpcRequest *Request) (<-chan *Response, error)
 	return responseChannel, nil
 }
 
-func (client *client) handleDeliveries() {
+func (client *Client) handleDeliveries() {
 	deliveries, err := client.receiveChannel.Consume(client.responseQueue.Name, client.responseQueue.Name,
 		clientResponseQueueAutoAck, clientResponseQueueExclusive,
 		clientResponseQueueNoLocal, clientResponseQueueNoWait, nil)
@@ -170,7 +170,7 @@ func (client *client) handleDeliveries() {
 	}
 }
 
-func (client *client) handleDeadLetterDeliveries() {
+func (client *Client) handleDeadLetterDeliveries() {
 	deadLetterDeliveries, err := client.receiveChannel.Consume(client.deadLetterQueue.Name, client.deadLetterQueue.Name,
 		deadLetterQueueAutoAck, deadLetterQueueExclusive,
 		deadLetterQueueNoLocal, deadLetterQueueNoWait, nil)
@@ -206,7 +206,7 @@ func (client *client) handleDeadLetterDeliveries() {
 	}
 }
 
-func (client *client) handleReturns() {
+func (client *Client) handleReturns() {
 	returns := make(chan amqp.Return)
 	client.sendChannel.NotifyReturn(returns)
 

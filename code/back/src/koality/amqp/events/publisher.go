@@ -9,12 +9,12 @@ import (
 	"unicode/utf8"
 )
 
-type publisher struct {
+type Publisher struct {
 	route       string
 	sendChannel *amqp.Channel
 }
 
-func NewPublisher(route string) *publisher {
+func NewPublisher(route string) *Publisher {
 	createExchanges()
 
 	sendChannel, err := kamqp.GetSendConnection().Channel()
@@ -22,7 +22,7 @@ func NewPublisher(route string) *publisher {
 		panic(err)
 	}
 
-	publisher := publisher{
+	publisher := Publisher{
 		route:       route,
 		sendChannel: sendChannel,
 	}
@@ -30,7 +30,7 @@ func NewPublisher(route string) *publisher {
 	return &publisher
 }
 
-func (publisher *publisher) checkEventIsValid(event *Event) error {
+func (publisher *Publisher) checkEventIsValid(event *Event) error {
 	for _, arg := range event.Args {
 		if !utf8.ValidString(fmt.Sprint(arg)) {
 			return EventError{Message: "Event argument contains illegal character"}
@@ -39,7 +39,7 @@ func (publisher *publisher) checkEventIsValid(event *Event) error {
 	return nil
 }
 
-func (publisher *publisher) SendEvent(event *Event) error {
+func (publisher *Publisher) SendEvent(event *Event) error {
 	err := publisher.checkEventIsValid(event)
 	if err != nil {
 		return err

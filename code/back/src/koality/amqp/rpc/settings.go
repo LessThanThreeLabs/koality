@@ -1,7 +1,7 @@
 package rpc
 
 const (
-	exchangeName       = "model:rpc" // TODO: change to "rpc"
+	exchangeName       = "rpc"
 	exchangeType       = "direct"
 	exchangeDurable    = false
 	exchangeAutoDelete = false
@@ -12,7 +12,7 @@ const (
 )
 
 const (
-	deadLetterExchangeName       = "model:rpc_dlx" // TODO: change to "rpc-dlx"
+	deadLetterExchangeName       = "rpc_dlx"
 	deadLetterExchangeType       = "fanout"
 	deadLetterExchangeDurable    = false
 	deadLetterExchangeAutoDelete = false

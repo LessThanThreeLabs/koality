@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-type server struct {
+type Server struct {
 	route          string
 	requestHandler *reflect.Value
 	sendChannel    *amqp.Channel
@@ -19,7 +19,7 @@ type server struct {
 	responseQueue  *amqp.Queue
 }
 
-func NewServer(route string, requestHandler interface{}) *server {
+func NewServer(route string, requestHandler interface{}) *Server {
 	createExchanges()
 
 	sendChannel, err := kamqp.GetSendConnection().Channel()
@@ -53,7 +53,7 @@ func NewServer(route string, requestHandler interface{}) *server {
 		panic("RPC Server: Unable to reflect on request handler")
 	}
 
-	server := server{
+	server := Server{
 		route:          route,
 		requestHandler: &reflectedRequestHandler,
 		sendChannel:    sendChannel,
@@ -66,7 +66,7 @@ func NewServer(route string, requestHandler interface{}) *server {
 	return &server
 }
 
-func (server *server) handleDeliveries() {
+func (server *Server) handleDeliveries() {
 	deliveries, err := server.receiveChannel.Consume(server.responseQueue.Name, server.responseQueue.Name,
 		serverResponseQueueAutoAck, serverResponseQueueExclusive,
 		serverResponseQueueNoLocal, serverResponseQueueNoWait, nil)
@@ -92,7 +92,7 @@ func (server *server) handleDeliveries() {
 	}
 }
 
-func (server *server) getMethod(methodName string) (*reflect.Value, error) {
+func (server *Server) getMethod(methodName string) (*reflect.Value, error) {
 	firstRuneOfMethod, _ := utf8.DecodeRune([]byte(methodName))
 	if firstRuneOfMethod == utf8.RuneError {
 		return nil, ResponseError{Type: "MethodDoesNotExist", Message: "Method does not exist"}
@@ -108,7 +108,7 @@ func (server *server) getMethod(methodName string) (*reflect.Value, error) {
 	return &method, nil
 }
 
-func (server *server) getMethodArgs(method *reflect.Value, args []interface{}) ([]reflect.Value, error) {
+func (server *Server) getMethodArgs(method *reflect.Value, args []interface{}) ([]reflect.Value, error) {
 	if len(args) != method.Type().NumIn() {
 		return nil, ResponseError{Type: "MethodCallFailed", Message: "Mismatched number of arguments"}
 	}
@@ -132,7 +132,7 @@ func (server *server) getMethodArgs(method *reflect.Value, args []interface{}) (
 	return argValues, nil
 }
 
-func (server *server) getReturnValues(method *reflect.Value, methodArgs []reflect.Value) ([]interface{}, error) {
+func (server *Server) getReturnValues(method *reflect.Value, methodArgs []reflect.Value) ([]interface{}, error) {
 	returnValues := method.Call(methodArgs)
 
 	returnInterfaces := make([]interface{}, len(returnValues))
@@ -146,7 +146,7 @@ func (server *server) getReturnValues(method *reflect.Value, methodArgs []reflec
 	return returnInterfaces, nil
 }
 
-func (server *server) handleRequest(rpcRequest *Request, replyToQueueName, correlationId string) {
+func (server *Server) handleRequest(rpcRequest *Request, replyToQueueName, correlationId string) {
 	method, err := server.getMethod(rpcRequest.Method)
 	if err != nil {
 		server.sendResponse(nil, err, replyToQueueName, correlationId)
@@ -168,7 +168,7 @@ func (server *server) handleRequest(rpcRequest *Request, replyToQueueName, corre
 	server.sendResponse(returnValues, err, replyToQueueName, correlationId)
 }
 
-func (server *server) sendResponse(values []interface{}, err error, replyToQueueName, correlationId string) {
+func (server *Server) sendResponse(values []interface{}, err error, replyToQueueName, correlationId string) {
 	response := Response{values, err}
 
 	buffer, err := msgpack.Marshal(response)

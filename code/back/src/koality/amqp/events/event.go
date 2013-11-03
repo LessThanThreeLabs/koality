@@ -1,12 +1,13 @@
 package events
 
 type Event struct {
-	Name string        `codec:"name"`
-	Args []interface{} `codec:"args"`
+	Resource string        `code:"resource"`
+	Name     string        `codec:"name"`
+	Args     []interface{} `codec:"args"`
 }
 
-func NewEvent(name string, args ...interface{}) *Event {
-	return &Event{name, args}
+func NewEvent(resource, name string, args ...interface{}) *Event {
+	return &Event{resource, name, args}
 }
 
 type EventError struct {

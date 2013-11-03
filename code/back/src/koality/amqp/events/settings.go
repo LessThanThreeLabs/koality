@@ -1,12 +1,24 @@
 package events
 
 const (
-	exchangeName       = "model:events" // TODO: change to "events"
-	exchangeType       = "fanout"
+	exchangeName       = "events"
+	exchangeType       = "direct"
 	exchangeDurable    = false
 	exchangeAutoDelete = false
 	exchangeInternal   = false
 	exchangeNoWait     = false
 	exchangeMandatory  = true
 	exchangeImmediate  = false
+)
+
+const (
+	receiveQueueName       = ""
+	receiveQueueDurable    = false
+	receiveQueueAutoDelete = true
+	receiveQueueExclusive  = true
+	receiveQueueNoWait     = false
+	receiveQueueBindNoWait = false
+	receiveQueueAutoAck    = false
+	receiveQueueNoLocal    = true
+	receiveQueueQos        = 3
 )

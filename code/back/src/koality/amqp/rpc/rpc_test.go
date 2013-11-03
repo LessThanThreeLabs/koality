@@ -57,7 +57,7 @@ func TestMixedRequests(testing *testing.T) {
 	<-requestsCompleted
 }
 
-func sendRequests(rpcClient *client, rpcServer *server, rpcRequest *Request, numRequests, maxConcurrentRequests int) {
+func sendRequests(rpcClient *Client, rpcServer *Server, rpcRequest *Request, numRequests, maxConcurrentRequests int) {
 	semaphore := make(chan bool, maxConcurrentRequests)
 	completed := make(chan *Response, maxConcurrentRequests)
 
