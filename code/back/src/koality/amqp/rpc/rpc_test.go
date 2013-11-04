@@ -26,14 +26,14 @@ func TestSmallRequests(testing *testing.T) {
 	client := NewClient(route)
 	server := NewServer(route, new(RequestHandler))
 	shortRequest := NewRequest("GetShortString", shortString, shortString, shortString)
-	sendRequests(client, server, shortRequest, 10000, 1000)
+	sendRequests(testing, client, server, shortRequest, 10000, 1000)
 }
 
 func TestLargeRequests(testing *testing.T) {
 	client := NewClient(route)
 	server := NewServer(route, new(RequestHandler))
 	longRequest := NewRequest("GetLongString", longString, longString, longString)
-	sendRequests(client, server, longRequest, 1000, 100)
+	sendRequests(testing, client, server, longRequest, 1000, 100)
 }
 
 func TestMixedRequests(testing *testing.T) {
@@ -43,13 +43,13 @@ func TestMixedRequests(testing *testing.T) {
 
 	shortRequest := NewRequest("GetShortString", shortString, shortString, shortString)
 	go func() {
-		sendRequests(client, server, shortRequest, 10000, 1000)
+		sendRequests(testing, client, server, shortRequest, 10000, 1000)
 		requestsCompleted <- true
 	}()
 
 	longRequest := NewRequest("GetLongString", longString, longString, longString)
 	go func() {
-		sendRequests(client, server, longRequest, 1000, 100)
+		sendRequests(testing, client, server, longRequest, 1000, 50)
 		requestsCompleted <- true
 	}()
 
@@ -57,7 +57,7 @@ func TestMixedRequests(testing *testing.T) {
 	<-requestsCompleted
 }
 
-func sendRequests(rpcClient *Client, rpcServer *Server, rpcRequest *Request, numRequests, maxConcurrentRequests int) {
+func sendRequests(testing *testing.T, rpcClient *Client, rpcServer *Server, rpcRequest *Request, numRequests, maxConcurrentRequests int) {
 	semaphore := make(chan bool, maxConcurrentRequests)
 	completed := make(chan *Response, maxConcurrentRequests)
 
@@ -67,7 +67,7 @@ func sendRequests(rpcClient *Client, rpcServer *Server, rpcRequest *Request, num
 			go func() {
 				responseChan, err := rpcClient.SendRequest(rpcRequest)
 				if err != nil {
-					panic(err)
+					testing.Error(err)
 				}
 
 				completed <- <-responseChan
@@ -79,7 +79,7 @@ func sendRequests(rpcClient *Client, rpcServer *Server, rpcRequest *Request, num
 	for index := 0; index < numRequests; index++ {
 		rpcResponse := <-completed
 		if rpcResponse.Error != nil {
-			panic(rpcResponse.Error)
+			testing.Error(rpcResponse.Error)
 		}
 	}
 }

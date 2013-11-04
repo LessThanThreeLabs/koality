@@ -18,7 +18,6 @@ const (
 	receiveQueueExclusive  = true
 	receiveQueueNoWait     = false
 	receiveQueueBindNoWait = false
-	receiveQueueAutoAck    = false
+	receiveQueueAutoAck    = true
 	receiveQueueNoLocal    = true
-	receiveQueueQos        = 3
 )

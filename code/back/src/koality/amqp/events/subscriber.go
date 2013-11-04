@@ -1,29 +1,26 @@
 package events
 
 import (
+	"errors"
 	"fmt"
 	"github.com/streadway/amqp"
 	"github.com/vmihailenco/msgpack"
 	kamqp "koality/amqp"
-	"reflect"
+	"sync"
 )
 
 type Subscriber struct {
-	route          string
-	eventHandler   *reflect.Value
-	receiveChannel *amqp.Channel
-	receiveQueue   *amqp.Queue
+	route              string
+	receiveChannel     *amqp.Channel
+	receiveQueue       *amqp.Queue
+	eventChannels      []chan *Event
+	eventChannelsMutex *sync.RWMutex
 }
 
-func NewSubscriber(route string, eventHandler interface{}) *Subscriber {
+func NewSubscriber(route string) *Subscriber {
 	createExchanges()
 
 	receiveChannel, err := kamqp.GetReceiveConnection().Channel()
-	if err != nil {
-		panic(err)
-	}
-
-	err = receiveChannel.Qos(receiveQueueQos, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -39,22 +36,42 @@ func NewSubscriber(route string, eventHandler interface{}) *Subscriber {
 		panic(err)
 	}
 
-	reflectedEventHandler := reflect.ValueOf(eventHandler)
-	if !reflectedEventHandler.IsValid() {
-		panic("Event Subscriber: Unable to reflect on event handler")
-	}
-	fmt.Println("make sure it has the handler() function we need")
-
 	subscriber := Subscriber{
-		route:          route,
-		eventHandler:   &reflectedEventHandler,
-		receiveChannel: receiveChannel,
-		receiveQueue:   &receiveQueue,
+		route:              route,
+		receiveChannel:     receiveChannel,
+		receiveQueue:       &receiveQueue,
+		eventChannels:      make([]chan *Event, 0),
+		eventChannelsMutex: new(sync.RWMutex),
 	}
 
 	go subscriber.handleDeliveries()
 
 	return &subscriber
+}
+
+func (subscriber *Subscriber) Subscribe() chan *Event {
+	subscriber.eventChannelsMutex.Lock()
+	defer subscriber.eventChannelsMutex.Unlock()
+
+	eventChannel := make(chan *Event, 100)
+	subscriber.eventChannels = append(subscriber.eventChannels, eventChannel)
+
+	return eventChannel
+}
+
+func (subscriber *Subscriber) Unsubscribe(eventChannel chan *Event) error {
+	subscriber.eventChannelsMutex.Lock()
+	defer subscriber.eventChannelsMutex.Unlock()
+
+	for index, otherEventChannel := range subscriber.eventChannels {
+		if eventChannel == otherEventChannel {
+			subscriber.eventChannels = append(subscriber.eventChannels[:index], subscriber.eventChannels[index+1:]...)
+			close(eventChannel)
+			return nil
+		}
+	}
+
+	return errors.New("Events Subscriber: No such event channel")
 }
 
 func (subscriber *Subscriber) handleDeliveries() {
@@ -76,8 +93,16 @@ func (subscriber *Subscriber) handleDeliveries() {
 				panic(err)
 			}
 
-			fmt.Println(event)
-			delivery.Ack(false)
+			subscriber.deliverEvent(event)
 		}(delivery)
+	}
+}
+
+func (subscriber *Subscriber) deliverEvent(event *Event) {
+	subscriber.eventChannelsMutex.RLock()
+	defer subscriber.eventChannelsMutex.RUnlock()
+
+	for _, eventChannel := range subscriber.eventChannels {
+		eventChannel <- event
 	}
 }

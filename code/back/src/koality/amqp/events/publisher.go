@@ -39,7 +39,7 @@ func (publisher *Publisher) checkEventIsValid(event *Event) error {
 	return nil
 }
 
-func (publisher *Publisher) SendEvent(event *Event) error {
+func (publisher *Publisher) Publish(event *Event) error {
 	err := publisher.checkEventIsValid(event)
 	if err != nil {
 		return err

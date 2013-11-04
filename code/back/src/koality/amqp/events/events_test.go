@@ -1,7 +1,6 @@
 package events
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -23,39 +22,70 @@ func makeTestString(text string, numRepeats int) string {
 	return strings.Join(stringsArray, " ")
 }
 
-func TestSmallEvents(testing *testing.T) {
+func TestSubscibeAndUnsubscribe(testing *testing.T) {
 	publisher := NewPublisher(route)
-	subscriber := NewSubscriber(route, new(EventHandler))
-	shortEvent := NewEvent("resource", "test event name", shortString, shortString, shortString)
-	sendEvents(publisher, subscriber, shortEvent, 10000, 1000)
+	subscriber := NewSubscriber(route)
+	event := NewEvent("resource", "test event name", shortString, shortString, shortString)
+
+	firstSubscription := subscriber.Subscribe()
+	err := publisher.Publish(event)
+	if err != nil {
+		testing.Error(err)
+	}
+	<-firstSubscription
+
+	secondSubscription := subscriber.Subscribe()
+	publisher.Publish(event)
+	if err != nil {
+		testing.Error(err)
+	}
+	<-firstSubscription
+	<-secondSubscription
+
+	err = subscriber.Unsubscribe(firstSubscription)
+	if err != nil {
+		testing.Error(err)
+	}
+	publisher.Publish(event)
+	if err != nil {
+		testing.Error(err)
+	}
+	<-secondSubscription
+	_, ok := <-firstSubscription
+	if ok {
+		testing.Error("Event passed to unsubscribed subscription")
+	}
 }
 
-func sendEvents(eventPublisher *Publisher, eventSubscriber *Subscriber, event *Event, numEvents, maxConcurrentEvents int) {
-	semaphore := make(chan bool, maxConcurrentEvents)
-	completed := make(chan bool, maxConcurrentEvents)
+func TestSmallEvents(testing *testing.T) {
+	publisher := NewPublisher(route)
+	subscriber := NewSubscriber(route)
+	shortEvent := NewEvent("resource", "test event name", shortString, shortString, shortString)
+	sendEvents(testing, publisher, subscriber, shortEvent, 10000)
+}
+
+func TestLargeEvents(testing *testing.T) {
+	publisher := NewPublisher(route)
+	subscriber := NewSubscriber(route)
+	longEvent := NewEvent("resource", "test event name", longString, longString, longString)
+	sendEvents(testing, publisher, subscriber, longEvent, 50)
+}
+
+func sendEvents(testing *testing.T, eventPublisher *Publisher, eventSubscriber *Subscriber, event *Event, numEvents int) {
+	events := eventSubscriber.Subscribe()
 
 	go func() {
 		for index := 0; index < numEvents; index++ {
-			semaphore <- true
 			go func() {
-				err := eventPublisher.SendEvent(event)
+				err := eventPublisher.Publish(event)
 				if err != nil {
-					panic(err)
+					testing.Error(err)
 				}
-
-				completed <- true
-				<-semaphore
 			}()
 		}
 	}()
 
 	for index := 0; index < numEvents; index++ {
-		<-completed
+		<-events
 	}
-}
-
-type EventHandler int
-
-func (eventHandler *EventHandler) HandleEvent(event *Event) {
-	fmt.Println(event)
 }
