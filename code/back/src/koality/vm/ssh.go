@@ -88,6 +88,6 @@ type ScpFileCopier struct {
 	Scper
 }
 
-func (fileCopier *ScpFileCopier) FileCopy(localFilePath, remoteFilePath string) shell.Executable {
-	return fileCopier.Scper.Scp(localFilePath, remoteFilePath, false)
+func (fileCopier *ScpFileCopier) FileCopy(localFilePath, remoteFilePath string) (shell.Executable, error) {
+	return fileCopier.Scper.Scp(localFilePath, remoteFilePath, false), nil
 }

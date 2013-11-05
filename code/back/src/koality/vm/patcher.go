@@ -38,7 +38,7 @@ func (p *patcher) Patch(config *PatchConfig) (shell.Executable, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd := p.FileCopier.FileCopy(tempFile.Name(), ".koality_patch")
+	cmd, err := p.FileCopier.FileCopy(tempFile.Name(), ".koality_patch")
 	// TODO: RUN AND check results
 	cmd = cmd
 	tempFile.Close()

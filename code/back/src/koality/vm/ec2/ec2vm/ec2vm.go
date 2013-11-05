@@ -54,7 +54,7 @@ func (ec2Vm *EC2VirtualMachine) Patch(patchConfig *vm.PatchConfig) (shell.Execut
 	return ec2Vm.patcher.Patch(patchConfig)
 }
 
-func (ec2Vm *EC2VirtualMachine) FileCopy(sourceFilePath, destFilePath string) shell.Executable {
+func (ec2Vm *EC2VirtualMachine) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
 	return ec2Vm.fileCopier.FileCopy(sourceFilePath, destFilePath)
 }
 

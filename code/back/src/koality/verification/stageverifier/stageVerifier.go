@@ -51,7 +51,7 @@ func (stageVerifier *StageVerifier) RunChangeStages(setupCommands commandgroup.C
 
 func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.CommandGroup) (bool, error) {
 	var err error
-	var setupCommand *verification.Command
+	var setupCommand verification.Command
 	for setupCommand, err = setupCommands.Next(); setupCommand != nil && err == nil; setupCommand, err = setupCommands.Next() {
 		success, err := stageVerifier.runCommand(setupCommand)
 		setupCommands.Done()
@@ -122,6 +122,12 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	return false, err
 }
 
-func (stageVerifier *StageVerifier) runCommand(command *verification.Command) (bool, error) {
-	return false, nil
+func (stageVerifier *StageVerifier) runCommand(command verification.Command) (bool, error) {
+	shellCommand := command.ShellCommand()
+	executable := stageVerifier.virtualMachine.MakeExecutable(shellCommand)
+	err := executable.Run()
+	if err == nil {
+		return false, err
+	}
+	return true, nil
 }

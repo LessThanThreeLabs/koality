@@ -77,7 +77,11 @@ func (launcher *EC2VirtualMachineLauncher) getSecurityGroups() []ec2.SecurityGro
 }
 
 func (launcher *EC2VirtualMachineLauncher) getUserData(username string) []byte {
-	publicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCYn9+XcfZjSscco4g8BNXY0Ap9Zdrc+fkigorpoMNhaoo4QWxHctsQ0f8VWQ39+Vn6nTGwWipSmGnPKN2kL7dFv3PT1nEC7+iT2skQELG0YC8j84CaMFY2NuDsSvJSE0O9Xm7Bq8O1bvLyrL8qRNrD9/CQSl1viUHr00P3wMwSFYq2BkfuUC3rVQttV6z1TQjMJjeg+YeKCZkzdpHx6a6Ay/M1fKg5ZXDGcJDKg5s783SOOSyvpzhvIWbuTTBcHmrgW/xPiqPAP5LmRrJkHZd/V95TPNIZ6duFEasOykjU8h9h7He4Cim4IfnNVvKwU62Xs9Mp5FESm9ozr3PP1bcj"
+	keyBytes, err := ioutil.ReadFile("~/.ssh/id_rsa.pub")
+	if err != nil {
+		panic(err)
+	}
+	publicKey := string(keyBytes)
 
 	configureUserCommand := shell.Chain(
 		shell.Command(fmt.Sprintf("useradd --create-home -s /bin/bash %s", username)),

@@ -7,14 +7,14 @@ import (
 
 type CommandGroup interface {
 	HasMoreCommands() bool
-	Next() (*verification.Command, error)
+	Next() (verification.Command, error)
 	Done() error
 	Wait() error
 }
 
 type AppendableCommandGroup interface {
 	CommandGroup
-	Append(*verification.Command) error
+	Append(verification.Command) error
 }
 
 type appendableCommandGroup struct {
@@ -38,7 +38,7 @@ func (group *appendableCommandGroup) HasMoreCommands() bool {
 	return len(group.commands) > 0
 }
 
-func (group *appendableCommandGroup) Next() (*verification.Command, error) {
+func (group *appendableCommandGroup) Next() (verification.Command, error) {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
@@ -50,7 +50,7 @@ func (group *appendableCommandGroup) Next() (*verification.Command, error) {
 
 	group.waitGroup.Add(1)
 
-	return &c, nil
+	return c, nil
 }
 
 func (group *appendableCommandGroup) Done() error {
@@ -65,11 +65,11 @@ func (group *appendableCommandGroup) Wait() error {
 	return nil
 }
 
-func (group *appendableCommandGroup) Append(command *verification.Command) error {
+func (group *appendableCommandGroup) Append(command verification.Command) error {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
-	group.commands = append(group.commands, *command)
+	group.commands = append(group.commands, command)
 	return nil
 }
 

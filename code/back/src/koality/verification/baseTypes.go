@@ -1,6 +1,13 @@
 package verification
 
-type Command struct{}
+import (
+	"koality/shell"
+)
+
+type Command interface {
+	Name() string
+	ShellCommand() shell.Command
+}
 
 type Result struct {
 	StageType string
