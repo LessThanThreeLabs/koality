@@ -32,23 +32,11 @@ func Test(command Command) Command {
 }
 
 func If(condition, thenCommand Command) Command {
-	return Chain(
-		Command(fmt.Sprintf("if %s", condition)),
-		Command("then"),
-		thenCommand,
-		Command("fi"),
-	)
+	return Command(fmt.Sprintf("if %s; then\n%s\nfi", condition, thenCommand))
 }
 
 func IfElse(condition, thenCommand, elseCommand Command) Command {
-	return Chain(
-		Command(fmt.Sprintf("if %s", condition)),
-		Command("then"),
-		thenCommand,
-		Command("else"),
-		elseCommand,
-		Command("fi"),
-	)
+	return Command(fmt.Sprintf("if %s; then\n%s\nelse\n%s\nfi", condition, thenCommand, elseCommand))
 }
 
 func join(commands []Command, joiner string) Command {

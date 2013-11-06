@@ -19,7 +19,7 @@ type virtualMachinePool struct {
 }
 
 func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize int) *virtualMachinePool {
-	readyChannel := make(chan VirtualMachine)
+	readyChannel := make(chan VirtualMachine, 64)
 	locker := new(sync.Mutex)
 	pool := virtualMachinePool{
 		virtualMachineLauncher: virtualMachineLauncher,
@@ -32,13 +32,13 @@ func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize in
 	return &pool
 }
 
-func (pool *virtualMachinePool) allocateOne() {
+func (pool *virtualMachinePool) allocateN(numToAllocate int) {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
 
-	pool.readyCount--
-	pool.allocatedCount++
-	fmt.Printf("Allocate one: %#v\n", pool)
+	pool.readyCount -= numToAllocate
+	pool.allocatedCount += numToAllocate
+	fmt.Printf("Allocate %d: %#v\n", pool, numToAllocate)
 }
 
 func (pool *virtualMachinePool) unallocateOne() {
@@ -86,11 +86,22 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 }
 
 func (pool *virtualMachinePool) Get() VirtualMachine {
-	pool.allocateOne()
+	return <-pool.GetN(1)
+}
+
+func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
+	machinesChan := make(chan VirtualMachine, numMachines)
+	pool.allocateN(numMachines)
 
 	go pool.ensureReadyInstances()
 
-	return <-pool.readyChannel
+	go func(machinesChan chan VirtualMachine) {
+		for x := 0; x < numMachines; x++ {
+			machinesChan <- <-pool.readyChannel
+		}
+		close(machinesChan)
+	}(machinesChan)
+	return machinesChan
 }
 
 func (pool *virtualMachinePool) Free() {

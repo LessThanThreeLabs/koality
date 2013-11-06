@@ -25,8 +25,10 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 
 	newStageVerifiersChan := make(chan *stageverifier.StageVerifier, verificationConfig.NumMachines)
 
-	launchNewMachineToRunTestsAndStuff := func() {
-		stageVerifier := stageverifier.New(changeVerifier.VirtualMachinePool.Get())
+	verifyStages := func(virtualMachine VirtualMachine) {
+		defer virtualMachine.Teardown()
+
+		stageVerifier := stageverifier.New(virtualMachine)
 		defer close(stageVerifier.ResultsChan)
 
 		newStageVerifiersChan <- stageVerifier
@@ -40,8 +42,10 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 			panic(err)
 		}
 	}
-	for machineNum := 0; machineNum < verificationConfig.NumMachines; machineNum++ {
-		go launchNewMachineToRunTestsAndStuff() // Best name
+
+	newMachinesChan := changeVerifier.VirtualMachinePool.GetN(verificationConfig.NumMachines)
+	for newMachine := range newMachinesChan {
+		go verifyStages(newMachine)
 	}
 
 	resultsChan := changeVerifier.combineResults(newStageVerifiersChan)

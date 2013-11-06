@@ -24,10 +24,12 @@ type appendableCommandGroup struct {
 }
 
 func New(commands []verification.Command) *appendableCommandGroup {
+	waitGroup := new(sync.WaitGroup)
+	waitGroup.Add(len(commands))
 	return &appendableCommandGroup{
 		commands:  commands,
 		locker:    new(sync.Mutex),
-		waitGroup: new(sync.WaitGroup),
+		waitGroup: waitGroup,
 	}
 }
 
@@ -48,8 +50,6 @@ func (group *appendableCommandGroup) Next() (verification.Command, error) {
 	c := group.commands[0]
 	group.commands = group.commands[1:]
 
-	group.waitGroup.Add(1)
-
 	return c, nil
 }
 
@@ -69,6 +69,7 @@ func (group *appendableCommandGroup) Append(command verification.Command) error 
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
+	group.waitGroup.Add(1)
 	group.commands = append(group.commands, command)
 	return nil
 }

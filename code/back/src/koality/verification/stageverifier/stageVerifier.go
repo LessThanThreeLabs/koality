@@ -4,6 +4,7 @@ import (
 	"koality/verification"
 	"koality/verification/config/commandgroup"
 	"koality/vm"
+	"os"
 )
 
 type StageVerifier struct {
@@ -50,11 +51,13 @@ func (stageVerifier *StageVerifier) RunChangeStages(setupCommands commandgroup.C
 }
 
 func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.CommandGroup) (bool, error) {
+	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	var err error
 	var setupCommand verification.Command
 	for setupCommand, err = setupCommands.Next(); setupCommand != nil && err == nil; setupCommand, err = setupCommands.Next() {
-		success, err := stageVerifier.runCommand(setupCommand)
+		success, err := stageVerifier.runCommand(setupCommand, commandRunner)
 		setupCommands.Done()
+		stageVerifier.ResultsChan <- verification.Result{"setup", success && err == nil}
 		if err != nil {
 			return false, err
 		}
@@ -69,10 +72,12 @@ func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.
 }
 
 func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgroup.CommandGroup) (bool, error) {
+	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	var err error
 	for compileCommand, err := compileCommands.Next(); compileCommand != nil && err == nil; compileCommand, err = compileCommands.Next() {
-		success, err := stageVerifier.runCommand(compileCommand)
+		success, err := stageVerifier.runCommand(compileCommand, commandRunner)
 		compileCommands.Done()
+		stageVerifier.ResultsChan <- verification.Result{"compile", success && err == nil}
 		if err != nil {
 			return false, err
 		}
@@ -87,10 +92,13 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 }
 
 func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgroup.CommandGroup, testCommands commandgroup.AppendableCommandGroup) (bool, error) {
+	// This needs to be something that generates new commands
+	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	var err error
 	for factoryCommand, err := factoryCommands.Next(); factoryCommand != nil && err == nil; factoryCommand, err = factoryCommands.Next() {
-		success, err := stageVerifier.runCommand(factoryCommand)
+		success, err := stageVerifier.runCommand(factoryCommand, commandRunner)
 		factoryCommands.Done()
+		stageVerifier.ResultsChan <- verification.Result{"factory", success && err == nil}
 		if err != nil {
 			return false, err
 		}
@@ -106,11 +114,13 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 }
 
 func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.CommandGroup) (bool, error) {
+	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	testsSuccess := true
 	var err error
 	for testCommand, err := testCommands.Next(); testCommand != nil && err == nil; testCommand, err = testCommands.Next() {
-		success, err := stageVerifier.runCommand(testCommand)
+		success, err := stageVerifier.runCommand(testCommand, commandRunner)
 		testCommands.Done()
+		stageVerifier.ResultsChan <- verification.Result{"test", success && err == nil}
 		testsSuccess = testsSuccess && success
 		if err != nil {
 			return false, err
@@ -122,12 +132,8 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	return false, err
 }
 
-func (stageVerifier *StageVerifier) runCommand(command verification.Command) (bool, error) {
+func (stageVerifier *StageVerifier) runCommand(command verification.Command, commandRunner CommandRunner) (bool, error) {
 	shellCommand := command.ShellCommand()
 	executable := stageVerifier.virtualMachine.MakeExecutable(shellCommand)
-	err := executable.Run()
-	if err == nil {
-		return false, err
-	}
-	return true, nil
+	return commandRunner.RunCommand(executable)
 }
