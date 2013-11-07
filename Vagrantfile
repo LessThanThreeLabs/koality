@@ -25,6 +25,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
 	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code", nfs: true
 	config.vm.synced_folder "nginx/", "#{VAGRANT_HOME_DIRECTORY}/nginx", nfs: true
+	config.vm.synced_folder "postgres/", "#{VAGRANT_HOME_DIRECTORY}/postgres", nfs: true
 
 	config.vm.provision :chef_solo do |chef|
 		chefRoot = "chef"

@@ -18,7 +18,7 @@ file "/etc/nginx/nginx.conf" do
 end
 
 link "/etc/nginx/nginx.conf" do
-	to			node["nginx"]["conf_path"]
+	to		node["nginx"]["conf_path"]
 	action	:create
 end
 

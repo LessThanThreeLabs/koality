@@ -1,27 +1,26 @@
 include_recipe "apt"
 
-# apt_repository "postgres" do
-# 	uri          "http://apt.postgresql.org/pub/repos/apt/"
-# 	distribution node["lsb"]["codename"]
-# 	components   ["postgres"]
-# 	key          "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
-# 	deb_src      true
-# end
+apt_repository 'apt.postgresql.org' do
+  uri 'http://apt.postgresql.org/pub/repos/apt'
+  distribution node["lsb"]["codename"] + '-pgdg'
+  components ['main', node["postgres"]["version"]]
+  key 'http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc'
+  action :add
+end
 
-apt_package "postgresql" do
-	version	node["postgres"]["version"]
+package 'postgresql-' + node["postgres"]["version"] do
 	action	:install
 end
 
-# file "/etc/postgres/postgres.conf" do
-# 	action	:delete
-# end
+file "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
+	action	:delete
+end
 
-# link "/etc/postgres/postgres.conf" do
-# 	to			node["postgres"]["conf_path"]
-# 	action	:create
-# end
+link "/etc/postgresql/9.3/main/postgresql.conf" do
+	to		node["postgres"]["conf_path"]
+	action	:create
+end
 
-# service "postgres" do
-# 	action	:restart
-# end
+service "postgresql" do
+	action	:restart
+end
