@@ -37,10 +37,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "git"
 		chef.add_recipe "oh-my-zsh"
 		chef.add_recipe "golang"
-		chef.add_recipe "nodejs"
 		chef.add_recipe "erlang"
 		chef.add_recipe "rabbitmq"
 		chef.add_recipe "nginx"
+		chef.add_recipe "postgres"
 
 		chef.json = {
 			:oh_my_zsh => {
