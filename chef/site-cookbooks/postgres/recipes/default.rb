@@ -24,3 +24,13 @@ end
 service "postgresql" do
 	action	:restart
 end
+
+execute "create-role" do
+	user "postgres"
+	command "psql -c \"SELECT 1 FROM pg_user WHERE usename='#{node[:postgres][:username]}'\" | grep -q 1 || createuser -s #{node[:postgres][:username]}"
+end
+
+execute "create-database" do
+	user "postgres"
+	command "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{node[:postgres][:database_name]}'\" | grep -q 1 || createdb #{node[:postgres][:database_name]}"
+end
