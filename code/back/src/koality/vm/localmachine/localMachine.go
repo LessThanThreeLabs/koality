@@ -31,13 +31,16 @@ func New() *LocalMachine {
 	}
 
 	cmdStr := fmt.Sprintf("mkdir -p %s", rootDir)
-	setupExec := executableMaker.MakeExecutable(shell.Advertised(shell.Command(cmdStr)))
+	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Command(cmdStr)))
+	if err != nil {
+		panic(err)
+	}
 	setupExec.Run()
 
 	return &localMachine
 }
 
-func (localMachine *LocalMachine) MakeExecutable(command shell.Command) shell.Executable {
+func (localMachine *LocalMachine) MakeExecutable(command shell.Command) (shell.Executable, error) {
 	fullCommand := shell.And(
 		shell.Command(fmt.Sprintf("cd %s", localMachine.rootDir)),
 		command,
@@ -67,5 +70,5 @@ type localCopier struct {
 
 func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
 	command := shell.Advertised(shell.Command(fmt.Sprintf("cp %s %s", sourceFilePath, destFilePath)))
-	return copier.executableMaker.MakeExecutable(command), nil
+	return copier.executableMaker.MakeExecutable(command)
 }

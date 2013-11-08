@@ -17,7 +17,7 @@ type EC2VirtualMachine struct {
 	ec2Broker          *ec2broker.EC2Broker
 }
 
-func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) *EC2VirtualMachine {
+func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (*EC2VirtualMachine, error) {
 	sshConfig := vm.SshConfig{
 		Username: username,
 		Hostname: instance.IPAddress,
@@ -29,19 +29,23 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) *
 			"ServerAliveInterval":   "20",
 		},
 	}
-	sshExecutableMaker := vm.NewSshExecutableMaker(sshConfig)
+	sshExecutableMaker, err := vm.NewSshExecutableMaker(sshConfig)
+	if err != nil {
+		return nil, err
+	}
 	fileCopier := &vm.ScpFileCopier{vm.NewScper(vm.ScpConfig(sshConfig))}
 	patcher := vm.NewPatcher(fileCopier, sshExecutableMaker)
-	return &EC2VirtualMachine{
+	ec2Vm := EC2VirtualMachine{
 		sshExecutableMaker: sshExecutableMaker,
 		fileCopier:         fileCopier,
 		patcher:            patcher,
 		instance:           instance,
 		ec2Broker:          broker,
 	}
+	return &ec2Vm, nil
 }
 
-func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command) shell.Executable {
+func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command) (shell.Executable, error) {
 	return ec2Vm.sshExecutableMaker.MakeExecutable(command)
 }
 

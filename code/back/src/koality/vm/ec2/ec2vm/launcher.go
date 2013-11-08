@@ -18,7 +18,7 @@ func NewLauncher(ec2Broker *ec2broker.EC2Broker) *EC2VirtualMachineLauncher {
 	return &EC2VirtualMachineLauncher{ec2Broker}
 }
 
-func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() vm.VirtualMachine {
+func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMachine, error) {
 	username := launcher.getUsername()
 	runOptions := ec2.RunInstancesOptions{
 		ImageId:        launcher.getImageId(),
@@ -28,12 +28,12 @@ func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() vm.VirtualMach
 	}
 	runResponse, err := launcher.ec2Broker.EC2().RunInstances(&runOptions)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	// TODO: more validation
 	instance := runResponse.Instances[0]
 	for instance.IPAddress == "" {
-		time.Sleep(time.Duration(5) * time.Second)
+		time.Sleep(5 * time.Second)
 		instances := launcher.ec2Broker.Instances()
 		for _, inst := range instances {
 			if inst.InstanceId == instance.InstanceId {
@@ -43,17 +43,21 @@ func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() vm.VirtualMach
 		}
 	}
 
-	ec2Vm := New(&instance, launcher.ec2Broker, username)
 	for {
-		sshAttempt := ec2Vm.MakeExecutable(shell.Command("true"))
-		err := sshAttempt.Run()
+		ec2Vm, err := New(&instance, launcher.ec2Broker, username)
+		if err != nil {
+			time.Sleep(3 * time.Second)
+			continue
+		}
+		sshAttempt, err := ec2Vm.MakeExecutable(shell.Command("true"))
 		if err == nil {
-			break
+			err = sshAttempt.Run()
+			if err == nil {
+				return ec2Vm
+			}
 		}
 		time.Sleep(3 * time.Second)
-		ec2Vm = New(&instance, launcher.ec2Broker, username)
 	}
-	return ec2Vm
 }
 
 // TODO: make all this stuff dynamic

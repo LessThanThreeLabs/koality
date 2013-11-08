@@ -19,7 +19,7 @@ type VirtualMachine interface {
 }
 
 type VirtualMachineLauncher interface {
-	LaunchVirtualMachine() VirtualMachine
+	LaunchVirtualMachine() (VirtualMachine, error)
 }
 
 type VirtualMachinePool interface {

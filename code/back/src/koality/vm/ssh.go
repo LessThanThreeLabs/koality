@@ -28,15 +28,15 @@ type keychain struct {
 	key *rsa.PrivateKey
 }
 
-func NewSshExecutableMaker(sshConfig SshConfig) *SshExecutableMaker {
+func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
 	privateKey, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa", os.Getenv("HOME")))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	block, _ := pem.Decode(privateKey)
 	rsaKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	clientKey := keychain{rsaKey}
 	clientConfig := ssh.ClientConfig{
@@ -46,17 +46,17 @@ func NewSshExecutableMaker(sshConfig SshConfig) *SshExecutableMaker {
 	address := fmt.Sprintf("%s:%d", sshConfig.Hostname, sshConfig.Port)
 	sshClient, err := ssh.Dial("tcp", address, &clientConfig)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return &SshExecutableMaker{sshClient}
+	return &SshExecutableMaker{sshClient}, nil
 }
 
-func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command) shell.Executable {
+func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command) (shell.Executable, error) {
 	session, err := sshExecutableMaker.sshClient.NewSession()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return &sshExecutable{command, session}
+	return &sshExecutable{command, session}, nil
 }
 
 func (sshExecutableMaker *SshExecutableMaker) Close() error {
@@ -109,7 +109,7 @@ func (k *keychain) Sign(i int, rand io.Reader, data []byte) (sig []byte, err err
 }
 
 type Scper interface {
-	Scp(localFilePath, remoteFilePath string, retrieveFile bool) shell.Executable
+	Scp(localFilePath, remoteFilePath string, retrieveFile bool) (shell.Executable, error)
 }
 
 type ShellScper struct {
@@ -124,7 +124,7 @@ func NewScper(config ScpConfig) Scper {
 	}
 }
 
-func (shellScper *ShellScper) Scp(localFilePath, remoteFilePath string, retrieveFile bool) shell.Executable {
+func (shellScper *ShellScper) Scp(localFilePath, remoteFilePath string, retrieveFile bool) (shell.Executable, error) {
 	fullCommand := shell.Command(strings.Join(append(shellScper.scpConfig.ScpArgs(localFilePath, remoteFilePath, retrieveFile)), " "))
 	return shellScper.executableMaker.MakeExecutable(fullCommand)
 }
@@ -173,5 +173,5 @@ type ScpFileCopier struct {
 }
 
 func (fileCopier *ScpFileCopier) FileCopy(localFilePath, remoteFilePath string) (shell.Executable, error) {
-	return fileCopier.Scper.Scp(localFilePath, remoteFilePath, false), nil
+	return fileCopier.Scper.Scp(localFilePath, remoteFilePath, false)
 }

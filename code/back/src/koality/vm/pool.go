@@ -153,7 +153,10 @@ func (pool *virtualMachinePool) SetMinReady(minReady int) {
 func (pool *virtualMachinePool) newReadyInstance() error {
 	newVm, err := func() (VirtualMachine, error) {
 		fmt.Println("try to launch")
-		newVm := pool.virtualMachineLauncher.LaunchVirtualMachine()
+		newVm, err := pool.virtualMachineLauncher.LaunchVirtualMachine()
+		if err != nil {
+			return nil, err
+		}
 		fmt.Println("launched")
 
 		pool.locker.Lock()

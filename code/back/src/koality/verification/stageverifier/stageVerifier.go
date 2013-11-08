@@ -134,6 +134,9 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 
 func (stageVerifier *StageVerifier) runCommand(command verification.Command, commandRunner CommandRunner) (int, error) {
 	shellCommand := command.ShellCommand()
-	executable := stageVerifier.virtualMachine.MakeExecutable(shellCommand)
+	executable, err := stageVerifier.virtualMachine.MakeExecutable(shellCommand)
+	if err != nil {
+		return -1, err
+	}
 	return commandRunner.RunCommand(executable)
 }
