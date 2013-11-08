@@ -1,27 +1,111 @@
 package vm
 
 import (
+	"code.google.com/p/go.crypto/ssh"
+	"crypto"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"koality/shell"
+	"os"
 	"strconv"
 	"strings"
 )
 
 type SshExecutableMaker struct {
-	sshConfig       SshConfig
-	executableMaker shell.ExecutableMaker
+	sshClient *ssh.ClientConn
 }
 
-func NewSshExecutableMaker(config SshConfig) *SshExecutableMaker {
-	return &SshExecutableMaker{
-		sshConfig:       config,
-		executableMaker: shell.NewShellExecutableMaker(),
+type sshExecutable struct {
+	shell.Command
+	*ssh.Session
+}
+
+type keychain struct {
+	key *rsa.PrivateKey
+}
+
+func NewSshExecutableMaker(sshConfig SshConfig) *SshExecutableMaker {
+	privateKey, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa", os.Getenv("HOME")))
+	if err != nil {
+		panic(err)
 	}
+	block, _ := pem.Decode(privateKey)
+	rsaKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		panic(err)
+	}
+	clientKey := keychain{rsaKey}
+	clientConfig := ssh.ClientConfig{
+		User: sshConfig.Username,
+		Auth: []ssh.ClientAuth{ssh.ClientAuthKeyring(&clientKey)},
+	}
+	address := fmt.Sprintf("%s:%d", sshConfig.Hostname, sshConfig.Port)
+	sshClient, err := ssh.Dial("tcp", address, &clientConfig)
+	if err != nil {
+		panic(err)
+	}
+	return &SshExecutableMaker{sshClient}
 }
 
 func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command) shell.Executable {
-	fullCommand := shell.Command(strings.Join(append(sshExecutableMaker.sshConfig.SshArgs(string(command))), " "))
-	return sshExecutableMaker.executableMaker.MakeExecutable(fullCommand)
+	session, err := sshExecutableMaker.sshClient.NewSession()
+	if err != nil {
+		panic(err)
+	}
+	return &sshExecutable{command, session}
+}
+
+func (sshExecutableMaker *SshExecutableMaker) Close() error {
+	return sshExecutableMaker.sshClient.Close()
+}
+
+func (executable *sshExecutable) StdoutPipe() (io.ReadCloser, error) {
+	reader, err := executable.Session.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.NopCloser(reader), nil
+}
+
+func (executable *sshExecutable) StderrPipe() (io.ReadCloser, error) {
+	reader, err := executable.Session.StderrPipe()
+	if err != nil {
+		return nil, err
+	}
+	return ioutil.NopCloser(reader), nil
+}
+
+func (executable *sshExecutable) Start() error {
+	return executable.Session.Start(string(executable.Command))
+}
+
+func (executable *sshExecutable) Run() error {
+	defer executable.Session.Close()
+	return executable.Session.Run(string(executable.Command))
+}
+
+func (executable *sshExecutable) Wait() error {
+	defer executable.Session.Close()
+	return executable.Session.Wait()
+}
+
+func (k *keychain) Key(i int) (ssh.PublicKey, error) {
+	if i != 0 {
+		return nil, nil
+	}
+	return ssh.NewPublicKey(&k.key.PublicKey)
+}
+
+func (k *keychain) Sign(i int, rand io.Reader, data []byte) (sig []byte, err error) {
+	hashFunc := crypto.SHA1
+	h := hashFunc.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	return rsa.SignPKCS1v15(rand, k.key, hashFunc, digest)
 }
 
 type Scper interface {

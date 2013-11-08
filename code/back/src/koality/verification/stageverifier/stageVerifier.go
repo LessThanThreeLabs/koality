@@ -55,13 +55,13 @@ func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.
 	var err error
 	var setupCommand verification.Command
 	for setupCommand, err = setupCommands.Next(); setupCommand != nil && err == nil; setupCommand, err = setupCommands.Next() {
-		success, err := stageVerifier.runCommand(setupCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(setupCommand, commandRunner)
 		setupCommands.Done()
-		stageVerifier.ResultsChan <- verification.Result{"setup", success && err == nil}
+		stageVerifier.ResultsChan <- verification.Result{"setup", returnCode == 0 && err == nil}
 		if err != nil {
 			return false, err
 		}
-		if !success {
+		if returnCode != 0 {
 			return false, nil
 		}
 	}
@@ -75,13 +75,13 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	var err error
 	for compileCommand, err := compileCommands.Next(); compileCommand != nil && err == nil; compileCommand, err = compileCommands.Next() {
-		success, err := stageVerifier.runCommand(compileCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(compileCommand, commandRunner)
 		compileCommands.Done()
-		stageVerifier.ResultsChan <- verification.Result{"compile", success && err == nil}
+		stageVerifier.ResultsChan <- verification.Result{"compile", returnCode == 0 && err == nil}
 		if err != nil {
 			return false, err
 		}
-		if !success {
+		if returnCode != 0 {
 			return false, nil
 		}
 	}
@@ -96,13 +96,13 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	var err error
 	for factoryCommand, err := factoryCommands.Next(); factoryCommand != nil && err == nil; factoryCommand, err = factoryCommands.Next() {
-		success, err := stageVerifier.runCommand(factoryCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(factoryCommand, commandRunner)
 		factoryCommands.Done()
-		stageVerifier.ResultsChan <- verification.Result{"factory", success && err == nil}
+		stageVerifier.ResultsChan <- verification.Result{"factory", returnCode == 0 && err == nil}
 		if err != nil {
 			return false, err
 		}
-		if !success {
+		if returnCode != 0 {
 			return false, nil
 		}
 		// outCommandChan <- command{} // Yes, this makes NO sense
@@ -118,10 +118,10 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	testsSuccess := true
 	var err error
 	for testCommand, err := testCommands.Next(); testCommand != nil && err == nil; testCommand, err = testCommands.Next() {
-		success, err := stageVerifier.runCommand(testCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(testCommand, commandRunner)
 		testCommands.Done()
-		stageVerifier.ResultsChan <- verification.Result{"test", success && err == nil}
-		testsSuccess = testsSuccess && success
+		stageVerifier.ResultsChan <- verification.Result{"test", returnCode == 0 && err == nil}
+		testsSuccess = testsSuccess && returnCode == 0
 		if err != nil {
 			return false, err
 		}
@@ -132,7 +132,7 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	return false, err
 }
 
-func (stageVerifier *StageVerifier) runCommand(command verification.Command, commandRunner CommandRunner) (bool, error) {
+func (stageVerifier *StageVerifier) runCommand(command verification.Command, commandRunner CommandRunner) (int, error) {
 	shellCommand := command.ShellCommand()
 	executable := stageVerifier.virtualMachine.MakeExecutable(shellCommand)
 	return commandRunner.RunCommand(executable)

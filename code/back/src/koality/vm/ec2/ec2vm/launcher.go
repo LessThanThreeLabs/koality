@@ -6,6 +6,7 @@ import (
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
+	"os"
 	"time"
 )
 
@@ -49,7 +50,7 @@ func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() vm.VirtualMach
 		if err == nil {
 			break
 		}
-		time.Sleep(time.Duration(3) * time.Second)
+		time.Sleep(3 * time.Second)
 		ec2Vm = New(&instance, launcher.ec2Broker, username)
 	}
 	return ec2Vm
@@ -77,7 +78,7 @@ func (launcher *EC2VirtualMachineLauncher) getSecurityGroups() []ec2.SecurityGro
 }
 
 func (launcher *EC2VirtualMachineLauncher) getUserData(username string) []byte {
-	keyBytes, err := ioutil.ReadFile("~/.ssh/id_rsa.pub")
+	keyBytes, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa.pub", os.Getenv("HOME")))
 	if err != nil {
 		panic(err)
 	}

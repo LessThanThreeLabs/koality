@@ -1,22 +1,23 @@
 package stageverifier
 
 import (
+	"code.google.com/p/go.crypto/ssh"
 	"io"
 	"koality/shell"
-	// "koality/verification"
+	"os/exec"
+	"syscall"
 	"time"
-	// "os"
 )
 
 type CommandRunner interface {
-	RunCommand(executable shell.Executable) (bool, error)
+	RunCommand(executable shell.Executable) (int, error)
 }
 
 type OutputWritingCommandRunner struct {
 	Writer io.Writer
 }
 
-func (runner *OutputWritingCommandRunner) RunCommand(executable shell.Executable) (bool, error) {
+func (runner OutputWritingCommandRunner) RunCommand(executable shell.Executable) (int, error) {
 	stdoutChan := make(chan []byte)
 	stderrChan := make(chan []byte)
 	exitChan := make(chan error)
@@ -38,14 +39,26 @@ func (runner *OutputWritingCommandRunner) RunCommand(executable shell.Executable
 		exitChan <- executable.Wait()
 	}()
 
-	exitErr := runner.processOutput(exitChan, stdoutChan, stderrChan, 0*time.Millisecond)
+	exitErr := runner.processOutput(exitChan, stdoutChan, stderrChan, 100*time.Millisecond)
 	if exitErr != nil {
-		return false, exitErr
+		switch exitErr.(type) {
+		case *ssh.ExitError:
+			sshErr := exitErr.(*ssh.ExitError)
+			return sshErr.Waitmsg.ExitStatus(), nil
+		case *exec.ExitError:
+			execErr := exitErr.(*exec.ExitError)
+			// This only works for unix-type systems right now
+			waitStatus, ok = execErr.Sys().(syscall.WaitStatus)
+			if ok {
+				return waitStatus.ExitStatus(), nil
+			}
+		}
+		return -1, exitErr
 	}
-	return true, nil
+	return 0, nil
 }
 
-func (runner *OutputWritingCommandRunner) handleOutput(reader io.Reader, outChan chan<- []byte) {
+func (runner OutputWritingCommandRunner) handleOutput(reader io.Reader, outChan chan<- []byte) {
 	for {
 		buffer := make([]byte, 1024)
 		numBytes, err := reader.Read(buffer)
@@ -59,7 +72,7 @@ func (runner *OutputWritingCommandRunner) handleOutput(reader io.Reader, outChan
 	}
 }
 
-func (runner *OutputWritingCommandRunner) processOutput(exitChan chan error, stdoutChan, stderrChan chan []byte, postExitTimeout time.Duration) error {
+func (runner OutputWritingCommandRunner) processOutput(exitChan chan error, stdoutChan, stderrChan chan []byte, postExitTimeout time.Duration) error {
 	processUntilExit := func() error {
 		for {
 			select {
