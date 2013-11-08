@@ -24,4 +24,5 @@ end
 
 service "nginx" do
 	action	:restart
+	supports :status=>true, :restart=>true, :reload=>true
 end

@@ -23,6 +23,7 @@ end
 
 service "postgresql" do
 	action	:restart
+	supports :status=>true, :restart=>true, :reload=>true
 end
 
 execute "create-role" do
