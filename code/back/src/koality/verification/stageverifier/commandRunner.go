@@ -48,7 +48,7 @@ func (runner OutputWritingCommandRunner) RunCommand(executable shell.Executable)
 		case *exec.ExitError:
 			execErr := exitErr.(*exec.ExitError)
 			// This only works for unix-type systems right now
-			waitStatus, ok = execErr.Sys().(syscall.WaitStatus)
+			waitStatus, ok := execErr.Sys().(syscall.WaitStatus)
 			if ok {
 				return waitStatus.ExitStatus(), nil
 			}

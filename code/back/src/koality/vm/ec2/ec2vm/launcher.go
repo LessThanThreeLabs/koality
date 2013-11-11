@@ -42,21 +42,27 @@ func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 			}
 		}
 	}
-
+	sshAttemptTimeout := 3 * time.Minute
+	sshAttemptTimeoutChan := time.After(sshAttemptTimeout)
 	for {
-		ec2Vm, err := New(&instance, launcher.ec2Broker, username)
-		if err != nil {
-			time.Sleep(3 * time.Second)
-			continue
-		}
-		sshAttempt, err := ec2Vm.MakeExecutable(shell.Command("true"))
-		if err == nil {
-			err = sshAttempt.Run()
-			if err == nil {
-				return ec2Vm
+		select {
+		case <-sshAttemptTimeoutChan:
+			return nil, fmt.Errorf("Failed to ssh into the instance after %s", sshAttemptTimeout.String())
+		default:
+			ec2Vm, err := New(&instance, launcher.ec2Broker, username)
+			if err != nil {
+				time.Sleep(3 * time.Second)
+				continue
 			}
+			sshAttempt, err := ec2Vm.MakeExecutable(shell.Command("true"))
+			if err == nil {
+				err = sshAttempt.Run()
+				if err == nil {
+					return ec2Vm, nil
+				}
+			}
+			time.Sleep(3 * time.Second)
 		}
-		time.Sleep(3 * time.Second)
 	}
 }
 
