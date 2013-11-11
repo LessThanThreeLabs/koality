@@ -72,9 +72,9 @@ CREATE TABLE IF NOT EXISTS changesets (
 	UNIQUE (head_sha, base_sha)
 );
 
-CREATE TABLE IF NOT EXISTS changes (
+CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
-	commit_id			integer NOT NULL references changesets(id),
+	changeset_id		integer NOT NULL references changesets(id),
 	repository_id		integer NOT NULL references repositories(id),
 	merge_target		varchar(1024),
 	verification_status varchar(32),
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS changes (
 
 CREATE TABLE IF NOT EXISTS stages (
 	id 					serial PRIMARY KEY,
-	change_id			integer NOT NULL references changes(id),
+	change_id			integer NOT NULL references verifications(id),
 	name 				varchar(1024) NOT NULL,
 	type 				varchar(32) NOT NULL,
 	order_number 		integer NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS stages (
 	UNIQUE (change_id, name, type)
 );
 
-CREATE TABLE IF NOT EXISTS runs (
+CREATE TABLE IF NOT EXISTS stage_runs (
 	id 					serial PRIMARY KEY,
 	stage_id			integer NOT NULL references stages(id),
 	return_code			integer,
@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS runs (
 
 CREATE TABLE IF NOT EXISTS console_texts (
 	id 					serial PRIMARY KEY,
-	run_id				integer NOT NULL references runs(id),
+	run_id				integer NOT NULL references stage_runs(id),
 	line_number			integer NOT NULL,
 	line 				text NOT NULL,
 
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS console_texts (
 
 CREATE TABLE IF NOT EXISTS xunits (
 	id 					serial PRIMARY KEY,
-	run_id				integer NOT NULL references runs(id),
+	run_id				integer NOT NULL references stage_runs(id),
 	path				varchar(1024) NOT NULL,
 	contents			text NOT NULL,
 
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS xunits (
 
 CREATE TABLE IF NOT EXISTS exports (
 	id 					serial PRIMARY KEY,
-	run_id				integer NOT NULL references runs(id),
+	run_id				integer NOT NULL references stage_runs(id),
 	path				varchar(1024) NOT NULL,
 	uri 				varchar(1024) NOT NULL,
 
