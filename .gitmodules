@@ -40,3 +40,6 @@
 [submodule "code/back/src/github.com/vmihailenco/bufio"]
 	path = code/back/src/github.com/vmihailenco/bufio
 	url = git@github.com:vmihailenco/bufio.git
+[submodule "code/back/src/github.com/lib/pq"]
+	path = code/back/src/github.com/lib/pq
+	url = git@github.com:lib/pq.git
