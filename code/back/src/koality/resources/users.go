@@ -1,10 +1,20 @@
 package resources
 
+import (
+	"time"
+)
+
 type User struct {
-	Id        int
-	Email     string
-	FirstName string
-	LastName  string
+	Id           int
+	Email        string
+	FirstName    string
+	LastName     string
+	PasswordHash string
+	PasswordSalt string
+	GitHubOauth  string
+	Admin        bool
+	Created      *time.Time
+	Deleted      *time.Time
 }
 
 type UsersHandler struct {
@@ -13,7 +23,7 @@ type UsersHandler struct {
 }
 
 type UsersReadHandler interface {
-	Get(userId int) (*User, error)
+	Get(id int) (*User, error)
 	// GetFromEmail(email string) (User, error)
 	// GetAll() ([]User, error)
 }
@@ -21,3 +31,5 @@ type UsersReadHandler interface {
 // type UsersUpdateHandler interface {
 // 	SetName(id int, firstName, lastName string) error
 // }
+
+type NoSuchUserError error
