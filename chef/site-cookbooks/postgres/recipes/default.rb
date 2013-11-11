@@ -28,7 +28,7 @@ end
 
 execute "create-role" do
 	user "postgres"
-	command "psql -c \"SELECT 1 FROM pg_user WHERE usename='#{node[:postgres][:username]}'\" | grep -q 1 || createuser -s #{node[:postgres][:username]}"
+	command "psql -c \"SELECT 1 FROM pg_user WHERE usename='#{node[:postgres][:username]}'\" | grep -q 1 || psql -c \"CREATE USER #{node[:postgres][:username]} PASSWORD '#{node[:postgres][:password]}' SUPERUSER\""
 end
 
 execute "create-database" do
