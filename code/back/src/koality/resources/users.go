@@ -24,8 +24,8 @@ type UsersHandler struct {
 
 type UsersReadHandler interface {
 	Get(id int) (*User, error)
-	// GetFromEmail(email string) (User, error)
-	// GetAll() ([]User, error)
+	GetByEmail(email string) (*User, error)
+	GetAll() ([]*User, error)
 }
 
 // type UsersUpdateHandler interface {

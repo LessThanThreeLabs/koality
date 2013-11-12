@@ -25,4 +25,13 @@ func TestUsersRead(testing *testing.T) {
 	if user.Id != 1000 {
 		testing.Error("user.Id mismatch")
 	}
+
+	user, err = connection.Users.Read.GetByEmail(user.Email)
+	if err != nil {
+		testing.Error(err)
+	}
+
+	if user.Id != 1000 {
+		testing.Error("user.Id mismatch")
+	}
 }
