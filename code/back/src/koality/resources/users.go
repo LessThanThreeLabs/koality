@@ -24,8 +24,8 @@ type SshKey struct {
 }
 
 type UsersHandler struct {
-	Read UsersReadHandler
-	// Update UsersUpdateHandler
+	Read   UsersReadHandler
+	Update UsersUpdateHandler
 }
 
 type UsersReadHandler interface {
@@ -36,7 +36,7 @@ type UsersReadHandler interface {
 }
 
 type UsersUpdateHandler interface {
-	// SetName(userId int, firstName, lastName string) error
+	SetName(userId int, firstName, lastName string) error
 }
 
 type NoSuchUserError error

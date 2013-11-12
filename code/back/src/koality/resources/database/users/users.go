@@ -7,10 +7,14 @@ import (
 
 func New(database *sql.DB) (*resources.UsersHandler, error) {
 	readHandler, err := NewReadHandler(database)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	var _ = err
+	if err != nil {
+		return nil, err
+	}
 
-	return &resources.UsersHandler{readHandler}, nil
+	updateHandler, err := NewUpdateHandler(database)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resources.UsersHandler{readHandler, updateHandler}, nil
 }

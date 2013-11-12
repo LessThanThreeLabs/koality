@@ -18,19 +18,14 @@ const (
 )
 
 func New() (*resources.Connection, error) {
-	file, err := ioutil.ReadFile("schema.sql")
-	if err != nil {
-		return nil, err
-	}
-	schemaQuery := string(file)
-
 	paramsString := fmt.Sprintf("host=%s user=%s password='%s' dbname=%s sslmode=%s", host, userName, password, databaseName, sslMode)
 	database, err := sql.Open("postgres", paramsString)
 	if err != nil {
 		return nil, err
 	}
+	database.SetMaxIdleConns(10)
 
-	_, err = database.Exec(schemaQuery)
+	err = setSchema(database)
 	if err != nil {
 		return nil, err
 	}
@@ -42,4 +37,19 @@ func New() (*resources.Connection, error) {
 
 	connection := resources.Connection{usersHandler}
 	return &connection, nil
+}
+
+func setSchema(database *sql.DB) error {
+	file, err := ioutil.ReadFile("schema.sql")
+	if err != nil {
+		return err
+	}
+	schemaQuery := string(file)
+
+	_, err = database.Exec(schemaQuery)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
