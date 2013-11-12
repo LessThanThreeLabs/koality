@@ -17,19 +17,26 @@ type User struct {
 	Deleted      *time.Time
 }
 
+type SshKey struct {
+	Alias     string
+	PublicKey string
+	Created   *time.Time
+}
+
 type UsersHandler struct {
 	Read UsersReadHandler
 	// Update UsersUpdateHandler
 }
 
 type UsersReadHandler interface {
-	Get(id int) (*User, error)
+	Get(userId int) (*User, error)
 	GetByEmail(email string) (*User, error)
-	GetAll() ([]*User, error)
+	GetAll() ([]User, error)
+	GetKeys(userId int) ([]SshKey, error)
 }
 
-// type UsersUpdateHandler interface {
-// 	SetName(id int, firstName, lastName string) error
-// }
+type UsersUpdateHandler interface {
+	// SetName(userId int, firstName, lastName string) error
+}
 
 type NoSuchUserError error

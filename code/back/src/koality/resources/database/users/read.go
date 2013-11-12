@@ -36,10 +36,10 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	return user, nil
 }
 
-func (readHandler *ReadHandler) Get(id int) (*resources.User, error) {
+func (readHandler *ReadHandler) Get(userId int) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
 		" github_oauth, admin, created, deleted FROM users WHERE id=$1"
-	row := readHandler.database.QueryRow(query, id)
+	row := readHandler.database.QueryRow(query, userId)
 	return readHandler.scanUser(row)
 }
 
@@ -50,7 +50,7 @@ func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error
 	return readHandler.scanUser(row)
 }
 
-func (readHandler *ReadHandler) GetAll() ([]*resources.User, error) {
+func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
 		" github_oauth, admin, created, deleted FROM users WHERE id=$1"
 	rows, err := readHandler.database.Query(query)
@@ -58,16 +58,38 @@ func (readHandler *ReadHandler) GetAll() ([]*resources.User, error) {
 		return nil, err
 	}
 
-	users := make([]*resources.User, 100)
+	users := make([]resources.User, 100)
 	for rows.Next() {
 		user, err := readHandler.scanUser(rows)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, user)
+		users = append(users, *user)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (readHandler *ReadHandler) GetKeys(userId int) ([]resources.SshKey, error) {
+	query := "SELECT alias, public_key, created FROM ssh_keys WHERE user_id=$1"
+	rows, err := readHandler.database.Query(query, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	sshKeys := make([]resources.SshKey, 5)
+	for rows.Next() {
+		sshKey := resources.SshKey{}
+		err = rows.Scan(&sshKey.Alias, &sshKey.PublicKey, &sshKey.Created)
+		if err != nil {
+			return nil, err
+		}
+		sshKeys = append(sshKeys, sshKey)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return sshKeys, nil
 }
