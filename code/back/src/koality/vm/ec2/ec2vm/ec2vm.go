@@ -71,8 +71,8 @@ func (ec2Vm *EC2VirtualMachine) Terminate() error {
 		return errors.New(fmt.Sprintf("Expected one state change, found %v instead", terminateResp.StateChanges))
 	}
 	stateChange := terminateResp.StateChanges[0]
-	if stateChange.CurrentState.Name != "terminated" {
-		return errors.New(fmt.Sprintf("Expected new state to be \"terminated\", was %q instead", stateChange.CurrentState.Name))
+	if stateChange.CurrentState.Name != "shutting-down" && stateChange.CurrentState.Name != "terminated" {
+		return errors.New(fmt.Sprintf("Expected new state to be \"shutting-down\" or \"terminated\", was %q instead", stateChange.CurrentState.Name))
 	}
 	return nil
 }

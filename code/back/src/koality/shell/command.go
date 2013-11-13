@@ -39,28 +39,32 @@ func IfElse(condition, thenCommand, elseCommand Command) Command {
 	return Command(fmt.Sprintf("if %s; then\n%s\nelse\n%s\nfi", condition, thenCommand, elseCommand))
 }
 
-func join(commands []Command, joiner string) Command {
+func join(commands []Command, joiner string, grouped bool) Command {
 	commandStrings := make([]string, len(commands))
 	for index, command := range commands {
-		commandStrings[index] = string(Group(command))
+		if grouped {
+			commandStrings[index] = string(Group(command))
+		} else {
+			commandStrings[index] = string(command)
+		}
 	}
 	return Command(strings.Join(commandStrings, joiner))
 }
 
 func And(commands ...Command) Command {
-	return join(commands, " && ")
+	return join(commands, " && ", true)
 }
 
 func Or(commands ...Command) Command {
-	return join(commands, " || ")
+	return join(commands, " || ", true)
 }
 
 func Pipe(commands ...Command) Command {
-	return join(commands, " | ")
+	return join(commands, " | ", true)
 }
 
 func Chain(commands ...Command) Command {
-	return join(commands, "\n")
+	return join(commands, "\n", false)
 }
 
 func redirect(command, stdoutFile Command, includeStderr bool, redirectionType string) Command {

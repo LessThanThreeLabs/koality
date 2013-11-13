@@ -19,6 +19,15 @@ type virtualMachinePool struct {
 }
 
 func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize int) *virtualMachinePool {
+	if minReady > maxSize {
+		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, maxSize))
+	}
+	if minReady < 0 {
+		panic(fmt.Sprintf("minReady must be nonnegative: (was %d)", minReady))
+	}
+	if maxSize <= 0 {
+		panic(fmt.Sprintf("maxSize must be positive: (was %d)", maxSize))
+	}
 	readyChannel := make(chan VirtualMachine, 64)
 	locker := new(sync.Mutex)
 	pool := virtualMachinePool{
@@ -38,7 +47,7 @@ func (pool *virtualMachinePool) allocateN(numToAllocate int) {
 
 	pool.readyCount -= numToAllocate
 	pool.allocatedCount += numToAllocate
-	fmt.Printf("Allocate %d: %#v\n", pool, numToAllocate)
+	// fmt.Printf("Allocate %d: %#v\n", pool, numToAllocate)
 }
 
 func (pool *virtualMachinePool) unallocateOne() {
@@ -53,9 +62,13 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 		pool.locker.Lock()
 		defer pool.locker.Unlock()
 
-		numToLaunch := pool.minReady - pool.readyCount - pool.startingCount
-		fmt.Printf("%#v\n", pool)
-		fmt.Printf("Num to launch: %d\n", numToLaunch)
+		numToLaunch := pool.minReady - (pool.readyCount + pool.startingCount)
+
+		if numToLaunch > pool.maxSize-(pool.readyCount+pool.startingCount+pool.allocatedCount) {
+			numToLaunch = pool.maxSize - (pool.readyCount + pool.startingCount + pool.allocatedCount)
+		}
+		// fmt.Printf("%#v\n", pool)
+		// fmt.Printf("Num to launch: %d\n", numToLaunch)
 		if numToLaunch <= 0 {
 			return 0
 		}
@@ -67,7 +80,7 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 		return nil
 	}
 
-	doneChannel := make(chan error)
+	doneChannel := make(chan error, numToLaunch)
 
 	for x := 0; x < numToLaunch; x++ {
 		go func(doneChannel chan error) {
@@ -75,8 +88,7 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 		}(doneChannel)
 	}
 
-	for x := 0; x < numToLaunch; x++ {
-		err := <-doneChannel
+	for err := range doneChannel {
 		if err != nil {
 			return err
 		}
@@ -107,7 +119,7 @@ func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
 func (pool *virtualMachinePool) Free() {
 	pool.unallocateOne()
 
-	pool.ensureReadyInstances()
+	go pool.ensureReadyInstances()
 }
 
 func (pool *virtualMachinePool) MaxSize() int {
@@ -117,6 +129,15 @@ func (pool *virtualMachinePool) MaxSize() int {
 func (pool *virtualMachinePool) SetMaxSize(maxSize int) {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
+
+	if maxSize < pool.minReady {
+		panic(fmt.Sprintf("maxSize should not be smaller than minReady: (%d < %d)", maxSize, pool.minReady))
+	}
+	if maxSize <= 0 {
+		panic(fmt.Sprintf("maxSize must be positive: (was %d)", maxSize))
+	}
+
+	pool.maxSize = maxSize
 
 	numToRemove := pool.startingCount + pool.readyCount + pool.allocatedCount - maxSize
 	if numToRemove <= 0 || pool.readyCount <= 0 {
@@ -146,18 +167,25 @@ func (pool *virtualMachinePool) SetMinReady(minReady int) {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
 
+	if minReady > pool.maxSize {
+		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, pool.maxSize))
+	}
+	if minReady < 0 {
+		panic(fmt.Sprintf("minReady must be nonnegative: (was %d)", minReady))
+	}
+
 	pool.minReady = minReady
 	go pool.ensureReadyInstances()
 }
 
 func (pool *virtualMachinePool) newReadyInstance() error {
 	newVm, err := func() (VirtualMachine, error) {
-		fmt.Println("try to launch")
+		// fmt.Println("try to launch")
 		newVm, err := pool.virtualMachineLauncher.LaunchVirtualMachine()
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("launched")
+		// fmt.Println("launched")
 
 		pool.locker.Lock()
 		defer pool.locker.Unlock()
@@ -165,10 +193,11 @@ func (pool *virtualMachinePool) newReadyInstance() error {
 		pool.startingCount--
 		pool.readyCount++
 
-		fmt.Printf("New instance: %#v\n", pool)
+		// fmt.Printf("New instance: %#v\n", pool)
 
-		if pool.readyCount+pool.startingCount >= pool.maxSize {
+		if pool.readyCount+pool.startingCount > pool.minReady {
 			pool.readyCount--
+			fmt.Println("Ermahgherd")
 			return nil, newVm.Terminate()
 		}
 		return newVm, nil
@@ -178,6 +207,7 @@ func (pool *virtualMachinePool) newReadyInstance() error {
 		return err
 	}
 	if newVm == nil {
+		// Probably shouldn't be panicing here, as this is a legitimate case when people shrink the pool
 		panic("New Virtual Machine was nil")
 	}
 

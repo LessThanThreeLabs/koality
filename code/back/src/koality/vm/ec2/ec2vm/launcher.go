@@ -1,12 +1,18 @@
 package ec2vm
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/crowdmob/goamz/ec2"
+	"io"
+	"io/ioutil"
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
+	"mime/multipart"
+	"net/textproto"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -107,5 +113,46 @@ func (launcher *EC2VirtualMachineLauncher) getUserData(username string) []byte {
 		shell.Redirect(shell.Command(fmt.Sprintf("echo 'Defaults !requiretty\n%s ALL=(ALL) NOPASSWD: ALL'", username)), shell.Command(fmt.Sprintf("/etc/sudoers.d/koality-%s", username)), false),
 		shell.Command(fmt.Sprintf("chmod 0440 /etc/sudoers.d/koality-%s", username)),
 	)
-	return ([]byte)(fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand))
+
+	buffer := new(bytes.Buffer)
+	multipartWriter := multipart.NewWriter(buffer)
+	buffer.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\nMIME-Version: 1.0\n\n", multipartWriter.Boundary()))
+
+	err = writeCloudInitMimePart(multipartWriter, fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand), "koality-data")
+	if err != nil {
+		panic(err)
+	}
+	multipartWriter.Close()
+
+	return buffer.Bytes()
+}
+
+func writeCloudInitMimePart(multipartWriter *multipart.Writer, contents, name string) error {
+	mimeHeader := make(textproto.MIMEHeader)
+	mimeHeader.Set("Content-Type", cloudInitMimeType(contents))
+	mimeHeader.Set("Content-Disposition", fmt.Sprintf("form-data; name=\"%s\"", name))
+	partWriter, err := multipartWriter.CreatePart(mimeHeader)
+	if err != nil {
+		return err
+	}
+	io.WriteString(partWriter, contents)
+	return nil
+}
+
+func cloudInitMimeType(contents string) string {
+	startsWithMapping := map[string]string{
+		"#include":              "text/x-include-url",
+		"#!":                    "text/x-shellscript",
+		"#cloud-boothook":       "text/cloud-boothook",
+		"#cloud-config":         "text/cloud-config",
+		"#cloud-config-archive": "text/cloud-config-archive",
+		"#upstart-job":          "text/upstart-job",
+		"#part-handler":         "text/part-handler",
+	}
+	for prefix, contentType := range startsWithMapping {
+		if strings.HasPrefix(contents, prefix) {
+			return contentType
+		}
+	}
+	return "text/plain"
 }
