@@ -6,10 +6,10 @@ import (
 )
 
 type CommandGroup interface {
-	HasMoreCommands() bool
 	Next() (verification.Command, error)
 	Done() error
 	Wait() error
+	Started() bool
 }
 
 type AppendableCommandGroup interface {
@@ -21,6 +21,7 @@ type appendableCommandGroup struct {
 	commands  []verification.Command
 	locker    sync.Locker
 	waitGroup *sync.WaitGroup
+	started   bool
 }
 
 func New(commands []verification.Command) *appendableCommandGroup {
@@ -33,16 +34,11 @@ func New(commands []verification.Command) *appendableCommandGroup {
 	}
 }
 
-func (group *appendableCommandGroup) HasMoreCommands() bool {
-	group.locker.Lock()
-	defer group.locker.Unlock()
-
-	return len(group.commands) > 0
-}
-
 func (group *appendableCommandGroup) Next() (verification.Command, error) {
 	group.locker.Lock()
 	defer group.locker.Unlock()
+
+	group.started = true
 
 	if len(group.commands) == 0 {
 		return nil, NoMoreCommands
@@ -59,10 +55,17 @@ func (group *appendableCommandGroup) Done() error {
 }
 
 func (group *appendableCommandGroup) Wait() error {
-	for group.HasMoreCommands() {
+	for len(group.commands) > 0 {
 		group.waitGroup.Wait()
 	}
 	return nil
+}
+
+func (group *appendableCommandGroup) Started() bool {
+	group.locker.Lock()
+	defer group.locker.Unlock()
+
+	return group.started
 }
 
 func (group *appendableCommandGroup) Append(command verification.Command) error {

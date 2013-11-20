@@ -1,6 +1,8 @@
 package stageverifier
 
 import (
+	"bytes"
+	"io"
 	"koality/verification"
 	"koality/verification/config/commandgroup"
 	"koality/vm"
@@ -44,7 +46,6 @@ func (stageVerifier *StageVerifier) RunChangeStages(setupCommands commandgroup.C
 	}
 
 	factoryCommands.Wait()
-	// closeTests
 
 	_, err = stageVerifier.runTestCommands(testCommands)
 	return err
@@ -92,8 +93,8 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 }
 
 func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgroup.CommandGroup, testCommands commandgroup.AppendableCommandGroup) (bool, error) {
-	// This needs to be something that generates new commands
-	commandRunner := &OutputWritingCommandRunner{os.Stdout}
+	outputBuffer := new(bytes.Buffer)
+	commandRunner := &OutputWritingCommandRunner{io.MultiWriter(outputBuffer, os.Stdout)}
 	var err error
 	for factoryCommand, err := factoryCommands.Next(); factoryCommand != nil && err == nil; factoryCommand, err = factoryCommands.Next() {
 		returnCode, err := stageVerifier.runCommand(factoryCommand, commandRunner)
@@ -105,7 +106,11 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 		if returnCode != 0 {
 			return false, nil
 		}
-		// outCommandChan <- command{} // Yes, this makes NO sense
+		// TODO (bbland): parse the output into new commands
+		newTests := []verification.Command{}
+		for _, newTest := range newTests {
+			testCommands.Append(newTest)
+		}
 	}
 	if err == commandgroup.NoMoreCommands {
 		return true, nil
