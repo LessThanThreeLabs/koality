@@ -9,21 +9,29 @@ apt_repository 'apt.postgresql.org' do
 end
 
 package 'postgresql-' + node["postgres"]["version"] do
-	action	:install
+	action		:install
 end
 
 file "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
-	action	:delete
+	action		:delete
 end
 
-link "/etc/postgresql/9.3/main/postgresql.conf" do
-	to		node["postgres"]["conf_path"]
-	action	:create
+link "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
+	to			node["postgres"]["conf_path"]
+	owner		"postgres"
+	group		"postgres"
+	action		:create
+	notifies 	:restart, "service[postgresql]", :delayed
+end
+
+cookbook_file "/etc/init/postgresql-run.conf" do
+	source		"upstart/postgresql-run.conf"
+	action	 	:create_if_missing
 end
 
 service "postgresql" do
-	action	:restart
-	supports :status=>true, :restart=>true, :reload=>true
+	action 		[:enable, :start]
+	supports 	:status=>true, :restart=>true, :start => true, :stop => true, :reload=>true
 end
 
 execute "create-role" do

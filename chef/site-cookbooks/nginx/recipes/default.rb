@@ -9,20 +9,28 @@ apt_repository "nginx" do
 end
 
 apt_package "nginx" do
-	version	node["nginx"]["version"]
-	action	:install
+	version		node["nginx"]["version"]
+	action		:install
 end
 
 file "/etc/nginx/nginx.conf" do
-	action	:delete
+	action		:delete
 end
 
 link "/etc/nginx/nginx.conf" do
-	to		node["nginx"]["conf_path"]
-	action	:create
+	to			node["nginx"]["conf_path"]
+	owner		"nginx"
+	group		"nginx"
+	action		:create
+	notifies	:restart, "service[nginx]", :delayed
+end
+
+cookbook_file "/etc/init/nginx-run.conf" do
+	source		"upstart/nginx-run.conf"
+	action	 	:create_if_missing
 end
 
 service "nginx" do
-	action	:restart
-	supports :status=>true, :restart=>true, :reload=>true
+	action [:enable, :start]
+	supports :status=>true, :restart=>true, :start => true, :stop => true, :reload=>true
 end
