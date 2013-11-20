@@ -59,11 +59,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/back/bin"
 			},
 			:nodejs => {
-				:version => "0.10.21",
+				:version => "0.10.21"
 			},
 			:rabbitmq => {
-				:version => "3.1.5",
-				:enabled_plugins => ["rabbitmq_management"]
+				:version => "3.1.5"
 			},
 			:nginx => {
 				:conf_path => "#{VAGRANT_HOME_DIRECTORY}/nginx/nginx.conf"
