@@ -6,6 +6,11 @@ import (
 )
 
 func New(database *sql.DB) (*resources.UsersHandler, error) {
+	createHandler, err := NewCreateHandler(database)
+	if err != nil {
+		return nil, err
+	}
+
 	readHandler, err := NewReadHandler(database)
 	if err != nil {
 		return nil, err
@@ -16,5 +21,10 @@ func New(database *sql.DB) (*resources.UsersHandler, error) {
 		return nil, err
 	}
 
-	return &resources.UsersHandler{readHandler, updateHandler}, nil
+	deleteHandler, err := NewDeleteHandler(database)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resources.UsersHandler{createHandler, readHandler, updateHandler, deleteHandler}, nil
 }

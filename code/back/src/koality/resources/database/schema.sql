@@ -15,9 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
 	password_hash 		varchar(100) NOT NULL,
 	password_salt 		varchar(64) NOT NULL,
 	github_oauth 		varchar(40),
-	admin 				boolean DEFAULT false,
-	created 			timestamp with time zone NOT NULL,
-	deleted 			timestamp with time zone,
+	is_admin			boolean NOT NULL DEFAULT false,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
+	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
 
 	UNIQUE (email, deleted)
 );
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS ssh_keys (
 	user_id 			integer NOT NULL references users(id),
 	alias				varchar(256) NOT NULL,
 	public_key			varchar(1024) NOT NULL,
-	created				timestamp with time zone NOT NULL,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 
 	UNIQUE (user_id, alias),
 	UNIQUE (public_key)
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS repositories (
 	name 				varchar(256) NOT NULL,
 	local_uri			varchar(1024) NOT NULL,
 	remote_uri			varchar(1024) NOT NULL,
-	created 			timestamp with time zone NOT NULL,
-	deleted 			timestamp with time zone,
+	created 			timestamp with time zone DEFAULT current_timestamp,
+	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
 
 	UNIQUE (name, deleted),
 	UNIQUE (local_uri, deleted),
@@ -64,10 +64,11 @@ CREATE TABLE IF NOT EXISTS changesets (
 	user_id 			integer NOT NULL references users(id),
 	repository_id		integer NOT NULL references repositories(id),
 	head_sha			varchar(40) NOT NULL,
-	base_sha			varchar(40),
-	head_message		varchar(1000000), -- 1MB
-	head_username		varchar(128),
-	head_email			varchar(256),
+	base_sha			varchar(40) NOT NULL,
+	head_message		varchar(1000000) NOT NULL, -- 1MB
+	head_username		varchar(128) NOT NULL,
+	head_email			varchar(256) NOT NULL,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 
 	UNIQUE (head_sha, base_sha)
 );
@@ -76,10 +77,10 @@ CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
 	changeset_id		integer NOT NULL references changesets(id),
 	repository_id		integer NOT NULL references repositories(id),
-	merge_target		varchar(1024),
+	merge_target		varchar(1024) NOT NULL,
 	verification_status varchar(32),
 	merge_status		varchar(32),
-	created				timestamp with time zone NOT NULL,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
 	ended				timestamp with time zone
 );
@@ -98,7 +99,7 @@ CREATE TABLE IF NOT EXISTS stage_runs (
 	id 					serial PRIMARY KEY,
 	stage_id			integer NOT NULL references stages(id),
 	return_code			integer,
-	created				timestamp with time zone NOT NULL,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
 	ended				timestamp with time zone
 );
@@ -144,28 +145,28 @@ DO
 $create_super_admins$
 BEGIN
 	IF NOT EXISTS (SELECT 1 FROM users WHERE id = 1) THEN
-		INSERT INTO users (id, email, first_name, last_name, password_hash, password_salt, admin, created) 
+		INSERT INTO users (id, email, first_name, last_name, password_hash, password_salt, is_admin, created) 
 		VALUES (1, 'admin-koala@koalitycode.com', 'Admin', 'Koala', 
 			'mooonIJXsb0zgz2V0LXvN/N4N4zbZE9FadrFl/YBJvzh3Z8O3VT/FH1q6OzWplbrX99D++PO6mpez7QdoIUQ6A==',
 			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);
 	END IF;
 
 	IF NOT EXISTS (SELECT 1 FROM users WHERE id = 2) THEN
-		INSERT INTO users (id, email, first_name, last_name, password_hash, password_salt, admin, created)
+		INSERT INTO users (id, email, first_name, last_name, password_hash, password_salt, is_admin, created)
 		VALUES (2, 'api`-koala@koalitycode.com', 'Api', 'Koala',
 			'mooonIJXsb0zgz2V0LXvN/N4N4zbZE9FadrFl/YBJvzh3Z8O3VT/FH1q6OzWplbrX99D++PO6mpez7QdoIUQ6A==',
 			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);
 	END IF;
 
 	IF NOT EXISTS (SELECT 1 FROM users WHERE id = 3) THEN
-		INSERT INTO users (id, email, first_name, last_name, password_hash, password_salt, admin, created)
+		INSERT INTO users (id, email, first_name, last_name, password_hash, password_salt, is_admin, created)
 		VALUES (3, 'verifier-koala@koalitycode.com', 'Verifier', 'Koala',
 			'mooonIJXsb0zgz2V0LXvN/N4N4zbZE9FadrFl/YBJvzh3Z8O3VT/FH1q6OzWplbrX99D++PO6mpez7QdoIUQ6A==',
 			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);
 	END IF;
 
 	IF NOT EXISTS (SELECT 1 FROM users WHERE id = 1000) THEN
-		INSERT INTO users (email, first_name, last_name, password_hash, password_salt, admin, created)
+		INSERT INTO users (email, first_name, last_name, password_hash, password_salt, is_admin, created)
 		VALUES ('jordannpotter@koalitycode.com', 'Jordan', 'Potter',
 			'mooonIJXsb0zgz2V0LXvN/N4N4zbZE9FadrFl/YBJvzh3Z8O3VT/FH1q6OzWplbrX99D++PO6mpez7QdoIUQ6A==',
 			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);

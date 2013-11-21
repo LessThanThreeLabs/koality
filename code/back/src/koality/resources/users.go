@@ -12,9 +12,8 @@ type User struct {
 	PasswordHash string
 	PasswordSalt string
 	GitHubOauth  string
-	Admin        bool
+	IsAdmin      bool
 	Created      *time.Time
-	Deleted      *time.Time
 }
 
 type SshKey struct {
@@ -25,8 +24,14 @@ type SshKey struct {
 }
 
 type UsersHandler struct {
+	Create UsersCreateHandler
 	Read   UsersReadHandler
 	Update UsersUpdateHandler
+	Delete UsersDeleteHandler
+}
+
+type UsersCreateHandler interface {
+	Create(email, firstName, lastName, passwordHash, passwordSalt string, admin bool) (int64, error)
 }
 
 type UsersReadHandler interface {
@@ -43,6 +48,10 @@ type UsersUpdateHandler interface {
 	SetAdmin(userId int64, admin bool) error
 	AddKey(userId int64, alias, publicKey string) (int64, error)
 	RemoveKey(userId, keyId int64) error
+}
+
+type UsersDeleteHandler interface {
+	Delete(userId int64) error
 }
 
 type UserAlreadyExistsError error

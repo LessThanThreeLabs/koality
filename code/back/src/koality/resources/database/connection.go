@@ -46,6 +46,13 @@ func setSchema(database *sql.DB) error {
 	}
 	schemaQuery := string(file)
 
+	// Just in case the public schema was deleted, which
+	// is oftentimes done as a shortcut to drop all tables
+	_, err = database.Exec("CREATE SCHEMA IF NOT EXISTS public")
+	if err != nil {
+		return err
+	}
+
 	_, err = database.Exec(schemaQuery)
 	if err != nil {
 		return err

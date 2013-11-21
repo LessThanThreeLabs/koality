@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"koality/resources"
-	"time"
 )
 
 type UpdateHandler struct {
@@ -46,18 +45,36 @@ func (updateHandler *UpdateHandler) SetGitHubOauth(userId int64, gitHubOauth str
 }
 
 func (updateHandler *UpdateHandler) SetAdmin(userId int64, admin bool) error {
-	query := "UPDATE users SET admin=$1 WHERE id=$2"
+	query := "UPDATE users SET is_admin=$1 WHERE id=$2"
 	return updateHandler.updateUser(query, admin, userId)
 }
 
 func (updateHandler *UpdateHandler) AddKey(userId int64, alias, publicKey string) (int64, error) {
+	if updateHandler.doesKeyExistWithUserAndAlias(userId, alias) {
+		return -1, resources.KeyAlreadyExistsError(errors.New("User already has key with alias: " + alias))
+	} else if updateHandler.doesKeyExistWithPublicKey(publicKey) {
+		return -1, resources.KeyAlreadyExistsError(errors.New("Key already exists with that public key"))
+	}
+
 	id := int64(0)
-	query := "INSERT INTO ssh_keys (user_id, alias, public_key, created) VALUES ($1, $2, $3, $4) RETURNING id"
-	err := updateHandler.database.QueryRow(query, userId, alias, publicKey, time.Now()).Scan(&id)
+	query := "INSERT INTO ssh_keys (user_id, alias, public_key) VALUES ($1, $2, $3) RETURNING id"
+	err := updateHandler.database.QueryRow(query, userId, alias, publicKey).Scan(&id)
 	if err != nil {
 		return -1, err
 	}
 	return id, nil
+}
+
+func (updateHandler UpdateHandler) doesKeyExistWithUserAndAlias(userId int64, alias string) bool {
+	query := "SELECT id FROM ssh_keys WHERE user_id=$1 and alias=$2"
+	err := updateHandler.database.QueryRow(query, userId, alias).Scan()
+	return err != sql.ErrNoRows
+}
+
+func (updateHandler UpdateHandler) doesKeyExistWithPublicKey(publicKey string) bool {
+	query := "SELECT id FROM ssh_keys WHERE public_key=$1"
+	err := updateHandler.database.QueryRow(query, publicKey).Scan()
+	return err != sql.ErrNoRows
 }
 
 func (updateHandler *UpdateHandler) RemoveKey(userId, keyId int64) error {

@@ -1,8 +1,50 @@
 package database
 
 import (
+	"koality/resources"
 	"testing"
 )
+
+func TestCreateUser(testing *testing.T) {
+	connection, err := New()
+	if err != nil {
+		testing.Fatal(err)
+	}
+
+	userId, err := connection.Users.Create.Create("test-email@address.com", "First", "Last", "password-hash", "password-salt", false)
+	if err != nil {
+		testing.Fatal(err)
+	}
+
+	user, err := connection.Users.Read.Get(userId)
+	if err != nil {
+		testing.Fatal(err)
+	}
+
+	if user.Id != userId {
+		testing.Fatal("user.Id mismatch")
+	}
+
+	_, err = connection.Users.Create.Create(user.Email, user.FirstName, user.LastName, user.PasswordHash, user.PasswordSalt, user.IsAdmin)
+	if _, ok := err.(resources.UserAlreadyExistsError); !ok {
+		testing.Fatal("Expected UserAlreadyExistsError when trying to add same user twice")
+	}
+
+	err = connection.Users.Delete.Delete(userId)
+	if err != nil {
+		testing.Fatal(err)
+	}
+
+	_, err = connection.Users.Read.Get(userId)
+	if err == nil {
+		testing.Fatal("Found a user that should have been deleted")
+	}
+
+	err = connection.Users.Delete.Delete(userId)
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		testing.Fatal("Expected NoSuchUserError when trying to delete same user twice")
+	}
+}
 
 func TestSingleUserRead(testing *testing.T) {
 	connection, err := New()
@@ -38,10 +80,6 @@ func TestUsersRead(testing *testing.T) {
 	users, err := connection.Users.Read.GetAll()
 	if err != nil {
 		testing.Fatal(err)
-	}
-
-	if len(users) != 1 {
-		testing.Fatal("Returned incorrect number of users")
 	}
 
 	for _, user := range users {
@@ -144,7 +182,7 @@ func TestUsersUpdateAdmin(testing *testing.T) {
 			testing.Fatal(err)
 		}
 
-		if user.Admin != admin {
+		if user.IsAdmin != admin {
 			testing.Fatal("Admin status not updated")
 		}
 	}
@@ -159,13 +197,23 @@ func TestUsersSshKeys(testing *testing.T) {
 		testing.Fatal(err)
 	}
 
-	keyId, err := connection.Users.Update.AddKey(1000, "alias", "public-key")
+	keyId, err := connection.Users.Update.AddKey(1000, "test-alias", "test-public-key")
 	if err != nil {
 		testing.Fatal(err)
+	}
+
+	_, err = connection.Users.Update.AddKey(1000, "test-alias", "test-public-key-2")
+	if _, ok := err.(resources.KeyAlreadyExistsError); !ok {
+		testing.Fatal("Expected KeyAlreadyExistsError when trying to add same key twice")
 	}
 
 	err = connection.Users.Update.RemoveKey(1000, keyId)
 	if err != nil {
 		testing.Fatal(err)
+	}
+
+	err = connection.Users.Update.RemoveKey(1000, keyId)
+	if _, ok := err.(resources.NoSuchKeyError); !ok {
+		testing.Fatal("Expected NoSuchKeyError when trying to delete same user twice")
 	}
 }

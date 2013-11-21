@@ -23,7 +23,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 
 	var gitHubOAuth sql.NullString
 	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.PasswordHash, &user.PasswordSalt,
-		&gitHubOAuth, &user.Admin, &user.Created, &user.Deleted)
+		&gitHubOAuth, &user.IsAdmin, &user.Created)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchUserError(errors.New("Unable to find user"))
 	} else if err != nil {
@@ -39,21 +39,21 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 
 func (readHandler *ReadHandler) Get(userId int64) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, admin, created, deleted FROM users WHERE id=$1"
+		" github_oauth, is_admin, created FROM users WHERE id=$1"
 	row := readHandler.database.QueryRow(query, userId)
 	return readHandler.scanUser(row)
 }
 
 func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, admin, created, deleted FROM users WHERE email=$1"
+		" github_oauth, is_admin, created FROM users WHERE email=$1 AND id != deleted"
 	row := readHandler.database.QueryRow(query, email)
 	return readHandler.scanUser(row)
 }
 
 func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, admin, created, deleted FROM users WHERE id >= 1000"
+		" github_oauth, is_admin, created FROM users WHERE id >= 1000 AND id != deleted"
 	rows, err := readHandler.database.Query(query)
 	if err != nil {
 		return nil, err
