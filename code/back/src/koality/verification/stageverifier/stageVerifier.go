@@ -12,12 +12,14 @@ import (
 type StageVerifier struct {
 	virtualMachine vm.VirtualMachine
 	ResultsChan    chan verification.Result
+	changeStatus   *verification.ChangeStatus
 }
 
-func New(virtualMachine vm.VirtualMachine) *StageVerifier {
+func New(virtualMachine vm.VirtualMachine, changeStatus *verification.ChangeStatus) *StageVerifier {
 	return &StageVerifier{
 		virtualMachine: virtualMachine,
 		ResultsChan:    make(chan verification.Result),
+		changeStatus:   changeStatus,
 	}
 }
 
@@ -56,6 +58,9 @@ func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.
 	var err error
 	var setupCommand verification.Command
 	for setupCommand, err = setupCommands.Next(); setupCommand != nil && err == nil; setupCommand, err = setupCommands.Next() {
+		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
+			return false, nil
+		}
 		returnCode, err := stageVerifier.runCommand(setupCommand, commandRunner)
 		setupCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"setup", returnCode == 0 && err == nil}
@@ -76,6 +81,9 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 	commandRunner := &OutputWritingCommandRunner{os.Stdout}
 	var err error
 	for compileCommand, err := compileCommands.Next(); compileCommand != nil && err == nil; compileCommand, err = compileCommands.Next() {
+		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
+			return false, nil
+		}
 		returnCode, err := stageVerifier.runCommand(compileCommand, commandRunner)
 		compileCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"compile", returnCode == 0 && err == nil}
@@ -97,6 +105,9 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 	commandRunner := &OutputWritingCommandRunner{io.MultiWriter(outputBuffer, os.Stdout)}
 	var err error
 	for factoryCommand, err := factoryCommands.Next(); factoryCommand != nil && err == nil; factoryCommand, err = factoryCommands.Next() {
+		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
+			return false, nil
+		}
 		returnCode, err := stageVerifier.runCommand(factoryCommand, commandRunner)
 		factoryCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"factory", returnCode == 0 && err == nil}
@@ -123,6 +134,9 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	testsSuccess := true
 	var err error
 	for testCommand, err := testCommands.Next(); testCommand != nil && err == nil; testCommand, err = testCommands.Next() {
+		if stageVerifier.changeStatus.Cancelled {
+			return false, nil
+		}
 		returnCode, err := stageVerifier.runCommand(testCommand, commandRunner)
 		testCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"test", returnCode == 0 && err == nil}

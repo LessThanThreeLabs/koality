@@ -13,3 +13,8 @@ type Result struct {
 	StageType string
 	Passed    bool
 }
+
+type ChangeStatus struct {
+	Failed    bool
+	Cancelled bool
+}

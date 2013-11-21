@@ -14,6 +14,8 @@ type ChangeVerifier struct {
 }
 
 func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
+	changeStatus := new(verification.ChangeStatus)
+
 	verificationConfig, err := changeVerifier.getVerificationConfig(changeId)
 	if err != nil {
 		changeVerifier.failChange(changeId)
@@ -28,7 +30,7 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 	verifyStages := func(virtualMachine VirtualMachine) {
 		defer virtualMachine.Teardown()
 
-		stageVerifier := stageverifier.New(virtualMachine)
+		stageVerifier := stageverifier.New(virtualMachine, changeStatus)
 		defer close(stageVerifier.ResultsChan)
 
 		newStageVerifiersChan <- stageVerifier
@@ -50,12 +52,10 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 
 	resultsChan := changeVerifier.combineResults(newStageVerifiersChan)
 
-	testsStarted := false
-	failed := false
 	for {
 		result, hasMoreResults := <-resultsChan
 		if !hasMoreResults {
-			if !failed {
+			if !changeStatus.Failed && !changeStatus.Cancelled {
 				err := changeVerifier.passChange(changeId)
 				if err != nil {
 					return false, err
@@ -64,9 +64,9 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 			return !failed, nil
 		}
 		if result.Passed == false {
-			if result.StageType == "setup" || result.StageType == "compile" {
-				if !testsStarted {
-					failed = true
+			if result.StageType == "setup" || result.StageType == "compile" || result.StageType == "factory" {
+				if !factoryCommands.HasStarted() && !changeStatus.Failed {
+					changeStatus.Failed = true
 					err := changeVerifier.failChange(changeId)
 					if err != nil {
 						return false, err
@@ -74,17 +74,16 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 				}
 				// changeDone <- nil
 			} else if result.StageType == "test" {
-				failed = true
-				err := changeVerifier.failChange(changeId)
-				if err != nil {
-					return false, err
+				if !changeStatus.Failed {
+					changeStatus.Failed = true
+					err := changeVerifier.failChange(changeId)
+					if err != nil {
+						return false, err
+					}
 				}
 			} else {
 				panic(fmt.Sprintf("Unexpected result %#v", result))
 			}
-		}
-		if result.StageType == "test" {
-			testsStarted = true // This is the WRONG place for this
 		}
 	}
 }
@@ -99,6 +98,13 @@ func (changeVerifier *ChangeVerifier) passChange(changeId int) error {
 
 func (changeVerifier *ChangeVerifier) getVerificationConfig(changeId int) (config.VerificationConfig, error) {
 	panic(fmt.Sprintf("not implemented"))
+	// return config.VerificationConfig{
+	// 	NumMachines: 1,
+		// SetupCommands: [],
+		// CompileCommands: [],
+		// FactoryCommands: [],
+		// TestCommands: [],
+	}
 }
 
 func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-chan *stageverifier.StageVerifier) <-chan verification.Result {

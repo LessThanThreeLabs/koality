@@ -9,7 +9,7 @@ type CommandGroup interface {
 	Next() (verification.Command, error)
 	Done() error
 	Wait() error
-	Started() bool
+	HasStarted() bool
 }
 
 type AppendableCommandGroup interface {
@@ -18,10 +18,10 @@ type AppendableCommandGroup interface {
 }
 
 type appendableCommandGroup struct {
-	commands  []verification.Command
-	locker    sync.Locker
-	waitGroup *sync.WaitGroup
-	started   bool
+	commands   []verification.Command
+	locker     sync.Locker
+	waitGroup  *sync.WaitGroup
+	hasStarted bool
 }
 
 func New(commands []verification.Command) *appendableCommandGroup {
@@ -38,7 +38,7 @@ func (group *appendableCommandGroup) Next() (verification.Command, error) {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
-	group.started = true
+	group.hasStarted = true
 
 	if len(group.commands) == 0 {
 		return nil, NoMoreCommands
@@ -61,11 +61,11 @@ func (group *appendableCommandGroup) Wait() error {
 	return nil
 }
 
-func (group *appendableCommandGroup) Started() bool {
+func (group *appendableCommandGroup) HasStarted() bool {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
-	return group.started
+	return group.hasStarted
 }
 
 func (group *appendableCommandGroup) Append(command verification.Command) error {
