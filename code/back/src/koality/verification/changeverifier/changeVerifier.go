@@ -100,11 +100,11 @@ func (changeVerifier *ChangeVerifier) getVerificationConfig(changeId int) (confi
 	panic(fmt.Sprintf("not implemented"))
 	// return config.VerificationConfig{
 	// 	NumMachines: 1,
-		// SetupCommands: [],
-		// CompileCommands: [],
-		// FactoryCommands: [],
-		// TestCommands: [],
-	}
+	// SetupCommands: [],
+	// CompileCommands: [],
+	// FactoryCommands: [],
+	// TestCommands: [],
+	// }
 }
 
 func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-chan *stageverifier.StageVerifier) <-chan verification.Result {
