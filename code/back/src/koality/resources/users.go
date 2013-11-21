@@ -5,7 +5,7 @@ import (
 )
 
 type User struct {
-	Id           int
+	Id           int64
 	Email        string
 	FirstName    string
 	LastName     string
@@ -18,6 +18,7 @@ type User struct {
 }
 
 type SshKey struct {
+	Id        int64
 	Alias     string
 	PublicKey string
 	Created   *time.Time
@@ -29,14 +30,23 @@ type UsersHandler struct {
 }
 
 type UsersReadHandler interface {
-	Get(userId int) (*User, error)
+	Get(userId int64) (*User, error)
 	GetByEmail(email string) (*User, error)
 	GetAll() ([]User, error)
-	GetKeys(userId int) ([]SshKey, error)
+	GetKeys(userId int64) ([]SshKey, error)
 }
 
 type UsersUpdateHandler interface {
-	SetName(userId int, firstName, lastName string) error
+	SetName(userId int64, firstName, lastName string) error
+	SetPassword(userId int64, passwordHash, passwordSalt string) error
+	SetGitHubOauth(userId int64, gitHubOauth string) error
+	SetAdmin(userId int64, admin bool) error
+	AddKey(userId int64, alias, publicKey string) (int64, error)
+	RemoveKey(userId, keyId int64) error
 }
 
+type UserAlreadyExistsError error
 type NoSuchUserError error
+
+type KeyAlreadyExistsError error
+type NoSuchKeyError error

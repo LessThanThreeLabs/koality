@@ -163,5 +163,12 @@ BEGIN
 			'mooonIJXsb0zgz2V0LXvN/N4N4zbZE9FadrFl/YBJvzh3Z8O3VT/FH1q6OzWplbrX99D++PO6mpez7QdoIUQ6A==',
 			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);
 	END IF;
+
+	IF NOT EXISTS (SELECT 1 FROM users WHERE id = 1000) THEN
+		INSERT INTO users (email, first_name, last_name, password_hash, password_salt, admin, created)
+		VALUES ('jordannpotter@koalitycode.com', 'Jordan', 'Potter',
+			'mooonIJXsb0zgz2V0LXvN/N4N4zbZE9FadrFl/YBJvzh3Z8O3VT/FH1q6OzWplbrX99D++PO6mpez7QdoIUQ6A==',
+			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);
+	END IF;
 END
 $create_super_admins$;

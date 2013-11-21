@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"errors"
 	"koality/resources"
 )
 
@@ -24,7 +25,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.PasswordHash, &user.PasswordSalt,
 		&gitHubOAuth, &user.Admin, &user.Created, &user.Deleted)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchUserError(err)
+		return nil, resources.NoSuchUserError(errors.New("Unable to find user"))
 	} else if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	return user, nil
 }
 
-func (readHandler *ReadHandler) Get(userId int) (*resources.User, error) {
+func (readHandler *ReadHandler) Get(userId int64) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
 		" github_oauth, admin, created, deleted FROM users WHERE id=$1"
 	row := readHandler.database.QueryRow(query, userId)
@@ -52,13 +53,13 @@ func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error
 
 func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, admin, created, deleted FROM users WHERE id=$1"
+		" github_oauth, admin, created, deleted FROM users WHERE id >= 1000"
 	rows, err := readHandler.database.Query(query)
 	if err != nil {
 		return nil, err
 	}
 
-	users := make([]resources.User, 100)
+	users := make([]resources.User, 0, 10)
 	for rows.Next() {
 		user, err := readHandler.scanUser(rows)
 		if err != nil {
@@ -72,8 +73,8 @@ func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	return users, nil
 }
 
-func (readHandler *ReadHandler) GetKeys(userId int) ([]resources.SshKey, error) {
-	query := "SELECT alias, public_key, created FROM ssh_keys WHERE user_id=$1"
+func (readHandler *ReadHandler) GetKeys(userId int64) ([]resources.SshKey, error) {
+	query := "SELECT id, alias, public_key, created FROM ssh_keys WHERE user_id=$1"
 	rows, err := readHandler.database.Query(query, userId)
 	if err != nil {
 		return nil, err
@@ -82,7 +83,7 @@ func (readHandler *ReadHandler) GetKeys(userId int) ([]resources.SshKey, error) 
 	sshKeys := make([]resources.SshKey, 5)
 	for rows.Next() {
 		sshKey := resources.SshKey{}
-		err = rows.Scan(&sshKey.Alias, &sshKey.PublicKey, &sshKey.Created)
+		err = rows.Scan(&sshKey.Id, &sshKey.Alias, &sshKey.PublicKey, &sshKey.Created)
 		if err != nil {
 			return nil, err
 		}
