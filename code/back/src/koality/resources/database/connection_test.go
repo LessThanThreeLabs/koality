@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestConnecting(testing *testing.T) {
+func TestConnecting(test *testing.T) {
 	_, err := New()
 	if err != nil {
-		testing.Fatal(err)
+		test.Fatal(err)
 	}
 }

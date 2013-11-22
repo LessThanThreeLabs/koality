@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS ssh_keys (
 
 CREATE TABLE IF NOT EXISTS repositories (
 	id 					serial PRIMARY KEY,
-	type				varchar(32) NOT NULL,
 	name 				varchar(256) NOT NULL,
+	vcs_type			varchar(32) NOT NULL,
 	local_uri			varchar(1024) NOT NULL,
 	remote_uri			varchar(1024) NOT NULL,
 	created 			timestamp with time zone DEFAULT current_timestamp,
@@ -50,8 +50,8 @@ CREATE TABLE IF NOT EXISTS repositories (
 CREATE TABLE IF NOT EXISTS repository_github_metadatas (
 	id 					serial PRIMARY KEY,
 	repository_id		integer NOT NULL references repositories(id),
-	owner_name			varchar(256) NOT NULL,
-	repository_name		varchar(256) NOT NULL,  -- name on GitHub
+	owner				varchar(256) NOT NULL,
+	name				varchar(256) NOT NULL,
 	hook_id				integer,
 	hook_secret			varchar(32),
 	hook_types			varchar(64)[],
