@@ -2,6 +2,7 @@ package users
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"koality/resources"
 )
@@ -22,7 +23,8 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	user := new(resources.User)
 
 	var gitHubOAuth sql.NullString
-	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.PasswordHash, &user.PasswordSalt,
+	var passwordHashBase64, passwordSaltBase64 string
+	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &passwordHashBase64, &passwordSaltBase64,
 		&gitHubOAuth, &user.IsAdmin, &user.Created)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchUserError(errors.New("Unable to find user"))
@@ -32,6 +34,20 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 
 	if gitHubOAuth.Valid {
 		user.GitHubOauth = gitHubOAuth.String
+	}
+
+	passwordHash, err := base64.StdEncoding.DecodeString(passwordHashBase64)
+	if err != nil {
+		return nil, err
+	} else {
+		user.PasswordHash = &passwordHash
+	}
+
+	passwordSalt, err := base64.StdEncoding.DecodeString(passwordSaltBase64)
+	if err != nil {
+		return nil, err
+	} else {
+		user.PasswordSalt = &passwordSalt
 	}
 
 	return user, nil

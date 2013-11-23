@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 	email 				varchar(256) NOT NULL,
 	first_name 			varchar(64) NOT NULL,
 	last_name 			varchar(64) NOT NULL,
-	password_hash 		varchar(100) NOT NULL,
-	password_salt 		varchar(64) NOT NULL,
+	password_hash 		varchar(100) NOT NULL,  -- base64 encoding
+	password_salt 		varchar(64) NOT NULL,   -- base64 encoding
 	github_oauth 		varchar(40),
 	is_admin			boolean NOT NULL DEFAULT false,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
@@ -165,6 +165,7 @@ BEGIN
 			'GMZhGiZU4/JYE3NlmCZgGA==', true, current_timestamp);
 	END IF;
 
+	-- TODO: remove this!
 	IF NOT EXISTS (SELECT 1 FROM users WHERE id = 1000) THEN
 		INSERT INTO users (email, first_name, last_name, password_hash, password_salt, is_admin, created)
 		VALUES ('jordannpotter@koalitycode.com', 'Jordan', 'Potter',

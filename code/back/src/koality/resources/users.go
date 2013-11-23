@@ -9,8 +9,8 @@ type User struct {
 	Email        string
 	FirstName    string
 	LastName     string
-	PasswordHash string
-	PasswordSalt string
+	PasswordHash *[]byte
+	PasswordSalt *[]byte
 	GitHubOauth  string
 	IsAdmin      bool
 	Created      *time.Time
@@ -31,7 +31,7 @@ type UsersHandler struct {
 }
 
 type UsersCreateHandler interface {
-	Create(email, firstName, lastName, passwordHash, passwordSalt string, admin bool) (int64, error)
+	Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (int64, error)
 }
 
 type UsersReadHandler interface {
@@ -43,7 +43,7 @@ type UsersReadHandler interface {
 
 type UsersUpdateHandler interface {
 	SetName(userId int64, firstName, lastName string) error
-	SetPassword(userId int64, passwordHash, passwordSalt string) error
+	SetPassword(userId int64, passwordHash, passwordSalt []byte) error
 	SetGitHubOauth(userId int64, gitHubOauth string) error
 	SetAdmin(userId int64, admin bool) error
 	AddKey(userId int64, alias, publicKey string) (int64, error)

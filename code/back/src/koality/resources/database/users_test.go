@@ -1,17 +1,21 @@
 package database
 
 import (
+	"bytes"
 	"koality/resources"
 	"testing"
 )
 
 const (
-	userEmail        = "test-email@address.com"
-	userFirstName    = "First"
-	userLastName     = "Last"
-	userPasswordHash = "password-hash"
-	userPasswordSalt = "password-salt"
-	userAdmin        = false
+	userEmail     = "test-email@address.com"
+	userFirstName = "First"
+	userLastName  = "Last"
+	userAdmin     = false
+)
+
+var (
+	userPasswordHash []byte = []byte("password-hash")
+	userPasswordSalt []byte = []byte("password-salt")
 )
 
 func TestCreateUser(test *testing.T) {
@@ -34,7 +38,7 @@ func TestCreateUser(test *testing.T) {
 		test.Fatal("user.Id mismatch")
 	}
 
-	_, err = connection.Users.Create.Create(user.Email, user.FirstName, user.LastName, user.PasswordHash, user.PasswordSalt, user.IsAdmin)
+	_, err = connection.Users.Create.Create(user.Email, user.FirstName, user.LastName, *user.PasswordHash, *user.PasswordSalt, user.IsAdmin)
 	if _, ok := err.(resources.UserAlreadyExistsError); !ok {
 		test.Fatal("Expected UserAlreadyExistsError when trying to add same user twice")
 	}
@@ -133,7 +137,7 @@ func TestUsersUpdatePassword(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	updateAndCheckPassword := func(userId int64, passwordHash, passwordSalt string) {
+	updateAndCheckPassword := func(userId int64, passwordHash, passwordSalt []byte) {
 		err = connection.Users.Update.SetPassword(userId, passwordHash, passwordSalt)
 		if err != nil {
 			test.Fatal(err)
@@ -144,12 +148,12 @@ func TestUsersUpdatePassword(test *testing.T) {
 			test.Fatal(err)
 		}
 
-		if user.PasswordHash != passwordHash || user.PasswordSalt != passwordSalt {
+		if bytes.Compare(*user.PasswordHash, passwordHash) != 0 || bytes.Compare(*user.PasswordSalt, passwordSalt) != 0 {
 			test.Fatal("Password not updated")
 		}
 	}
 
-	updateAndCheckPassword(1000, "password-hash", "password-salt")
+	updateAndCheckPassword(1000, []byte("password-hash-2"), []byte("password-salt-2"))
 }
 
 // TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
