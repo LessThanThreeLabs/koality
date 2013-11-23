@@ -5,8 +5,8 @@ import (
 	"io"
 	"koality/shell"
 	"os/exec"
+	"sync"
 	"syscall"
-	"time"
 )
 
 type CommandRunner interface {
@@ -14,32 +14,27 @@ type CommandRunner interface {
 }
 
 type OutputWritingCommandRunner struct {
-	Writer io.Writer
+	writer io.Writer
+}
+
+func NewOutputWritingCommandRunner(writer io.Writer) OutputWritingCommandRunner {
+	var writeMutex sync.Mutex
+	return OutputWritingCommandRunner{&syncWriter{writer, writeMutex}}
 }
 
 func (runner OutputWritingCommandRunner) RunCommand(executable shell.Executable) (int, error) {
-	stdoutChan := make(chan []byte)
-	stderrChan := make(chan []byte)
-	exitChan := make(chan error)
+	var err error
 
-	stdoutPipe, err := executable.StdoutPipe()
+	err = executable.SetStdout(runner.writer)
 	if err != nil {
 		panic(err)
 	}
-	stderrPipe, err := executable.StderrPipe()
+	err = executable.SetStderr(runner.writer)
 	if err != nil {
 		panic(err)
 	}
 
-	executable.Start()
-
-	go runner.handleOutput(stdoutPipe, stdoutChan)
-	go runner.handleOutput(stderrPipe, stderrChan)
-	go func() {
-		exitChan <- executable.Wait()
-	}()
-
-	exitErr := runner.processOutput(exitChan, stdoutChan, stderrChan, 100*time.Millisecond)
+	exitErr := executable.Run()
 	if exitErr != nil {
 		switch exitErr.(type) {
 		case *ssh.ExitError:
@@ -58,73 +53,13 @@ func (runner OutputWritingCommandRunner) RunCommand(executable shell.Executable)
 	return 0, nil
 }
 
-func (runner OutputWritingCommandRunner) handleOutput(reader io.Reader, outChan chan<- []byte) {
-	for {
-		buffer := make([]byte, 1024)
-		numBytes, err := reader.Read(buffer)
-		if numBytes > 0 {
-			outChan <- buffer[:numBytes]
-		}
-		if err != nil {
-			close(outChan)
-			return
-		}
-	}
+type syncWriter struct {
+	writer io.Writer
+	mutex  sync.Mutex
 }
 
-func (runner OutputWritingCommandRunner) processOutput(exitChan chan error, stdoutChan, stderrChan chan []byte, postExitTimeout time.Duration) error {
-	processUntilExit := func() error {
-		for {
-			select {
-			case err := <-exitChan:
-				return err
-			case out, ok := <-stdoutChan:
-				if out != nil {
-					runner.Writer.Write(out)
-				}
-				if !ok {
-					stdoutChan = nil
-				}
-			case out, ok := <-stderrChan:
-				if out != nil {
-					runner.Writer.Write(out)
-				}
-				if !ok {
-					stderrChan = nil
-				}
-			}
-		}
-	}
-
-	processRemainingOutput := func() {
-		timeout := time.After(postExitTimeout)
-		for {
-			if stdoutChan == nil && stderrChan == nil {
-				return
-			}
-
-			select {
-			case <-timeout:
-				return
-			case out, ok := <-stdoutChan:
-				if out != nil {
-					runner.Writer.Write(out)
-				}
-				if !ok {
-					stdoutChan = nil
-				}
-			case out, ok := <-stderrChan:
-				if out != nil {
-					runner.Writer.Write(out)
-				}
-				if !ok {
-					stderrChan = nil
-				}
-			}
-		}
-	}
-
-	exitErr := processUntilExit()
-	processRemainingOutput()
-	return exitErr
+func (writer *syncWriter) Write(bytes []byte) (int, error) {
+	writer.mutex.Lock()
+	defer writer.mutex.Unlock()
+	return writer.writer.Write(bytes)
 }

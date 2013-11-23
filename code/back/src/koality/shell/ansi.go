@@ -40,5 +40,5 @@ func AnsiFormat(ansiCodes ...int) string {
 	for index, ansiCode := range ansiCodes {
 		modifierStrings[index] = strconv.Itoa(ansiCode)
 	}
-	return fmt.Sprintf("\\x1b[%sm", strings.Join(modifierStrings, ";"))
+	return fmt.Sprintf("\x1b[%sm", strings.Join(modifierStrings, ";"))
 }

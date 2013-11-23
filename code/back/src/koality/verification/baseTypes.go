@@ -2,6 +2,7 @@ package verification
 
 import (
 	"koality/shell"
+	"strings"
 )
 
 type Command interface {
@@ -17,4 +18,18 @@ type Result struct {
 type ChangeStatus struct {
 	Failed    bool
 	Cancelled bool
+}
+
+// Temporary
+
+type ShellCommand struct {
+	shell.Command
+}
+
+func (shellCommand ShellCommand) Name() string {
+	return strings.Fields(string(shellCommand.Command))[0]
+}
+
+func (shellCommand ShellCommand) ShellCommand() shell.Command {
+	return shellCommand.Command
 }

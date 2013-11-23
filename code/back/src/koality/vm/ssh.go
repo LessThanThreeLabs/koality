@@ -63,20 +63,14 @@ func (sshExecutableMaker *SshExecutableMaker) Close() error {
 	return sshExecutableMaker.sshClient.Close()
 }
 
-func (executable *sshExecutable) StdoutPipe() (io.ReadCloser, error) {
-	reader, err := executable.Session.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	return ioutil.NopCloser(reader), nil
+func (executable *sshExecutable) SetStdout(writer io.Writer) error {
+	executable.Session.Stdout = writer
+	return nil
 }
 
-func (executable *sshExecutable) StderrPipe() (io.ReadCloser, error) {
-	reader, err := executable.Session.StderrPipe()
-	if err != nil {
-		return nil, err
-	}
-	return ioutil.NopCloser(reader), nil
+func (executable *sshExecutable) SetStderr(writer io.Writer) error {
+	executable.Session.Stderr = writer
+	return nil
 }
 
 func (executable *sshExecutable) Start() error {

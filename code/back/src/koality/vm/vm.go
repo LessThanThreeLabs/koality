@@ -28,6 +28,6 @@ type VirtualMachinePool interface {
 	Free()
 	MaxSize() int
 	SetMaxSize(int)
-	MinSize() int
-	SetMinSize(int)
+	MinReady() int
+	SetMinReady(int)
 }

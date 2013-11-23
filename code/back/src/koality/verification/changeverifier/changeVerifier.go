@@ -2,6 +2,7 @@ package changeverifier
 
 import (
 	"fmt"
+	"koality/shell"
 	"koality/verification"
 	"koality/verification/config"
 	"koality/verification/config/commandgroup"
@@ -27,8 +28,9 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 
 	newStageVerifiersChan := make(chan *stageverifier.StageVerifier, verificationConfig.NumMachines)
 
-	verifyStages := func(virtualMachine VirtualMachine) {
-		defer virtualMachine.Teardown()
+	verifyStages := func(virtualMachine vm.VirtualMachine) {
+		defer changeVerifier.VirtualMachinePool.Free()
+		defer virtualMachine.Terminate()
 
 		stageVerifier := stageverifier.New(virtualMachine, changeStatus)
 		defer close(stageVerifier.ResultsChan)
@@ -46,9 +48,11 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 	}
 
 	newMachinesChan := changeVerifier.VirtualMachinePool.GetN(verificationConfig.NumMachines)
-	for newMachine := range newMachinesChan {
-		go verifyStages(newMachine)
-	}
+	go func(newMachinesChan <-chan vm.VirtualMachine) {
+		for newMachine := range newMachinesChan {
+			go verifyStages(newMachine)
+		}
+	}(newMachinesChan)
 
 	resultsChan := changeVerifier.combineResults(newStageVerifiersChan)
 
@@ -61,7 +65,7 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 					return false, err
 				}
 			}
-			return !failed, nil
+			return !changeStatus.Failed, nil
 		}
 		if result.Passed == false {
 			if result.StageType == "setup" || result.StageType == "compile" || result.StageType == "factory" {
@@ -72,7 +76,6 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 						return false, err
 					}
 				}
-				// changeDone <- nil
 			} else if result.StageType == "test" {
 				if !changeStatus.Failed {
 					changeStatus.Failed = true
@@ -89,22 +92,32 @@ func (changeVerifier *ChangeVerifier) VerifyChange(changeId int) (bool, error) {
 }
 
 func (changeVerifier *ChangeVerifier) failChange(changeId int) error {
-	panic(fmt.Sprintf("change %d failed", changeId))
+	fmt.Printf("change %d %sFAILED!!!%s\n", changeId, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
+	return nil
 }
 
 func (changeVerifier *ChangeVerifier) passChange(changeId int) error {
-	panic(fmt.Sprintf("change %d passed", changeId))
+	fmt.Printf("change %d %sPASSED!!!%s\n", changeId, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
+	return nil
 }
 
+// TODO (bbland): make this not bogus
 func (changeVerifier *ChangeVerifier) getVerificationConfig(changeId int) (config.VerificationConfig, error) {
-	panic(fmt.Sprintf("not implemented"))
-	// return config.VerificationConfig{
-	// 	NumMachines: 1,
-	// SetupCommands: [],
-	// CompileCommands: [],
-	// FactoryCommands: [],
-	// TestCommands: [],
-	// }
+	// panic(fmt.Sprintf("not implemented"))
+	return config.VerificationConfig{
+		NumMachines: 10,
+		SetupCommands: []verification.Command{
+			verification.ShellCommand{shell.Command("echo hello there")},
+			// verification.ShellCommand{shell.Command("exit 1")},
+		},
+		CompileCommands: []verification.Command{},
+		FactoryCommands: []verification.Command{},
+		TestCommands: []verification.Command{
+			verification.ShellCommand{shell.And(shell.Command(fmt.Sprintf("echo -e %s\n", shell.Quote(fmt.Sprintf("%sthis will fail!%s", shell.AnsiFormat(shell.AnsiFgRed), shell.AnsiFormat(shell.AnsiReset))))), "exit 1")},
+			verification.ShellCommand{shell.And(shell.Command(fmt.Sprintf("echo -e %s\n", shell.Quote(fmt.Sprintf("%sthis will pass!%s", shell.AnsiFormat(shell.AnsiFgGreen), shell.AnsiFormat(shell.AnsiReset))))), "echo more echoing lol")},
+			verification.ShellCommand{shell.And(shell.Command(fmt.Sprintf("echo -e %s\n", shell.Quote(fmt.Sprintf("%sthis will also fail!%s", shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))))), "exit 1")},
+		},
+	}, nil
 }
 
 func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-chan *stageverifier.StageVerifier) <-chan verification.Result {
@@ -126,6 +139,8 @@ func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-cha
 			}
 		}
 
+		// TODO (bbland): make this not so ugly
+	gatherResults:
 		for {
 			select {
 			case stageVerifier, ok := <-newStageVerifiersChan:
@@ -144,8 +159,7 @@ func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-cha
 				}
 				stageVerifiersDoneCounter++
 				if stageVerifiersDoneCounter >= len(stageVerifiers) {
-					fmt.Println("shit's done")
-					break
+					break gatherResults
 				}
 
 			case result, ok := <-combinedResults:
@@ -156,23 +170,22 @@ func (changeVerifier *ChangeVerifier) combineResults(newStageVerifiersChan <-cha
 			}
 		}
 		// Drain the remaining results that matter
-		for {
-			select {
-			case result := <-combinedResults:
-				resultsChan <- result
-			default:
-				fmt.Println("results drained")
-				close(resultsChan)
-				break
+		drainRemaining := func() {
+			for {
+				select {
+				case result := <-combinedResults:
+					resultsChan <- result
+				default:
+					close(resultsChan)
+					return
+				}
 			}
 		}
+		drainRemaining()
 		// Drain any extra possible results that we don't care about
 		for _, stageVerifier := range stageVerifiers {
-			for {
-				_, ok := <-stageVerifier.ResultsChan
-				if !ok {
-					break
-				}
+			for _ = range stageVerifier.ResultsChan {
+				fmt.Println("Got an extra result")
 			}
 		}
 	}(newStageVerifiersChan)

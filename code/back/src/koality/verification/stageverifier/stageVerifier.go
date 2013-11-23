@@ -54,7 +54,7 @@ func (stageVerifier *StageVerifier) RunChangeStages(setupCommands commandgroup.C
 }
 
 func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.CommandGroup) (bool, error) {
-	commandRunner := &OutputWritingCommandRunner{os.Stdout}
+	commandRunner := NewOutputWritingCommandRunner(os.Stdout)
 	var err error
 	var setupCommand verification.Command
 	for setupCommand, err = setupCommands.Next(); setupCommand != nil && err == nil; setupCommand, err = setupCommands.Next() {
@@ -78,7 +78,7 @@ func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.
 }
 
 func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgroup.CommandGroup) (bool, error) {
-	commandRunner := &OutputWritingCommandRunner{os.Stdout}
+	commandRunner := NewOutputWritingCommandRunner(os.Stdout)
 	var err error
 	for compileCommand, err := compileCommands.Next(); compileCommand != nil && err == nil; compileCommand, err = compileCommands.Next() {
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
@@ -94,7 +94,7 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 			return false, nil
 		}
 	}
-	if err == commandgroup.NoMoreCommands {
+	if err == nil || err == commandgroup.NoMoreCommands {
 		return true, nil
 	}
 	return false, err
@@ -102,7 +102,7 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 
 func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgroup.CommandGroup, testCommands commandgroup.AppendableCommandGroup) (bool, error) {
 	outputBuffer := new(bytes.Buffer)
-	commandRunner := &OutputWritingCommandRunner{io.MultiWriter(outputBuffer, os.Stdout)}
+	commandRunner := NewOutputWritingCommandRunner(io.MultiWriter(outputBuffer, os.Stdout))
 	var err error
 	for factoryCommand, err := factoryCommands.Next(); factoryCommand != nil && err == nil; factoryCommand, err = factoryCommands.Next() {
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
@@ -123,14 +123,14 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 			testCommands.Append(newTest)
 		}
 	}
-	if err == commandgroup.NoMoreCommands {
+	if err == nil || err == commandgroup.NoMoreCommands {
 		return true, nil
 	}
 	return false, err
 }
 
 func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.CommandGroup) (bool, error) {
-	commandRunner := &OutputWritingCommandRunner{os.Stdout}
+	commandRunner := NewOutputWritingCommandRunner(os.Stdout)
 	testsSuccess := true
 	var err error
 	for testCommand, err := testCommands.Next(); testCommand != nil && err == nil; testCommand, err = testCommands.Next() {
@@ -145,7 +145,7 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 			return false, err
 		}
 	}
-	if err == commandgroup.NoMoreCommands {
+	if err == nil || err == commandgroup.NoMoreCommands {
 		return testsSuccess, nil
 	}
 	return false, err
