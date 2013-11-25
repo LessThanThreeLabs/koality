@@ -53,7 +53,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	return user, nil
 }
 
-func (readHandler *ReadHandler) Get(userId int64) (*resources.User, error) {
+func (readHandler *ReadHandler) Get(userId uint64) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
 		" github_oauth, is_admin, created FROM users WHERE id=$1"
 	row := readHandler.database.QueryRow(query, userId)
@@ -89,7 +89,7 @@ func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	return users, nil
 }
 
-func (readHandler *ReadHandler) GetKeys(userId int64) ([]resources.SshKey, error) {
+func (readHandler *ReadHandler) GetKeys(userId uint64) ([]resources.SshKey, error) {
 	query := "SELECT id, alias, public_key, created FROM ssh_keys WHERE user_id=$1"
 	rows, err := readHandler.database.Query(query, userId)
 	if err != nil {

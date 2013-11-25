@@ -110,7 +110,7 @@ func TestUsersUpdateName(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	updateAndCheckName := func(userId int64, firstName, lastName string) {
+	updateAndCheckName := func(userId uint64, firstName, lastName string) {
 		err = connection.Users.Update.SetName(userId, firstName, lastName)
 		if err != nil {
 			test.Fatal(err)
@@ -126,7 +126,7 @@ func TestUsersUpdateName(test *testing.T) {
 		}
 	}
 
-	updateAndCheckName(1000, "Jordan2", "Potter2")
+	updateAndCheckName(1000, "McJordan", "McPotter")
 	updateAndCheckName(1000, "Jordan", "Potter")
 }
 
@@ -137,7 +137,7 @@ func TestUsersUpdatePassword(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	updateAndCheckPassword := func(userId int64, passwordHash, passwordSalt []byte) {
+	updateAndCheckPassword := func(userId uint64, passwordHash, passwordSalt []byte) {
 		err = connection.Users.Update.SetPassword(userId, passwordHash, passwordSalt)
 		if err != nil {
 			test.Fatal(err)
@@ -163,7 +163,7 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	updateAndCheckGitHubOauth := func(userId int64, gitHubOauth string) {
+	updateAndCheckGitHubOauth := func(userId uint64, gitHubOauth string) {
 		err = connection.Users.Update.SetGitHubOauth(userId, gitHubOauth)
 		if err != nil {
 			test.Fatal(err)
@@ -189,7 +189,7 @@ func TestUsersUpdateAdmin(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	updateAndCheckAdmin := func(userId int64, admin bool) {
+	updateAndCheckAdmin := func(userId uint64, admin bool) {
 		err = connection.Users.Update.SetAdmin(userId, admin)
 		if err != nil {
 			test.Fatal(err)
@@ -216,12 +216,24 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	keyId, err := connection.Users.Update.AddKey(1000, "test-alias", "test-public-key")
+	testPublicKey1 := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxvvK4FBlsGz6xbr5IME" +
+		"fvp0LfaPg2LHJlrHPqawe66136PrXPQHDJUN5rUb8LEulVVMsW6fRjG5oAytmOZ/DCGlxLN7" +
+		"vN65c8adw67lLjHVpQ8uHJteDkq0EuL/rZSPBLm2fP/yAeJYRiJP6fob24PpklwIz5cr9tGH" +
+		"H7DJmzk69PzU3AdL7DbUZAvIay9cPFV5sQ3B2TpHSQlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PY" +
+		"p7+aBRpbPDJ4f3uiMzcmzSxAqcoz+PuCzljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9F" +
+		"Wvg6W5DcdPsUQGqeyJta7ppIQW88HOpNk5 jordannpotter@gmail.com"
+	keyId, err := connection.Users.Update.AddKey(1000, "test-alias", testPublicKey1)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	_, err = connection.Users.Update.AddKey(1000, "test-alias", "test-public-key-2")
+	testPublicKey2 := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxvvK4FBlsDz6xbr5IME" +
+		"fvp0LfaPg2LHJlrHPqawe66136PrXPQHDJUN5rUb8LEulVVMsW6fRjG5oAytmOZ/DCGlxLN7" +
+		"vN65c8adw67lLjHVpQ8uHJDeDkq0EuL/rZSPBLm2fP/yAeJYRiJP6fob24PpklwIz5cr9tGH" +
+		"H7DJmzk69DzU3AdL7DbUZAvIay9cPFV5sQ3B2TpHSQlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PY" +
+		"p7+aBRpbPDJ4f3uiMzAmzSxAqcoz+PuCzljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9F" +
+		"Wvg6W5DcdPsUQGqeyJta7ppIQW88HOpNk5 jordannpotter@gmail.com"
+	_, err = connection.Users.Update.AddKey(1000, "test-alias", testPublicKey2)
 	if _, ok := err.(resources.KeyAlreadyExistsError); !ok {
 		test.Fatal("Expected KeyAlreadyExistsError when trying to add same key twice")
 	}

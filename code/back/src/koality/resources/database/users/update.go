@@ -5,14 +5,20 @@ import (
 	"encoding/base64"
 	"errors"
 	"koality/resources"
+	"math"
 )
 
 type UpdateHandler struct {
 	database *sql.DB
+	verifier *Verifier
 }
 
 func NewUpdateHandler(database *sql.DB) (resources.UsersUpdateHandler, error) {
-	return &UpdateHandler{database}, nil
+	verifier, err := NewVerifier(database)
+	if err != nil {
+		return nil, err
+	}
+	return &UpdateHandler{database, verifier}, nil
 }
 
 func (updateHandler *UpdateHandler) updateUser(query string, params ...interface{}) error {
@@ -30,12 +36,17 @@ func (updateHandler *UpdateHandler) updateUser(query string, params ...interface
 	return nil
 }
 
-func (updateHandler *UpdateHandler) SetName(userId int64, firstName, lastName string) error {
+func (updateHandler *UpdateHandler) SetName(userId uint64, firstName, lastName string) error {
+	if err := updateHandler.verifier.verifyFirstName(firstName); err != nil {
+		return err
+	} else if err := updateHandler.verifier.verifyLastName(lastName); err != nil {
+		return err
+	}
 	query := "UPDATE users SET first_name=$1, last_name=$2 WHERE id=$3"
 	return updateHandler.updateUser(query, firstName, lastName, userId)
 }
 
-func (updateHandler *UpdateHandler) SetPassword(userId int64, passwordHash, passwordSalt []byte) error {
+func (updateHandler *UpdateHandler) SetPassword(userId uint64, passwordHash, passwordSalt []byte) error {
 	passwordHashBase64 := base64.StdEncoding.EncodeToString(passwordHash)
 	passwordSaltBase64 := base64.StdEncoding.EncodeToString(passwordSalt)
 
@@ -43,45 +54,33 @@ func (updateHandler *UpdateHandler) SetPassword(userId int64, passwordHash, pass
 	return updateHandler.updateUser(query, passwordHashBase64, passwordSaltBase64, userId)
 }
 
-func (updateHandler *UpdateHandler) SetGitHubOauth(userId int64, gitHubOauth string) error {
+func (updateHandler *UpdateHandler) SetGitHubOauth(userId uint64, gitHubOauth string) error {
 	query := "UPDATE users SET github_oauth=$1 WHERE id=$2"
 	return updateHandler.updateUser(query, gitHubOauth, userId)
 }
 
-func (updateHandler *UpdateHandler) SetAdmin(userId int64, admin bool) error {
+func (updateHandler *UpdateHandler) SetAdmin(userId uint64, admin bool) error {
 	query := "UPDATE users SET is_admin=$1 WHERE id=$2"
 	return updateHandler.updateUser(query, admin, userId)
 }
 
-func (updateHandler *UpdateHandler) AddKey(userId int64, alias, publicKey string) (int64, error) {
-	if updateHandler.doesKeyExistWithUserAndAlias(userId, alias) {
-		return -1, resources.KeyAlreadyExistsError(errors.New("User already has key with alias: " + alias))
-	} else if updateHandler.doesKeyExistWithPublicKey(publicKey) {
-		return -1, resources.KeyAlreadyExistsError(errors.New("Key already exists with that public key"))
+func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey string) (uint64, error) {
+	if err := updateHandler.verifier.verifyKeyAlias(userId, alias); err != nil {
+		return math.MaxUint64, err
+	} else if err := updateHandler.verifier.verifyPublicKey(publicKey); err != nil {
+		return math.MaxUint64, err
 	}
 
-	id := int64(0)
+	id := uint64(0)
 	query := "INSERT INTO ssh_keys (user_id, alias, public_key) VALUES ($1, $2, $3) RETURNING id"
 	err := updateHandler.database.QueryRow(query, userId, alias, publicKey).Scan(&id)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	return id, nil
 }
 
-func (updateHandler UpdateHandler) doesKeyExistWithUserAndAlias(userId int64, alias string) bool {
-	query := "SELECT id FROM ssh_keys WHERE user_id=$1 and alias=$2"
-	err := updateHandler.database.QueryRow(query, userId, alias).Scan()
-	return err != sql.ErrNoRows
-}
-
-func (updateHandler UpdateHandler) doesKeyExistWithPublicKey(publicKey string) bool {
-	query := "SELECT id FROM ssh_keys WHERE public_key=$1"
-	err := updateHandler.database.QueryRow(query, publicKey).Scan()
-	return err != sql.ErrNoRows
-}
-
-func (updateHandler *UpdateHandler) RemoveKey(userId, keyId int64) error {
+func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
 	query := "DELETE FROM ssh_keys WHERE user_id=$1 AND id=$2"
 	result, err := updateHandler.database.Exec(query, userId, keyId)
 	if err != nil {

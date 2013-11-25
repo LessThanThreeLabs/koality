@@ -5,7 +5,7 @@ import (
 )
 
 type Repository struct {
-	Id        int64
+	Id        uint64
 	Name      string
 	VcsType   string
 	LocalUri  string
@@ -30,7 +30,7 @@ type RepositoriesHandler struct {
 }
 
 type RepositoriesCreateHandler interface {
-	Create(name, vcsType, localUri, remoteUri string) (int64, error)
+	Create(name, vcsType, localUri, remoteUri string) (uint64, error)
 }
 
 // type RepositoriesReadHandler interface {
@@ -50,7 +50,7 @@ type RepositoriesCreateHandler interface {
 // }
 
 type RepositoriesDeleteHandler interface {
-	Delete(repositoryId int64) error
+	Delete(repositoryId uint64) error
 }
 
 type RepositoryAlreadyExistsError error
