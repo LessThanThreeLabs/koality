@@ -48,11 +48,6 @@ func TestCreateUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	_, err = connection.Users.Read.Get(userId)
-	if err == nil {
-		test.Fatal("Found a user that should have been deleted")
-	}
-
 	err = connection.Users.Delete.Delete(userId)
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to delete same user twice")

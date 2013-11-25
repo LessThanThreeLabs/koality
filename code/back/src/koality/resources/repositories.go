@@ -17,37 +17,32 @@ type Repository struct {
 type GitHubMetadata struct {
 	Owner      string
 	Name       string
-	HookId     int
+	HookId     int64
 	HookSecret string
 	HookTypes  []string
 }
 
 type RepositoriesHandler struct {
 	Create RepositoriesCreateHandler
-	// Read   UsersReadHandler
-	// Update UsersUpdateHandler
+	Read   RepositoriesReadHandler
+	Update RepositoriesUpdateHandler
 	Delete RepositoriesDeleteHandler
 }
 
 type RepositoriesCreateHandler interface {
 	Create(name, vcsType, localUri, remoteUri string) (uint64, error)
+	CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (uint64, error)
 }
 
-// type RepositoriesReadHandler interface {
-// 	Get(userId int64) (*User, error)
-// 	GetByEmail(email string) (*User, error)
-// 	GetAll() ([]User, error)
-// 	GetKeys(userId int64) ([]SshKey, error)
-// }
+type RepositoriesReadHandler interface {
+	Get(repositoryId uint64) (*Repository, error)
+	GetAll() ([]Repository, error)
+}
 
-// type RepositoriesUpdateHandler interface {
-// 	SetName(userId int64, firstName, lastName string) error
-// 	SetPassword(userId int64, passwordHash, passwordSalt string) error
-// 	SetGitHubOauth(userId int64, gitHubOauth string) error
-// 	SetAdmin(userId int64, admin bool) error
-// 	AddKey(userId int64, alias, publicKey string) (int64, error)
-// 	RemoveKey(userId, keyId int64) error
-// }
+type RepositoriesUpdateHandler interface {
+	SetGitHubHook(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) error
+	ClearGitHubHook(repositoryId uint64) error
+}
 
 type RepositoriesDeleteHandler interface {
 	Delete(repositoryId uint64) error
@@ -55,3 +50,5 @@ type RepositoriesDeleteHandler interface {
 
 type RepositoryAlreadyExistsError error
 type NoSuchRepositoryError error
+
+type NoSuchRepositoryHookError error

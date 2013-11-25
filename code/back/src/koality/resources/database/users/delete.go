@@ -15,7 +15,7 @@ func NewDeleteHandler(database *sql.DB) (resources.UsersDeleteHandler, error) {
 }
 
 func (deleteHandler *DeleteHandler) Delete(userId uint64) error {
-	query := "DELETE FROM users WHERE id=$1"
+	query := "UPDATE users SET deleted = id WHERE id=$1 AND id != deleted"
 	result, err := deleteHandler.database.Exec(query, userId)
 	if err != nil {
 		return err

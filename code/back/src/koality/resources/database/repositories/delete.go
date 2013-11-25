@@ -15,7 +15,7 @@ func NewDeleteHandler(database *sql.DB) (resources.RepositoriesDeleteHandler, er
 }
 
 func (deleteHandler *DeleteHandler) Delete(repositoryId uint64) error {
-	query := "DELETE FROM repositories WHERE id=$1"
+	query := "UPDATE repositories SET deleted = id WHERE id=$1 AND id != deleted"
 	result, err := deleteHandler.database.Exec(query, repositoryId)
 	if err != nil {
 		return err

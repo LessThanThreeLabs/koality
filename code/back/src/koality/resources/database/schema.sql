@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS ssh_keys (
 	id 					serial PRIMARY KEY,
-	user_id 			integer NOT NULL references users(id),
+	user_id 			integer NOT NULL references users(id) ON DELETE CASCADE,
 	alias				varchar(256) NOT NULL,
 	public_key			varchar(1024) NOT NULL,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS repositories (
 
 CREATE TABLE IF NOT EXISTS repository_github_metadatas (
 	id 					serial PRIMARY KEY,
-	repository_id		integer NOT NULL references repositories(id),
+	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
 	owner				varchar(256) NOT NULL,
 	name				varchar(256) NOT NULL,
 	hook_id				integer,
@@ -61,8 +61,8 @@ CREATE TABLE IF NOT EXISTS repository_github_metadatas (
 
 CREATE TABLE IF NOT EXISTS changesets (
 	id 					serial PRIMARY KEY,
-	user_id 			integer NOT NULL references users(id),
-	repository_id		integer NOT NULL references repositories(id),
+	user_id 			integer NOT NULL references users(id) ON DELETE CASCADE,
+	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
 	head_sha			varchar(40) NOT NULL,
 	base_sha			varchar(40) NOT NULL,
 	head_message		varchar(1000000) NOT NULL, -- 1MB
@@ -75,8 +75,8 @@ CREATE TABLE IF NOT EXISTS changesets (
 
 CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
-	changeset_id		integer NOT NULL references changesets(id),
-	repository_id		integer NOT NULL references repositories(id),
+	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
+	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
 	merge_target		varchar(1024) NOT NULL,
 	verification_status varchar(32),
 	merge_status		varchar(32),
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS verifications (
 
 CREATE TABLE IF NOT EXISTS stages (
 	id 					serial PRIMARY KEY,
-	change_id			integer NOT NULL references verifications(id),
+	change_id			integer NOT NULL references verifications(id) ON DELETE CASCADE,
 	name 				varchar(1024) NOT NULL,
 	type 				varchar(32) NOT NULL,
 	order_number 		integer NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS stages (
 
 CREATE TABLE IF NOT EXISTS stage_runs (
 	id 					serial PRIMARY KEY,
-	stage_id			integer NOT NULL references stages(id),
+	stage_id			integer NOT NULL references stages(id) ON DELETE CASCADE,
 	return_code			integer,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS stage_runs (
 
 CREATE TABLE IF NOT EXISTS console_texts (
 	id 					serial PRIMARY KEY,
-	run_id				integer NOT NULL references stage_runs(id),
+	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
 	line_number			integer NOT NULL,
 	line 				text NOT NULL,
 
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS console_texts (
 
 CREATE TABLE IF NOT EXISTS xunits (
 	id 					serial PRIMARY KEY,
-	run_id				integer NOT NULL references stage_runs(id),
+	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
 	path				varchar(1024) NOT NULL,
 	contents			text NOT NULL,
 
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS xunits (
 
 CREATE TABLE IF NOT EXISTS exports (
 	id 					serial PRIMARY KEY,
-	run_id				integer NOT NULL references stage_runs(id),
+	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
 	path				varchar(1024) NOT NULL,
 	uri 				varchar(1024) NOT NULL,
 
