@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"koality/resources"
+	"strings"
 )
 
 type Scannable interface {
@@ -22,9 +23,7 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 	repository := new(resources.Repository)
 
 	var gitHubHookId sql.NullInt64
-	var gitHubOwner, gitHubName, gitHubHookSecret sql.NullString
-	// var gitHubHookTypes []string
-	var gitHubHookTypes sql.NullString
+	var gitHubOwner, gitHubName, gitHubHookSecret, gitHubHookTypes sql.NullString
 	err := scannable.Scan(&repository.Id, &repository.Name, &repository.VcsType,
 		&repository.LocalUri, &repository.RemoteUri, &repository.Created,
 		&gitHubOwner, &gitHubName, &gitHubHookId, &gitHubHookSecret, &gitHubHookTypes)
@@ -50,9 +49,9 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 	if gitHubHookSecret.Valid {
 		repository.GitHub.HookSecret = gitHubHookSecret.String
 	}
-	// if gitHubHookId.Valid && gitHubHookSecret.Valid {
-	// 	repository.GitHub.HookTypes = gitHubHookTypes
-	// }
+	if gitHubHookTypes.Valid {
+		repository.GitHub.HookTypes = strings.Split(gitHubHookTypes.String, ",")
+	}
 
 	return repository, nil
 }

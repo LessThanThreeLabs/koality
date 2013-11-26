@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"koality/resources"
+	"strings"
 )
 
 type UpdateHandler struct {
@@ -35,10 +36,9 @@ func (updateHandler *UpdateHandler) updateRepositoryHook(query string, params ..
 }
 
 func (updateHandler *UpdateHandler) SetGitHubHook(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) error {
-	// query := "UPDATE repository_github_metadatas SET hook_id=$1, hook_secret=$2, hook_types=$3 WHERE repository_id=$4"
-	// return updateHandler.updateRepositoryHook(query, hookId, hookSecret, hookTypes, repositoryId)
-	query := "UPDATE repository_github_metadatas SET hook_id=$1, hook_secret=$2 WHERE repository_id=$3"
-	return updateHandler.updateRepositoryHook(query, hookId, hookSecret, repositoryId)
+	hookTypesString := strings.Join(hookTypes, ",")
+	query := "UPDATE repository_github_metadatas SET hook_id=$1, hook_secret=$2, hook_types=$3 WHERE repository_id=$4"
+	return updateHandler.updateRepositoryHook(query, hookId, hookSecret, hookTypesString, repositoryId)
 }
 
 func (updateHandler *UpdateHandler) ClearGitHubHook(repositoryId uint64) error {
