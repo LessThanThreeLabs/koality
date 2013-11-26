@@ -42,26 +42,72 @@ func (launcher *EC2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 	if err != nil {
 		return nil, err
 	}
-	// TODO (bbland): add more validation
-	instance := runResponse.Instances[0]
-	for instance.IPAddress == "" {
-		time.Sleep(5 * time.Second)
-		instances := launcher.ec2Broker.Instances()
-		for _, inst := range instances {
-			if inst.InstanceId == instance.InstanceId {
-				instance = inst
-				break
+	if len(runResponse.Instances) == 0 {
+		return nil, errors.New("No instances launched")
+	}
+	if len(runResponse.Instances) > 1 {
+		fmt.Printf("Launched too many instances. Wat?")
+		extraInstanceIds := make([]string, len(runResponse.Instances)-1)
+		for i := 1; i < len(runResponse.Instances); i++ {
+			extraInstanceIds[i-1] = runResponse.Instances[i].InstanceId
+		}
+		_, err := launcher.ec2Broker.EC2().TerminateInstances(extraInstanceIds)
+		if err != nil {
+			launcher.ec2Broker.EC2().TerminateInstances([]string{runResponse.Instances[0].InstanceId})
+			return nil, err
+		}
+	}
+	instance := &runResponse.Instances[0]
+	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker (%s)", launcher.getMasterName())}
+	_, err = launcher.ec2Broker.EC2().CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
+	err = launcher.waitForIpAddress(instance, 2*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	ec2Vm, err := launcher.waitForSsh(instance, username, 3*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	return ec2Vm, nil
+}
+
+func (launcher *EC2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instance, timeout time.Duration) error {
+	for {
+		select {
+		case <-time.After(timeout):
+			_, err := launcher.ec2Broker.EC2().TerminateInstances([]string{instance.InstanceId})
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("Instance failed to receive an IP address after %s", timeout.String())
+		default:
+			if instance.PrivateIPAddress != "" {
+				return nil
+			} else {
+				time.Sleep(5 * time.Second)
+				instances := launcher.ec2Broker.Instances()
+				for _, inst := range instances {
+					if inst.InstanceId == instance.InstanceId {
+						*instance = inst
+						break
+					}
+				}
 			}
 		}
 	}
-	sshAttemptTimeout := 3 * time.Minute
-	sshAttemptTimeoutChan := time.After(sshAttemptTimeout)
+}
+
+func (launcher *EC2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, username string, timeout time.Duration) (*EC2VirtualMachine, error) {
 	for {
 		select {
-		case <-sshAttemptTimeoutChan:
-			return nil, fmt.Errorf("Failed to ssh into the instance after %s", sshAttemptTimeout.String())
+		case <-time.After(timeout):
+			_, err := launcher.ec2Broker.EC2().TerminateInstances([]string{instance.InstanceId})
+			if err != nil {
+				return new(EC2VirtualMachine), err
+			}
+			return nil, fmt.Errorf("Failed to ssh into the instance after %s", timeout.String())
 		default:
-			ec2Vm, err := New(&instance, launcher.ec2Broker, username)
+			ec2Vm, err := New(instance, launcher.ec2Broker, username)
 			if err != nil {
 				time.Sleep(3 * time.Second)
 				continue
@@ -175,17 +221,17 @@ func (launcher *EC2VirtualMachineLauncher) getDefaultUserData(username string) s
 	publicKey := string(keyBytes)
 
 	configureUserCommand := shell.Chain(
-		shell.Command(fmt.Sprintf("useradd --create-home -s /bin/bash %s", username)),
-		shell.Command(fmt.Sprintf("mkdir ~%s/.ssh", username)),
-		shell.Append(shell.Command(fmt.Sprintf("echo %s", shell.Quote(publicKey))), shell.Command(fmt.Sprintf("~%s/.ssh/authorized_keys", username)), false),
-		shell.Command(fmt.Sprintf("chown -R %s:%s ~%s/.ssh", username, username, username)),
+		shell.Commandf("useradd --create-home -s /bin/bash %s", username),
+		shell.Commandf("mkdir ~%s/.ssh", username),
+		shell.Append(shell.Commandf("echo %s", shell.Quote(publicKey)), shell.Commandf("~%s/.ssh/authorized_keys", username), false),
+		shell.Commandf("chown -R %s:%s ~%s/.ssh", username, username, username),
 		shell.Or(
 			shell.Command("grep '#includedir /etc/sudoers.d' /etc/sudoers"),
 			shell.Append(shell.Command("echo #includedir /etc/sudoers.d"), shell.Command("/etc/sudoers"), false),
 		),
 		shell.Command("mkdir /etc/sudoers.d"),
-		shell.Redirect(shell.Command(fmt.Sprintf("echo 'Defaults !requiretty\n%s ALL=(ALL) NOPASSWD: ALL'", username)), shell.Command(fmt.Sprintf("/etc/sudoers.d/koality-%s", username)), false),
-		shell.Command(fmt.Sprintf("chmod 0440 /etc/sudoers.d/koality-%s", username)),
+		shell.Redirect(shell.Commandf("echo 'Defaults !requiretty\n%s ALL=(ALL) NOPASSWD: ALL'", username), shell.Commandf("/etc/sudoers.d/koality-%s", username), false),
+		shell.Commandf("chmod 0440 /etc/sudoers.d/koality-%s", username),
 	)
 	return fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand)
 }
@@ -218,4 +264,22 @@ func cloudInitMimeType(contents string) string {
 		}
 	}
 	return "text/plain"
+}
+
+func (launcher *EC2VirtualMachineLauncher) getMasterName() string {
+	executable, err := shell.NewShellExecutableMaker().MakeExecutable(shell.Command("ec2metadata --instance-id"))
+	if err != nil {
+		return "master unknown"
+	}
+	buffer := new(bytes.Buffer)
+	executable.SetStdout(buffer)
+	err = executable.Run()
+	if err != nil || buffer.String() == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			return "master unknown"
+		}
+		return hostname
+	}
+	return buffer.String()
 }
