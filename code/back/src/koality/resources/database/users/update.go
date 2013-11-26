@@ -31,7 +31,7 @@ func (updateHandler *UpdateHandler) updateUser(query string, params ...interface
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchUserError(errors.New("Unable to find user"))
+		return resources.NoSuchUserError{errors.New("Unable to find user")}
 	}
 	return nil
 }
@@ -91,7 +91,7 @@ func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchKeyError(errors.New("Unable to find key"))
+		return resources.NoSuchKeyError{errors.New("Unable to find key")}
 	}
 	return nil
 }

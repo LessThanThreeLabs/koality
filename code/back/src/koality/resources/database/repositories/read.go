@@ -29,7 +29,7 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 		&repository.LocalUri, &repository.RemoteUri, &repository.Created,
 		&gitHubOwner, &gitHubName, &gitHubHookId, &gitHubHookSecret, &gitHubHookTypes)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchRepositoryError(errors.New("Unable to find repository"))
+		return nil, resources.NoSuchRepositoryError{errors.New("Unable to find repository")}
 	} else if err != nil {
 		return nil, err
 	}

@@ -88,7 +88,7 @@ func TestCreateRepository(test *testing.T) {
 	}
 
 	_, err = connection.Repositories.Create.Create(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri)
-	if _, ok := err.(resources.UserAlreadyExistsError); !ok {
+	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
 
@@ -134,7 +134,7 @@ func TestCreateGitHubRepository(test *testing.T) {
 	}
 
 	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
-	if _, ok := err.(resources.UserAlreadyExistsError); !ok {
+	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
 

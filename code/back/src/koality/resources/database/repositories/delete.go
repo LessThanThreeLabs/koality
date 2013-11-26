@@ -25,7 +25,7 @@ func (deleteHandler *DeleteHandler) Delete(repositoryId uint64) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchRepositoryError(errors.New("Unable to find repository"))
+		return resources.NoSuchRepositoryError{errors.New("Unable to find repository")}
 	}
 	return nil
 }

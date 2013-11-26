@@ -28,6 +28,8 @@ func (verifier *Verifier) verifyEmail(email string) error {
 		return errors.New("Email must be less than 256 characters long")
 	} else if ok, err := regexp.MatchString(emailRegex, email); !ok || err != nil {
 		return errors.New("Email must match regex: " + emailRegex)
+	} else if verifier.doesUserExistWithEmail(email) {
+		return resources.UserAlreadyExistsError{errors.New("User already exists with email: " + email)}
 	}
 	return nil
 }
@@ -56,7 +58,7 @@ func (verifier *Verifier) verifyKeyAlias(userId uint64, alias string) error {
 	} else if ok, err := regexp.MatchString(keyAliasRegex, alias); !ok || err != nil {
 		return errors.New("SSH Key alias must match regex: " + keyAliasRegex)
 	} else if verifier.doesKeyExistWithUserAndAlias(userId, alias) {
-		return resources.KeyAlreadyExistsError(errors.New("User already has SSH Key with alias: " + alias))
+		return resources.KeyAlreadyExistsError{errors.New("User already has SSH Key with alias: " + alias)}
 	}
 	return nil
 }
@@ -67,7 +69,7 @@ func (verifier *Verifier) verifyPublicKey(publicKey string) error {
 	} else if ok, err := regexp.MatchString(publicKeyRegex, publicKey); !ok || err != nil {
 		return errors.New("SSH Public Key must match regex: " + publicKeyRegex)
 	} else if verifier.doesKeyExistWithPublicKey(publicKey) {
-		return resources.KeyAlreadyExistsError(errors.New("SSH Public key already exists"))
+		return resources.KeyAlreadyExistsError{errors.New("SSH Public key already exists")}
 	}
 	return nil
 }

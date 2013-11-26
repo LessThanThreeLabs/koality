@@ -25,7 +25,7 @@ func (deleteHandler *DeleteHandler) Delete(userId uint64) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchUserError(errors.New("Unable to find user"))
+		return resources.NoSuchUserError{errors.New("Unable to find user")}
 	}
 	return nil
 }

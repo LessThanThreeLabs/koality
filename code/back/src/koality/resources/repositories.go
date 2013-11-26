@@ -48,7 +48,26 @@ type RepositoriesDeleteHandler interface {
 	Delete(repositoryId uint64) error
 }
 
-type RepositoryAlreadyExistsError error
-type NoSuchRepositoryError error
+type RepositoryAlreadyExistsError struct {
+	error
+}
 
-type NoSuchRepositoryHookError error
+func (err RepositoryAlreadyExistsError) Error() string {
+	return err.error.Error()
+}
+
+type NoSuchRepositoryError struct {
+	error
+}
+
+func (err NoSuchRepositoryError) Error() string {
+	return err.error.Error()
+}
+
+type NoSuchRepositoryHookError struct {
+	error
+}
+
+func (err NoSuchRepositoryHookError) Error() string {
+	return err.error.Error()
+}

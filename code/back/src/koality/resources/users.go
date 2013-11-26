@@ -54,8 +54,34 @@ type UsersDeleteHandler interface {
 	Delete(userId uint64) error
 }
 
-type UserAlreadyExistsError error
-type NoSuchUserError error
+type UserAlreadyExistsError struct {
+	error
+}
 
-type KeyAlreadyExistsError error
-type NoSuchKeyError error
+func (err UserAlreadyExistsError) Error() string {
+	return err.error.Error()
+}
+
+type NoSuchUserError struct {
+	error
+}
+
+func (err NoSuchUserError) Error() string {
+	return err.error.Error()
+}
+
+type KeyAlreadyExistsError struct {
+	error
+}
+
+func (err KeyAlreadyExistsError) Error() string {
+	return err.error.Error()
+}
+
+type NoSuchKeyError struct {
+	error
+}
+
+func (err NoSuchKeyError) Error() string {
+	return err.error.Error()
+}
