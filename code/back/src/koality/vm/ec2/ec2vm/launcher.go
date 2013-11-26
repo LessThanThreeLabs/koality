@@ -168,23 +168,22 @@ func (launcher *EC2VirtualMachineLauncher) getBaseImage() (ec2.Image, error) {
 	imageFilter.Add("owner-id", "600991114254") // must be changed if our ec2 info changes
 	imageFilter.Add("name", "koality_verification_precise_0.4")
 	imageFilter.Add("state", "available")
-	imagesResp, err := launcher.ec2Broker.EC2().Images([]string{}, imageFilter)
+	imagesResponse, err := launcher.ec2Broker.EC2().Images([]string{}, imageFilter)
 	if err != nil {
 		return ec2.Image{}, err
 	}
-	return imagesResp.Images[0], nil
+	return imagesResponse.Images[0], nil
 }
 
 func (launcher *EC2VirtualMachineLauncher) getSnapshotsForImage(baseImage ec2.Image) ([]ec2.Image, error) {
 	imageFilter := ec2.NewFilter()
-	imageFilter.Add("owner-alias", "self")
 	imageFilter.Add("name", fmt.Sprintf("koality-snapshot-(%s)-v*", baseImage.Name))
 	imageFilter.Add("state", "available")
-	imagesResp, err := launcher.ec2Broker.EC2().Images([]string{}, imageFilter)
+	imagesResponse, err := launcher.ec2Broker.EC2().Images([]string{}, imageFilter)
 	if err != nil {
 		return []ec2.Image{}, err
 	}
-	return imagesResp.Images, nil
+	return imagesResponse.Images, nil
 }
 
 func (launcher *EC2VirtualMachineLauncher) getInstanceType() string {
