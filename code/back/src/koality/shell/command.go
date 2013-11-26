@@ -7,36 +7,40 @@ import (
 
 type Command string
 
+func Commandf(format string, args ...interface{}) Command {
+	return Command(fmt.Sprintf(format, args...))
+}
+
 func Group(command Command) Command {
-	return Command(fmt.Sprintf("{\n%s\n}", command))
+	return Commandf("{\n%s\n}", command)
 }
 
 func Subshell(command Command) Command {
-	return Command(fmt.Sprintf("(%s)", command))
+	return Commandf("(%s)", command)
 }
 
 func Capture(command Command) Command {
-	return Command(fmt.Sprintf("$(%s)", command))
+	return Commandf("$(%s)", command)
 }
 
 func Background(command Command) Command {
-	return Command(fmt.Sprintf("%s &", command))
+	return Commandf("%s &", command)
 }
 
 func Not(command Command) Command {
-	return Command(fmt.Sprintf("! %s", Group(command)))
+	return Commandf("! %s", Group(command))
 }
 
 func Test(command Command) Command {
-	return Command(fmt.Sprintf("[ %s ]", command))
+	return Commandf("[ %s ]", command)
 }
 
 func If(condition, thenCommand Command) Command {
-	return Command(fmt.Sprintf("if %s; then\n%s\nfi", condition, thenCommand))
+	return Commandf("if %s; then\n%s\nfi", condition, thenCommand)
 }
 
 func IfElse(condition, thenCommand, elseCommand Command) Command {
-	return Command(fmt.Sprintf("if %s; then\n%s\nelse\n%s\nfi", condition, thenCommand, elseCommand))
+	return Commandf("if %s; then\n%s\nelse\n%s\nfi", condition, thenCommand, elseCommand)
 }
 
 func join(commands []Command, joiner string, grouped bool) Command {
@@ -70,7 +74,7 @@ func Chain(commands ...Command) Command {
 func redirect(command, stdoutFile Command, includeStderr bool, redirectionType string) Command {
 	redirect := fmt.Sprintf("%s %s %s", Group(command), redirectionType, stdoutFile)
 	if includeStderr {
-		return Command(fmt.Sprintf("%s 2>&1", redirect))
+		return Commandf("%s 2>&1", redirect)
 	} else {
 		return Command(redirect)
 	}
@@ -89,11 +93,11 @@ func Silent(command Command) Command {
 }
 
 func Login(command Command) Command {
-	return Command(fmt.Sprintf("bash --login -c %s", Quote(string(command))))
+	return Commandf("bash --login -c %s", Quote(string(command)))
 }
 
 func Sudo(command Command) Command {
-	return Command(fmt.Sprintf("sudo -E HOME=\"$HOME\" PATH=\"$PATH\" bash -c %s", Quote(string(command))))
+	return Commandf("sudo -E HOME=\"$HOME\" PATH=\"$PATH\" bash -c %s", Quote(string(command)))
 }
 
 func Advertised(command Command) Command {
@@ -109,6 +113,6 @@ func AdvertisedWithActual(advertised, actual Command) Command {
 	for index, line := range lines {
 		colorized[index] = colorize(line)
 	}
-	printCommand := Command(fmt.Sprintf("printf %s", Quote(fmt.Sprintf("$ %s\\n", strings.Join(colorized, "\\n> ")))))
+	printCommand := Commandf("printf %s", Quote(fmt.Sprintf("$ %s\\n", strings.Join(colorized, "\\n> "))))
 	return And(printCommand, actual)
 }
