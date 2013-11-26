@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS repository_github_metadatas (
 	name				varchar(256) NOT NULL,
 	hook_id				integer,
 	hook_secret			varchar(32),
-	hook_types			varchar(128),
+	hook_types			varchar(128),  -- e.g. "push,pull_request"
 
 	UNIQUE (repository_id)
 );
