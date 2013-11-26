@@ -75,5 +75,5 @@ func (p *patcher) Patch(config *PatchConfig) (shell.Executable, error) {
 			),
 		),
 	)
-	return p.ExecutableMaker.MakeExecutable(patchCommand)
+	return p.ExecutableMaker.MakeExecutable(patchCommand, nil, nil)
 }

@@ -51,26 +51,18 @@ func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
 	return &SshExecutableMaker{sshClient}, nil
 }
 
-func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command) (shell.Executable, error) {
+func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
 	session, err := sshExecutableMaker.sshClient.NewSession()
 	if err != nil {
 		return nil, err
 	}
+	session.Stdout = stdout
+	session.Stderr = stderr
 	return &sshExecutable{command, session}, nil
 }
 
 func (sshExecutableMaker *SshExecutableMaker) Close() error {
 	return sshExecutableMaker.sshClient.Close()
-}
-
-func (executable *sshExecutable) SetStdout(writer io.Writer) error {
-	executable.Session.Stdout = writer
-	return nil
-}
-
-func (executable *sshExecutable) SetStderr(writer io.Writer) error {
-	executable.Session.Stderr = writer
-	return nil
 }
 
 func (executable *sshExecutable) Start() error {
@@ -120,7 +112,7 @@ func NewScper(config ScpConfig) Scper {
 
 func (shellScper *ShellScper) Scp(localFilePath, remoteFilePath string, retrieveFile bool) (shell.Executable, error) {
 	fullCommand := shell.Command(strings.Join(append(shellScper.scpConfig.ScpArgs(localFilePath, remoteFilePath, retrieveFile)), " "))
-	return shellScper.executableMaker.MakeExecutable(fullCommand)
+	return shellScper.executableMaker.MakeExecutable(fullCommand, nil, nil)
 }
 
 type SshConfig struct {

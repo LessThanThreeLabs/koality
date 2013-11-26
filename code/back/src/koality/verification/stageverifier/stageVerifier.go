@@ -2,11 +2,15 @@ package stageverifier
 
 import (
 	"bytes"
+	"code.google.com/p/go.crypto/ssh"
 	"io"
 	"koality/verification"
 	"koality/verification/config/commandgroup"
 	"koality/vm"
 	"os"
+	"os/exec"
+	"sync"
+	"syscall"
 )
 
 type StageVerifier struct {
@@ -54,14 +58,13 @@ func (stageVerifier *StageVerifier) RunChangeStages(setupCommands commandgroup.C
 }
 
 func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.CommandGroup) (bool, error) {
-	commandRunner := NewOutputWritingCommandRunner(os.Stdout)
 	var err error
 	var setupCommand verification.Command
 	for setupCommand, err = setupCommands.Next(); setupCommand != nil && err == nil; setupCommand, err = setupCommands.Next() {
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(setupCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(setupCommand, os.Stdout, os.Stderr)
 		setupCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"setup", returnCode == 0 && err == nil}
 		if err != nil {
@@ -78,13 +81,12 @@ func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.
 }
 
 func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgroup.CommandGroup) (bool, error) {
-	commandRunner := NewOutputWritingCommandRunner(os.Stdout)
 	var err error
 	for compileCommand, err := compileCommands.Next(); compileCommand != nil && err == nil; compileCommand, err = compileCommands.Next() {
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(compileCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(compileCommand, os.Stdout, os.Stderr)
 		compileCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"compile", returnCode == 0 && err == nil}
 		if err != nil {
@@ -102,13 +104,13 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 
 func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgroup.CommandGroup, testCommands commandgroup.AppendableCommandGroup) (bool, error) {
 	outputBuffer := new(bytes.Buffer)
-	commandRunner := NewOutputWritingCommandRunner(io.MultiWriter(outputBuffer, os.Stdout))
+	syncOutputBuffer := &syncWriter{writer: outputBuffer}
 	var err error
 	for factoryCommand, err := factoryCommands.Next(); factoryCommand != nil && err == nil; factoryCommand, err = factoryCommands.Next() {
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(factoryCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(factoryCommand, io.MultiWriter(syncOutputBuffer, os.Stdout), io.MultiWriter(syncOutputBuffer, os.Stderr))
 		factoryCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"factory", returnCode == 0 && err == nil}
 		if err != nil {
@@ -130,14 +132,13 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 }
 
 func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.CommandGroup) (bool, error) {
-	commandRunner := NewOutputWritingCommandRunner(os.Stdout)
 	testsSuccess := true
 	var err error
 	for testCommand, err := testCommands.Next(); testCommand != nil && err == nil; testCommand, err = testCommands.Next() {
 		if stageVerifier.changeStatus.Cancelled {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(testCommand, commandRunner)
+		returnCode, err := stageVerifier.runCommand(testCommand, os.Stdout, os.Stderr)
 		testCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"test", returnCode == 0 && err == nil}
 		testsSuccess = testsSuccess && returnCode == 0
@@ -151,11 +152,38 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	return false, err
 }
 
-func (stageVerifier *StageVerifier) runCommand(command verification.Command, commandRunner CommandRunner) (int, error) {
+func (stageVerifier *StageVerifier) runCommand(command verification.Command, stdout io.Writer, stderr io.Writer) (int, error) {
 	shellCommand := command.ShellCommand()
-	executable, err := stageVerifier.virtualMachine.MakeExecutable(shellCommand)
+	executable, err := stageVerifier.virtualMachine.MakeExecutable(shellCommand, stdout, stderr)
 	if err != nil {
 		return -1, err
 	}
-	return commandRunner.RunCommand(executable)
+	exitErr := executable.Run()
+	if exitErr != nil {
+		switch exitErr.(type) {
+		case *ssh.ExitError:
+			sshErr := exitErr.(*ssh.ExitError)
+			return sshErr.Waitmsg.ExitStatus(), nil
+		case *exec.ExitError:
+			execErr := exitErr.(*exec.ExitError)
+			// This only works for unix-type systems right now
+			waitStatus, ok := execErr.Sys().(syscall.WaitStatus)
+			if ok {
+				return waitStatus.ExitStatus(), nil
+			}
+		}
+		return -1, exitErr
+	}
+	return 0, nil
+}
+
+type syncWriter struct {
+	writer io.Writer
+	mutex  sync.Mutex
+}
+
+func (writer *syncWriter) Write(bytes []byte) (int, error) {
+	writer.mutex.Lock()
+	defer writer.mutex.Unlock()
+	return writer.writer.Write(bytes)
 }

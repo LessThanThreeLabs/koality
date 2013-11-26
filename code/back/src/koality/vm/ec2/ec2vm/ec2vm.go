@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/crowdmob/goamz/ec2"
+	"io"
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
@@ -45,8 +46,8 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (
 	return &ec2Vm, nil
 }
 
-func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command) (shell.Executable, error) {
-	return ec2Vm.sshExecutableMaker.MakeExecutable(command)
+func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
+	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdout, stderr)
 }
 
 func (ec2Vm *EC2VirtualMachine) ProvisionCommand() shell.Command {
