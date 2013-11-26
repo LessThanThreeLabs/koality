@@ -18,7 +18,12 @@ func rcPath() string {
 }
 
 func foundExistingCommand(language string, location string) shell.Command {
-	return shell.Command(fmt.Sprintf("printf \"\\x1b[32mFound existing %s install at: %s\\x1b[0m\\n\"", language, location))
+	return shell.Command(fmt.Sprintf("printf \"%sFound existing %s install at: %s%s\\n\"",
+		shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold),
+		language,
+		location,
+		shell.AnsiFormat(shell.AnsiReset)),
+	)
 }
 
 type PackageManager struct {
@@ -65,7 +70,12 @@ func installPackages(packageStrings []string, platformSpecific map[string]([]str
 		installAttempts = append(installAttempts, installAttempt)
 	}
 
-	errorMessage := fmt.Sprintf("\\x1b[31;1mCould not find a package manager to install: %s.\\nSupports: %s\\x1b[0m", packageStrings, supportedManagers)
+	errorMessage := fmt.Sprintf("%sCould not find a package manager to install: %s.\\nSupports: %s%s",
+		shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+		packageStrings,
+		supportedManagers,
+		shell.AnsiFormat(shell.AnsiReset),
+	)
 	errorCommand := shell.And(
 		shell.Command(fmt.Sprintf("echo -e %s", shell.Quote(errorMessage))),
 		shell.Command("false"),
@@ -258,7 +268,13 @@ func parsePython(version string) (languageCommand shell.Command, versionCommand 
 		sourceCommand,
 	)
 
-	return languageCommand, shell.AdvertisedWithActual("python --version", shell.Command(fmt.Sprintf("printf \"\\x1b[32m%s\\x1b[0m\\n\"", shell.Capture(shell.Redirect("python --version", "/dev/stdout", true)))))
+	return languageCommand, shell.AdvertisedWithActual(
+		"python --version",
+		shell.Command(fmt.Sprintf("printf \"%s%s%s\\n\"",
+			shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold),
+			shell.Capture(shell.Redirect("python --version", "/dev/stdout", true)),
+			shell.AnsiFormat(shell.AnsiReset),
+		)))
 }
 
 func parseRuby(version string) (languageCommand shell.Command, versionCommand shell.Command) {
@@ -305,7 +321,12 @@ func parseRuby(version string) (languageCommand shell.Command, versionCommand sh
 			),
 		),
 	)
-	return languageCommand, shell.AdvertisedWithActual("ruby --version", shell.Command(fmt.Sprintf("printf \"\\x1b[32m%s\\x1b[0m\\n\"", shell.Capture(shell.Command("ruby --version")))))
+	return languageCommand, shell.AdvertisedWithActual("ruby --version",
+		shell.Command(fmt.Sprintf("printf \"%s%s%s\\n\"",
+			shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold),
+			shell.Capture(shell.Command("ruby --version")),
+			shell.AnsiFormat(shell.AnsiReset),
+		)))
 }
 
 func parseNodejs(version string) (languageCommand shell.Command, versionCommand shell.Command) {
@@ -345,7 +366,12 @@ func parseNodejs(version string) (languageCommand shell.Command, versionCommand 
 	)
 
 	versionCommand = shell.And(
-		shell.AdvertisedWithActual("node --version", shell.Command(fmt.Sprintf("printf \"\\x1b[32m%s\\x1b[0m\\n\"", shell.Capture(shell.Command("node --version"))))),
+		shell.AdvertisedWithActual("node --version",
+			shell.Command(fmt.Sprintf("printf \"%s%s%s\\n\"",
+				shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold),
+				shell.Capture(shell.Command("node --version")),
+				shell.AnsiFormat(shell.AnsiReset),
+			))),
 		shell.Chain(
 			shell.Or(
 				shell.Silent("npm set color always"),
@@ -393,7 +419,12 @@ func parseJvm(version string) (languageCommand shell.Command, versionCommand she
 		rcAppendCommand(fmt.Sprintf("export JAVA_HOME=%s", javaHome)),
 		rcAppendCommand(fmt.Sprintf("export PATH=%s:$PATH", javaPath)),
 	)
-	return languageCommand, shell.AdvertisedWithActual("java -version", shell.Command(fmt.Sprintf("printf \"\\x1b[32m%s\\x1b[0m\\n\"", shell.Capture(shell.Command("java -version")))))
+	return languageCommand, shell.AdvertisedWithActual("java -version",
+		shell.Command(fmt.Sprintf("printf \"%s%s%s\\n\"",
+			shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold),
+			shell.Capture(shell.Command("java -version")),
+			shell.AnsiFormat(shell.AnsiReset),
+		)))
 
 }
 
