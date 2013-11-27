@@ -12,7 +12,7 @@ type Executable interface {
 }
 
 type ExecutableMaker interface {
-	MakeExecutable(command Command, stdout io.Writer, stderr io.Writer) (Executable, error)
+	MakeExecutable(command Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (Executable, error)
 }
 
 type ShellExecutableMaker struct{} // Empty struct?
@@ -25,8 +25,9 @@ func NewShellExecutableMaker() *ShellExecutableMaker {
 	return &ShellExecutableMaker{}
 }
 
-func (executableMaker *ShellExecutableMaker) MakeExecutable(command Command, stdout io.Writer, stderr io.Writer) (Executable, error) {
+func (executableMaker *ShellExecutableMaker) MakeExecutable(command Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (Executable, error) {
 	cmd := exec.Command("bash", "-c", string(command))
+	cmd.Stdin = stdin
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	return ShellExecutable{cmd}, nil

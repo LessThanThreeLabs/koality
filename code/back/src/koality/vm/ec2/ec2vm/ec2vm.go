@@ -34,7 +34,11 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (
 	if err != nil {
 		return nil, err
 	}
-	fileCopier := &vm.ScpFileCopier{vm.NewScper(vm.ScpConfig(sshConfig))}
+	scper, err := vm.NewScper(vm.ScpConfig(sshConfig))
+	if err != nil {
+		return nil, err
+	}
+	fileCopier := &vm.ScpFileCopier{scper}
 	patcher := vm.NewPatcher(fileCopier, sshExecutableMaker)
 	ec2Vm := EC2VirtualMachine{
 		sshExecutableMaker: sshExecutableMaker,
@@ -46,8 +50,8 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (
 	return &ec2Vm, nil
 }
 
-func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
-	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdout, stderr)
+func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
+	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdin, stdout, stderr)
 }
 
 func (ec2Vm *EC2VirtualMachine) ProvisionCommand() shell.Command {

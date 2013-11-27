@@ -2,6 +2,7 @@ package localmachine
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"koality/shell"
 	"koality/vm"
@@ -31,7 +32,7 @@ func New() *LocalMachine {
 	}
 
 	cmdStr := fmt.Sprintf("mkdir -p %s", rootDir)
-	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Command(cmdStr)))
+	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Command(cmdStr)), nil, nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -40,12 +41,12 @@ func New() *LocalMachine {
 	return &localMachine
 }
 
-func (localMachine *LocalMachine) MakeExecutable(command shell.Command) (shell.Executable, error) {
+func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
 	fullCommand := shell.And(
 		shell.Command(fmt.Sprintf("cd %s", localMachine.rootDir)),
 		command,
 	)
-	return localMachine.executableMaker.MakeExecutable(fullCommand)
+	return localMachine.executableMaker.MakeExecutable(fullCommand, stdin, stdout, stderr)
 }
 
 func (localMachine *LocalMachine) ProvisionCommand() shell.Command {
@@ -70,5 +71,5 @@ type localCopier struct {
 
 func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
 	command := shell.Advertised(shell.Command(fmt.Sprintf("cp %s %s", sourceFilePath, destFilePath)))
-	return copier.executableMaker.MakeExecutable(command)
+	return copier.executableMaker.MakeExecutable(command, nil, nil, nil)
 }

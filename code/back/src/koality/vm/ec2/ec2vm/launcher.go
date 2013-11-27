@@ -112,7 +112,7 @@ func (launcher *EC2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, us
 				time.Sleep(3 * time.Second)
 				continue
 			}
-			sshAttempt, err := ec2Vm.MakeExecutable(shell.Command("true"), nil, nil)
+			sshAttempt, err := ec2Vm.MakeExecutable(shell.Command("true"), nil, nil, nil)
 			if err == nil {
 				err = sshAttempt.Run()
 				if err == nil {
@@ -267,7 +267,7 @@ func cloudInitMimeType(contents string) string {
 
 func (launcher *EC2VirtualMachineLauncher) getMasterName() string {
 	buffer := new(bytes.Buffer)
-	executable, err := shell.NewShellExecutableMaker().MakeExecutable(shell.Command("ec2metadata --instance-id"), buffer, nil)
+	executable, err := shell.NewShellExecutableMaker().MakeExecutable(shell.Command("ec2metadata --instance-id"), nil, buffer, nil)
 	if err != nil {
 		return "master unknown"
 	}

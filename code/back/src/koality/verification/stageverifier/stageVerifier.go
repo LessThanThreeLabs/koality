@@ -64,7 +64,7 @@ func (stageVerifier *StageVerifier) runSetupCommands(setupCommands commandgroup.
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(setupCommand, os.Stdout, os.Stderr)
+		returnCode, err := stageVerifier.runCommand(setupCommand, os.Stdin, os.Stdout, os.Stderr)
 		setupCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"setup", returnCode == 0 && err == nil}
 		if err != nil {
@@ -86,7 +86,7 @@ func (stageVerifier *StageVerifier) runCompileCommands(compileCommands commandgr
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(compileCommand, os.Stdout, os.Stderr)
+		returnCode, err := stageVerifier.runCommand(compileCommand, os.Stdin, os.Stdout, os.Stderr)
 		compileCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"compile", returnCode == 0 && err == nil}
 		if err != nil {
@@ -110,7 +110,7 @@ func (stageVerifier *StageVerifier) runFactoryCommands(factoryCommands commandgr
 		if stageVerifier.changeStatus.Cancelled || stageVerifier.changeStatus.Failed {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(factoryCommand, io.MultiWriter(syncOutputBuffer, os.Stdout), io.MultiWriter(syncOutputBuffer, os.Stderr))
+		returnCode, err := stageVerifier.runCommand(factoryCommand, os.Stdin, io.MultiWriter(syncOutputBuffer, os.Stdout), io.MultiWriter(syncOutputBuffer, os.Stderr))
 		factoryCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"factory", returnCode == 0 && err == nil}
 		if err != nil {
@@ -138,7 +138,7 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 		if stageVerifier.changeStatus.Cancelled {
 			return false, nil
 		}
-		returnCode, err := stageVerifier.runCommand(testCommand, os.Stdout, os.Stderr)
+		returnCode, err := stageVerifier.runCommand(testCommand, os.Stdin, os.Stdout, os.Stderr)
 		testCommands.Done()
 		stageVerifier.ResultsChan <- verification.Result{"test", returnCode == 0 && err == nil}
 		testsSuccess = testsSuccess && returnCode == 0
@@ -152,9 +152,9 @@ func (stageVerifier *StageVerifier) runTestCommands(testCommands commandgroup.Co
 	return false, err
 }
 
-func (stageVerifier *StageVerifier) runCommand(command verification.Command, stdout io.Writer, stderr io.Writer) (int, error) {
+func (stageVerifier *StageVerifier) runCommand(command verification.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (int, error) {
 	shellCommand := command.ShellCommand()
-	executable, err := stageVerifier.virtualMachine.MakeExecutable(shellCommand, stdout, stderr)
+	executable, err := stageVerifier.virtualMachine.MakeExecutable(shellCommand, stdin, stdout, stderr)
 	if err != nil {
 		return -1, err
 	}

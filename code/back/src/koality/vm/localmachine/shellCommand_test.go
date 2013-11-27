@@ -508,7 +508,7 @@ func executeAndAssert(testing *testing.T, command shell.Command, expectSuccess b
 	defer vm.Terminate()
 
 	var err error
-	executable, err := vm.MakeExecutable(command)
+	executable, err := vm.MakeExecutable(command, nil, nil, nil)
 	if err != nil {
 		testing.Logf("Failed to create executable from command:\n%s\n", command)
 		testing.Error(err)

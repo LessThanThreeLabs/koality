@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"bytes"
 	"code.google.com/p/go.crypto/ssh"
 	"crypto"
 	"crypto/rsa"
@@ -11,8 +12,8 @@ import (
 	"io/ioutil"
 	"koality/shell"
 	"os"
+	"path"
 	"strconv"
-	"strings"
 )
 
 type SshExecutableMaker struct {
@@ -51,11 +52,12 @@ func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
 	return &SshExecutableMaker{sshClient}, nil
 }
 
-func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
+func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
 	session, err := sshExecutableMaker.sshClient.NewSession()
 	if err != nil {
 		return nil, err
 	}
+	session.Stdin = stdin
 	session.Stdout = stdout
 	session.Stderr = stderr
 	return &sshExecutable{command, session}, nil
@@ -95,24 +97,37 @@ func (k *keychain) Sign(i int, rand io.Reader, data []byte) (sig []byte, err err
 }
 
 type Scper interface {
-	Scp(localFilePath, remoteFilePath string, retrieveFile bool) (shell.Executable, error)
+	Scp(localFilePath, remoteFilePath string) (shell.Executable, error)
 }
 
-type ShellScper struct {
-	scpConfig       ScpConfig
-	executableMaker shell.ExecutableMaker
+type sshScper struct {
+	*SshExecutableMaker
 }
 
-func NewScper(config ScpConfig) Scper {
-	return &ShellScper{
-		scpConfig:       config,
-		executableMaker: shell.NewShellExecutableMaker(),
+func NewScper(config ScpConfig) (Scper, error) {
+	sshExecutableMaker, err := NewSshExecutableMaker(SshConfig(config))
+	if err != nil {
+		return nil, err
 	}
+	return &sshScper{sshExecutableMaker}, nil
 }
 
-func (shellScper *ShellScper) Scp(localFilePath, remoteFilePath string, retrieveFile bool) (shell.Executable, error) {
-	fullCommand := shell.Command(strings.Join(append(shellScper.scpConfig.ScpArgs(localFilePath, remoteFilePath, retrieveFile)), " "))
-	return shellScper.executableMaker.MakeExecutable(fullCommand, nil, nil)
+func (scper *sshScper) Scp(localFilePath, remoteFilePath string) (shell.Executable, error) {
+	localFile, err := os.Open(localFilePath)
+	if err != nil {
+		return nil, err
+	}
+	fileInfo, err := localFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+	headerBuffer := bytes.NewBufferString(fmt.Sprintf("C%#o %d %s\n", fileInfo.Mode()&os.ModePerm, fileInfo.Size(), path.Base(remoteFilePath)))
+	scpStdin := io.MultiReader(headerBuffer, localFile, bytes.NewReader([]byte{0}))
+	remoteCommand := shell.And(
+		shell.Commandf("mkdir -p %s", path.Dir(remoteFilePath)),
+		shell.Commandf("scp -qrt %s", path.Dir(remoteFilePath)),
+	)
+	return scper.SshExecutableMaker.MakeExecutable(remoteCommand, scpStdin, nil, nil)
 }
 
 type SshConfig struct {
@@ -143,15 +158,10 @@ func (sshConfig SshConfig) SshArgs(remoteCommand string) []string {
 	return append([]string{"ssh"}, args...)
 }
 
-func (scpConfig ScpConfig) ScpArgs(localFilePath, remoteFilePath string, retrieveFile bool) []string {
+func (scpConfig ScpConfig) ScpArgs(localFilePath, remoteFilePath string) []string {
 	options := toOptionsList(scpConfig.Options)
 	remotePath := fmt.Sprintf("%s@%s:%s", scpConfig.Username, scpConfig.Hostname, remoteFilePath)
-
-	if retrieveFile {
-		return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(remotePath), shell.Quote(localFilePath))
-	} else {
-		return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(localFilePath), shell.Quote(remotePath))
-	}
+	return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(localFilePath), shell.Quote(remotePath))
 }
 
 type ScpFileCopier struct {
@@ -159,5 +169,5 @@ type ScpFileCopier struct {
 }
 
 func (fileCopier *ScpFileCopier) FileCopy(localFilePath, remoteFilePath string) (shell.Executable, error) {
-	return fileCopier.Scper.Scp(localFilePath, remoteFilePath, false)
+	return fileCopier.Scper.Scp(localFilePath, remoteFilePath)
 }
