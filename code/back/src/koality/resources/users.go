@@ -9,18 +9,18 @@ type User struct {
 	Email        string
 	FirstName    string
 	LastName     string
-	PasswordHash *[]byte
-	PasswordSalt *[]byte
+	PasswordHash []byte
+	PasswordSalt []byte
 	GitHubOauth  string
 	IsAdmin      bool
-	Created      *time.Time
+	Created      time.Time
 }
 
 type SshKey struct {
 	Id        uint64
 	Alias     string
 	PublicKey string
-	Created   *time.Time
+	Created   time.Time
 }
 
 type UsersHandler struct {
@@ -58,30 +58,14 @@ type UserAlreadyExistsError struct {
 	error
 }
 
-func (err UserAlreadyExistsError) Error() string {
-	return err.error.Error()
-}
-
 type NoSuchUserError struct {
 	error
-}
-
-func (err NoSuchUserError) Error() string {
-	return err.error.Error()
 }
 
 type KeyAlreadyExistsError struct {
 	error
 }
 
-func (err KeyAlreadyExistsError) Error() string {
-	return err.error.Error()
-}
-
 type NoSuchKeyError struct {
 	error
-}
-
-func (err NoSuchKeyError) Error() string {
-	return err.error.Error()
 }

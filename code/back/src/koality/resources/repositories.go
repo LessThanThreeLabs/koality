@@ -10,7 +10,7 @@ type Repository struct {
 	VcsType   string
 	LocalUri  string
 	RemoteUri string
-	Created   *time.Time
+	Created   time.Time
 	GitHub    *GitHubMetadata
 }
 
@@ -52,22 +52,10 @@ type RepositoryAlreadyExistsError struct {
 	error
 }
 
-func (err RepositoryAlreadyExistsError) Error() string {
-	return err.error.Error()
-}
-
 type NoSuchRepositoryError struct {
 	error
 }
 
-func (err NoSuchRepositoryError) Error() string {
-	return err.error.Error()
-}
-
 type NoSuchRepositoryHookError struct {
 	error
-}
-
-func (err NoSuchRepositoryHookError) Error() string {
-	return err.error.Error()
 }

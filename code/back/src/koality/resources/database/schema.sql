@@ -61,11 +61,10 @@ CREATE TABLE IF NOT EXISTS repository_github_metadatas (
 
 CREATE TABLE IF NOT EXISTS changesets (
 	id 					serial PRIMARY KEY,
-	user_id 			integer NOT NULL references users(id) ON DELETE CASCADE,
 	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
 	head_sha			varchar(40) NOT NULL,
 	base_sha			varchar(40) NOT NULL,
-	head_message		varchar(1000000) NOT NULL, -- 1MB
+	head_message		varchar(1000000) NOT NULL,  -- 1MB
 	head_username		varchar(128) NOT NULL,
 	head_email			varchar(256) NOT NULL,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
@@ -77,7 +76,8 @@ CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
 	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
 	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
-	merge_target		varchar(1024) NOT NULL,
+	owner_email 		varchar(256),  -- TODO: need a better name for this
+	merge_target		varchar(1024),
 	verification_status varchar(32),
 	merge_status		varchar(32),
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,

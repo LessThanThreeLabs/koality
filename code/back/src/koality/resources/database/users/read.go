@@ -40,14 +40,14 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	if err != nil {
 		return nil, err
 	} else {
-		user.PasswordHash = &passwordHash
+		user.PasswordHash = passwordHash
 	}
 
 	passwordSalt, err := base64.StdEncoding.DecodeString(passwordSaltBase64)
 	if err != nil {
 		return nil, err
 	} else {
-		user.PasswordSalt = &passwordSalt
+		user.PasswordSalt = passwordSalt
 	}
 
 	return user, nil

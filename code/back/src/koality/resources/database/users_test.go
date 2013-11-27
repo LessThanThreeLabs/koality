@@ -38,7 +38,7 @@ func TestCreateUser(test *testing.T) {
 		test.Fatal("user.Id mismatch")
 	}
 
-	_, err = connection.Users.Create.Create(user.Email, user.FirstName, user.LastName, *user.PasswordHash, *user.PasswordSalt, user.IsAdmin)
+	_, err = connection.Users.Create.Create(user.Email, user.FirstName, user.LastName, user.PasswordHash, user.PasswordSalt, user.IsAdmin)
 	if _, ok := err.(resources.UserAlreadyExistsError); !ok {
 		test.Fatal("Expected UserAlreadyExistsError when trying to add same user twice")
 	}
@@ -143,7 +143,7 @@ func TestUsersUpdatePassword(test *testing.T) {
 			test.Fatal(err)
 		}
 
-		if bytes.Compare(*user.PasswordHash, passwordHash) != 0 || bytes.Compare(*user.PasswordSalt, passwordSalt) != 0 {
+		if bytes.Compare(user.PasswordHash, passwordHash) != 0 || bytes.Compare(user.PasswordSalt, passwordSalt) != 0 {
 			test.Fatal("Password not updated")
 		}
 	}
