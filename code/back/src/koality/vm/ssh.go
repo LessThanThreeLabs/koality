@@ -123,6 +123,8 @@ func (scper *sshScper) Scp(localFilePath, remoteFilePath string) (shell.Executab
 	}
 	headerBuffer := bytes.NewBufferString(fmt.Sprintf("C%#o %d %s\n", fileInfo.Mode()&os.ModePerm, fileInfo.Size(), path.Base(remoteFilePath)))
 	scpStdin := io.MultiReader(headerBuffer, localFile, bytes.NewReader([]byte{0}))
+
+	// Note: this is more powerful than standard scp, as it will actually create the destination directory for you
 	remoteCommand := shell.And(
 		shell.Commandf("mkdir -p %s", path.Dir(remoteFilePath)),
 		shell.Commandf("scp -qrt %s", path.Dir(remoteFilePath)),
