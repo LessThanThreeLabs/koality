@@ -11,13 +11,13 @@ type Verification struct {
 	EmailToNotify      string
 	VerificationStatus string
 	MergeStatus        string
-	Created            time.Time
-	Started            time.Time
-	Ended              time.Time
-	ChangeSet          ChangeSet
+	Created            *time.Time
+	Started            *time.Time
+	Ended              *time.Time
+	Changeset          Changeset
 }
 
-type ChangeSet struct {
+type Changeset struct {
 	Id           uint64
 	RepositoryId uint64
 	HeadSha      string
@@ -25,14 +25,13 @@ type ChangeSet struct {
 	HeadMessage  string
 	HeadUsername string
 	HeadEmail    string
-	Created      time.Time
+	Created      *time.Time
 }
 
 type VerificationsHandler struct {
 	Create VerificationsCreateHandler
-	// Read   VerificationsReadHandler
+	Read   VerificationsReadHandler
 	// Update VerificationsUpdateHandler
-	// Delete VerificationsDeleteHandler
 }
 
 type VerificationsCreateHandler interface {
@@ -41,12 +40,10 @@ type VerificationsCreateHandler interface {
 }
 
 type VerificationsReadHandler interface {
+	Get(verificationId uint64) (*Verification, error)
 }
 
 type VerificationsUpdateHandler interface {
-}
-
-type VerificationsDeleteHandler interface {
 }
 
 type NoSuchVerificationError struct {

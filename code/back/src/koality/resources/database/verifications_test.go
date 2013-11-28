@@ -1,7 +1,7 @@
 package database
 
 import (
-	"fmt"
+	"koality/resources"
 	"testing"
 )
 
@@ -39,21 +39,19 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	fmt.Println(verificationId)
+	verification, err := connection.Verifications.Read.Get(verificationId)
+	if err != nil {
+		test.Fatal(err)
+	}
 
-	// repository, err := connection.Repositories.Read.Get(repositoryId)
-	// if err != nil {
-	// 	test.Fatal(err)
-	// }
+	if verification.Id != verificationId {
+		test.Fatal("verification.Id mismatch")
+	}
 
-	// if repository.Id != repositoryId {
-	// 	test.Fatal("repository.Id mismatch")
-	// }
-
-	// _, err = connection.Repositories.Create.Create(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri)
-	// if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
-	// 	test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
-	// }
+	_, err = connection.Verifications.Create.Create(repositoryId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
+		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add verification with same changeset params twice")
+	}
 
 	// err = connection.Repositories.Update.SetGitHubHook(repositoryId, gitHubHookId, gitHubHookSecret, gitHubHookTypes)
 	// if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
@@ -63,15 +61,5 @@ func TestCreateVerification(test *testing.T) {
 	// err = connection.Repositories.Update.ClearGitHubHook(repositoryId)
 	// if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
 	// 	test.Fatal("Expected NoSuchRepositoryHookError when trying to clear repository hook")
-	// }
-
-	// err = connection.Repositories.Delete.Delete(repositoryId)
-	// if err != nil {
-	// 	test.Fatal(err)
-	// }
-
-	// err = connection.Repositories.Delete.Delete(repositoryId)
-	// if _, ok := err.(resources.NoSuchRepositoryError); !ok {
-	// 	test.Fatal("Expected NoSuchRepositoryError when trying to delete same repository twice")
 	// }
 }

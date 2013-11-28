@@ -10,7 +10,7 @@ type Repository struct {
 	VcsType   string
 	LocalUri  string
 	RemoteUri string
-	Created   time.Time
+	Created   *time.Time
 	GitHub    *GitHubMetadata
 }
 

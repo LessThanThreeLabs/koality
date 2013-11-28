@@ -13,14 +13,14 @@ type User struct {
 	PasswordSalt []byte
 	GitHubOauth  string
 	IsAdmin      bool
-	Created      time.Time
+	Created      *time.Time
 }
 
 type SshKey struct {
 	Id        uint64
 	Alias     string
 	PublicKey string
-	Created   time.Time
+	Created   *time.Time
 }
 
 type UsersHandler struct {
