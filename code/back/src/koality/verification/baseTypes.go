@@ -2,12 +2,16 @@ package verification
 
 import (
 	"koality/shell"
-	"strings"
 )
 
 type Command interface {
 	Name() string
 	ShellCommand() shell.Command
+}
+
+type TestCommand interface {
+	Command
+	GetXunitCommand() shell.Command
 }
 
 type Result struct {
@@ -23,13 +27,20 @@ type ChangeStatus struct {
 // Temporary
 
 type ShellCommand struct {
-	shell.Command
+	name    string
+	command shell.Command
+}
+
+func NewShellCommand(name string, command shell.Command) (shellCommand ShellCommand) {
+	shellCommand.name = name
+	shellCommand.command = command
+	return
 }
 
 func (shellCommand ShellCommand) Name() string {
-	return strings.Fields(string(shellCommand.Command))[0]
+	return shellCommand.name
 }
 
 func (shellCommand ShellCommand) ShellCommand() shell.Command {
-	return shellCommand.Command
+	return shellCommand.command
 }

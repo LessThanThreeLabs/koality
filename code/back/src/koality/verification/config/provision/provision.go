@@ -85,7 +85,7 @@ func installPackages(packageStrings []string, platformSpecific map[string]([]str
 }
 
 //TODO(akostov) debug
-func ParseLanguages(languageConfig map[string]string) (provisionCommand shell.Command, err error) {
+func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionCommand shell.Command, err error) {
 	languageDispatcher := map[string]func(string) (shell.Command, shell.Command){
 		"python": parsePython,
 		"ruby":   parseRuby,
@@ -121,8 +121,24 @@ func ParseLanguages(languageConfig map[string]string) (provisionCommand shell.Co
 	// TODO(akostov) environment - do we still need it?
 
 	for language, version := range languageConfig {
-		if parser, ok := languageDispatcher[language]; ok {
-			languageCommand, versionCommand := parser(version)
+		languageString, ok := language.(string)
+
+		if !ok {
+			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The language specifying variable %v is not a string.", language)}
+		}
+
+		_, okFloat := version.(float64)
+		_, okString := version.(string)
+		_, okInt := version.(int)
+
+		if !(okFloat || okString || okInt) {
+			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The version specifying variable %v is not a recognizable format.", version)}
+		}
+
+		versionString := fmt.Sprintf("%v", version)
+
+		if parser, ok := languageDispatcher[languageString]; ok {
+			languageCommand, versionCommand := parser(versionString)
 			languageSteps = append(languageSteps, languageCommand)
 			setupSteps = append(setupSteps, versionCommand)
 		} else {
@@ -151,7 +167,7 @@ func ParseLanguages(languageConfig map[string]string) (provisionCommand shell.Co
 	), err
 }
 
-func parsePython(version string) (languageCommand shell.Command, versionCommand shell.Command) {
+func parsePython(version string) (languageCommand, versionCommand shell.Command) {
 	versionMap := map[string]string{
 		"2.4": "2.4.6",
 		"2.5": "2.5.6",
@@ -277,7 +293,7 @@ func parsePython(version string) (languageCommand shell.Command, versionCommand 
 		))
 }
 
-func parseRuby(version string) (languageCommand shell.Command, versionCommand shell.Command) {
+func parseRuby(version string) (languageCommand, versionCommand shell.Command) {
 	useSystemRuby := shell.And(
 		shell.Or(
 			shell.Silent(shell.Commandf("source %s/../scripts/rvm", shell.Capture(shell.Commandf("dirname %s", shell.Capture("which rvm"))))),
@@ -329,7 +345,7 @@ func parseRuby(version string) (languageCommand shell.Command, versionCommand sh
 		))
 }
 
-func parseNodejs(version string) (languageCommand shell.Command, versionCommand shell.Command) {
+func parseNodejs(version string) (languageCommand, versionCommand shell.Command) {
 	nvmPath := filepath.Join(baseDirectory, ".nvm", "nvm.sh")
 
 	installNodeCommand := shell.And(
@@ -386,7 +402,7 @@ func parseNodejs(version string) (languageCommand shell.Command, versionCommand 
 	return languageCommand, versionCommand
 }
 
-func parseJvm(version string) (languageCommand shell.Command, versionCommand shell.Command) {
+func parseJvm(version string) (languageCommand, versionCommand shell.Command) {
 	version = strings.ToLower(version)
 	versionAliases := map[string]([]string){
 		"5":        []string{"1.5", "1.5.0"},
