@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"koality/resources"
-	"math"
 )
 
 type UpdateHandler struct {
@@ -66,9 +65,9 @@ func (updateHandler *UpdateHandler) SetAdmin(userId uint64, admin bool) error {
 
 func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey string) (uint64, error) {
 	if err := updateHandler.verifier.verifyKeyAlias(userId, alias); err != nil {
-		return math.MaxUint64, err
+		return 0, err
 	} else if err := updateHandler.verifier.verifyPublicKey(publicKey); err != nil {
-		return math.MaxUint64, err
+		return 0, err
 	}
 
 	id := uint64(0)

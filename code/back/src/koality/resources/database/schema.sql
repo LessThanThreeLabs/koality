@@ -74,25 +74,28 @@ CREATE TABLE IF NOT EXISTS changesets (
 
 CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
-	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
 	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
-	owner_email 		varchar(256),  -- TODO: need a better name for this
+	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
 	merge_target		varchar(1024),
+	email_to_notify		varchar(256),
 	verification_status varchar(32),
 	merge_status		varchar(32),
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
-	ended				timestamp with time zone
+	ended				timestamp with time zone,
+
+	CHECK (started IS NULL OR created <= started),
+	CHECK (started IS NULL OR ended IS NULL OR started <= ended)
 );
 
 CREATE TABLE IF NOT EXISTS stages (
 	id 					serial PRIMARY KEY,
-	change_id			integer NOT NULL references verifications(id) ON DELETE CASCADE,
+	verification_id		integer NOT NULL references verifications(id) ON DELETE CASCADE,
 	name 				varchar(1024) NOT NULL,
 	type 				varchar(32) NOT NULL,
 	order_number 		integer NOT NULL,
 
-	UNIQUE (change_id, name, type)
+	UNIQUE (verification_id, name, type)
 );
 
 CREATE TABLE IF NOT EXISTS stage_runs (
@@ -101,7 +104,10 @@ CREATE TABLE IF NOT EXISTS stage_runs (
 	return_code			integer,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
-	ended				timestamp with time zone
+	ended				timestamp with time zone,
+
+	CHECK (started IS NULL OR created <= started),
+	CHECK (started IS NULL OR ended IS NULL OR started <= ended)
 );
 
 CREATE TABLE IF NOT EXISTS console_texts (

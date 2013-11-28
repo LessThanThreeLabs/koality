@@ -8,6 +8,7 @@ import (
 	"koality/resources"
 	"koality/resources/database/repositories"
 	"koality/resources/database/users"
+	"koality/resources/database/verifications"
 )
 
 const (
@@ -41,7 +42,12 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	connection := resources.Connection{usersHandler, repositoriesHandler}
+	verificationsHandler, err := verifications.New(database)
+	if err != nil {
+		return nil, err
+	}
+
+	connection := resources.Connection{usersHandler, repositoriesHandler, verificationsHandler}
 	return &connection, nil
 }
 

@@ -8,6 +8,7 @@ type Verification struct {
 	Id                 uint64
 	RepositoryId       uint64
 	MergeTarget        string
+	EmailToNotify      string
 	VerificationStatus string
 	MergeStatus        string
 	Created            time.Time
@@ -29,12 +30,14 @@ type ChangeSet struct {
 
 type VerificationsHandler struct {
 	Create VerificationsCreateHandler
-	Read   VerificationsReadHandler
-	Update VerificationsUpdateHandler
-	Delete VerificationsDeleteHandler
+	// Read   VerificationsReadHandler
+	// Update VerificationsUpdateHandler
+	// Delete VerificationsDeleteHandler
 }
 
 type VerificationsCreateHandler interface {
+	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (uint64, error)
+	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (uint64, error)
 }
 
 type VerificationsReadHandler interface {
@@ -46,10 +49,14 @@ type VerificationsUpdateHandler interface {
 type VerificationsDeleteHandler interface {
 }
 
-type VerificationAlreadyExistsError struct {
+type NoSuchVerificationError struct {
 	error
 }
 
-type NoSuchVerificationError struct {
+type ChangesetAlreadyExistsError struct {
+	error
+}
+
+type NoSuchChangesetError struct {
 	error
 }

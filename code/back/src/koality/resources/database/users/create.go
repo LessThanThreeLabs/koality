@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"koality/resources"
-	"math"
 )
 
 type CreateHandler struct {
@@ -23,7 +22,7 @@ func NewCreateHandler(database *sql.DB) (resources.UsersCreateHandler, error) {
 func (createHandler *CreateHandler) Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (uint64, error) {
 	err := createHandler.getUserParamsError(email, firstName, lastName)
 	if err != nil {
-		return math.MaxUint64, err
+		return 0, err
 	}
 
 	passwordHashBase64 := base64.StdEncoding.EncodeToString(passwordHash)
@@ -34,7 +33,7 @@ func (createHandler *CreateHandler) Create(email, firstName, lastName string, pa
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 	err = createHandler.database.QueryRow(query, email, firstName, lastName, passwordHashBase64, passwordSaltBase64, admin).Scan(&id)
 	if err != nil {
-		return math.MaxUint64, err
+		return 0, err
 	}
 	return id, nil
 }
