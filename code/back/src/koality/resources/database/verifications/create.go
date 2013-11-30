@@ -53,7 +53,7 @@ func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha
 	}
 
 	verificationId := uint64(0)
-	verificationQuery := "INSERT INTO verifications (repository_id, changeset_id, merge_target, email_to_notify, verification_status)" +
+	verificationQuery := "INSERT INTO verifications (repository_id, changeset_id, merge_target, email_to_notify, status)" +
 		" VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	err = transaction.QueryRow(verificationQuery, repositoryId, changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&verificationId)
 	if err != nil {
@@ -78,7 +78,7 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetI
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO verifications (repository_id, changeset_id, merge_target, owner_email, verification_status)" +
+	query := "INSERT INTO verifications (repository_id, changeset_id, merge_target, owner_email, status)" +
 		" VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	err = createHandler.database.QueryRow(query, repositoryId, changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&id)
 	if err != nil {

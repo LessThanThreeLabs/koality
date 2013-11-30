@@ -3,6 +3,7 @@ package database
 import (
 	"koality/resources"
 	"testing"
+	"time"
 )
 
 const (
@@ -19,21 +20,48 @@ const (
 	emailToNotify                   = "koalas@koalitycode.com"
 )
 
-func TestCreateInvalidVerification(test *testing.T) {
+var (
+	connection   *resources.Connection
+	repositoryId uint64
+)
 
+// TODO: get rid of this, import database dump instead
+func TestPrepareOtherTests(test *testing.T) {
+	var err error
+	connection, err = New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositoryId, err = connection.Repositories.Create.Create(verificationRepositoryName, verificationRepositoryVcsType, verificationRepositoryLocalUri, verificationRepositoryRemoteUri)
+	if err != nil {
+		test.Fatal(err)
+	}
+}
+
+func TestCreateInvalidVerification(test *testing.T) {
+	_, err := connection.Verifications.Create.Create(0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid repository id")
+	}
+
+	_, err = connection.Verifications.Create.Create(repositoryId, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid head sha")
+	}
+
+	_, err = connection.Verifications.Create.Create(repositoryId, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid base sha")
+	}
+
+	_, err = connection.Verifications.Create.Create(repositoryId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
+	if err == nil {
+		test.Fatal("Expected error after providing invalid email to notify")
+	}
 }
 
 func TestCreateVerification(test *testing.T) {
-	connection, err := New()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	repositoryId, err := connection.Repositories.Create.Create(verificationRepositoryName, verificationRepositoryVcsType, verificationRepositoryLocalUri, verificationRepositoryRemoteUri)
-	if err != nil {
-		test.Fatal(err)
-	}
-
 	verificationId, err := connection.Verifications.Create.Create(repositoryId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
@@ -53,13 +81,48 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add verification with same changeset params twice")
 	}
 
-	// err = connection.Repositories.Update.SetGitHubHook(repositoryId, gitHubHookId, gitHubHookSecret, gitHubHookTypes)
-	// if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
-	// 	test.Fatal("Expected NoSuchRepositoryHookError when trying to add repository hook")
-	// }
+	err = connection.Verifications.Update.SetStatus(verificationId, "passed")
+	if err != nil {
+		test.Fatal(err)
+	}
 
-	// err = connection.Repositories.Update.ClearGitHubHook(repositoryId)
-	// if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
-	// 	test.Fatal("Expected NoSuchRepositoryHookError when trying to clear repository hook")
-	// }
+	err = connection.Verifications.Update.SetStatus(verificationId, "bad-status")
+	if _, ok := err.(resources.InvalidVerificationStatusError); !ok {
+		test.Fatal("Expected InvalidVerificationStatusError when trying to set status")
+	}
+
+	err = connection.Verifications.Update.SetMergeStatus(verificationId, "passed")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Verifications.Update.SetMergeStatus(verificationId, "bad-merge-status")
+	if _, ok := err.(resources.InvalidVerificationMergeStatusError); !ok {
+		test.Fatal("Expected InvalidVerificationMergeStatusError when trying to set merge status")
+	}
+
+	err = connection.Verifications.Update.SetEndTime(verificationId, time.Now())
+	if err == nil {
+		test.Fatal("Expected error when setting end time without start time")
+	}
+
+	err = connection.Verifications.Update.SetStartTime(verificationId, time.Unix(0, 0))
+	if err == nil {
+		test.Fatal("Expected error when setting start time before create time")
+	}
+
+	err = connection.Verifications.Update.SetStartTime(verificationId, time.Now())
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Verifications.Update.SetEndTime(verificationId, time.Unix(0, 0))
+	if err == nil {
+		test.Fatal("Expected error when setting end time before create time")
+	}
+
+	err = connection.Verifications.Update.SetEndTime(verificationId, time.Now())
+	if err != nil {
+		test.Fatal(err)
+	}
 }

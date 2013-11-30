@@ -19,7 +19,7 @@ func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verificat
 	var mergeTarget, emailToNotify, verificationStatus, mergeStatus sql.NullString
 
 	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
-		" V.verification_status, V.merge_status, V.created, V.started, V.ended," +
+		" V.status, V.merge_status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.created" +
 		" FROM verifications V JOIN changesets C" +

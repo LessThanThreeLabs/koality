@@ -31,7 +31,7 @@ type Changeset struct {
 type VerificationsHandler struct {
 	Create VerificationsCreateHandler
 	Read   VerificationsReadHandler
-	// Update VerificationsUpdateHandler
+	Update VerificationsUpdateHandler
 }
 
 type VerificationsCreateHandler interface {
@@ -44,9 +44,21 @@ type VerificationsReadHandler interface {
 }
 
 type VerificationsUpdateHandler interface {
+	SetStatus(verificationId uint64, status string) error
+	SetMergeStatus(verificationId uint64, mergeStatus string) error
+	SetStartTime(verificationId uint64, startTime time.Time) error
+	SetEndTime(verificationId uint64, endTime time.Time) error
 }
 
 type NoSuchVerificationError struct {
+	error
+}
+
+type InvalidVerificationStatusError struct {
+	error
+}
+
+type InvalidVerificationMergeStatusError struct {
 	error
 }
 

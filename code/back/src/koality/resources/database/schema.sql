@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS verifications (
 	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
 	merge_target		varchar(1024),
 	email_to_notify		varchar(256),
-	verification_status varchar(32),
+	status 				varchar(32) NOT NULL,
 	merge_status		varchar(32),
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,

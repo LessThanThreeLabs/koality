@@ -16,10 +16,10 @@ func New(database *sql.DB) (*resources.VerificationsHandler, error) {
 		return nil, err
 	}
 
-	// updateHandler, err := NewUpdateHandler(database)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	updateHandler, err := NewUpdateHandler(database)
+	if err != nil {
+		return nil, err
+	}
 
-	return &resources.VerificationsHandler{createHandler, readHandler}, nil
+	return &resources.VerificationsHandler{createHandler, readHandler, updateHandler}, nil
 }

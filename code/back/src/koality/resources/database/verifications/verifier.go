@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	allowedVerificationStatuses []string = []string{"received", "queued", "running", "passed", "failed"}
-	allowedMergeStatuses        []string = []string{"running", "passed", "failed"}
+	allowedStatuses      []string = []string{"received", "queued", "running", "passed", "failed", "cancelled"}
+	allowedMergeStatuses []string = []string{"running", "passed", "failed"}
 )
 
 type Verifier struct {
@@ -43,9 +43,6 @@ func (verifier *Verifier) verifyShas(headSha, baseSha string) error {
 }
 
 func (verifier *Verifier) verifyHeadMessage(message string) error {
-	if len(message) > 1000000 {
-		return errors.New("Head message must be less than 1E6 characters long")
-	}
 	return nil
 }
 
@@ -79,13 +76,13 @@ func (verifier *Verifier) verifyEmailToNotify(emailToNotify string) error {
 	return nil
 }
 
-func (verifier *Verifier) verifyVerificationStatus(verificationStatus string) error {
-	for _, allowedVerificationStatus := range allowedVerificationStatuses {
-		if verificationStatus == allowedVerificationStatus {
+func (verifier *Verifier) verifyStatus(status string) error {
+	for _, allowedVerificationStatus := range allowedStatuses {
+		if status == allowedVerificationStatus {
 			return nil
 		}
 	}
-	return errors.New("Unexpected verification status: " + verificationStatus)
+	return resources.InvalidVerificationStatusError{errors.New("Unexpected verification status: " + status)}
 }
 
 func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {
@@ -94,7 +91,7 @@ func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {
 			return nil
 		}
 	}
-	return errors.New("Unexpected merge status: " + mergeStatus)
+	return resources.InvalidVerificationMergeStatusError{errors.New("Unexpected merge status: " + mergeStatus)}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {
