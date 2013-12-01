@@ -15,7 +15,7 @@ type Stage struct {
 
 type StageRun struct {
 	Id         uint64
-	ReturnCode uint64
+	ReturnCode int // ignore if -1
 	Created    *time.Time
 	Started    *time.Time
 	Ended      *time.Time
@@ -28,8 +28,8 @@ type StagesHandler struct {
 }
 
 type StagesCreateHandler interface {
-	// Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (uint64, error)
-	// CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (uint64, error)
+	Create(verificationId uint64, name, flavor string, orderNumber uint64) (uint64, error)
+	CreateRun(stageId uint64) (uint64, error)
 }
 
 type StagesReadHandler interface {

@@ -3,6 +3,7 @@ package stages
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"koality/resources"
 	"time"
 )
@@ -51,14 +52,38 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 	return nil
 }
 
-func (verifier *Verifier) doesVerificationExist(verificationId uint64) bool {
+func (verifier *Verifier) verifyVerificationExists(verificationId uint64) error {
 	query := "SELECT id FROM verifications WHERE id=$1"
 	err := verifier.database.QueryRow(query, verificationId).Scan()
-	return err != sql.ErrNoRows
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
+		return resources.NoSuchVerificationError{errors.New(errorText)}
+	}
+	return nil
 }
 
-func (verifier *Verifier) doesStageExistWithNameAndFlavor(verificationId uint64, name, flavor string) bool {
+func (verifier *Verifier) verifyStageExists(stageId uint64) error {
+	query := "SELECT id FROM stages WHERE id=$1"
+	err := verifier.database.QueryRow(query, stageId).Scan()
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Unable to find stage with id: %d", stageId)
+		return resources.NoSuchStageError{errors.New(errorText)}
+	}
+	return nil
+}
+
+func (verifier *Verifier) verifyStageDoesNotExistWithNameAndFlavor(verificationId uint64, name, flavor string) error {
 	query := "SELECT id FROM stages WHERE verification_id=$1 AND name=$2 AND flavor=$3"
 	err := verifier.database.QueryRow(query, verificationId, name, flavor).Scan()
-	return err != sql.ErrNoRows
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Stage already exists with name %s and flavor %s", name, flavor)
+		return resources.StageAlreadyExistsError{errors.New(errorText)}
+	}
+	return nil
 }

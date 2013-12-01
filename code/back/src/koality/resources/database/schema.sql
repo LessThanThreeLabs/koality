@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS stages (
 CREATE TABLE IF NOT EXISTS stage_runs (
 	id 					serial PRIMARY KEY,
 	stage_id			integer NOT NULL references stages(id) ON DELETE CASCADE,
-	return_code			integer,
+	return_code			integer DEFAULT -1,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
 	ended				timestamp with time zone,
