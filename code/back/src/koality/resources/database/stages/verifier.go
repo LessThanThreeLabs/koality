@@ -54,7 +54,7 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 
 func (verifier *Verifier) verifyVerificationExists(verificationId uint64) error {
 	query := "SELECT id FROM verifications WHERE id=$1"
-	err := verifier.database.QueryRow(query, verificationId).Scan()
+	err := verifier.database.QueryRow(query, verificationId).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err == sql.ErrNoRows {
@@ -66,7 +66,7 @@ func (verifier *Verifier) verifyVerificationExists(verificationId uint64) error 
 
 func (verifier *Verifier) verifyStageExists(stageId uint64) error {
 	query := "SELECT id FROM stages WHERE id=$1"
-	err := verifier.database.QueryRow(query, stageId).Scan()
+	err := verifier.database.QueryRow(query, stageId).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err == sql.ErrNoRows {
@@ -78,10 +78,10 @@ func (verifier *Verifier) verifyStageExists(stageId uint64) error {
 
 func (verifier *Verifier) verifyStageDoesNotExistWithNameAndFlavor(verificationId uint64, name, flavor string) error {
 	query := "SELECT id FROM stages WHERE verification_id=$1 AND name=$2 AND flavor=$3"
-	err := verifier.database.QueryRow(query, verificationId, name, flavor).Scan()
+	err := verifier.database.QueryRow(query, verificationId, name, flavor).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
-	} else if err == sql.ErrNoRows {
+	} else if err != sql.ErrNoRows {
 		errorText := fmt.Sprintf("Stage already exists with name %s and flavor %s", name, flavor)
 		return resources.StageAlreadyExistsError{errors.New(errorText)}
 	}

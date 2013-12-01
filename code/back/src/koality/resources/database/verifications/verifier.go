@@ -3,6 +3,7 @@ package verifications
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"koality/resources"
 	"regexp"
 	"time"
@@ -27,17 +28,20 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 	return &Verifier{database}, nil
 }
 
-func (verifier *Verifier) verifyShas(headSha, baseSha string) error {
+func (verifier *Verifier) verifyHeadSha(headSha string) error {
 	if len(headSha) != 40 {
 		return errors.New("Head SHA must be 40 characters long")
 	} else if ok, err := regexp.MatchString(headShaRegex, headSha); !ok || err != nil {
 		return errors.New("Head SHA must match regex: " + headSha)
-	} else if len(baseSha) != 40 {
+	}
+	return nil
+}
+
+func (verifier *Verifier) verifyBaseSha(baseSha string) error {
+	if len(baseSha) != 40 {
 		return errors.New("Base SHA must be 40 characters long")
 	} else if ok, err := regexp.MatchString(baseShaRegex, baseSha); !ok || err != nil {
 		return errors.New("Base SHA must match regex: " + baseSha)
-	} else if verifier.doesShaPairExist(headSha, baseSha) {
-		return resources.ChangesetAlreadyExistsError{errors.New("Changeset already exists with head sha and base sha")}
 	}
 	return nil
 }
@@ -110,20 +114,38 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 	return nil
 }
 
-func (verifier *Verifier) doesRepositoryExist(repositoryId uint64) bool {
+func (verifier *Verifier) verifyRepositoryExists(repositoryId uint64) error {
 	query := "SELECT id FROM repositories WHERE id=$1"
-	err := verifier.database.QueryRow(query, repositoryId).Scan()
-	return err != sql.ErrNoRows
+	err := verifier.database.QueryRow(query, repositoryId).Scan(new(uint64))
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Unable to find repository with id: %d", repositoryId)
+		return resources.NoSuchRepositoryError{errors.New(errorText)}
+	}
+	return nil
 }
 
-func (verifier *Verifier) doesChangesetExist(changesetId uint64) bool {
+func (verifier *Verifier) verifyChangesetExists(changesetId uint64) error {
 	query := "SELECT id FROM changesets WHERE id=$1"
-	err := verifier.database.QueryRow(query, changesetId).Scan()
-	return err != sql.ErrNoRows
+	err := verifier.database.QueryRow(query, changesetId).Scan(new(uint64))
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Unable to find changeset with id: %d", changesetId)
+		return resources.NoSuchChangesetError{errors.New(errorText)}
+	}
+	return nil
 }
 
-func (verifier *Verifier) doesShaPairExist(headSha, baseSha string) bool {
+func (verifier *Verifier) verifyShaPairDoesNotExist(headSha, baseSha string) error {
 	query := "SELECT id FROM changesets WHERE head_sha=$1 AND base_sha=$2"
-	err := verifier.database.QueryRow(query, headSha, baseSha).Scan()
-	return err != sql.ErrNoRows
+	err := verifier.database.QueryRow(query, headSha, baseSha).Scan(new(uint64))
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err != sql.ErrNoRows {
+		errorText := fmt.Sprintf("Changeset already exists with head sha %s and base sha %s", headSha, baseSha)
+		return resources.ChangesetAlreadyExistsError{errors.New(errorText)}
+	}
+	return nil
 }
