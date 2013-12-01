@@ -92,10 +92,10 @@ CREATE TABLE IF NOT EXISTS stages (
 	id 					serial PRIMARY KEY,
 	verification_id		integer NOT NULL references verifications(id) ON DELETE CASCADE,
 	name 				varchar(1024) NOT NULL,
-	type 				varchar(32) NOT NULL,
+	flavor 				varchar(32) NOT NULL,
 	order_number 		integer NOT NULL,
 
-	UNIQUE (verification_id, name, type)
+	UNIQUE (verification_id, name, flavor)
 );
 
 CREATE TABLE IF NOT EXISTS stage_runs (
