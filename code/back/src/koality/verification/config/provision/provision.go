@@ -132,7 +132,7 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionComman
 		_, okInt := version.(int)
 
 		if !(okFloat || okString || okInt) {
-			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The version specifying variable %v is not a recognizable format.", version)}
+			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The version specifying variable %#v is not a recognizable format.", version)}
 		}
 
 		versionString := fmt.Sprintf("%v", version)

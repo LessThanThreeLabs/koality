@@ -8,26 +8,110 @@ import (
 	"koality/shell"
 	"koality/verification"
 	"koality/verification/config/provision"
-	//"koality/verification/config/remotecommand"
+	"koality/verification/config/remotecommand"
 	"strings"
 )
 
-/*
 type VerificationConfig struct {
-	NumMachines     int
-	SetupCommands   []verification.Command
-	CompileCommands []verification.Command
-	FactoryCommands []verification.Command
-	TestCommands    []verification.Command
+	Nodes                 int
+	Snapshot              bool
+	RecursiveClone        bool
+	GitClean              bool
+	ProvisionCommand      verification.Command
+	SetupCommands         []verification.Command
+	FirstPreTestCommands  []verification.Command
+	EveryPreTestCommands  []verification.Command
+	TestCommands          []verification.TestCommand
+	EveryPostTestCommands []verification.Command
+	LastPostTestCommands  []verification.Command
+	ExportCommands        []verification.Command
 }
-*/
 
-type VerificationConfig struct {
-	nodes            int
-	snapshot         bool
-	recursiveClone   bool
-	gitClean         bool
-	provisionCommand verification.Command
+const defaultTimeout = 600
+
+//Too long of a function name?
+func getRemoteCommandsFromScripts(scripts interface{}, xunit, advertised bool) (commands []verification.TestCommand, err error) {
+	switch scripts.(type) {
+	case []string:
+		commands = append(commands, remotecommand.NewRemoteCommand(true, "setup", defaultTimeout, nil, scripts.([]string)))
+		return
+	case map[interface{}]interface{}:
+		scripts := scripts.(map[interface{}]interface{})
+		for name, parameters := range scripts {
+			name, ok := name.(string)
+			if !ok {
+				err = BadConfigurationError{fmt.Sprintf("The name %#v is not a valid string", name)}
+				return
+			}
+
+			paramMap, ok := parameters.(map[interface{}]interface{})
+
+			if !ok {
+				err = BadConfigurationError{fmt.Sprintf("The parameters for script %s should be a map.", name)}
+				return
+			}
+
+			var xunitPaths []string
+			var timeout int
+			var command string
+			for parameter, value := range paramMap {
+				switch parameter {
+				case "xunit":
+					if !xunit {
+						err = BadConfigurationError{"Only the scripts in the test section can have xunit output."}
+						return
+					}
+
+					switch value.(type) {
+					case []string:
+						xunitPaths = value.([]string)
+					case string:
+						xunitPaths = []string{value.(string)}
+					default:
+						err = BadConfigurationError{"The xunit parameter should be a string or a list of strings."}
+						return
+					}
+				case "timeout":
+					timeout, ok = value.(int)
+
+					if !ok {
+						err = BadConfigurationError{"The timeout parameter should be an integer."}
+						return
+					}
+				case "command":
+					command, ok = value.(string)
+
+					if !ok {
+						err = BadConfigurationError{"The command paremeter of a script should be a string"}
+						return
+					}
+				default:
+					err = BadConfigurationError{fmt.Sprintf("The parameter %#v is not supported for scripts.", parameter)}
+					return
+				}
+			}
+
+			commands = append(commands, remotecommand.NewRemoteCommand(advertised, name, timeout, xunitPaths, []string{command}))
+		}
+	default:
+		return commands, BadConfigurationError{"The script subsection should contain a list of shell scripts or a map from script names to script parameters."}
+	}
+
+	return
+}
+
+func getRemoteCommands(scripts interface{}, advertised bool) (commands []verification.Command, err error) {
+	remoteCommands, err := getRemoteCommandsFromScripts(scripts, false, advertised)
+
+	// Either this or code duplication. Seriously, does anyone know a better way to do this? Discuss this with me.
+	for _, command := range remoteCommands {
+		commands = append(commands, command.(verification.Command))
+	}
+	return
+}
+
+func getRemoteTestCommands(scripts interface{}, advertised bool) (commands []verification.TestCommand, err error) {
+	return getRemoteCommandsFromScripts(scripts, true, advertised)
 }
 
 func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err error) {
@@ -35,7 +119,7 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 
 	err = goyaml.Unmarshal([]byte(yamlContents), &parsedConfig)
 	if err != nil {
-		if strings.Contains(err.Error(), "YAML error") {
+		if strings.HasPrefix(err.Error(), "YAML error") {
 			return
 		} else {
 			// TODO(andrey) log the error (this should be an oom/null-pointer type of error)
@@ -58,11 +142,25 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 				return verificationConfig, err
 			}
 
-			verificationConfig.nodes = nodes
-			verificationConfig.snapshot = snapshot
-			verificationConfig.recursiveClone = recursiveClone
-			verificationConfig.gitClean = gitClean
-			verificationConfig.provisionCommand = verification.NewShellCommand("provision", provisionCommand)
+			verificationConfig.Nodes = nodes
+			verificationConfig.Snapshot = snapshot
+			verificationConfig.RecursiveClone = recursiveClone
+			verificationConfig.GitClean = gitClean
+			verificationConfig.ProvisionCommand = verification.NewShellCommand("provision", provisionCommand)
+		case "setup":
+			setupCommands, err := convertSetupSection(config)
+
+			if err != nil {
+				return verificationConfig, err
+			}
+
+			verificationConfig.SetupCommands = setupCommands
+		case "before tests":
+			return
+		case "tests":
+			return
+		case "after tests":
+			return
 		default:
 			err = BadConfigurationError{fmt.Sprintf("The section %s is not currently supported.", section)}
 			return
@@ -75,9 +173,23 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 func convertParameterSection(config interface{}) (node int, snapshot, recursiveClone, gitClean bool, provisionCommand shell.Command, err error) {
 	switch config.(type) {
 	case map[interface{}]interface{}:
-		for key, option := range config.(map[interface{}]interface{}) {
+		config := config.(map[interface{}]interface{})
+
+		parseBool := func(option interface{}) (bool, error) {
+			switch option {
+			case true, false:
+				option := option.(bool)
+				return option, nil
+			default:
+				// @Jordan,Brian - what do you think of this? I send this error and catch it and give a more specific one
+				return false, BadConfigurationError{""}
+			}
+		}
+
+		for key, option := range config {
 			switch key {
 			case "languages":
+
 				option, ok := option.(map[interface{}]interface{})
 
 				if !ok {
@@ -103,63 +215,79 @@ func convertParameterSection(config interface{}) (node int, snapshot, recursiveC
 				}
 
 				node = option
+			// Can you guys think of a way to avoid this code duplication?
 			case "snapshot":
-
+				snapshot, err = parseBool(option)
+				if err != nil {
+					err = BadConfigurationError{"The snapshot parameter can be only true or false."}
+					return
+				}
+			case "recursiveClone":
+				recursiveClone, err = parseBool(option)
+				if err != nil {
+					err = BadConfigurationError{"The recursiveClone parameter can be only true or false."}
+					return
+				}
+			case "gitClean":
+				gitClean, err = parseBool(option)
+				if err != nil {
+					err = BadConfigurationError{"The gitClean parameter can be only true or false."}
+					return
+				}
+			default:
+				err = BadConfigurationError{fmt.Sprintf("The option %v is not currently supported.", option)}
+				return
 			}
 		}
 	default:
-		//TODO (andrey) error
-		fmt.Printf("Boo")
+		err = BadConfigurationError{"The parameter section should be a map."}
+		return
 	}
-
 	return
 }
 
-/*
-func convertSetupSection(config interface{}) (command RemoteCommand, err error) {
-	switch configType := config.(type) {
-	case map[string]interface{}:
-		config := config.(map[string]interface{})
+func convertSetupSection(config interface{}) (commands []verification.Command, err error) {
+	switch config.(type) {
+	case map[interface{}]interface{}:
+		config := config.(map[interface{}]interface{})
 		scripts, ok := config["scripts"]
 		if len(config) > 1 {
 			return commands, BadConfigurationError{"We currently only support a script subsection for the setup section."}
 		} else if len(config) == 1 && !ok {
 			return commands, BadConfigurationError{"We currently only support a script subsection for the setup section."}
 		} else if ok {
-			switch scriptType := scripts.(type) {
-			case []string:
-				commands := scripts.([]string)
-
-			default:
-				return commands, BadConfigurationError{"The script subsection should contain a list of shell scripts."}
-			}
+			commands, err = getRemoteCommands(scripts, true)
 		}
 	default:
 		return commands, BadConfigurationError{"The setup section should be a list of scripts"}
 	}
 	return
 }
-*/
+
 /*
-func convertBeforeTestSection(config interface{}) (commands []shell.Command, err error) {
-	switch configType := config.(type) {
-	case map[string]interface{}:
-		config := config.(map[string]interface{})
-		if len(config) > 2 {
-			return commands, BadConfigurationError{"We currently only support \"first node\" and \"every node\" subsections for the before tests section."}
-		} else if ok {
-			switch scriptType = scripts.(type) {
-			case []string:
-					for _, command := range scripts {
-						commands = append(commands, toScript(command))
-					}
+func convertBeforeTestSection(config interface{}) (firstCommands, everyCommands []verification.Command, err error) {
+	switch config.(type) {
+	case map[interface{}]interface{}:
+		config := config.(map[interface{}]interface{})
+		for subsection, content := range config {
+			switch subsection {
+			case "scripts":
+				if len(config) > 1 {
+					err = BadConfigurationError{"If you have scripts directly under before tests, then you can have no other subsections."}
+				}
+
+			case "first node":
+
+			case "every node":
+
 			default:
-				return commands, BadConfigurationError{"The script subsection should contain a list of shell scripts."}
 			}
 		}
 	default:
-		return commands, BadConfigurationError{"The setup section should be a list of scripts"}
+		err = BadConfigurationError{"The setup section should be a list of scripts"}
+		return
 	}
+	return
 }
 */
 

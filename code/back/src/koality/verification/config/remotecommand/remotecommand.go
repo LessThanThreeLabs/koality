@@ -13,12 +13,25 @@ type RemoteCommand struct {
 	commands   []string
 }
 
-func (remoteCommand *RemoteCommand) Name() string {
+func NewRemoteCommand(advertised bool, name string, timeout int, xunit, commands []string) (remoteCommand RemoteCommand) {
+	remoteCommand.advertised = advertised
+	remoteCommand.name = name
+	remoteCommand.timeout = timeout
+	remoteCommand.xunit = xunit
+	remoteCommand.commands = commands
+	return
+}
+
+func (remoteCommand RemoteCommand) Name() string {
 	return remoteCommand.name
 }
 
-func (remoteCommand *RemoteCommand) ShellCommand() shell.Command {
+func (remoteCommand RemoteCommand) ShellCommand() shell.Command {
 	return remoteCommand.toScript()
+}
+
+func (remoteCommand RemoteCommand) GetXunitCommand() shell.Command {
+	return shell.Command("TODO")
 }
 
 func advertiseCommands(remoteCommand *RemoteCommand) shell.Command {
