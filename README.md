@@ -28,7 +28,7 @@
 * `vagrant suspend`
 	* Will put the virtual machine to sleep
 	* Be sure to do this before putting your computer to sleep
-* `vagrant reboot`
+* `vagrant reload`
 	* Will restart the virtual machine
 	* Use this if the virtual machine is ever giving you trouble
 * `sudo /Library/StartupItems/VirtualBox/VirtualBox restart`
