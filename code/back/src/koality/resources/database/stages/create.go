@@ -45,7 +45,7 @@ func (createHandler *CreateHandler) CreateRun(stageId uint64) (uint64, error) {
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO stage_runs (stageId) VALUES ($1) RETURNING id"
+	query := "INSERT INTO stage_runs (stage_id) VALUES ($1) RETURNING id"
 	err = createHandler.database.QueryRow(query, stageId).Scan(&id)
 	if err != nil {
 		return 0, err

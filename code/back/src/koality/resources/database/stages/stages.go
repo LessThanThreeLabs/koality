@@ -11,15 +11,15 @@ func New(database *sql.DB) (*resources.StagesHandler, error) {
 		return nil, err
 	}
 
-	// readHandler, err := NewReadHandler(database)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	readHandler, err := NewReadHandler(database)
+	if err != nil {
+		return nil, err
+	}
 
-	// updateHandler, err := NewUpdateHandler(database)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	updateHandler, err := NewUpdateHandler(database)
+	if err != nil {
+		return nil, err
+	}
 
-	return &resources.StagesHandler{createHandler}, nil
+	return &resources.StagesHandler{createHandler, readHandler, updateHandler}, nil
 }

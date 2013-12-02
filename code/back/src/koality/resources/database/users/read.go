@@ -27,7 +27,8 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &passwordHashBase64, &passwordSaltBase64,
 		&gitHubOAuth, &user.IsAdmin, &user.Created)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchUserError{errors.New("Unable to find user")}
+		errorText := "Unable to find user"
+		return nil, resources.NoSuchUserError{errors.New(errorText)}
 	} else if err != nil {
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func (readHandler *ReadHandler) GetKeys(userId uint64) ([]resources.SshKey, erro
 		return nil, err
 	}
 
-	sshKeys := make([]resources.SshKey, 5)
+	sshKeys := make([]resources.SshKey, 0, 5)
 	for rows.Next() {
 		sshKey := resources.SshKey{}
 		err = rows.Scan(&sshKey.Id, &sshKey.Alias, &sshKey.PublicKey, &sshKey.Created)

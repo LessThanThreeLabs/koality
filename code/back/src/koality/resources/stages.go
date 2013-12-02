@@ -23,8 +23,8 @@ type StageRun struct {
 
 type StagesHandler struct {
 	Create StagesCreateHandler
-	// Read   StagesReadHandler
-	// Update StagesUpdateHandler
+	Read   StagesReadHandler
+	Update StagesUpdateHandler
 }
 
 type StagesCreateHandler interface {
@@ -33,14 +33,15 @@ type StagesCreateHandler interface {
 }
 
 type StagesReadHandler interface {
-	// Get(verificationId uint64) (*Verification, error)
+	Get(stageId uint64) (*Stage, error)
+	GetRun(stageRunId uint64) (*StageRun, error)
+	GetRuns(stageId uint64) ([]StageRun, error)
 }
 
 type StagesUpdateHandler interface {
-	// SetStatus(verificationId uint64, status string) error
-	// SetMergeStatus(verificationId uint64, mergeStatus string) error
-	// SetStartTime(verificationId uint64, startTime time.Time) error
-	// SetEndTime(verificationId uint64, endTime time.Time) error
+	SetReturnCode(stageRunId uint64, returnCode int) error
+	SetStartTime(verificationId uint64, startTime time.Time) error
+	SetEndTime(verificationId uint64, endTime time.Time) error
 }
 
 type NoSuchStageError struct {

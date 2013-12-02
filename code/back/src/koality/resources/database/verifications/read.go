@@ -3,6 +3,7 @@ package verifications
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"koality/resources"
 )
 
@@ -31,7 +32,8 @@ func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verificat
 		&verification.Changeset.BaseSha, &verification.Changeset.HeadMessage, &verification.Changeset.HeadUsername,
 		&verification.Changeset.HeadEmail, &verification.Changeset.Created)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchVerificationError{errors.New("Unable to find verification")}
+		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
+		return nil, resources.NoSuchVerificationError{errors.New(errorText)}
 	} else if err != nil {
 		return nil, err
 	}

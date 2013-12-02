@@ -3,6 +3,7 @@ package verifications
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"koality/resources"
 	"time"
 )
@@ -55,7 +56,8 @@ func (updateHandler *UpdateHandler) getTimes(verificationId uint64) (createTime,
 	query := "SELECT created, started, ended FROM verifications WHERE id=$1"
 	err = updateHandler.database.QueryRow(query, verificationId).Scan(&createTime, &startTime, &endTime)
 	if err == sql.ErrNoRows {
-		err = resources.NoSuchVerificationError{errors.New("Unable to find verification")}
+		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
+		err = resources.NoSuchVerificationError{errors.New(errorText)}
 	}
 	return
 }
@@ -80,9 +82,9 @@ func (updateHandler *UpdateHandler) SetEndTime(verificationId uint64, endTime ti
 	if err != nil {
 		return err
 	} else if createTime == nil {
-		return errors.New("Cannot set start time when create time is null")
+		return errors.New("Cannot set end time when create time is null")
 	} else if startTime == nil {
-		return errors.New("Cannot set start time when start time is null")
+		return errors.New("Cannot set end time when start time is null")
 	}
 
 	if err := updateHandler.verifier.verifyEndTime(*createTime, *startTime, endTime); err != nil {
