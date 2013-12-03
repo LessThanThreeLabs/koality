@@ -54,7 +54,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				]
 			},
 			:go => {
-				:version => "1.1.2",
+				:version => "1.2",
 				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code/back",
 				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/back/bin"
 			},
