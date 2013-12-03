@@ -3,14 +3,18 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"koality/resources"
 	"regexp"
 )
 
 const (
-	nameRegex   = "^[-_a-zA-Z0-9]+$"
-	gitUriRegex = "[-_\\./a-zA-Z0-9]+@[-_\\.:/a-zA-Z0-9]+$"
-	hgUriRegex  = "[-_\\./a-zA-Z0-9]+@[-_\\./a-zA-Z0-9]+$"
+	repositoryMaxNameLength      = 256
+	repositoryMaxLocalUriLength  = 256
+	repositoryMaxRemoteUriLength = 256
+	nameRegex                    = "^[-_a-zA-Z0-9]+$"
+	gitUriRegex                  = "[-_\\./a-zA-Z0-9]+@[-_\\.:/a-zA-Z0-9]+$"
+	hgUriRegex                   = "[-_\\./a-zA-Z0-9]+@[-_\\./a-zA-Z0-9]+$"
 )
 
 type Verifier struct {
@@ -22,8 +26,9 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyName(name string) error {
-	if len(name) > 256 {
-		return errors.New("Name must be less than 256 characters long")
+	if len(name) > repositoryMaxNameLength {
+		errorText := fmt.Sprintf("Name cannot exceed %d characters long", repositoryMaxNameLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(nameRegex, name); !ok || err != nil {
 		return errors.New("Name must match regex: " + nameRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithName(name); err != nil {
@@ -40,8 +45,9 @@ func (verifier *Verifier) verifyVcsType(vcsType string) error {
 }
 
 func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
-	if len(localUri) > 1024 {
-		return errors.New("Git local uri must be less than 1024 characters long")
+	if len(localUri) > repositoryMaxLocalUriLength {
+		errorText := fmt.Sprintf("Git local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(gitUriRegex, localUri); !ok || err != nil {
 		return errors.New("Git local uri must match regex: " + gitUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
@@ -51,8 +57,9 @@ func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
 }
 
 func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
-	if len(remoteUri) > 1024 {
-		return errors.New("Git local uri must be less than 1024 characters long")
+	if len(remoteUri) > repositoryMaxRemoteUriLength {
+		errorText := fmt.Sprintf("Git remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(gitUriRegex, remoteUri); !ok || err != nil {
 		return errors.New("Git local uri must match regex: " + gitUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
@@ -62,8 +69,9 @@ func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 }
 
 func (verifier *Verifier) verifyLocalHgUri(localUri string) error {
-	if len(localUri) > 1024 {
-		return errors.New("Hg local uri must be less than 1024 characters long")
+	if len(localUri) > repositoryMaxLocalUriLength {
+		errorText := fmt.Sprintf("Hg local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(hgUriRegex, localUri); !ok || err != nil {
 		return errors.New("Hg local uri must match regex: " + hgUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
@@ -73,8 +81,9 @@ func (verifier *Verifier) verifyLocalHgUri(localUri string) error {
 }
 
 func (verifier *Verifier) verifyRemoteHgUri(remoteUri string) error {
-	if len(remoteUri) > 1024 {
-		return errors.New("Hg local uri must be less than 1024 characters long")
+	if len(remoteUri) > repositoryMaxRemoteUriLength {
+		errorText := fmt.Sprintf("Hg remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(hgUriRegex, remoteUri); !ok || err != nil {
 		return errors.New("Hg local uri must match regex: " + hgUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {

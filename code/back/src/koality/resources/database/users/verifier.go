@@ -3,16 +3,22 @@ package users
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"koality/resources"
 	"regexp"
 )
 
 const (
-	emailRegex     = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
-	firstNameRegex = "^[-'a-zA-Z ]+$"
-	lastNameRegex  = "^[-'a-zA-Z ]+$"
-	keyAliasRegex  = "^[-'a-zA-Z ]+$"
-	publicKeyRegex = "^ssh-(?:dss|rsa) [A-Za-z0-9+/]+={0,2}"
+	userMaxEmailLength     = 256
+	userMaxFirstNameLength = 64
+	userMaxLastNameLength  = 64
+	userMaxKeyAliasLength  = 256
+	userMaxPublicKeyLength = 1024
+	emailRegex             = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+	firstNameRegex         = "^[-'a-zA-Z ]+$"
+	lastNameRegex          = "^[-'a-zA-Z ]+$"
+	keyAliasRegex          = "^[-'a-zA-Z ]+$"
+	publicKeyRegex         = "^ssh-(?:dss|rsa) [A-Za-z0-9+/]+={0,2}"
 )
 
 type Verifier struct {
@@ -24,8 +30,9 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyEmail(email string) error {
-	if len(email) > 256 {
-		return errors.New("Email must be less than 256 characters long")
+	if len(email) > userMaxEmailLength {
+		errorText := fmt.Sprintf("Email cannot exceed %d characters long", userMaxEmailLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(emailRegex, email); !ok || err != nil {
 		return errors.New("Email must match regex: " + emailRegex)
 	} else if err := verifier.verifyUserDoesNotExistWithEmail(email); err != nil {
@@ -35,8 +42,9 @@ func (verifier *Verifier) verifyEmail(email string) error {
 }
 
 func (verifier *Verifier) verifyFirstName(firstName string) error {
-	if len(firstName) > 64 {
-		return errors.New("First name must be less than 64 characters long")
+	if len(firstName) > userMaxFirstNameLength {
+		errorText := fmt.Sprintf("First name exceed %d characters long", userMaxFirstNameLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(firstNameRegex, firstName); !ok || err != nil {
 		return errors.New("First name must match regex: " + firstNameRegex)
 	}
@@ -44,8 +52,9 @@ func (verifier *Verifier) verifyFirstName(firstName string) error {
 }
 
 func (verifier *Verifier) verifyLastName(lastName string) error {
-	if len(lastName) > 64 {
-		return errors.New("Last name must be less than 64 characters long")
+	if len(lastName) > userMaxLastNameLength {
+		errorText := fmt.Sprintf("Last name cannot exceed %d characters long", userMaxLastNameLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(lastNameRegex, lastName); !ok || err != nil {
 		return errors.New("Last name must match regex: " + lastNameRegex)
 	}
@@ -53,8 +62,9 @@ func (verifier *Verifier) verifyLastName(lastName string) error {
 }
 
 func (verifier *Verifier) verifyKeyAlias(userId uint64, alias string) error {
-	if len(alias) > 256 {
-		return errors.New("Key alias must be less than 256 characters long")
+	if len(alias) > userMaxKeyAliasLength {
+		errorText := fmt.Sprintf("Key alias cannot exceed %d characters long", userMaxKeyAliasLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(keyAliasRegex, alias); !ok || err != nil {
 		return errors.New("SSH Key alias must match regex: " + keyAliasRegex)
 	} else if err := verifier.verifyKeyDoesNotExistWithAlias(userId, alias); err != nil {
@@ -64,8 +74,9 @@ func (verifier *Verifier) verifyKeyAlias(userId uint64, alias string) error {
 }
 
 func (verifier *Verifier) verifyPublicKey(publicKey string) error {
-	if len(publicKey) > 1024 {
-		return errors.New("Public key must be less than 1024 characters long")
+	if len(publicKey) > userMaxPublicKeyLength {
+		errorText := fmt.Sprintf("Public key cannot exceed %d characters long", userMaxPublicKeyLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(publicKeyRegex, publicKey); !ok || err != nil {
 		return errors.New("SSH Public Key must match regex: " + publicKeyRegex)
 	} else if err := verifier.verifyPublicKeyDoesNotExist(publicKey); err != nil {

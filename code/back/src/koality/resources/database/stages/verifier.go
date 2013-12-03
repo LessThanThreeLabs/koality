@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+const (
+	stageMaxNameLength            = 1024
+	stageConsoleTextMaxLineNumber = 1000000
+)
+
 var (
 	allowedFlavors []string = []string{"metadata", "setup", "beforeTest", "test", "afterTest", "deploy"}
 )
@@ -21,8 +26,9 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyName(name string) error {
-	if len(name) > 1024 {
-		return errors.New("Name must be less than 1024 characters long")
+	if len(name) > stageMaxNameLength {
+		errorText := fmt.Sprintf("Name cannot exceed %d characters long", stageMaxNameLength)
+		return errors.New(errorText)
 	}
 	return nil
 }
@@ -33,7 +39,8 @@ func (verifier *Verifier) verifyFlavor(flavor string) error {
 			return nil
 		}
 	}
-	return resources.InvalidStageFlavorError{errors.New("Unexpected stage flavor: " + flavor)}
+	errorText := "Unexpected stage flavor: " + flavor
+	return resources.InvalidStageFlavorError{errors.New(errorText)}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {
@@ -48,6 +55,14 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 		return errors.New("Start time cannot be before create time")
 	} else if ended.Before(started) {
 		return errors.New("End time cannot be before start time")
+	}
+	return nil
+}
+
+func (verifier *Verifier) verifyLineNumber(lineNumber uint64) error {
+	if lineNumber > stageConsoleTextMaxLineNumber {
+		errorText := fmt.Sprintf("Line number cannot exceed %d", stageConsoleTextMaxLineNumber)
+		return errors.New(errorText)
 	}
 	return nil
 }

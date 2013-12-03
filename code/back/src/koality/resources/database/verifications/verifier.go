@@ -10,9 +10,15 @@ import (
 )
 
 const (
-	headShaRegex       = "^[a-fA-F0-9]+$"
-	baseShaRegex       = "^[a-fA-F0-9]+$"
-	emailToNotifyRegex = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+	verificationHeadShaLength          = 40
+	verificationBaseShaLength          = 40
+	verificationMaxHeadUsernameLength  = 128
+	verificationMaxHeadEmailLength     = 256
+	verificationMaxMergeTargetLength   = 1024
+	verificationMaxEmailToNotifyLength = 128
+	headShaRegex                       = "^[a-fA-F0-9]+$"
+	baseShaRegex                       = "^[a-fA-F0-9]+$"
+	emailToNotifyRegex                 = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 )
 
 var (
@@ -29,8 +35,9 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyHeadSha(headSha string) error {
-	if len(headSha) != 40 {
-		return errors.New("Head SHA must be 40 characters long")
+	if len(headSha) != verificationHeadShaLength {
+		errorText := fmt.Sprintf("Head SHA must be %d characters long", verificationHeadShaLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(headShaRegex, headSha); !ok || err != nil {
 		return errors.New("Head SHA must match regex: " + headSha)
 	}
@@ -38,8 +45,9 @@ func (verifier *Verifier) verifyHeadSha(headSha string) error {
 }
 
 func (verifier *Verifier) verifyBaseSha(baseSha string) error {
-	if len(baseSha) != 40 {
-		return errors.New("Base SHA must be 40 characters long")
+	if len(baseSha) != verificationBaseShaLength {
+		errorText := fmt.Sprintf("Base SHA must be %d characters long", verificationBaseShaLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(baseShaRegex, baseSha); !ok || err != nil {
 		return errors.New("Base SHA must match regex: " + baseSha)
 	}
@@ -51,29 +59,33 @@ func (verifier *Verifier) verifyHeadMessage(message string) error {
 }
 
 func (verifier *Verifier) verifyHeadUsername(username string) error {
-	if len(username) > 128 {
-		return errors.New("Head username must be less than 128 characters long")
+	if len(username) > verificationMaxHeadUsernameLength {
+		errorText := fmt.Sprintf("Head username cannot exceed %d characters long", verificationMaxHeadUsernameLength)
+		return errors.New(errorText)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyHeadEmail(email string) error {
-	if len(email) > 256 {
-		return errors.New("Head email must be less than 256 characters long")
+	if len(email) > verificationMaxHeadEmailLength {
+		errorText := fmt.Sprintf("Head email cannot exceed %d characters long", verificationMaxHeadEmailLength)
+		return errors.New(errorText)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyMergeTarget(mergeTarget string) error {
-	if len(mergeTarget) > 1024 {
-		return errors.New("Merge target must be less than 1024 characters long")
+	if len(mergeTarget) > verificationMaxMergeTargetLength {
+		errorText := fmt.Sprintf("Merge target cannot exceed %d characters long", verificationMaxMergeTargetLength)
+		return errors.New(errorText)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyEmailToNotify(emailToNotify string) error {
-	if len(emailToNotify) > 256 {
-		return errors.New("Email to notify must be less than 256 characters long")
+	if len(emailToNotify) > verificationMaxEmailToNotifyLength {
+		errorText := fmt.Sprintf("Email to notify cannot exceed %d characters long", verificationMaxEmailToNotifyLength)
+		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(emailToNotifyRegex, emailToNotify); !ok || err != nil {
 		return errors.New("Email to notify must match regex: " + emailToNotifyRegex)
 	}
