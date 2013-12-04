@@ -21,11 +21,6 @@ type StageRun struct {
 	Ended      *time.Time
 }
 
-type ConsoleTextLine struct {
-	Number uint64
-	Text   string
-}
-
 type StagesHandler struct {
 	Create StagesCreateHandler
 	Read   StagesReadHandler
@@ -47,7 +42,7 @@ type StagesUpdateHandler interface {
 	SetReturnCode(stageRunId uint64, returnCode int) error
 	SetStartTime(verificationId uint64, startTime time.Time) error
 	SetEndTime(verificationId uint64, endTime time.Time) error
-	AddConsoleLines(stageRunId uint64, consoleTextLines ...ConsoleTextLine) error
+	AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error
 }
 
 type NoSuchStageError struct {

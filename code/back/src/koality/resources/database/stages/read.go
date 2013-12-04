@@ -71,17 +71,17 @@ func (readHandler *ReadHandler) GetRuns(stageId uint64) ([]resources.StageRun, e
 	return stageRuns, nil
 }
 
-func (readHandler *ReadHandler) GetConsoleText(stageRunId uint64, offset, results uint64) ([]resources.ConsoleTextLine, error) {
+func (readHandler *ReadHandler) GetConsoleText(stageRunId uint64, offset, results uint64) (map[uint64]string, error) {
 	// query := "SELECT number, line FROM console_texts WHERE run_id=$1 ORDER BY number ASC LIMIT $2 OFFSET $3"
 	return nil, nil
 }
 
-func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, results uint64) ([]resources.ConsoleTextLine, error) {
+func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, results uint64) (map[uint64]string, error) {
 	// query := "SELECT number, line FROM console_texts WHERE run_id=$1 ORDER BY number DESC LIMIT $2 OFFSET $3"
 	return nil, nil
 }
 
-func (readHandler *ReadHandler) GetAllConsoleText(stageRunId uint64) ([]resources.ConsoleTextLine, error) {
+func (readHandler *ReadHandler) GetAllConsoleText(stageRunId uint64) (map[uint64]string, error) {
 	// query := "SELECT number, line FROM console_texts WHERE run_id=$1"
 	return nil, nil
 }

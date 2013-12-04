@@ -162,10 +162,12 @@ func TestConsoleText(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	firstLine := resources.ConsoleTextLine{0, "hello"}
-	secondLine := resources.ConsoleTextLine{1, "there"}
-	fifthLine := resources.ConsoleTextLine{4, "sir"}
-	err = connection.Stages.Update.AddConsoleLines(stageRunId, firstLine, secondLine, fifthLine)
+	lines := map[uint64]string{
+		0:  "hello",
+		7:  "there",
+		42: "sir",
+	}
+	err = connection.Stages.Update.AddConsoleLines(stageRunId, lines)
 	if err != nil {
 		test.Fatal(err)
 	}

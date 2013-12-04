@@ -84,22 +84,24 @@ func (updateHandler *UpdateHandler) SetEndTime(stageRunId uint64, endTime time.T
 	return updateHandler.updateStageRun(query, endTime, stageRunId)
 }
 
-func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleTextLines ...resources.ConsoleTextLine) error {
+func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error {
 	// We don't verify that stageRunId exists for performance reasons
 
 	getValuesString := func() string {
 		valuesStringArray := make([]string, len(consoleTextLines))
-		for index, _ := range consoleTextLines {
+		for index := 0; index < len(consoleTextLines); index++ {
 			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d)", stageRunId, index*2+1, index*2+2)
 		}
 		return strings.Join(valuesStringArray, ", ")
 	}
 
 	consoleTextLinesToArray := func() []interface{} {
+		count := 0
 		linesArray := make([]interface{}, len(consoleTextLines)*2)
-		for index, consoleTextLine := range consoleTextLines {
-			linesArray[index*2] = consoleTextLine.Number
-			linesArray[index*2+1] = consoleTextLine.Text
+		for number, text := range consoleTextLines {
+			linesArray[count*2] = number
+			linesArray[count*2+1] = text
+			count++
 		}
 		return linesArray
 	}
