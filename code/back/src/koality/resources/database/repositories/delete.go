@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"koality/resources"
 )
 
@@ -25,7 +25,8 @@ func (deleteHandler *DeleteHandler) Delete(repositoryId uint64) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchRepositoryError{errors.New("Unable to find repository")}
+		errorText := fmt.Sprintf("Unable to find repository with id: %d ", repositoryId)
+		return resources.NoSuchRepositoryError{errorText}
 	}
 	return nil
 }

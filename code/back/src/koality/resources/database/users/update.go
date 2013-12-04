@@ -3,7 +3,7 @@ package users
 import (
 	"database/sql"
 	"encoding/base64"
-	"errors"
+	"fmt"
 	"koality/resources"
 )
 
@@ -30,7 +30,7 @@ func (updateHandler *UpdateHandler) updateUser(query string, params ...interface
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchUserError{errors.New("Unable to find user")}
+		return resources.NoSuchUserError{"Unable to find user"}
 	}
 	return nil
 }
@@ -90,7 +90,8 @@ func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchKeyError{errors.New("Unable to find key")}
+		errorText := fmt.Sprintf("Unable to find key for user with id: %d ", keyId)
+		return resources.NoSuchKeyError{errorText}
 	}
 	return nil
 }

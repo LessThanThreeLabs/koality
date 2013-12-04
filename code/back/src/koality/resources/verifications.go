@@ -51,21 +51,41 @@ type VerificationsUpdateHandler interface {
 }
 
 type NoSuchVerificationError struct {
-	error
+	Message string
+}
+
+func (err NoSuchVerificationError) Error() string {
+	return err.Message
 }
 
 type InvalidVerificationStatusError struct {
-	error
+	Message string
+}
+
+func (err InvalidVerificationStatusError) Error() string {
+	return err.Message
 }
 
 type InvalidVerificationMergeStatusError struct {
-	error
+	Message string
+}
+
+func (err InvalidVerificationMergeStatusError) Error() string {
+	return err.Message
 }
 
 type ChangesetAlreadyExistsError struct {
-	error
+	Message string
+}
+
+func (err ChangesetAlreadyExistsError) Error() string {
+	return err.Message
 }
 
 type NoSuchChangesetError struct {
-	error
+	Message string
+}
+
+func (err NoSuchChangesetError) Error() string {
+	return err.Message
 }

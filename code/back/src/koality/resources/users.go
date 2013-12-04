@@ -55,17 +55,33 @@ type UsersDeleteHandler interface {
 }
 
 type UserAlreadyExistsError struct {
-	error
+	Message string
+}
+
+func (err UserAlreadyExistsError) Error() string {
+	return err.Message
 }
 
 type NoSuchUserError struct {
-	error
+	Message string
+}
+
+func (err NoSuchUserError) Error() string {
+	return err.Message
 }
 
 type KeyAlreadyExistsError struct {
-	error
+	Message string
+}
+
+func (err KeyAlreadyExistsError) Error() string {
+	return err.Message
 }
 
 type NoSuchKeyError struct {
-	error
+	Message string
+}
+
+func (err NoSuchKeyError) Error() string {
+	return err.Message
 }

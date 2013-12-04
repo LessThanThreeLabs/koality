@@ -49,27 +49,21 @@ func TestStagesPrepareOtherTests(test *testing.T) {
 	}
 }
 
-// func TestCreateInvalidVerification(test *testing.T) {
-// 	_, err := connection.Verifications.Create.Create(0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
-// 	if err == nil {
-// 		test.Fatal("Expected error after providing invalid repository id")
-// 	}
+func TestCreateInvalidStage(test *testing.T) {
+	_, err := connection.Stages.Create.Create(0, stageName, stageFlavor, stageOrderNumber)
+	if _, ok := err.(resources.NoSuchVerificationError); !ok {
+		test.Fatal("Expected NoSuchVerificationError when providing invalid verification id")
+	}
+	_, err = connection.Stages.Create.Create(stageVerificationId, "", stageFlavor, stageOrderNumber)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid stage name")
+	}
 
-// 	_, err = connection.Verifications.Create.Create(stageRepositoryId, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
-// 	if err == nil {
-// 		test.Fatal("Expected error after providing invalid head sha")
-// 	}
-
-// 	_, err = connection.Verifications.Create.Create(stageRepositoryId, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
-// 	if err == nil {
-// 		test.Fatal("Expected error after providing invalid base sha")
-// 	}
-
-// 	_, err = connection.Verifications.Create.Create(stageRepositoryId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
-// 	if err == nil {
-// 		test.Fatal("Expected error after providing invalid email to notify")
-// 	}
-// }
+	_, err = connection.Stages.Create.Create(stageVerificationId, stageName, "bad-flavor", stageOrderNumber)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid flavor")
+	}
+}
 
 func TestCreateStage(test *testing.T) {
 	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName, stageFlavor, stageOrderNumber)
@@ -152,6 +146,26 @@ func TestCreateStage(test *testing.T) {
 	}
 
 	err = connection.Stages.Update.SetEndTime(stageRun1Id, time.Now())
+	if err != nil {
+		test.Fatal(err)
+	}
+}
+
+func TestConsoleText(test *testing.T) {
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"2", stageFlavor, stageOrderNumber)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunId, err := connection.Stages.Create.CreateRun(stageId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstLine := resources.ConsoleTextLine{0, "hello"}
+	secondLine := resources.ConsoleTextLine{1, "there"}
+	fifthLine := resources.ConsoleTextLine{4, "sir"}
+	err = connection.Stages.Update.AddConsoleLines(stageRunId, firstLine, secondLine, fifthLine)
 	if err != nil {
 		test.Fatal(err)
 	}

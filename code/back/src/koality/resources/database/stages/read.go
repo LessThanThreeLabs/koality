@@ -2,7 +2,6 @@ package stages
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"koality/resources"
 )
@@ -23,7 +22,7 @@ func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.Name, &stage.Flavor, &stage.OrderNumber)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage with id: %d", stageId)
-		return nil, resources.NoSuchStageError{errors.New(errorText)}
+		return nil, resources.NoSuchStageError{errorText}
 	} else if err != nil {
 		return nil, err
 	}
@@ -43,7 +42,7 @@ func (readHandler *ReadHandler) GetRun(stageRunId uint64) (*resources.StageRun, 
 	err := row.Scan(&stageRun.Id, &stageRun.ReturnCode, &stageRun.Created, &stageRun.Started, &stageRun.Ended)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage run with id: %d", stageRunId)
-		return nil, resources.NoSuchStageRunError{errors.New(errorText)}
+		return nil, resources.NoSuchStageRunError{errorText}
 	} else if err != nil {
 		return nil, err
 	}
@@ -70,4 +69,19 @@ func (readHandler *ReadHandler) GetRuns(stageId uint64) ([]resources.StageRun, e
 		return nil, err
 	}
 	return stageRuns, nil
+}
+
+func (readHandler *ReadHandler) GetConsoleText(stageRunId uint64, offset, results uint64) ([]resources.ConsoleTextLine, error) {
+	// query := "SELECT number, line FROM console_texts WHERE run_id=$1 ORDER BY number ASC LIMIT $2 OFFSET $3"
+	return nil, nil
+}
+
+func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, results uint64) ([]resources.ConsoleTextLine, error) {
+	// query := "SELECT number, line FROM console_texts WHERE run_id=$1 ORDER BY number DESC LIMIT $2 OFFSET $3"
+	return nil, nil
+}
+
+func (readHandler *ReadHandler) GetAllConsoleText(stageRunId uint64) ([]resources.ConsoleTextLine, error) {
+	// query := "SELECT number, line FROM console_texts WHERE run_id=$1"
+	return nil, nil
 }

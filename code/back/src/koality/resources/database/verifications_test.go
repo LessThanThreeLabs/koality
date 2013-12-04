@@ -41,8 +41,8 @@ func TestPrepareOtherTests(test *testing.T) {
 
 func TestCreateInvalidVerification(test *testing.T) {
 	_, err := connection.Verifications.Create.Create(0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
-	if err == nil {
-		test.Fatal("Expected error after providing invalid repository id")
+	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
+		test.Fatal("Expected NoSuchRepositoryError when providing invalid repository id")
 	}
 
 	_, err = connection.Verifications.Create.Create(repositoryId, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)

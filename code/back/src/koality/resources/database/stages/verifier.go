@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	stageMaxNameLength            = 1024
-	stageConsoleTextMaxLineNumber = 1000000
+	stageMinNameLength = 1
+	stageMaxNameLength = 1024
 )
 
 var (
@@ -26,7 +26,10 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyName(name string) error {
-	if len(name) > stageMaxNameLength {
+	if len(name) < stageMinNameLength {
+		errorText := fmt.Sprintf("Name must be at least %d characters long", stageMinNameLength)
+		return errors.New(errorText)
+	} else if len(name) > stageMaxNameLength {
 		errorText := fmt.Sprintf("Name cannot exceed %d characters long", stageMaxNameLength)
 		return errors.New(errorText)
 	}
@@ -40,7 +43,7 @@ func (verifier *Verifier) verifyFlavor(flavor string) error {
 		}
 	}
 	errorText := "Unexpected stage flavor: " + flavor
-	return resources.InvalidStageFlavorError{errors.New(errorText)}
+	return resources.InvalidStageFlavorError{errorText}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {
@@ -59,14 +62,6 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 	return nil
 }
 
-func (verifier *Verifier) verifyLineNumber(lineNumber uint64) error {
-	if lineNumber > stageConsoleTextMaxLineNumber {
-		errorText := fmt.Sprintf("Line number cannot exceed %d", stageConsoleTextMaxLineNumber)
-		return errors.New(errorText)
-	}
-	return nil
-}
-
 func (verifier *Verifier) verifyVerificationExists(verificationId uint64) error {
 	query := "SELECT id FROM verifications WHERE id=$1"
 	err := verifier.database.QueryRow(query, verificationId).Scan(new(uint64))
@@ -74,7 +69,7 @@ func (verifier *Verifier) verifyVerificationExists(verificationId uint64) error 
 		return err
 	} else if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
-		return resources.NoSuchVerificationError{errors.New(errorText)}
+		return resources.NoSuchVerificationError{errorText}
 	}
 	return nil
 }
@@ -86,7 +81,7 @@ func (verifier *Verifier) verifyStageExists(stageId uint64) error {
 		return err
 	} else if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage with id: %d", stageId)
-		return resources.NoSuchStageError{errors.New(errorText)}
+		return resources.NoSuchStageError{errorText}
 	}
 	return nil
 }
@@ -98,7 +93,7 @@ func (verifier *Verifier) verifyStageDoesNotExistWithNameAndFlavor(verificationI
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := fmt.Sprintf("Stage already exists with name %s and flavor %s", name, flavor)
-		return resources.StageAlreadyExistsError{errors.New(errorText)}
+		return resources.StageAlreadyExistsError{errorText}
 	}
 	return nil
 }

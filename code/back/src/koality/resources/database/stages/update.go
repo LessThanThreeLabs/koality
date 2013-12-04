@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"koality/resources"
+	"strings"
 	"time"
 )
 
@@ -31,8 +32,7 @@ func (updateHandler *UpdateHandler) updateStageRun(query string, params ...inter
 	if err != nil {
 		return err
 	} else if count != 1 {
-		errorText := "Unable to find stage run"
-		return resources.NoSuchStageRunError{errors.New(errorText)}
+		return resources.NoSuchStageRunError{"Unable to find stage run"}
 	}
 	return nil
 }
@@ -47,7 +47,7 @@ func (updateHandler *UpdateHandler) getTimes(stageRunId uint64) (createTime, sta
 	err = updateHandler.database.QueryRow(query, stageRunId).Scan(&createTime, &startTime, &endTime)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage run with id: %d", stageRunId)
-		err = resources.NoSuchVerificationError{errors.New(errorText)}
+		err = resources.NoSuchVerificationError{errorText}
 	}
 	return
 }
@@ -84,18 +84,30 @@ func (updateHandler *UpdateHandler) SetEndTime(stageRunId uint64, endTime time.T
 	return updateHandler.updateStageRun(query, endTime, stageRunId)
 }
 
-// func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey string) (uint64, error) {
-// 	if err := updateHandler.verifier.verifyKeyAlias(userId, alias); err != nil {
-// 		return 0, err
-// 	} else if err := updateHandler.verifier.verifyPublicKey(publicKey); err != nil {
-// 		return 0, err
-// 	}
+func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleTextLines ...resources.ConsoleTextLine) error {
+	// We don't verify that stageRunId exists for performance reasons
 
-// 	id := uint64(0)
-// 	query := "INSERT INTO ssh_keys (user_id, alias, public_key) VALUES ($1, $2, $3) RETURNING id"
-// 	err := updateHandler.database.QueryRow(query, userId, alias, publicKey).Scan(&id)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	return id, nil
-// }
+	getValuesString := func() string {
+		valuesStringArray := make([]string, len(consoleTextLines))
+		for index, _ := range consoleTextLines {
+			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d)", stageRunId, index*2+1, index*2+2)
+		}
+		return strings.Join(valuesStringArray, ", ")
+	}
+
+	consoleTextLinesToArray := func() []interface{} {
+		linesArray := make([]interface{}, len(consoleTextLines)*2)
+		for index, consoleTextLine := range consoleTextLines {
+			linesArray[index*2] = consoleTextLine.Number
+			linesArray[index*2+1] = consoleTextLine.Text
+		}
+		return linesArray
+	}
+
+	query := "INSERT INTO console_texts (run_id, number, text) VALUES " + getValuesString()
+	_, err := updateHandler.database.Exec(query, consoleTextLinesToArray()...)
+	if err != nil {
+		return err
+	}
+	return nil
+}

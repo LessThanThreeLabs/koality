@@ -2,7 +2,7 @@ package users
 
 import (
 	"database/sql"
-	"errors"
+	"fmt"
 	"koality/resources"
 )
 
@@ -25,7 +25,8 @@ func (deleteHandler *DeleteHandler) Delete(userId uint64) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchUserError{errors.New("Unable to find user")}
+		errorText := fmt.Sprintf("Unable to find user with id: %d ", userId)
+		return resources.NoSuchUserError{errorText}
 	}
 	return nil
 }

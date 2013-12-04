@@ -49,13 +49,25 @@ type RepositoriesDeleteHandler interface {
 }
 
 type RepositoryAlreadyExistsError struct {
-	error
+	Message string
+}
+
+func (err RepositoryAlreadyExistsError) Error() string {
+	return err.Message
 }
 
 type NoSuchRepositoryError struct {
-	error
+	Message string
+}
+
+func (err NoSuchRepositoryError) Error() string {
+	return err.Message
 }
 
 type NoSuchRepositoryHookError struct {
-	error
+	Message string
+}
+
+func (err NoSuchRepositoryHookError) Error() string {
+	return err.Message
 }

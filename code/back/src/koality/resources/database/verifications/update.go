@@ -31,7 +31,7 @@ func (updateHandler *UpdateHandler) updateVerification(query string, params ...i
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchVerificationError{errors.New("Unable to find verification")}
+		return resources.NoSuchVerificationError{"Unable to find verification"}
 	}
 	return nil
 }
@@ -57,7 +57,7 @@ func (updateHandler *UpdateHandler) getTimes(verificationId uint64) (createTime,
 	err = updateHandler.database.QueryRow(query, verificationId).Scan(&createTime, &startTime, &endTime)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
-		err = resources.NoSuchVerificationError{errors.New(errorText)}
+		err = resources.NoSuchVerificationError{errorText}
 	}
 	return
 }

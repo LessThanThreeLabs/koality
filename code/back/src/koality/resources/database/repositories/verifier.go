@@ -99,7 +99,7 @@ func (verifier *Verifier) verifyRepositoryDoesNotExistWithName(name string) erro
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := "Repository already exists with name: " + name
-		return resources.RepositoryAlreadyExistsError{errors.New(errorText)}
+		return resources.RepositoryAlreadyExistsError{errorText}
 	}
 	return nil
 }
@@ -111,7 +111,7 @@ func (verifier *Verifier) verifyRepositoryDoesNotExistWithLocalUri(localUri stri
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := "Repository already exists with local uri: " + localUri
-		return resources.RepositoryAlreadyExistsError{errors.New(errorText)}
+		return resources.RepositoryAlreadyExistsError{errorText}
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func (verifier *Verifier) verifyRepositoryDoesNotExistWithRemoteUri(remoteUri st
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := "Repository already exists with remote uri: " + remoteUri
-		return resources.RepositoryAlreadyExistsError{errors.New(errorText)}
+		return resources.RepositoryAlreadyExistsError{errorText}
 	}
 	return nil
 }

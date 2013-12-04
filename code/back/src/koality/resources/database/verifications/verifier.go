@@ -98,7 +98,7 @@ func (verifier *Verifier) verifyStatus(status string) error {
 			return nil
 		}
 	}
-	return resources.InvalidVerificationStatusError{errors.New("Unexpected verification status: " + status)}
+	return resources.InvalidVerificationStatusError{"Unexpected verification status: " + status}
 }
 
 func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {
@@ -107,7 +107,7 @@ func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {
 			return nil
 		}
 	}
-	return resources.InvalidVerificationMergeStatusError{errors.New("Unexpected merge status: " + mergeStatus)}
+	return resources.InvalidVerificationMergeStatusError{"Unexpected merge status: " + mergeStatus}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {
@@ -133,7 +133,7 @@ func (verifier *Verifier) verifyRepositoryExists(repositoryId uint64) error {
 		return err
 	} else if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find repository with id: %d", repositoryId)
-		return resources.NoSuchRepositoryError{errors.New(errorText)}
+		return resources.NoSuchRepositoryError{errorText}
 	}
 	return nil
 }
@@ -145,7 +145,7 @@ func (verifier *Verifier) verifyChangesetExists(changesetId uint64) error {
 		return err
 	} else if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find changeset with id: %d", changesetId)
-		return resources.NoSuchChangesetError{errors.New(errorText)}
+		return resources.NoSuchChangesetError{errorText}
 	}
 	return nil
 }
@@ -157,7 +157,7 @@ func (verifier *Verifier) verifyShaPairDoesNotExist(headSha, baseSha string) err
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := fmt.Sprintf("Changeset already exists with head sha %s and base sha %s", headSha, baseSha)
-		return resources.ChangesetAlreadyExistsError{errors.New(errorText)}
+		return resources.ChangesetAlreadyExistsError{errorText}
 	}
 	return nil
 }

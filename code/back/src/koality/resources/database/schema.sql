@@ -113,11 +113,20 @@ CREATE TABLE IF NOT EXISTS stage_runs (
 CREATE TABLE IF NOT EXISTS console_texts (
 	id 					serial PRIMARY KEY,
 	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
-	line_number			integer NOT NULL,
-	line 				text NOT NULL,
+	number				integer NOT NULL,
+	text 				text NOT NULL,
 
-	UNIQUE (run_id, line_number)
+	UNIQUE (run_id, number)
 );
+
+DO
+$create_console_texts_line_number_idx$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_number_idx') THEN
+		CREATE INDEX console_texts_number_idx ON console_texts(number);
+	END IF;
+END
+$create_console_texts_line_number_idx$;
 
 CREATE TABLE IF NOT EXISTS xunits (
 	id 					serial PRIMARY KEY,

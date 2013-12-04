@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
 	"koality/resources"
 	"strings"
 )
@@ -30,7 +29,7 @@ func (updateHandler *UpdateHandler) updateRepositoryHook(query string, params ..
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchRepositoryHookError{errors.New("Unable to find repository hook")}
+		return resources.NoSuchRepositoryHookError{"Unable to find repository hook"}
 	}
 	return nil
 }

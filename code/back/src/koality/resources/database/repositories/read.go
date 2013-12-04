@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"database/sql"
-	"errors"
 	"koality/resources"
 	"strings"
 )
@@ -29,7 +28,7 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 		&gitHubOwner, &gitHubName, &gitHubHookId, &gitHubHookSecret, &gitHubHookTypes)
 	if err == sql.ErrNoRows {
 		errorText := "Unable to find repository"
-		return nil, resources.NoSuchRepositoryError{errors.New(errorText)}
+		return nil, resources.NoSuchRepositoryError{errorText}
 	} else if err != nil {
 		return nil, err
 	}

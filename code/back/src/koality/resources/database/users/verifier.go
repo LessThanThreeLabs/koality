@@ -92,7 +92,7 @@ func (verifier *Verifier) verifyUserDoesNotExistWithEmail(email string) error {
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := "User already exists with email: " + email
-		return resources.UserAlreadyExistsError{errors.New(errorText)}
+		return resources.UserAlreadyExistsError{errorText}
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func (verifier *Verifier) verifyKeyDoesNotExistWithAlias(userId uint64, alias st
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := "SSH Public key already exists with alias: " + alias
-		return resources.KeyAlreadyExistsError{errors.New(errorText)}
+		return resources.KeyAlreadyExistsError{errorText}
 	}
 	return nil
 }
@@ -116,7 +116,7 @@ func (verifier *Verifier) verifyPublicKeyDoesNotExist(publicKey string) error {
 		return err
 	} else if err != sql.ErrNoRows {
 		errorText := "SSH Public key already exists"
-		return resources.KeyAlreadyExistsError{errors.New(errorText)}
+		return resources.KeyAlreadyExistsError{errorText}
 	}
 	return nil
 }

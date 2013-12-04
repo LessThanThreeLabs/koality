@@ -3,7 +3,6 @@ package users
 import (
 	"database/sql"
 	"encoding/base64"
-	"errors"
 	"koality/resources"
 )
 
@@ -28,7 +27,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 		&gitHubOAuth, &user.IsAdmin, &user.Created)
 	if err == sql.ErrNoRows {
 		errorText := "Unable to find user"
-		return nil, resources.NoSuchUserError{errors.New(errorText)}
+		return nil, resources.NoSuchUserError{errorText}
 	} else if err != nil {
 		return nil, err
 	}
