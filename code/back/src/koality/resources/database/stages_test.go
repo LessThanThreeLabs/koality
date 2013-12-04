@@ -171,4 +171,25 @@ func TestConsoleText(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+
+	lines, err = connection.Stages.Read.GetAllConsoleText(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(lines) != 3 {
+		test.Fatal("Expected three lines of console text in result")
+	}
+
+	lines, err = connection.Stages.Read.GetConsoleTextHead(stageRunId, 7, 1)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(lines) != 1 {
+		test.Fatal("Expected one line of console text in result")
+	}
+
+	lines, err = connection.Stages.Read.GetConsoleTextTail(stageRunId, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(lines) != 1 {
+		test.Fatal("Expected one line of console text in result")
+	}
 }

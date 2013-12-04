@@ -36,6 +36,9 @@ type StagesReadHandler interface {
 	Get(stageId uint64) (*Stage, error)
 	GetRun(stageRunId uint64) (*StageRun, error)
 	GetRuns(stageId uint64) ([]StageRun, error)
+	GetConsoleTextHead(stageRunId uint64, offset, results int) (map[uint64]string, error)
+	GetConsoleTextTail(stageRunId uint64, offset, results int) (map[uint64]string, error)
+	GetAllConsoleText(stageRunId uint64) (map[uint64]string, error)
 }
 
 type StagesUpdateHandler interface {

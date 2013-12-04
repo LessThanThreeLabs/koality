@@ -120,13 +120,22 @@ CREATE TABLE IF NOT EXISTS console_texts (
 );
 
 DO
-$create_console_texts_line_number_idx$
+$create_console_texts_run_id_idx$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_run_id_idx') THEN
+		CREATE INDEX console_texts_run_id_idx ON console_texts(run_id);
+	END IF;
+END
+$create_console_texts_run_id_idx$;
+
+DO
+$create_console_texts_number_idx$
 BEGIN
 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_number_idx') THEN
 		CREATE INDEX console_texts_number_idx ON console_texts(number);
 	END IF;
 END
-$create_console_texts_line_number_idx$;
+$create_console_texts_number_idx$;
 
 CREATE TABLE IF NOT EXISTS xunits (
 	id 					serial PRIMARY KEY,
