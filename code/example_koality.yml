@@ -1,0 +1,52 @@
+parameters:
+  languages:
+    python: 2.7
+  environment:
+    CI: true
+  snapshot until: chicken
+  gitClean: false
+sections:
+- setup:
+    run on: all
+    fail on: first
+    scripts:
+    - chicken chicken:
+        script: echo "chicken"
+        timeout: 42
+        xunit:
+        - chicken chicken
+        - chicken chicken chicken
+    exports:
+    - some/path/
+- chicken:
+    run on: all
+    fail on: first
+    scripts:
+    - wget stuff
+- export chicken:
+    run on: single
+    exports:
+    - path/to/chicken
+    - some/other/chicken.jpg
+- integration tests:
+    run on: split
+    fail on: any
+    continue on failure: true
+    factories:
+    - ls | while read chicken; do echo "- rake -t $chicken"; done
+- smoketest:
+    run on: all
+    fail on: any
+    continue on failure: false
+    scripts:
+    - chicken chicken chicken chicken
+    - chicken chicken chicken
+final:
+- export chicken:
+    run on: all
+    exports:
+    - path/to/chicken
+- deploy:
+    run on: single
+    scripts:
+    - if [ $KOALITY_SECTIONS_PASSED == "true" ]; echo winner; fi
