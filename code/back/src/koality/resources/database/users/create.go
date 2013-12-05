@@ -11,11 +11,7 @@ type CreateHandler struct {
 	verifier *Verifier
 }
 
-func NewCreateHandler(database *sql.DB) (resources.UsersCreateHandler, error) {
-	verifier, err := NewVerifier(database)
-	if err != nil {
-		return nil, err
-	}
+func NewCreateHandler(database *sql.DB, verifier *Verifier) (resources.UsersCreateHandler, error) {
 	return &CreateHandler{database, verifier}, nil
 }
 

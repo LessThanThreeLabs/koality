@@ -12,10 +12,11 @@ type Scannable interface {
 
 type ReadHandler struct {
 	database *sql.DB
+	verifier *Verifier
 }
 
-func NewReadHandler(database *sql.DB) (resources.UsersReadHandler, error) {
-	return &ReadHandler{database}, nil
+func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.UsersReadHandler, error) {
+	return &ReadHandler{database, verifier}, nil
 }
 
 func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, error) {

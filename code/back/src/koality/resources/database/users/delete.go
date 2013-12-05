@@ -8,10 +8,11 @@ import (
 
 type DeleteHandler struct {
 	database *sql.DB
+	verifier *Verifier
 }
 
-func NewDeleteHandler(database *sql.DB) (resources.UsersDeleteHandler, error) {
-	return &DeleteHandler{database}, nil
+func NewDeleteHandler(database *sql.DB, verifier *Verifier) (resources.UsersDeleteHandler, error) {
+	return &DeleteHandler{database, verifier}, nil
 }
 
 func (deleteHandler *DeleteHandler) Delete(userId uint64) error {

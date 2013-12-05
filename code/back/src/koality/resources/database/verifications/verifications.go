@@ -6,17 +6,22 @@ import (
 )
 
 func New(database *sql.DB) (*resources.VerificationsHandler, error) {
-	createHandler, err := NewCreateHandler(database)
+	verifier, err := NewVerifier(database)
 	if err != nil {
 		return nil, err
 	}
 
-	readHandler, err := NewReadHandler(database)
+	createHandler, err := NewCreateHandler(database, verifier)
 	if err != nil {
 		return nil, err
 	}
 
-	updateHandler, err := NewUpdateHandler(database)
+	readHandler, err := NewReadHandler(database, verifier)
+	if err != nil {
+		return nil, err
+	}
+
+	updateHandler, err := NewUpdateHandler(database, verifier)
 	if err != nil {
 		return nil, err
 	}

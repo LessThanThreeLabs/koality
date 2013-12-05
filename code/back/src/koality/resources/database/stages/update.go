@@ -14,11 +14,7 @@ type UpdateHandler struct {
 	verifier *Verifier
 }
 
-func NewUpdateHandler(database *sql.DB) (resources.StagesUpdateHandler, error) {
-	verifier, err := NewVerifier(database)
-	if err != nil {
-		return nil, err
-	}
+func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.StagesUpdateHandler, error) {
 	return &UpdateHandler{database, verifier}, nil
 }
 

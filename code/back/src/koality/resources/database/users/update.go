@@ -12,11 +12,7 @@ type UpdateHandler struct {
 	verifier *Verifier
 }
 
-func NewUpdateHandler(database *sql.DB) (resources.UsersUpdateHandler, error) {
-	verifier, err := NewVerifier(database)
-	if err != nil {
-		return nil, err
-	}
+func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.UsersUpdateHandler, error) {
 	return &UpdateHandler{database, verifier}, nil
 }
 

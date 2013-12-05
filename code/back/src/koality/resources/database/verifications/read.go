@@ -8,10 +8,11 @@ import (
 
 type ReadHandler struct {
 	database *sql.DB
+	verifier *Verifier
 }
 
-func NewReadHandler(database *sql.DB) (resources.VerificationsReadHandler, error) {
-	return &ReadHandler{database}, nil
+func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.VerificationsReadHandler, error) {
+	return &ReadHandler{database, verifier}, nil
 }
 
 func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verification, error) {

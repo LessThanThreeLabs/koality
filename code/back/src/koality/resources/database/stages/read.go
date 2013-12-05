@@ -11,11 +11,7 @@ type ReadHandler struct {
 	verifier *Verifier
 }
 
-func NewReadHandler(database *sql.DB) (resources.StagesReadHandler, error) {
-	verifier, err := NewVerifier(database)
-	if err != nil {
-		return nil, err
-	}
+func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.StagesReadHandler, error) {
 	return &ReadHandler{database, verifier}, nil
 }
 
