@@ -152,7 +152,7 @@ func TestCreateStage(test *testing.T) {
 }
 
 func TestConsoleText(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"2", stageFlavor, stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"console-text", stageFlavor, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -191,5 +191,30 @@ func TestConsoleText(test *testing.T) {
 		test.Fatal(err)
 	} else if len(lines) != 1 {
 		test.Fatal("Expected one line of console text in result")
+	}
+}
+
+func TestXunit(test *testing.T) {
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"xunit", stageFlavor, stageOrderNumber)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunId, err := connection.Stages.Create.CreateRun(stageId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstXunitResult := resources.XunitResult{"first", "some/path/1.xml", "", "", "", "", time.Now(), 1.137}
+	secondXunitResult := resources.XunitResult{"second", "some/path/2.xml", "", "", "", "", time.Now(), 1.137}
+	xunitResults := []resources.XunitResult{firstXunitResult, secondXunitResult}
+	err = connection.Stages.Update.AddXunitResults(stageRunId, xunitResults)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	_, err = connection.Stages.Read.GetXunitResults(stageRunId)
+	if err != nil {
+		test.Fatal(err)
 	}
 }

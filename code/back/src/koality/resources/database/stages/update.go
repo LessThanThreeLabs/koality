@@ -113,3 +113,40 @@ func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleTe
 	}
 	return nil
 }
+
+func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResults []resources.XunitResult) error {
+	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return err
+	}
+
+	getValuesString := func() string {
+		valuesStringArray := make([]string, len(xunitResults))
+		for index := 0; index < len(xunitResults); index++ {
+			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+				stageRunId, index*8+1, index*8+2, index*8+3, index*8+4, index*8+5, index*8+6, index*8+7, index*8+8)
+		}
+		return strings.Join(valuesStringArray, ", ")
+	}
+
+	xunitResultsToArray := func() []interface{} {
+		xunitResultsArray := make([]interface{}, len(xunitResults)*8)
+		for index, xunitResult := range xunitResults {
+			xunitResultsArray[index*8] = xunitResult.Name
+			xunitResultsArray[index*8+1] = xunitResult.Path
+			xunitResultsArray[index*8+2] = xunitResult.Sysout
+			xunitResultsArray[index*8+3] = xunitResult.Syserr
+			xunitResultsArray[index*8+4] = xunitResult.FailureText
+			xunitResultsArray[index*8+5] = xunitResult.ErrorText
+			xunitResultsArray[index*8+6] = xunitResult.Started
+			xunitResultsArray[index*8+7] = xunitResult.Seconds
+		}
+		return xunitResultsArray
+	}
+
+	query := "INSERT INTO xunit_results (run_id, name, path, sysout, syserr, failure_text, error_text, started, seconds) VALUES " + getValuesString()
+	_, err := updateHandler.database.Exec(query, xunitResultsToArray()...)
+	if err != nil {
+		return err
+	}
+	return nil
+}

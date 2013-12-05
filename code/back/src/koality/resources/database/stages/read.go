@@ -8,10 +8,15 @@ import (
 
 type ReadHandler struct {
 	database *sql.DB
+	verifier *Verifier
 }
 
 func NewReadHandler(database *sql.DB) (resources.StagesReadHandler, error) {
-	return &ReadHandler{database}, nil
+	verifier, err := NewVerifier(database)
+	if err != nil {
+		return nil, err
+	}
+	return &ReadHandler{database, verifier}, nil
 }
 
 func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
@@ -94,6 +99,10 @@ func (readHandler *ReadHandler) getConsoleTextLines(query string, params ...inte
 }
 
 func (readHandler *ReadHandler) GetConsoleTextHead(stageRunId uint64, offset, results int) (map[uint64]string, error) {
+	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return nil, err
+	}
+
 	lowerBound := offset
 	upperBound := offset + results
 	query := "SELECT number, text FROM console_texts WHERE run_id=$1 AND number >= $2 AND number < $3 ORDER BY id ASC"
@@ -101,6 +110,10 @@ func (readHandler *ReadHandler) GetConsoleTextHead(stageRunId uint64, offset, re
 }
 
 func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, results int) (map[uint64]string, error) {
+	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return nil, err
+	}
+
 	var maxLineNumber int
 	maxLineNumberQuery := "SELECT number FROM console_texts WHERE run_id=$1 ORDER BY number DESC LIMIT 1"
 	row := readHandler.database.QueryRow(maxLineNumberQuery, stageRunId)
@@ -118,6 +131,60 @@ func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, re
 }
 
 func (readHandler *ReadHandler) GetAllConsoleText(stageRunId uint64) (map[uint64]string, error) {
+	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return nil, err
+	}
+
 	query := "SELECT number, text FROM console_texts WHERE run_id=$1 ORDER BY id ASC"
 	return readHandler.getConsoleTextLines(query, stageRunId)
+}
+
+func (readHandler *ReadHandler) scanXunitResult(scannable *sql.Rows) (*resources.XunitResult, error) {
+	xunitResult := new(resources.XunitResult)
+
+	var sysout, syserr, failureText, errorText sql.NullString
+	err := scannable.Scan(&xunitResult.Name, &xunitResult.Path, &sysout, &syserr, &failureText, &errorText, &xunitResult.Started, &xunitResult.Seconds)
+	if err != nil {
+		return nil, err
+	}
+
+	if sysout.Valid {
+		xunitResult.Sysout = sysout.String
+	}
+	if syserr.Valid {
+		xunitResult.Syserr = syserr.String
+	}
+	if failureText.Valid {
+		xunitResult.FailureText = failureText.String
+	}
+	if errorText.Valid {
+		xunitResult.ErrorText = errorText.String
+	}
+
+	return xunitResult, nil
+}
+
+func (readHandler *ReadHandler) GetXunitResults(stageRunId uint64) ([]resources.XunitResult, error) {
+	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return nil, err
+	}
+
+	query := "SELECT name, path, sysout, syserr, failure_text, error_text, started, seconds FROM xunit_results WHERE run_id=$1"
+	rows, err := readHandler.database.Query(query, stageRunId)
+	if err != nil {
+		return nil, err
+	}
+
+	xunitResuts := make([]resources.XunitResult, 0, 100)
+	for rows.Next() {
+		xunitResult, err := readHandler.scanXunitResult(rows)
+		if err != nil {
+			return nil, err
+		}
+		xunitResuts = append(xunitResuts, *xunitResult)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return xunitResuts, nil
 }

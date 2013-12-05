@@ -21,6 +21,17 @@ type StageRun struct {
 	Ended      *time.Time
 }
 
+type XunitResult struct {
+	Name        string
+	Path        string
+	Sysout      string
+	Syserr      string
+	FailureText string
+	ErrorText   string
+	Started     time.Time
+	Seconds     float64
+}
+
 type StagesHandler struct {
 	Create StagesCreateHandler
 	Read   StagesReadHandler
@@ -39,6 +50,7 @@ type StagesReadHandler interface {
 	GetConsoleTextHead(stageRunId uint64, offset, results int) (map[uint64]string, error)
 	GetConsoleTextTail(stageRunId uint64, offset, results int) (map[uint64]string, error)
 	GetAllConsoleText(stageRunId uint64) (map[uint64]string, error)
+	GetXunitResults(stageRunId uint64) ([]XunitResult, error)
 }
 
 type StagesUpdateHandler interface {
@@ -46,6 +58,7 @@ type StagesUpdateHandler interface {
 	SetStartTime(verificationId uint64, startTime time.Time) error
 	SetEndTime(verificationId uint64, endTime time.Time) error
 	AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error
+	AddXunitResults(stageRunId uint64, xunitResults []XunitResult) error
 }
 
 type NoSuchStageError struct {
@@ -77,5 +90,13 @@ type NoSuchStageRunError struct {
 }
 
 func (err NoSuchStageRunError) Error() string {
+	return err.Message
+}
+
+type NoSuchXunitError struct {
+	Message string
+}
+
+func (err NoSuchXunitError) Error() string {
 	return err.Message
 }

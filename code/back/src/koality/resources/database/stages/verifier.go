@@ -86,6 +86,18 @@ func (verifier *Verifier) verifyStageExists(stageId uint64) error {
 	return nil
 }
 
+func (verifier *Verifier) verifyStageRunExists(stageRunId uint64) error {
+	query := "SELECT id FROM stage_runs WHERE id=$1"
+	err := verifier.database.QueryRow(query, stageRunId).Scan(new(uint64))
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	} else if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Unable to find stage run with id: %d", stageRunId)
+		return resources.NoSuchStageRunError{errorText}
+	}
+	return nil
+}
+
 func (verifier *Verifier) verifyStageDoesNotExistWithNameAndFlavor(verificationId uint64, name, flavor string) error {
 	query := "SELECT id FROM stages WHERE verification_id=$1 AND name=$2 AND flavor=$3"
 	err := verifier.database.QueryRow(query, verificationId, name, flavor).Scan(new(uint64))

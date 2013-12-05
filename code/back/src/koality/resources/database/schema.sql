@@ -137,14 +137,27 @@ BEGIN
 END
 $create_console_texts_number_idx$;
 
-CREATE TABLE IF NOT EXISTS xunits (
+CREATE TABLE IF NOT EXISTS xunit_results (
 	id 					serial PRIMARY KEY,
 	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
-	path				varchar(1024) NOT NULL,
-	contents			text NOT NULL,
-
-	UNIQUE (run_id, path)
+	name 				text NOT NULL,
+	path 				text NOT NULL,
+	sysout 				text,
+	syserr 				text,
+	failure_text 		text,
+	error_text 			text,
+	started 			timestamp NOT NULL,
+	seconds				real NOT NULL
 );
+
+DO
+$create_xunit_results_run_id_idx$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'xunit_results_run_id_idx') THEN
+		CREATE INDEX xunit_results_run_id_idx ON xunit_results(run_id);
+	END IF;
+END
+$create_xunit_results_run_id_idx$;
 
 CREATE TABLE IF NOT EXISTS exports (
 	id 					serial PRIMARY KEY,
