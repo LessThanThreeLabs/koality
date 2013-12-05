@@ -17,8 +17,7 @@ func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.StagesReadH
 
 func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 	stage := new(resources.Stage)
-	query := "SELECT id, verification_id, name, flavor, order_number " +
-		"FROM stages WHERE id=$1"
+	query := "SELECT id, verification_id, name, flavor, order_number FROM stages WHERE id=$1"
 	row := readHandler.database.QueryRow(query, stageId)
 	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.Name, &stage.Flavor, &stage.OrderNumber)
 	if err == sql.ErrNoRows {
@@ -28,12 +27,34 @@ func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 		return nil, err
 	}
 
-	stage.Runs, err = readHandler.GetRuns(stageId)
+	stage.Runs, err = readHandler.GetAllRuns(stageId)
 	if err != nil {
 		return nil, err
 	}
 
 	return stage, nil
+}
+
+func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage, error) {
+	query := "SELECT id, verification_id, name, flavor, order_number FROM stages WHERE verification_id=$1"
+	rows, err := readHandler.database.Query(query, verificationId)
+	if err != nil {
+		return nil, err
+	}
+
+	stages := make([]resources.Stage, 0, 2)
+	for rows.Next() {
+		stage := resources.Stage{}
+		err := rows.Scan(&stage.Id, &stage.VerificationId, &stage.Name, &stage.Flavor, &stage.OrderNumber)
+		if err != nil {
+			return nil, err
+		}
+		stages = append(stages, stage)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return stages, nil
 }
 
 func (readHandler *ReadHandler) GetRun(stageRunId uint64) (*resources.StageRun, error) {
@@ -50,14 +71,14 @@ func (readHandler *ReadHandler) GetRun(stageRunId uint64) (*resources.StageRun, 
 	return stageRun, nil
 }
 
-func (readHandler *ReadHandler) GetRuns(stageId uint64) ([]resources.StageRun, error) {
+func (readHandler *ReadHandler) GetAllRuns(stageId uint64) ([]resources.StageRun, error) {
 	query := "SELECT id, return_code, created, started, ended FROM stage_runs WHERE stage_id=$1"
 	rows, err := readHandler.database.Query(query, stageId)
 	if err != nil {
 		return nil, err
 	}
 
-	stageRuns := make([]resources.StageRun, 0, 1)
+	stageRuns := make([]resources.StageRun, 0, 2)
 	for rows.Next() {
 		stageRun := resources.StageRun{}
 		err = rows.Scan(&stageRun.Id, &stageRun.ReturnCode, &stageRun.Created, &stageRun.Started, &stageRun.Ended)

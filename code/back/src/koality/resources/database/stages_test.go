@@ -78,6 +78,13 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal("stage.Id mismatch")
 	}
 
+	stages, err := connection.Stages.Read.GetAll(stageVerificationId)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(stages) != 1 {
+		test.Fatal("Unexpected number of stages")
+	}
+
 	_, err = connection.Stages.Create.Create(stageVerificationId, stageName, stageFlavor, stageOrderNumber)
 	if _, ok := err.(resources.StageAlreadyExistsError); !ok {
 		test.Fatal("Expected StageAlreadyExistsError when trying to add same stage twice")
@@ -123,6 +130,13 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(err)
 	} else if stageRun.ReturnCode != 17 {
 		test.Fatal("stageRun.ReturnCode mismatch")
+	}
+
+	stageRuns, err := connection.Stages.Read.GetAllRuns(stageId)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(stageRuns) != 2 {
+		test.Fatal("Unexpected number of stage runs")
 	}
 
 	err = connection.Stages.Update.SetEndTime(stageRun1Id, time.Now())
