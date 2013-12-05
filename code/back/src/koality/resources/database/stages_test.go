@@ -19,8 +19,8 @@ const (
 	verificationHeadEmail     = "jpotter@koalitycode.com"
 	verificationMergeTarget   = "refs/heads/master"
 	verificationEmailToNotify = "koalas@koalitycode.com"
+	stageSectionNumber        = 4
 	stageName                 = "awesome stage"
-	stageFlavor               = "test"
 	stageOrderNumber          = 17
 )
 
@@ -50,23 +50,18 @@ func TestStagesPrepareOtherTests(test *testing.T) {
 }
 
 func TestCreateInvalidStage(test *testing.T) {
-	_, err := connection.Stages.Create.Create(0, stageName, stageFlavor, stageOrderNumber)
+	_, err := connection.Stages.Create.Create(0, stageSectionNumber, stageName, stageOrderNumber)
 	if _, ok := err.(resources.NoSuchVerificationError); !ok {
 		test.Fatal("Expected NoSuchVerificationError when providing invalid verification id")
 	}
-	_, err = connection.Stages.Create.Create(stageVerificationId, "", stageFlavor, stageOrderNumber)
+	_, err = connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, "", stageOrderNumber)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid stage name")
-	}
-
-	_, err = connection.Stages.Create.Create(stageVerificationId, stageName, "bad-flavor", stageOrderNumber)
-	if err == nil {
-		test.Fatal("Expected error after providing invalid flavor")
 	}
 }
 
 func TestCreateStage(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName, stageFlavor, stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -85,7 +80,7 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal("Unexpected number of stages")
 	}
 
-	_, err = connection.Stages.Create.Create(stageVerificationId, stageName, stageFlavor, stageOrderNumber)
+	_, err = connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName, stageOrderNumber)
 	if _, ok := err.(resources.StageAlreadyExistsError); !ok {
 		test.Fatal("Expected StageAlreadyExistsError when trying to add same stage twice")
 	}
@@ -166,7 +161,7 @@ func TestCreateStage(test *testing.T) {
 }
 
 func TestConsoleText(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"console-text", stageFlavor, stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName+"-console-text", stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -209,7 +204,7 @@ func TestConsoleText(test *testing.T) {
 }
 
 func TestXunit(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"xunit", stageFlavor, stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName+"-xunit", stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -238,7 +233,7 @@ func TestXunit(test *testing.T) {
 }
 
 func TestExport(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"export", stageFlavor, stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName+"-export", stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}

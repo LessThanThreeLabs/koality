@@ -7,8 +7,8 @@ import (
 type Stage struct {
 	Id             uint64
 	VerificationId uint64
+	SectionNumber  uint64
 	Name           string
-	Flavor         string
 	OrderNumber    uint64
 	Runs           []StageRun // Do we need this? Is this helpful?
 }
@@ -44,7 +44,7 @@ type StagesHandler struct {
 }
 
 type StagesCreateHandler interface {
-	Create(verificationId uint64, name, flavor string, orderNumber uint64) (uint64, error)
+	Create(verificationId, sectionNumber uint64, name string, orderNumber uint64) (uint64, error)
 	CreateRun(stageId uint64) (uint64, error)
 }
 
@@ -82,14 +82,6 @@ type StageAlreadyExistsError struct {
 }
 
 func (err StageAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type InvalidStageFlavorError struct {
-	Message string
-}
-
-func (err InvalidStageFlavorError) Error() string {
 	return err.Message
 }
 

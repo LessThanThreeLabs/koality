@@ -18,16 +18,16 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier) (resources.StagesCre
 	return &CreateHandler{database, verifier}, nil
 }
 
-func (createHandler *CreateHandler) Create(verificationId uint64, name, flavor string, orderNumber uint64) (uint64, error) {
-	err := createHandler.getStageParamsError(verificationId, name, flavor, orderNumber)
+func (createHandler *CreateHandler) Create(verificationId, sectionNumber uint64, name string, orderNumber uint64) (uint64, error) {
+	err := createHandler.getStageParamsError(verificationId, sectionNumber, name, orderNumber)
 	if err != nil {
 		return 0, err
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO stages (verification_id, name, flavor, order_number)" +
+	query := "INSERT INTO stages (verification_id, section_number, name, order_number)" +
 		" VALUES ($1, $2, $3, $4) RETURNING id"
-	err = createHandler.database.QueryRow(query, verificationId, name, flavor, orderNumber).Scan(&id)
+	err = createHandler.database.QueryRow(query, verificationId, sectionNumber, name, orderNumber).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -49,14 +49,12 @@ func (createHandler *CreateHandler) CreateRun(stageId uint64) (uint64, error) {
 	return id, nil
 }
 
-func (createHandler *CreateHandler) getStageParamsError(verificationId uint64, name, flavor string, orderNumber uint64) error {
+func (createHandler *CreateHandler) getStageParamsError(verificationId, sectionNumber uint64, name string, orderNumber uint64) error {
 	if err := createHandler.verifier.verifyName(name); err != nil {
-		return err
-	} else if err := createHandler.verifier.verifyFlavor(flavor); err != nil {
 		return err
 	} else if err := createHandler.verifier.verifyVerificationExists(verificationId); err != nil {
 		return err
-	} else if err := createHandler.verifier.verifyStageDoesNotExistWithNameAndFlavor(verificationId, name, flavor); err != nil {
+	} else if err := createHandler.verifier.verifyStageDoesNotExistWithSectionAndName(verificationId, sectionNumber, name); err != nil {
 		return err
 	}
 	return nil

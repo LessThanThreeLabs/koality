@@ -17,9 +17,9 @@ func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.StagesReadH
 
 func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 	stage := new(resources.Stage)
-	query := "SELECT id, verification_id, name, flavor, order_number FROM stages WHERE id=$1"
+	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE id=$1"
 	row := readHandler.database.QueryRow(query, stageId)
-	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.Name, &stage.Flavor, &stage.OrderNumber)
+	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.SectionNumber, &stage.Name, &stage.OrderNumber)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage with id: %d", stageId)
 		return nil, resources.NoSuchStageError{errorText}
@@ -36,7 +36,7 @@ func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 }
 
 func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage, error) {
-	query := "SELECT id, verification_id, name, flavor, order_number FROM stages WHERE verification_id=$1"
+	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE verification_id=$1"
 	rows, err := readHandler.database.Query(query, verificationId)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage
 	stages := make([]resources.Stage, 0, 2)
 	for rows.Next() {
 		stage := resources.Stage{}
-		err := rows.Scan(&stage.Id, &stage.VerificationId, &stage.Name, &stage.Flavor, &stage.OrderNumber)
+		err := rows.Scan(&stage.Id, &stage.VerificationId, &stage.SectionNumber, &stage.Name, &stage.OrderNumber)
 		if err != nil {
 			return nil, err
 		}

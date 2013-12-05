@@ -13,10 +13,6 @@ const (
 	stageMaxNameLength = 1024
 )
 
-var (
-	allowedFlavors []string = []string{"metadata", "setup", "beforeTest", "test", "afterTest", "deploy"}
-)
-
 type Verifier struct {
 	database *sql.DB
 }
@@ -34,16 +30,6 @@ func (verifier *Verifier) verifyName(name string) error {
 		return errors.New(errorText)
 	}
 	return nil
-}
-
-func (verifier *Verifier) verifyFlavor(flavor string) error {
-	for _, allowedFlavor := range allowedFlavors {
-		if flavor == allowedFlavor {
-			return nil
-		}
-	}
-	errorText := "Unexpected stage flavor: " + flavor
-	return resources.InvalidStageFlavorError{errorText}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {
@@ -98,13 +84,13 @@ func (verifier *Verifier) verifyStageRunExists(stageRunId uint64) error {
 	return nil
 }
 
-func (verifier *Verifier) verifyStageDoesNotExistWithNameAndFlavor(verificationId uint64, name, flavor string) error {
-	query := "SELECT id FROM stages WHERE verification_id=$1 AND name=$2 AND flavor=$3"
-	err := verifier.database.QueryRow(query, verificationId, name, flavor).Scan(new(uint64))
+func (verifier *Verifier) verifyStageDoesNotExistWithSectionAndName(verificationId, sectionNumber uint64, name string) error {
+	query := "SELECT id FROM stages WHERE verification_id=$1 AND section_number=$2 AND name=$3"
+	err := verifier.database.QueryRow(query, verificationId, sectionNumber, name).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := fmt.Sprintf("Stage already exists with name %s and flavor %s", name, flavor)
+		errorText := fmt.Sprintf("Stage already exists with section number %d and name %s", sectionNumber, name)
 		return resources.StageAlreadyExistsError{errorText}
 	}
 	return nil
