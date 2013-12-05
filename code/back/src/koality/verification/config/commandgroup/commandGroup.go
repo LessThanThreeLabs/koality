@@ -10,6 +10,8 @@ type CommandGroup interface {
 	Done() error
 	Wait() error
 	HasStarted() bool
+	Copy() CommandGroup
+	Remaining() CommandGroup
 }
 
 type AppendableCommandGroup interface {
@@ -18,10 +20,11 @@ type AppendableCommandGroup interface {
 }
 
 type appendableCommandGroup struct {
-	commands   []verification.Command
-	locker     sync.Locker
-	waitGroup  *sync.WaitGroup
-	hasStarted bool
+	commands     []verification.Command
+	commandIndex uint
+	locker       sync.Locker
+	waitGroup    *sync.WaitGroup
+	hasStarted   bool
 }
 
 func New(commands []verification.Command) *appendableCommandGroup {
@@ -40,13 +43,12 @@ func (group *appendableCommandGroup) Next() (verification.Command, error) {
 
 	group.hasStarted = true
 
-	if len(group.commands) == 0 {
+	if group.commandIndex >= uint(len(group.commands)) {
 		return nil, NoMoreCommands
 	}
-	c := group.commands[0]
-	group.commands = group.commands[1:]
+	group.commandIndex++
 
-	return c, nil
+	return group.commands[group.commandIndex-1], nil
 }
 
 func (group *appendableCommandGroup) Done() error {
@@ -55,7 +57,7 @@ func (group *appendableCommandGroup) Done() error {
 }
 
 func (group *appendableCommandGroup) Wait() error {
-	for len(group.commands) > 0 {
+	for uint(len(group.commands)) > group.commandIndex {
 		group.waitGroup.Wait()
 	}
 	return nil
@@ -66,6 +68,23 @@ func (group *appendableCommandGroup) HasStarted() bool {
 	defer group.locker.Unlock()
 
 	return group.hasStarted
+}
+
+func (group *appendableCommandGroup) Copy() CommandGroup {
+	return New(group.commands)
+}
+
+func (group *appendableCommandGroup) Remaining() CommandGroup {
+	group.locker.Lock()
+	defer group.locker.Unlock()
+
+	group.hasStarted = true
+
+	remainingGroup := &appendableCommandGroup{group.commands, group.commandIndex, group.locker, group.waitGroup, group.hasStarted}
+
+	group.commandIndex = uint(len(group.commands))
+
+	return remainingGroup
 }
 
 func (group *appendableCommandGroup) Append(command verification.Command) error {

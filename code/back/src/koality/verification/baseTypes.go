@@ -14,14 +14,10 @@ type TestCommand interface {
 	GetXunitCommand() shell.Command
 }
 
-type Result struct {
-	StageType string
-	Passed    bool
-}
-
-type ChangeStatus struct {
-	Failed    bool
-	Cancelled bool
+type SectionResult struct {
+	Section       string
+	FailSectionOn string
+	Passed        bool
 }
 
 // Temporary
@@ -31,10 +27,8 @@ type ShellCommand struct {
 	command shell.Command
 }
 
-func NewShellCommand(name string, command shell.Command) (shellCommand ShellCommand) {
-	shellCommand.name = name
-	shellCommand.command = command
-	return
+func NewShellCommand(name string, command shell.Command) ShellCommand {
+	return ShellCommand{name, command}
 }
 
 func (shellCommand ShellCommand) Name() string {

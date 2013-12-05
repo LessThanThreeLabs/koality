@@ -7,24 +7,24 @@ import (
 	"github.com/dchest/goyaml"
 	"koality/shell"
 	"koality/verification"
+	"koality/verification/config/commandgroup"
 	"koality/verification/config/provision"
 	"koality/verification/config/remotecommand"
+	"koality/verification/config/section"
 	"strings"
 )
 
 type VerificationConfig struct {
-	Nodes                 int
-	Snapshot              bool
-	RecursiveClone        bool
-	GitClean              bool
-	ProvisionCommand      verification.Command
-	SetupCommands         []verification.Command
-	FirstPreTestCommands  []verification.Command
-	EveryPreTestCommands  []verification.Command
-	TestCommands          []verification.TestCommand
-	EveryPostTestCommands []verification.Command
-	LastPostTestCommands  []verification.Command
-	ExportCommands        []verification.Command
+	Params        Params
+	Sections      []section.Section
+	FinalSections []section.Section
+}
+
+type Params struct {
+	Nodes          uint
+	Snapshot       bool // TODO: should be SnapshotUntil (string)
+	RecursiveClone bool
+	GitClean       bool
 }
 
 const defaultTimeout = 600
@@ -133,36 +133,45 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 		return
 	}
 
-	for section, config := range configMap {
-		switch section {
+	for key, config := range configMap {
+		switch key {
 		case "parameters":
-			nodes, snapshot, recursiveClone, gitClean, provisionCommand, err := convertParameterSection(config)
+			nodes, snapshot, recursiveClone, gitClean, provisionCommand, err := convertParameters(config)
 
 			if err != nil {
 				return verificationConfig, err
 			}
 
-			verificationConfig.Nodes = nodes
-			verificationConfig.Snapshot = snapshot
-			verificationConfig.RecursiveClone = recursiveClone
-			verificationConfig.GitClean = gitClean
-			verificationConfig.ProvisionCommand = verification.NewShellCommand("provision", provisionCommand)
-		case "setup":
-			setupCommands, err := convertSetupSection(config)
+			verificationConfig.Params = Params{nodes, snapshot, recursiveClone, gitClean}
+			provisionShellCommand := verification.NewShellCommand("provision", provisionCommand)
+			provisionSection := section.New(
+				"provision",
+				section.RunOnAll,
+				section.FailOnFirst,
+				false,
+				commandgroup.New([]verification.Command{}),
+				commandgroup.New([]verification.Command{provisionShellCommand}),
+			)
+			verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
+		case "sections":
+			// TODO: this should be filled in from parsing
+			sections := []section.Section{}
+			verificationConfig.Sections = append(verificationConfig.Sections, sections...)
+			// setupCommands, err := convertSetupSection(config)
 
-			if err != nil {
-				return verificationConfig, err
-			}
+			// if err != nil {
+			// 	return verificationConfig, err
+			// }
 
-			verificationConfig.SetupCommands = setupCommands
-		case "before tests":
-			return
-		case "tests":
-			return
-		case "after tests":
-			return
+			// verificationConfig.SetupCommands = setupCommands
+		// case "before tests":
+		// 	return
+		// case "tests":
+		// 	return
+		// case "after tests":
+		// 	return
 		default:
-			err = BadConfigurationError{fmt.Sprintf("The section %s is not currently supported.", section)}
+			err = BadConfigurationError{fmt.Sprintf("The primary key %q is not currently supported.", key)}
 			return
 		}
 	}
@@ -170,7 +179,7 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 	return
 }
 
-func convertParameterSection(config interface{}) (node int, snapshot, recursiveClone, gitClean bool, provisionCommand shell.Command, err error) {
+func convertParameters(config interface{}) (node uint, snapshot, recursiveClone, gitClean bool, provisionCommand shell.Command, err error) {
 	switch config.(type) {
 	case map[interface{}]interface{}:
 		config := config.(map[interface{}]interface{})
@@ -182,7 +191,7 @@ func convertParameterSection(config interface{}) (node int, snapshot, recursiveC
 				return option, nil
 			default:
 				// @Jordan,Brian - what do you think of this? I send this error and catch it and give a more specific one
-				return false, BadConfigurationError{""}
+				return false, BadConfigurationError{}
 			}
 		}
 
@@ -207,14 +216,14 @@ func convertParameterSection(config interface{}) (node int, snapshot, recursiveC
 				if err != nil {
 					return
 				}
-			case "node":
+			case "nodes":
 				option, ok := option.(int)
 
-				if !ok {
-					err = BadConfigurationError{"The number of nodes should be an integer."}
+				if !ok || option < 0 {
+					err = BadConfigurationError{"The number of nodes must be a positive integer."}
 				}
 
-				node = option
+				node = uint(option)
 			// Can you guys think of a way to avoid this code duplication?
 			case "snapshot":
 				snapshot, err = parseBool(option)
@@ -291,17 +300,17 @@ func convertBeforeTestSection(config interface{}) (firstCommands, everyCommands 
 }
 */
 
-func convertTestSection(config interface{}) (commands []shell.Command, err error) {
-	return
-}
+// func convertTestSection(config interface{}) (commands []shell.Command, err error) {
+// 	return
+// }
 
-func convertAfterTestSection(config interface{}) (commands []shell.Command, err error) {
-	return
-}
+// func convertAfterTestSection(config interface{}) (commands []shell.Command, err error) {
+// 	return
+// }
 
-func convertDeploySection(config interface{}) (commands []shell.Command, err error) {
-	return
-}
+// func convertDeploySection(config interface{}) (commands []shell.Command, err error) {
+// 	return
+// }
 
 type BadConfigurationError struct {
 	msg string

@@ -31,8 +31,7 @@ func New() *LocalMachine {
 		patcher:         vm.NewPatcher(copier, executableMaker),
 	}
 
-	cmdStr := fmt.Sprintf("mkdir -p %s", rootDir)
-	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Command(cmdStr)), nil, nil, nil)
+	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Commandf("mkdir -p %s", rootDir)), nil, nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +42,7 @@ func New() *LocalMachine {
 
 func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
 	fullCommand := shell.And(
-		shell.Command(fmt.Sprintf("cd %s", localMachine.rootDir)),
+		shell.Commandf("cd %s", localMachine.rootDir),
 		command,
 	)
 	return localMachine.executableMaker.MakeExecutable(fullCommand, stdin, stdout, stderr)
@@ -70,6 +69,6 @@ type localCopier struct {
 }
 
 func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
-	command := shell.Advertised(shell.Command(fmt.Sprintf("cp %s %s", sourceFilePath, destFilePath)))
+	command := shell.Advertised(shell.Commandf("cp %s %s", sourceFilePath, destFilePath))
 	return copier.executableMaker.MakeExecutable(command, nil, nil, nil)
 }
