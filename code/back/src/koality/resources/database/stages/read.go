@@ -184,3 +184,29 @@ func (readHandler *ReadHandler) GetXunitResults(stageRunId uint64) ([]resources.
 	}
 	return xunitResuts, nil
 }
+
+func (readHandler *ReadHandler) GetExports(stageRunId uint64) ([]resources.Export, error) {
+	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return nil, err
+	}
+
+	query := "SELECT path, uri FROM exports WHERE run_id=$1"
+	rows, err := readHandler.database.Query(query, stageRunId)
+	if err != nil {
+		return nil, err
+	}
+
+	exports := make([]resources.Export, 0, 1)
+	for rows.Next() {
+		export := resources.Export{}
+		err := rows.Scan(&export.Path, &export.Uri)
+		if err != nil {
+			return nil, err
+		}
+		exports = append(exports, export)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return exports, nil
+}

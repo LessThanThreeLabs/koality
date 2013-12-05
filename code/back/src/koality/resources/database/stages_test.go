@@ -213,8 +213,41 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	_, err = connection.Stages.Read.GetXunitResults(stageRunId)
+	returnedXunitResults, err := connection.Stages.Read.GetXunitResults(stageRunId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if len(returnedXunitResults) != 2 {
+		test.Fatal("Unexpected numebr of xunit results")
+	}
+}
+
+func TestExport(test *testing.T) {
+	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageName+"export", stageFlavor, stageOrderNumber)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunId, err := connection.Stages.Create.CreateRun(stageId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstExport := resources.Export{"some/path/1.xml", "https://s3.aws/bucket-name/1.xml"}
+	secondExport := resources.Export{"some/path/2.xml", "https://s3.aws/bucket-name/2.xml"}
+	exports := []resources.Export{firstExport, secondExport}
+	err = connection.Stages.Update.AddExports(stageRunId, exports)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	returnedExports, err := connection.Stages.Read.GetExports(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if len(returnedExports) != 2 {
+		test.Fatal("Unexpecetd number of exports")
 	}
 }

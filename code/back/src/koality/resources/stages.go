@@ -32,6 +32,11 @@ type XunitResult struct {
 	Seconds     float64
 }
 
+type Export struct {
+	Path string
+	Uri  string
+}
+
 type StagesHandler struct {
 	Create StagesCreateHandler
 	Read   StagesReadHandler
@@ -51,6 +56,7 @@ type StagesReadHandler interface {
 	GetConsoleTextTail(stageRunId uint64, offset, results int) (map[uint64]string, error)
 	GetAllConsoleText(stageRunId uint64) (map[uint64]string, error)
 	GetXunitResults(stageRunId uint64) ([]XunitResult, error)
+	GetExports(stageRunId uint64) ([]Export, error)
 }
 
 type StagesUpdateHandler interface {
@@ -59,6 +65,7 @@ type StagesUpdateHandler interface {
 	SetEndTime(verificationId uint64, endTime time.Time) error
 	AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error
 	AddXunitResults(stageRunId uint64, xunitResults []XunitResult) error
+	AddExports(stageRunId uint64, exports []Export) error
 }
 
 type NoSuchStageError struct {

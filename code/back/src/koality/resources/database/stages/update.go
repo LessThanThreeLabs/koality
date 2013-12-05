@@ -146,3 +146,33 @@ func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResu
 	}
 	return nil
 }
+
+func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []resources.Export) error {
+	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return err
+	}
+
+	getValuesString := func() string {
+		valuesStringArray := make([]string, len(exports))
+		for index := 0; index < len(exports); index++ {
+			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d)", stageRunId, index*2+1, index*2+2)
+		}
+		return strings.Join(valuesStringArray, ", ")
+	}
+
+	exportsToArray := func() []interface{} {
+		exportsArray := make([]interface{}, len(exports)*2)
+		for index, export := range exports {
+			exportsArray[index*2] = export.Path
+			exportsArray[index*2+1] = export.Uri
+		}
+		return exportsArray
+	}
+
+	query := "INSERT INTO exports (run_id, path, uri) VALUES " + getValuesString()
+	_, err := updateHandler.database.Exec(query, exportsToArray()...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
