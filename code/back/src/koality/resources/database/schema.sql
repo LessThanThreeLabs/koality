@@ -114,28 +114,26 @@ CREATE TABLE IF NOT EXISTS console_texts (
 	id 					serial PRIMARY KEY,
 	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
 	number				integer NOT NULL,
-	text 				text NOT NULL,
-
-	UNIQUE (run_id, number)
+	text 				text NOT NULL
 );
 
-DO
-$create_console_texts_run_id_idx$
-BEGIN
-	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_run_id_idx') THEN
-		CREATE INDEX console_texts_run_id_idx ON console_texts(run_id);
-	END IF;
-END
-$create_console_texts_run_id_idx$;
+-- DO
+-- $create_console_texts_run_id_idx$
+-- BEGIN
+-- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_run_id_idx') THEN
+-- 		CREATE INDEX console_texts_run_id_idx ON console_texts(run_id);
+-- 	END IF;
+-- END
+-- $create_console_texts_run_id_idx$;
 
-DO
-$create_console_texts_number_idx$
-BEGIN
-	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_number_idx') THEN
-		CREATE INDEX console_texts_number_idx ON console_texts(number);
-	END IF;
-END
-$create_console_texts_number_idx$;
+-- DO
+-- $create_console_texts_number_idx$
+-- BEGIN
+-- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_number_idx') THEN
+-- 		CREATE INDEX console_texts_number_idx ON console_texts(number);
+-- 	END IF;
+-- END
+-- $create_console_texts_number_idx$;
 
 CREATE TABLE IF NOT EXISTS xunit_results (
 	id 					serial PRIMARY KEY,
@@ -150,14 +148,14 @@ CREATE TABLE IF NOT EXISTS xunit_results (
 	seconds				real NOT NULL
 );
 
-DO
-$create_xunit_results_run_id_idx$
-BEGIN
-	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'xunit_results_run_id_idx') THEN
-		CREATE INDEX xunit_results_run_id_idx ON xunit_results(run_id);
-	END IF;
-END
-$create_xunit_results_run_id_idx$;
+-- DO
+-- $create_xunit_results_run_id_idx$
+-- BEGIN
+-- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'xunit_results_run_id_idx') THEN
+-- 		CREATE INDEX xunit_results_run_id_idx ON xunit_results(run_id);
+-- 	END IF;
+-- END
+-- $create_xunit_results_run_id_idx$;
 
 CREATE TABLE IF NOT EXISTS exports (
 	id 					serial PRIMARY KEY,
