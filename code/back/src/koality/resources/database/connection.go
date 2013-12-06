@@ -10,6 +10,7 @@ import (
 	"koality/resources/database/stages"
 	"koality/resources/database/users"
 	"koality/resources/database/verifications"
+	"os/user"
 )
 
 const (
@@ -21,12 +22,11 @@ const (
 )
 
 func New() (*resources.Connection, error) {
-	paramsString := fmt.Sprintf("host=%s user=%s password='%s' dbname=%s sslmode=%s", host, userName, password, databaseName, sslMode)
-	database, err := sql.Open("postgres", paramsString)
+	database, err := getDatabaseConnection()
 	if err != nil {
 		return nil, err
 	}
-	database.SetMaxIdleConns(10)
+	database.SetMaxIdleConns(100)
 
 	err = setSchema(database)
 	if err != nil {
@@ -57,8 +57,31 @@ func New() (*resources.Connection, error) {
 	return &connection, nil
 }
 
+func Reseed() error {
+	database, err := getDatabaseConnection()
+	if err != nil {
+		return err
+	}
+
+	_, err = database.Exec("DROP SCHEMA public CASCADE")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getDatabaseConnection() (*sql.DB, error) {
+	paramsString := fmt.Sprintf("host=%s user=%s password='%s' dbname=%s sslmode=%s", host, userName, password, databaseName, sslMode)
+	return sql.Open("postgres", paramsString)
+}
+
 func setSchema(database *sql.DB) error {
-	file, err := ioutil.ReadFile("schema.sql")
+	currentUser, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	file, err := ioutil.ReadFile(currentUser.HomeDir + "/postgres/schema.sql")
 	if err != nil {
 		return err
 	}

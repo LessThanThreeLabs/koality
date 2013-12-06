@@ -12,7 +12,7 @@ const (
 	repositoryMaxNameLength      = 256
 	repositoryMaxLocalUriLength  = 256
 	repositoryMaxRemoteUriLength = 256
-	nameRegex                    = "^[-_a-zA-Z0-9]+$"
+	nameRegex                    = "^[-_a-zA-Z0-9 ]+$"
 	gitUriRegex                  = "[-_\\./a-zA-Z0-9]+@[-_\\.:/a-zA-Z0-9]+$"
 	hgUriRegex                   = "[-_\\./a-zA-Z0-9]+@[-_\\./a-zA-Z0-9]+$"
 )
