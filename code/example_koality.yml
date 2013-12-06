@@ -6,12 +6,13 @@ parameters:
   snapshot until: chicken
   gitClean: false
 sections:
-- setup:
+- setup chicken:
     run on: all
     fail on: first
     scripts:
+    - chicken chicken
     - chicken chicken:
-        script: echo "chicken"
+        command: echo "chicken"
         timeout: 42
         xunit:
         - chicken chicken
@@ -22,7 +23,7 @@ sections:
     run on: all
     fail on: first
     scripts:
-    - wget stuff
+    - wget chicken
 - export chicken:
     run on: single
     exports:
@@ -49,4 +50,4 @@ final:
 - deploy:
     run on: single
     scripts:
-    - if [ $KOALITY_SECTIONS_PASSED == "true" ]; echo winner; fi
+    - if [ $CHICKEN == "true" ]; echo chicken; fi

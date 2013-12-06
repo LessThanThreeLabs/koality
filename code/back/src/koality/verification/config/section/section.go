@@ -6,6 +6,7 @@ import (
 	"koality/verification/config/commandgroup"
 )
 
+// mandatory
 const (
 	RunOnAll    = "runOnAll"
 	RunOnSplit  = "runOnSplit"
@@ -25,6 +26,7 @@ type section struct {
 	continueOnFailure bool
 	factoryCommands   commandgroup.CommandGroup
 	commands          commandgroup.AppendableCommandGroup
+	exportPaths       []string
 }
 
 type Section interface {
@@ -37,14 +39,14 @@ type Section interface {
 	Exports() []string
 }
 
-func New(name, runOn, failOn string, continueOnFailure bool, factoryCommands commandgroup.CommandGroup, commands commandgroup.AppendableCommandGroup) *section {
+func New(name, runOn, failOn string, continueOnFailure bool, factoryCommands commandgroup.CommandGroup, commands commandgroup.AppendableCommandGroup, exportPaths []string) *section {
 	if runOn != RunOnAll && runOn != RunOnSplit && runOn != RunOnSingle {
 		panic(fmt.Sprintf("Invalid runOn argument: %q", runOn))
 	}
 	if failOn != FailOnNever && failOn != FailOnAny && failOn != FailOnFirst {
 		panic(fmt.Sprintf("Invalid failOn argument: %q", failOn))
 	}
-	return &section{name, runOn, failOn, continueOnFailure, factoryCommands, commands}
+	return &section{name, runOn, failOn, continueOnFailure, factoryCommands, commands, exportPaths}
 }
 
 func (section *section) Name() string {
