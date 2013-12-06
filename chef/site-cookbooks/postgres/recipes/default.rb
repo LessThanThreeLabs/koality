@@ -41,5 +41,5 @@ end
 
 execute "create-database" do
 	user "postgres"
-	command "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{node[:postgres][:database_name]}'\" | grep -q 1 || createdb #{node[:postgres][:database_name]}"
+	command "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{node[:postgres][:database_name]}'\" | grep -q 1 || createdb #{node[:postgres][:database_name]} --template template0 --locale #{node[:postgres][:locale]} --encoding #{node[:postgres][:character_encoding]}"
 end
