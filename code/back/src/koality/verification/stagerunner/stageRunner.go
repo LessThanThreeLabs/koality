@@ -79,13 +79,14 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		if stageRunner.verification.VerificationStatus == "cancelled" {
 			return false, nil
 		}
+
 		stageId, err := stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, command.Name(), uint64(index))
 		if err != nil {
 			return false, err
 		}
+
 		stageRunId, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
 		if err != nil {
-			panic(err)
 			return false, err
 		}
 
@@ -141,10 +142,12 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		if stageRunner.verification.VerificationStatus == "cancelled" {
 			return false, nil
 		}
+
 		stageId, err := stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, sectionToRun.Name(), uint64(index))
 		if err != nil {
 			return false, err
 		}
+
 		stageRunId, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
 		if err != nil {
 			return false, err
@@ -247,7 +250,7 @@ func (writer *consoleTextWriter) flushOnTick() {
 
 func (writer *consoleTextWriter) Write(bytes []byte) (int, error) {
 	writer.locker.Lock()
-	writer.locker.Unlock()
+	defer writer.locker.Unlock()
 
 	numBytes, err := writer.buffer.Write(bytes)
 
