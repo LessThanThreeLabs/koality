@@ -49,7 +49,7 @@ func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
 		errorText := fmt.Sprintf("Git local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
 		return errors.New(errorText)
 	} else if ok, err := regexp.MatchString(gitUriRegex, localUri); !ok || err != nil {
-		return errors.New("Git local uri must match regex: " + gitUriRegex)
+		return fmt.Errorf("Git local uri must match regex: %q", gitUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
 		return err
 	}

@@ -6,13 +6,15 @@ import (
 	"koality/shell"
 	"koality/verification"
 	"koality/verification/config"
+	"koality/verification/config/commandgroup"
 	"koality/verification/config/section"
-	// "koality/verification/config/commandgroup"
 	"koality/verification/stagerunner"
 	"koality/vm"
+	"time"
 )
 
 type VerificationServer struct {
+	ResourcesConnection *resources.Connection
 	VirtualMachinePools map[uint64]vm.VirtualMachinePool
 }
 
@@ -42,7 +44,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		defer virtualMachinePool.Free()
 		defer virtualMachine.Terminate()
 
-		stageRunner := stagerunner.New(virtualMachine, currentVerification)
+		stageRunner := stagerunner.New(verificationServer.ResourcesConnection, virtualMachine, currentVerification)
 		defer close(stageRunner.ResultsChan)
 
 		newStageRunnersChan <- stageRunner
@@ -62,6 +64,9 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 
 	resultsChan := verificationServer.combineResults(newStageRunnersChan)
 	receivedResult := make(map[string]bool)
+
+	// TODO (bbland): do this when the first stageRunner begins
+	verificationServer.ResourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
 
 	for {
 		result, hasMoreResults := <-resultsChan
@@ -104,18 +109,30 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 func (verificationServer *VerificationServer) failVerification(verification *resources.Verification) error {
 	(*verification).VerificationStatus = "failed"
 	fmt.Printf("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
+	verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
 	return nil
 }
 
 func (verificationServer *VerificationServer) passVerification(verification *resources.Verification) error {
 	(*verification).VerificationStatus = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
+	verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
 	return nil
 }
 
 // TODO (bbland): make this not bogus
-func (verificationServer *VerificationServer) getVerificationConfig(verification *resources.Verification) (config.VerificationConfig, error) {
-	return config.FromYaml("parameters:\n  languages:\n    python: asdf")
+func (verificationServer *VerificationServer) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
+	config, err := config.FromYaml("parameters:\n  languages:\n    python: asdf")
+	config.Sections = append(config.Sections, section.New(
+		"test",
+		section.RunOnSplit,
+		section.FailOnFirst,
+		true,
+		commandgroup.New([]verification.Command{verification.NewShellCommand("hi", "echo hi"), verification.NewShellCommand("bye", "echo bye")}),
+		commandgroup.New([]verification.Command{}),
+		[]string{},
+	))
+	return config, err
 }
 
 func (verificationServer *VerificationServer) combineResults(newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan verification.SectionResult {

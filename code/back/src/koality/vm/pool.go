@@ -105,6 +105,7 @@ func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
 	machinesChan := make(chan VirtualMachine, numMachines)
 	pool.allocateN(numMachines)
 
+	// TODO (bbland): handle case where this errors out
 	go pool.ensureReadyInstances()
 
 	go func(machinesChan chan VirtualMachine) {
@@ -119,6 +120,7 @@ func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
 func (pool *virtualMachinePool) Free() {
 	pool.unallocateOne()
 
+	// TODO (bbland): handle case where this errors out
 	go pool.ensureReadyInstances()
 }
 

@@ -150,6 +150,7 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 				commandgroup.New([]verification.Command{provisionShellCommand}),
 				[]string{},
 			)
+			provisionShellCommand = provisionShellCommand
 			verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
 		case "sections":
 			sections, err := parseSections(config)
