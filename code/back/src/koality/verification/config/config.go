@@ -101,14 +101,12 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 	return
 }
 
-func parseBool(option interface{}) (bool, error) {
-	switch option {
-	case true, false:
-		option := option.(bool)
-		return option, nil
-	default:
+func parseBool(option interface{}) (val bool, err error) {
+	val, ok := option.(bool)
+	if !ok {
 		return false, BadConfigurationError{}
 	}
+	return
 }
 
 func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err error) {
