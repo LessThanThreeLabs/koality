@@ -23,11 +23,9 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 
 func (verifier *Verifier) verifyName(name string) error {
 	if len(name) < stageMinNameLength {
-		errorText := fmt.Sprintf("Name must be at least %d characters long", stageMinNameLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Name must be at least %d characters long", stageMinNameLength)
 	} else if len(name) > stageMaxNameLength {
-		errorText := fmt.Sprintf("Name cannot exceed %d characters long", stageMaxNameLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Name cannot exceed %d characters long", stageMaxNameLength)
 	}
 	return nil
 }

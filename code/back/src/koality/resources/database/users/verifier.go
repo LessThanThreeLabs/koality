@@ -31,8 +31,7 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 
 func (verifier *Verifier) verifyEmail(email string) error {
 	if len(email) > userMaxEmailLength {
-		errorText := fmt.Sprintf("Email cannot exceed %d characters long", userMaxEmailLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Email cannot exceed %d characters long", userMaxEmailLength)
 	} else if ok, err := regexp.MatchString(emailRegex, email); !ok || err != nil {
 		return errors.New("Email must match regex: " + emailRegex)
 	} else if err := verifier.verifyUserDoesNotExistWithEmail(email); err != nil {
@@ -43,8 +42,7 @@ func (verifier *Verifier) verifyEmail(email string) error {
 
 func (verifier *Verifier) verifyFirstName(firstName string) error {
 	if len(firstName) > userMaxFirstNameLength {
-		errorText := fmt.Sprintf("First name exceed %d characters long", userMaxFirstNameLength)
-		return errors.New(errorText)
+		return fmt.Errorf("First name exceed %d characters long", userMaxFirstNameLength)
 	} else if ok, err := regexp.MatchString(firstNameRegex, firstName); !ok || err != nil {
 		return errors.New("First name must match regex: " + firstNameRegex)
 	}
@@ -53,8 +51,7 @@ func (verifier *Verifier) verifyFirstName(firstName string) error {
 
 func (verifier *Verifier) verifyLastName(lastName string) error {
 	if len(lastName) > userMaxLastNameLength {
-		errorText := fmt.Sprintf("Last name cannot exceed %d characters long", userMaxLastNameLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Last name cannot exceed %d characters long", userMaxLastNameLength)
 	} else if ok, err := regexp.MatchString(lastNameRegex, lastName); !ok || err != nil {
 		return errors.New("Last name must match regex: " + lastNameRegex)
 	}
@@ -63,8 +60,7 @@ func (verifier *Verifier) verifyLastName(lastName string) error {
 
 func (verifier *Verifier) verifyKeyAlias(userId uint64, alias string) error {
 	if len(alias) > userMaxKeyAliasLength {
-		errorText := fmt.Sprintf("Key alias cannot exceed %d characters long", userMaxKeyAliasLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Key alias cannot exceed %d characters long", userMaxKeyAliasLength)
 	} else if ok, err := regexp.MatchString(keyAliasRegex, alias); !ok || err != nil {
 		return errors.New("SSH Key alias must match regex: " + keyAliasRegex)
 	} else if err := verifier.verifyKeyDoesNotExistWithAlias(userId, alias); err != nil {
@@ -75,8 +71,7 @@ func (verifier *Verifier) verifyKeyAlias(userId uint64, alias string) error {
 
 func (verifier *Verifier) verifyPublicKey(publicKey string) error {
 	if len(publicKey) > userMaxPublicKeyLength {
-		errorText := fmt.Sprintf("Public key cannot exceed %d characters long", userMaxPublicKeyLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Public key cannot exceed %d characters long", userMaxPublicKeyLength)
 	} else if ok, err := regexp.MatchString(publicKeyRegex, publicKey); !ok || err != nil {
 		return errors.New("SSH Public Key must match regex: " + publicKeyRegex)
 	} else if err := verifier.verifyPublicKeyDoesNotExist(publicKey); err != nil {
@@ -91,8 +86,7 @@ func (verifier *Verifier) verifyUserDoesNotExistWithEmail(email string) error {
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := "User already exists with email: " + email
-		return resources.UserAlreadyExistsError{errorText}
+		return resources.UserAlreadyExistsError{"User already exists with email: " + email}
 	}
 	return nil
 }
@@ -103,8 +97,7 @@ func (verifier *Verifier) verifyKeyDoesNotExistWithAlias(userId uint64, alias st
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := "SSH Public key already exists with alias: " + alias
-		return resources.KeyAlreadyExistsError{errorText}
+		return resources.KeyAlreadyExistsError{"SSH Public key already exists with alias: " + alias}
 	}
 	return nil
 }
@@ -115,8 +108,7 @@ func (verifier *Verifier) verifyPublicKeyDoesNotExist(publicKey string) error {
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := "SSH Public key already exists"
-		return resources.KeyAlreadyExistsError{errorText}
+		return resources.KeyAlreadyExistsError{"SSH Public key already exists"}
 	}
 	return nil
 }

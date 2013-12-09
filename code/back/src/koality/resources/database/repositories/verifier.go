@@ -27,8 +27,7 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 
 func (verifier *Verifier) verifyName(name string) error {
 	if len(name) > repositoryMaxNameLength {
-		errorText := fmt.Sprintf("Name cannot exceed %d characters long", repositoryMaxNameLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Name cannot exceed %d characters long", repositoryMaxNameLength)
 	} else if ok, err := regexp.MatchString(nameRegex, name); !ok || err != nil {
 		return errors.New("Name must match regex: " + nameRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithName(name); err != nil {
@@ -46,8 +45,7 @@ func (verifier *Verifier) verifyVcsType(vcsType string) error {
 
 func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
 	if len(localUri) > repositoryMaxLocalUriLength {
-		errorText := fmt.Sprintf("Git local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Git local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
 	} else if ok, err := regexp.MatchString(gitUriRegex, localUri); !ok || err != nil {
 		return errors.New("Git local uri must match regex: " + gitUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
@@ -58,8 +56,7 @@ func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
 
 func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 	if len(remoteUri) > repositoryMaxRemoteUriLength {
-		errorText := fmt.Sprintf("Git remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Git remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
 	} else if ok, err := regexp.MatchString(gitUriRegex, remoteUri); !ok || err != nil {
 		return errors.New("Git local uri must match regex: " + gitUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
@@ -70,8 +67,7 @@ func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 
 func (verifier *Verifier) verifyLocalHgUri(localUri string) error {
 	if len(localUri) > repositoryMaxLocalUriLength {
-		errorText := fmt.Sprintf("Hg local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Hg local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
 	} else if ok, err := regexp.MatchString(hgUriRegex, localUri); !ok || err != nil {
 		return errors.New("Hg local uri must match regex: " + hgUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
@@ -82,8 +78,7 @@ func (verifier *Verifier) verifyLocalHgUri(localUri string) error {
 
 func (verifier *Verifier) verifyRemoteHgUri(remoteUri string) error {
 	if len(remoteUri) > repositoryMaxRemoteUriLength {
-		errorText := fmt.Sprintf("Hg remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
-		return errors.New(errorText)
+		return fmt.Errorf("Hg remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
 	} else if ok, err := regexp.MatchString(hgUriRegex, remoteUri); !ok || err != nil {
 		return errors.New("Hg local uri must match regex: " + hgUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
@@ -98,8 +93,7 @@ func (verifier *Verifier) verifyRepositoryDoesNotExistWithName(name string) erro
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := "Repository already exists with name: " + name
-		return resources.RepositoryAlreadyExistsError{errorText}
+		return resources.RepositoryAlreadyExistsError{"Repository already exists with name: " + name}
 	}
 	return nil
 }
@@ -110,8 +104,7 @@ func (verifier *Verifier) verifyRepositoryDoesNotExistWithLocalUri(localUri stri
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := "Repository already exists with local uri: " + localUri
-		return resources.RepositoryAlreadyExistsError{errorText}
+		return resources.RepositoryAlreadyExistsError{"Repository already exists with local uri: " + localUri}
 	}
 	return nil
 }
@@ -122,8 +115,7 @@ func (verifier *Verifier) verifyRepositoryDoesNotExistWithRemoteUri(remoteUri st
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		errorText := "Repository already exists with remote uri: " + remoteUri
-		return resources.RepositoryAlreadyExistsError{errorText}
+		return resources.RepositoryAlreadyExistsError{"Repository already exists with remote uri: " + remoteUri}
 	}
 	return nil
 }

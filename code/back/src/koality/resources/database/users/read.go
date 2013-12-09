@@ -27,8 +27,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &passwordHashBase64, &passwordSaltBase64,
 		&gitHubOAuth, &user.IsAdmin, &user.Created)
 	if err == sql.ErrNoRows {
-		errorText := "Unable to find user"
-		return nil, resources.NoSuchUserError{errorText}
+		return nil, resources.NoSuchUserError{"Unable to find user"}
 	} else if err != nil {
 		return nil, err
 	}
