@@ -2,6 +2,7 @@ package verificationserver
 
 import (
 	"fmt"
+	"io/ioutil"
 	"koality/resources"
 	"koality/shell"
 	"koality/verification"
@@ -10,6 +11,7 @@ import (
 	"koality/verification/config/section"
 	"koality/verification/stagerunner"
 	"koality/vm"
+	"os/user"
 	"time"
 )
 
@@ -28,6 +30,12 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		return false, fmt.Errorf("No virtual machine pool found for repository: %d", currentVerification.RepositoryId)
 	}
 	verificationConfig, err := verificationServer.getVerificationConfig(currentVerification)
+	if err != nil {
+		verificationServer.failVerification(currentVerification)
+		return false, err
+	}
+
+	err = verificationServer.createStages(currentVerification, verificationConfig.Sections)
 	if err != nil {
 		verificationServer.failVerification(currentVerification)
 		return false, err
@@ -122,17 +130,53 @@ func (verificationServer *VerificationServer) passVerification(verification *res
 
 // TODO (bbland): make this not bogus
 func (verificationServer *VerificationServer) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
-	config, err := config.FromYaml("parameters:\n  languages:\n    python: asdf")
-	config.Sections = append(config.Sections, section.New(
-		"test",
-		section.RunOnSplit,
-		section.FailOnFirst,
-		true,
-		commandgroup.New([]verification.Command{verification.NewShellCommand("hi", "echo hi"), verification.NewShellCommand("bye", "echo bye")}),
-		commandgroup.New([]verification.Command{}),
-		[]string{},
-	))
-	return config, err
+	var emptyConfig config.VerificationConfig
+
+	usr, err := user.Current()
+	if err != nil {
+		return emptyConfig, err
+	}
+
+	example_yaml, err := ioutil.ReadFile(fmt.Sprintf("%s/code/back/src/koality/verification/config/example_koality.yml", usr.HomeDir))
+	if err != nil {
+		return emptyConfig, err
+	}
+
+	return config.FromYaml(string(example_yaml))
+}
+
+func (verificationServer *VerificationServer) createStages(currentVerification *resources.Verification, sections []section.Section) error {
+	for sectionNumber, section := range sections {
+		var err error
+
+		stageNumber := 0
+
+		factoryCommands := section.FactoryCommands(true)
+
+		for command, err := factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
+			_, err := verificationServer.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
+			if err != nil {
+				return err
+			}
+			stageNumber++
+		}
+		if err != nil && err != commandgroup.NoMoreCommands {
+			return err
+		}
+
+		commands := section.Commands(true)
+		for command, err := commands.Next(); err == nil; command, err = commands.Next() {
+			_, err := verificationServer.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
+			if err != nil {
+				return err
+			}
+			stageNumber++
+		}
+		if err != nil && err != commandgroup.NoMoreCommands {
+			return err
+		}
+	}
+	return nil
 }
 
 func (verificationServer *VerificationServer) combineResults(newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan verification.SectionResult {

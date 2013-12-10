@@ -50,10 +50,10 @@ func advertiseCommands(remoteCommand *RemoteCommand) shell.Command {
 func (remoteCommand *RemoteCommand) toScript() shell.Command {
 	givenCommand := shell.Command(fmt.Sprintf("eval %s", shell.Quote(string(shell.And(advertiseCommands(remoteCommand))))))
 
-	timeoutMessage := fmt.Sprintf("echo %s timed out after %s seconds", shell.Quote(remoteCommand.name), remoteCommand.timeout)
+	timeoutMessage := fmt.Sprintf("echo %s timed out after %d seconds", shell.Quote(remoteCommand.name), remoteCommand.timeout)
 
 	timeoutCommand := shell.Chain(
-		shell.Commandf("sleep %s", remoteCommand.timeout),
+		shell.Commandf("sleep %d", remoteCommand.timeout),
 		shell.Silent("kill -INT $$"),
 		shell.Command("sleep 1"),
 		shell.IfElse(

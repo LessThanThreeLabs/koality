@@ -3,9 +3,11 @@ package stagerunner
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
+	"github.com/dchest/goyaml"
 	"io"
 	"koality/resources"
 	"koality/verification"
+	"koality/verification/config"
 	"koality/verification/config/commandgroup"
 	"koality/verification/config/section"
 	"koality/vm"
@@ -71,18 +73,25 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 	var command verification.Command
 	sectionFailed := false
 
-	factoryCommands := sectionToRun.FactoryCommands()
-
-	index := 0
+	factoryCommands := sectionToRun.FactoryCommands(false)
 
 	for command, err = factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
 		if stageRunner.verification.VerificationStatus == "cancelled" {
 			return false, nil
 		}
 
-		stageId, err := stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, command.Name(), uint64(index))
+		stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
 		if err != nil {
 			return false, err
+		}
+
+		var stageId uint64
+
+		for _, stage := range stages {
+			if stage.SectionNumber == sectionNumber && stage.Name == command.Name() {
+				stageId = stage.Id
+				break
+			}
 		}
 
 		stageRunId, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
@@ -92,9 +101,17 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 
 		outputBuffer := new(bytes.Buffer)
 		syncOutputBuffer := &syncWriter{writer: outputBuffer}
-		syncConsoleWriter := &syncWriter{writer: newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)}
+
+		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)
+		syncConsoleWriter := &syncWriter{writer: consoleWriter}
+
 		returnCode, runErr := stageRunner.runCommand(command, os.Stdin, io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stdout), io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stderr))
 		factoryCommands.Done()
+		closeErr := consoleWriter.Close()
+		if closeErr != nil {
+			return false, closeErr
+		}
+
 		stageFailed := returnCode != 0 || runErr != nil
 		if stageFailed && !sectionFailed {
 			sectionFailed = true
@@ -117,14 +134,41 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		if stageFailed && !sectionToRun.ContinueOnFailure() {
 			return false, nil
 		}
-		// TODO (bbland): parse the output into new commands
-		newCommands := []verification.Command{}
-		for _, newCommand := range newCommands {
-			sectionToRun.AppendCommand(newCommand)
+		var yamlParsedCommands interface{}
+
+		err = goyaml.Unmarshal(outputBuffer.Bytes(), &yamlParsedCommands)
+		if err != nil {
+			// TODO (bbland): display an error to the user
+			return false, err
 		}
-		index++
+		newCommands, err := config.ParseRemoteCommands(yamlParsedCommands, true)
+		if err != nil {
+			// TODO (bbland): display the error to the user
+			return false, err
+		}
+		stages, err = stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
+		if err != nil {
+			return false, err
+		}
+		var maxOrderNumber uint64
+		for _, stage := range stages {
+			if stage.SectionNumber == sectionNumber && stage.OrderNumber > maxOrderNumber {
+				maxOrderNumber = stage.OrderNumber
+			}
+		}
+		orderNumber := maxOrderNumber + 1
+		for _, newCommand := range newCommands {
+			// This can still end up with duplicate/bad order numbers if multiple factories run simultaneously
+			// TODO (bbland): handle case of stages with the same name. This requires more locking...
+			_, err = stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, newCommand.Name(), orderNumber)
+			if err != nil {
+				return false, err
+			}
+			sectionToRun.AppendCommand(newCommand)
+			orderNumber++
+		}
 	}
-	if err != commandgroup.NoMoreCommands {
+	if err != nil && err != commandgroup.NoMoreCommands {
 		return false, err
 	}
 	return !sectionFailed, nil
@@ -135,17 +179,24 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 	var command verification.Command
 	sectionFailed := false
 
-	index := 0
-
-	commands := sectionToRun.Commands()
+	commands := sectionToRun.Commands(false)
 	for command, err = commands.Next(); err == nil; command, err = commands.Next() {
 		if stageRunner.verification.VerificationStatus == "cancelled" {
 			return false, nil
 		}
 
-		stageId, err := stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, sectionToRun.Name(), uint64(index))
+		stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
 		if err != nil {
 			return false, err
+		}
+
+		var stageId uint64
+
+		for _, stage := range stages {
+			if stage.SectionNumber == sectionNumber && stage.Name == command.Name() {
+				stageId = stage.Id
+				break
+			}
 		}
 
 		stageRunId, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
@@ -153,9 +204,16 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			return false, err
 		}
 
-		syncConsoleWriter := &syncWriter{writer: newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)}
+		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)
+		syncConsoleWriter := &syncWriter{writer: consoleWriter}
+
 		returnCode, runErr := stageRunner.runCommand(command, os.Stdin, io.MultiWriter(syncConsoleWriter, os.Stdout), io.MultiWriter(syncConsoleWriter, os.Stderr))
 		commands.Done()
+		closeErr := consoleWriter.Close()
+		if closeErr != nil {
+			return false, closeErr
+		}
+
 		stageFailed := returnCode != 0 || runErr != nil
 		if stageFailed && !sectionFailed && !sectionPreviouslyFailed {
 			sectionFailed = true
@@ -178,9 +236,8 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		if stageFailed && !sectionToRun.ContinueOnFailure() {
 			return false, nil
 		}
-		index++
 	}
-	if err != commandgroup.NoMoreCommands {
+	if err != nil && err != commandgroup.NoMoreCommands {
 		return false, err
 	}
 	return !sectionFailed, nil
@@ -228,6 +285,7 @@ type consoleTextWriter struct {
 	stageRunId          uint64
 	buffer              bytes.Buffer
 	locker              sync.Mutex
+	closeChan           chan bool
 	lastLine            string
 	lastLineNumber      uint64
 }
@@ -235,16 +293,22 @@ type consoleTextWriter struct {
 func newConsoleTextWriter(stagesUpdateHandler resources.StagesUpdateHandler, stageRunId uint64) *consoleTextWriter {
 	var buffer bytes.Buffer
 	var locker sync.Mutex
-	writer := &consoleTextWriter{stagesUpdateHandler, stageRunId, buffer, locker, "", 1}
+	writer := &consoleTextWriter{stagesUpdateHandler, stageRunId, buffer, locker, make(chan bool, 1), "", 1}
 	go writer.flushOnTick()
 	return writer
 }
 
 func (writer *consoleTextWriter) flushOnTick() {
-	ticker := time.Tick(250 * time.Millisecond)
+	ticker := time.NewTicker(250 * time.Millisecond)
 	for {
-		<-ticker
-		writer.flush()
+		select {
+		case <-ticker.C:
+			writer.flush()
+		case <-writer.closeChan:
+			ticker.Stop()
+			writer.flush()
+			return
+		}
 	}
 }
 
@@ -257,9 +321,10 @@ func (writer *consoleTextWriter) Write(bytes []byte) (int, error) {
 	return numBytes, err
 }
 
-// Not sure if this is right
 func (writer *consoleTextWriter) Close() error {
-	return writer.flush()
+	writer.closeChan <- true
+	close(writer.closeChan)
+	return nil
 }
 
 func (writer *consoleTextWriter) flush() error {

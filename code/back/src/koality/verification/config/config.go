@@ -32,7 +32,7 @@ type Params struct {
 
 const defaultTimeout = 600
 
-func parseRemoteCommands(config interface{}, advertised bool) (commands []verification.Command, err error) {
+func ParseRemoteCommands(config interface{}, advertised bool) (commands []verification.Command, err error) {
 	scripts, ok := config.([]interface{})
 	if !ok {
 		err = BadConfigurationError{"The scripts subsection should always be a list of either strings or parameter maps."}
@@ -42,8 +42,7 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 	for _, script := range scripts {
 		switch script.(type) {
 		case string:
-			commands = append(commands, remotecommand.NewRemoteCommand(true, script.(string), defaultTimeout, nil, []string{script.(string)}))
-			return
+			commands = append(commands, remotecommand.NewRemoteCommand(advertised, script.(string), defaultTimeout, nil, []string{script.(string)}))
 		case map[interface{}]interface{}:
 			script := script.(map[interface{}]interface{})
 			for name, parameters := range script {
@@ -66,8 +65,17 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 					switch parameter {
 					case "xunit":
 						switch value.(type) {
-						case []string:
-							xunitPaths = value.([]string)
+						case []interface{}:
+							paths := value.([]interface{})
+							for _, path := range paths {
+								path, ok := path.(string)
+								if !ok {
+									err = BadConfigurationError{"Each xunit path should be a string."}
+									return
+								}
+
+								xunitPaths = append(xunitPaths, path)
+							}
 						case string:
 							xunitPaths = []string{value.(string)}
 						default:
@@ -84,7 +92,7 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 					case "command":
 						command, ok = value.(string)
 						if !ok {
-							err = BadConfigurationError{"The command paremeter of a script should be a string"}
+							err = BadConfigurationError{"The command parameter of a script should be a string"}
 							return
 						}
 					default:
@@ -311,7 +319,7 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 	for subsection, content := range sectionMap {
 		switch subsection {
 		case "scripts":
-			commands, err := parseRemoteCommands(content, true)
+			commands, err := ParseRemoteCommands(content, true)
 			if err != nil {
 				return newSection, err
 			}
@@ -323,7 +331,7 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 
 			regularCommands = commandgroup.New(commands)
 		case "factories":
-			commands, err := parseRemoteCommands(content, false)
+			commands, err := ParseRemoteCommands(content, false)
 			if err != nil {
 				return newSection, err
 			}

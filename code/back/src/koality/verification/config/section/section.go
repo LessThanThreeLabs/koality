@@ -33,8 +33,8 @@ type Section interface {
 	Name() string
 	FailOn() string
 	ContinueOnFailure() bool
-	FactoryCommands() commandgroup.CommandGroup
-	Commands() commandgroup.CommandGroup
+	FactoryCommands(readOnlyCopy bool) commandgroup.CommandGroup
+	Commands(readOnlyCopy bool) commandgroup.CommandGroup
 	AppendCommand(verification.Command) error
 	Exports() []string
 }
@@ -61,7 +61,13 @@ func (section *section) ContinueOnFailure() bool {
 	return section.continueOnFailure
 }
 
-func (section *section) FactoryCommands() commandgroup.CommandGroup {
+func (section *section) FactoryCommands(readOnlyCopy bool) commandgroup.CommandGroup {
+	if section.factoryCommands == nil {
+		return commandgroup.New([]verification.Command{})
+	}
+	if readOnlyCopy {
+		return section.factoryCommands.Copy()
+	}
 	switch section.runOn {
 	case RunOnAll, RunOnSplit: // Splits factories in both cases
 		return section.factoryCommands
@@ -71,8 +77,16 @@ func (section *section) FactoryCommands() commandgroup.CommandGroup {
 	panic(fmt.Sprintf("Unexpected runOn value: %s\n", section.runOn))
 }
 
-func (section *section) Commands() commandgroup.CommandGroup {
-	section.factoryCommands.Wait()
+func (section *section) Commands(readOnlyCopy bool) commandgroup.CommandGroup {
+	if section.commands == nil {
+		return commandgroup.New([]verification.Command{})
+	}
+	if readOnlyCopy {
+		return section.commands.Copy()
+	}
+	if section.factoryCommands != nil {
+		section.factoryCommands.Wait()
+	}
 	switch section.runOn {
 	case RunOnAll:
 		return section.commands.Copy()
@@ -85,9 +99,12 @@ func (section *section) Commands() commandgroup.CommandGroup {
 }
 
 func (section *section) AppendCommand(command verification.Command) error {
+	if section.commands == nil {
+		section.commands = commandgroup.New([]verification.Command{})
+	}
 	return section.commands.Append(command)
 }
 
 func (section *section) Exports() []string {
-	panic("Not implemented")
+	return section.exportPaths
 }
