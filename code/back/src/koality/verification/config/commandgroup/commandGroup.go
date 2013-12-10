@@ -16,7 +16,8 @@ type CommandGroup interface {
 
 type AppendableCommandGroup interface {
 	CommandGroup
-	Append(verification.Command) error
+	// TODO (bbland): rename this because it's strange behavior now?
+	Append(verification.Command) (verification.Command, error)
 }
 
 type appendableCommandGroup struct {
@@ -31,7 +32,7 @@ func New(commands []verification.Command) *appendableCommandGroup {
 	waitGroup := new(sync.WaitGroup)
 	waitGroup.Add(len(commands))
 	return &appendableCommandGroup{
-		commands:  commands,
+		commands:  dedupeCommands(commands),
 		locker:    new(sync.Mutex),
 		waitGroup: waitGroup,
 	}
@@ -87,13 +88,14 @@ func (group *appendableCommandGroup) Remaining() CommandGroup {
 	return remainingGroup
 }
 
-func (group *appendableCommandGroup) Append(command verification.Command) error {
+func (group *appendableCommandGroup) Append(command verification.Command) (verification.Command, error) {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
 	group.waitGroup.Add(1)
-	group.commands = append(group.commands, command)
-	return nil
+	group.commands = dedupeCommands(append(group.commands, command))
+
+	return group.commands[len(group.commands)-1], nil
 }
 
 type noMoreCommands struct{}

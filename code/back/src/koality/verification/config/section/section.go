@@ -35,7 +35,7 @@ type Section interface {
 	ContinueOnFailure() bool
 	FactoryCommands(readOnlyCopy bool) commandgroup.CommandGroup
 	Commands(readOnlyCopy bool) commandgroup.CommandGroup
-	AppendCommand(verification.Command) error
+	AppendCommand(verification.Command) (verification.Command, error)
 	Exports() []string
 }
 
@@ -78,27 +78,29 @@ func (section *section) FactoryCommands(readOnlyCopy bool) commandgroup.CommandG
 }
 
 func (section *section) Commands(readOnlyCopy bool) commandgroup.CommandGroup {
-	if section.commands == nil {
-		return commandgroup.New([]verification.Command{})
+	commands := section.commands
+	if commands == nil {
+		commands = commandgroup.New([]verification.Command{})
 	}
+
 	if readOnlyCopy {
-		return section.commands.Copy()
+		return commands.Copy()
 	}
 	if section.factoryCommands != nil {
 		section.factoryCommands.Wait()
 	}
 	switch section.runOn {
 	case RunOnAll:
-		return section.commands.Copy()
+		return commands.Copy()
 	case RunOnSplit:
-		return section.commands
+		return commands
 	case RunOnSingle:
-		return section.commands.Remaining()
+		return commands.Remaining()
 	}
 	panic(fmt.Sprintf("Unexpected runOn value: %s\n", section.runOn))
 }
 
-func (section *section) AppendCommand(command verification.Command) error {
+func (section *section) AppendCommand(command verification.Command) (verification.Command, error) {
 	if section.commands == nil {
 		section.commands = commandgroup.New([]verification.Command{})
 	}

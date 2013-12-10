@@ -108,9 +108,6 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		returnCode, runErr := stageRunner.runCommand(command, os.Stdin, io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stdout), io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stderr))
 		factoryCommands.Done()
 		closeErr := consoleWriter.Close()
-		if closeErr != nil {
-			return false, closeErr
-		}
 
 		stageFailed := returnCode != 0 || runErr != nil
 		if stageFailed && !sectionFailed {
@@ -122,10 +119,18 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			}
 		}
 
+		stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRunId, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRunId, returnCode)
 
+		if closeErr != nil {
+			return false, closeErr
+		}
 		if runErr != nil {
 			return false, runErr
+		}
+		if setEndTimeErr != nil {
+			return false, setEndTimeErr
 		}
 		if setReturnCodeErr != nil {
 			return false, setReturnCodeErr
@@ -159,12 +164,16 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		orderNumber := maxOrderNumber + 1
 		for _, newCommand := range newCommands {
 			// This can still end up with duplicate/bad order numbers if multiple factories run simultaneously
-			// TODO (bbland): handle case of stages with the same name. This requires more locking...
-			_, err = stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, newCommand.Name(), orderNumber)
+			command, err := sectionToRun.AppendCommand(newCommand)
 			if err != nil {
 				return false, err
 			}
-			sectionToRun.AppendCommand(newCommand)
+
+			_, err = stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, command.Name(), orderNumber)
+			if err != nil {
+				return false, err
+			}
+
 			orderNumber++
 		}
 	}
@@ -210,9 +219,6 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		returnCode, runErr := stageRunner.runCommand(command, os.Stdin, io.MultiWriter(syncConsoleWriter, os.Stdout), io.MultiWriter(syncConsoleWriter, os.Stderr))
 		commands.Done()
 		closeErr := consoleWriter.Close()
-		if closeErr != nil {
-			return false, closeErr
-		}
 
 		stageFailed := returnCode != 0 || runErr != nil
 		if stageFailed && !sectionFailed && !sectionPreviouslyFailed {
@@ -224,10 +230,18 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			}
 		}
 
+		stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRunId, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRunId, returnCode)
 
+		if closeErr != nil {
+			return false, closeErr
+		}
 		if runErr != nil {
 			return false, runErr
+		}
+		if setEndTimeErr != nil {
+			return false, setEndTimeErr
 		}
 		if setReturnCodeErr != nil {
 			return false, setReturnCodeErr
