@@ -17,8 +17,6 @@ sections:
         xunit:
         - chicken chicken
         - chicken chicken chicken
-    exports:
-    - some/path/
 - chicken:
     run on: all
     fail on: first

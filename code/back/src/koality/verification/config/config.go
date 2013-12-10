@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+const DefaultTimeout = 600
+
 type VerificationConfig struct {
 	Params        Params
 	Sections      []section.Section
@@ -40,7 +42,7 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 	for _, script := range scripts {
 		switch script.(type) {
 		case string:
-			commands = append(commands, remotecommand.NewRemoteCommand(true, "setup", defaultTimeout, nil, []string{script.(string)}))
+			commands = append(commands, remotecommand.NewRemoteCommand(true, script.(string), defaultTimeout, nil, []string{script.(string)}))
 			return
 		case map[interface{}]interface{}:
 			script := script.(map[interface{}]interface{})
@@ -57,8 +59,8 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 					return
 				}
 
-				var xunitPaths []string
-				var timeout int
+				xunitPaths := []string{}
+				timeout := DefaultTimeout
 				var command string
 				for parameter, value := range paramMap {
 					switch parameter {
@@ -89,6 +91,10 @@ func parseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 						err = BadConfigurationError{fmt.Sprintf("The parameter %#v is not supported for scripts.", parameter)}
 						return
 					}
+				}
+
+				if _, ok := paramMap["command"]; !ok {
+					command = name
 				}
 
 				commands = append(commands, remotecommand.NewRemoteCommand(advertised, name, timeout, xunitPaths, []string{command}))
@@ -158,7 +164,12 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 
 			verificationConfig.Sections = append(verificationConfig.Sections, sections...)
 		case "final":
+			finalSections, err := parseSections(config)
+			if err != nil {
+				return verificationConfig, err
+			}
 
+			verificationConfig.FinalSections = finalSections
 		default:
 			err = BadConfigurationError{fmt.Sprintf("The primary key %q is not currently supported.", key)}
 			return
@@ -213,7 +224,7 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 					return
 				}
 
-				params.Environment = make(map[string]string)
+				params.Environment = make(map[string]string, len(variableMap))
 				for name, value := range variableMap {
 					name, ok := name.(string)
 					if !ok {
@@ -284,7 +295,7 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 		return
 	}
 
-	for key, _ := range singletonMap {
+	for key := range singletonMap {
 		name, ok = key.(string)
 		if !ok {
 			err = BadConfigurationError{"Each section name should be a string."}
@@ -293,7 +304,7 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 
 	sectionMap, ok := singletonMap[name].(map[interface{}]interface{})
 	if !ok {
-		err = BadConfigurationError{"The setup section should be a list of scripts"}
+		err = BadConfigurationError{"Each section should be a list of scripts and options."}
 		return
 	}
 
@@ -305,10 +316,20 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 				return newSection, err
 			}
 
+			if _, ok := sectionMap["exports"]; ok {
+				err = BadConfigurationError{"A section cannot contain both a scripts and an exports subsection."}
+				return newSection, err
+			}
+
 			regularCommands = commandgroup.New(commands)
 		case "factories":
 			commands, err := parseRemoteCommands(content, false)
 			if err != nil {
+				return newSection, err
+			}
+
+			if _, ok := sectionMap["exports"]; ok {
+				err = BadConfigurationError{"A section cannot contain both a factories and an exports subsection."}
 				return newSection, err
 			}
 
@@ -369,6 +390,12 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 
 	if runOn == "" {
 		err = BadConfigurationError{"The run on parameter must be specified for every section."}
+		return newSection, err
+	}
+
+	if len(exportPaths) == 0 && factoryCommands == nil && regularCommands == nil {
+		err = BadConfigurationError{"Each section must have at least one of a scripts, factories or exports subsection."}
+		return newSection, err
 	}
 
 	return section.New(name, runOn, failOn, continueOnFailure, factoryCommands, regularCommands, exportPaths), nil
