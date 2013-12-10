@@ -27,7 +27,7 @@
 	url = git@github.com:streadway/amqp.git
 [submodule "chef/cookbooks/oh-my-zsh"]
 	path = chef/cookbooks/oh-my-zsh
-	url = git@github.com:shingara/oh-my-zsh-chef.git
+	url = git@github.com:KoalityCode/oh-my-zsh-chef.git
 [submodule "chef/cookbooks/golang"]
 	path = chef/cookbooks/golang
 	url = git@github.com:KoalityCode/chef-golang.git

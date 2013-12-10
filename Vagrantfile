@@ -48,7 +48,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				:users => [
 					{
 					:login => "vagrant",
-					:theme => "simple",
+					:theme => {:name => "bbland", :source => "https://gist.github.com/BrianBland/7884348/raw/934802429044760bc5a2b90c773e71b13d261563/bbland.zsh-theme" },
 					:plugins => ["git", "golang"]
 					}
 				]
