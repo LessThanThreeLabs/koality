@@ -70,11 +70,8 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		}
 	}(newMachinesChan)
 
-	resultsChan := verificationServer.combineResults(newStageRunnersChan)
+	resultsChan := verificationServer.combineResults(currentVerification, newStageRunnersChan)
 	receivedResult := make(map[string]bool)
-
-	// TODO (bbland): do this when the first stageRunner begins
-	verificationServer.ResourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
 
 	for {
 		result, hasMoreResults := <-resultsChan
@@ -117,15 +114,25 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 func (verificationServer *VerificationServer) failVerification(verification *resources.Verification) error {
 	(*verification).VerificationStatus = "failed"
 	fmt.Printf("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
-	return nil
+	err := verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
+	if err != nil {
+		return err
+	}
+
+	err = verificationServer.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	return err
 }
 
 func (verificationServer *VerificationServer) passVerification(verification *resources.Verification) error {
 	(*verification).VerificationStatus = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
-	return nil
+	err := verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
+	if err != nil {
+		return err
+	}
+
+	err = verificationServer.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	return err
 }
 
 // TODO (bbland): make this not bogus
@@ -179,9 +186,11 @@ func (verificationServer *VerificationServer) createStages(currentVerification *
 	return nil
 }
 
-func (verificationServer *VerificationServer) combineResults(newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan verification.SectionResult {
+func (verificationServer *VerificationServer) combineResults(currentVerification *resources.Verification, newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan verification.SectionResult {
 	resultsChan := make(chan verification.SectionResult)
 	go func(newStageRunnersChan <-chan *stagerunner.StageRunner) {
+		isStarted := false
+
 		combinedResults := make(chan verification.SectionResult)
 		stageRunners := make([]*stagerunner.StageRunner, 0, cap(newStageRunnersChan))
 		stageRunnerDoneChan := make(chan error, cap(newStageRunnersChan))
@@ -205,6 +214,10 @@ func (verificationServer *VerificationServer) combineResults(newStageRunnersChan
 			case stageRunner, ok := <-newStageRunnersChan:
 				if !ok {
 					panic("new stage Runners channel closed")
+				}
+				if !isStarted {
+					isStarted = true
+					verificationServer.ResourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
 				}
 				stageRunners = append(stageRunners, stageRunner)
 				go handleNewStageRunner(stageRunner)
