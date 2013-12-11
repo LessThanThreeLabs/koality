@@ -35,6 +35,26 @@ func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 	return stage, nil
 }
 
+func (readHandler *ReadHandler) GetBySectionNumberAndName(verificationId, sectionNumber uint64, name string) (*resources.Stage, error) {
+	stage := new(resources.Stage)
+	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE verification_id=$1 AND section_number=$2 AND name=$3"
+	row := readHandler.database.QueryRow(query, verificationId, sectionNumber, name)
+	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.SectionNumber, &stage.Name, &stage.OrderNumber)
+	if err == sql.ErrNoRows {
+		errorText := fmt.Sprintf("Unable to find stage with section number %d and name %s", sectionNumber, name)
+		return nil, resources.NoSuchStageError{errorText}
+	} else if err != nil {
+		return nil, err
+	}
+
+	stage.Runs, err = readHandler.GetAllRuns(stage.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return stage, nil
+}
+
 func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage, error) {
 	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE verification_id=$1"
 	rows, err := readHandler.database.Query(query, verificationId)

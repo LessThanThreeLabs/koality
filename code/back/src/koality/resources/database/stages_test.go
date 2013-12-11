@@ -73,6 +73,13 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal("stage.Id mismatch")
 	}
 
+	stage, err = connection.Stages.Read.GetBySectionNumberAndName(stage.VerificationId, stage.SectionNumber, stage.Name)
+	if err != nil {
+		test.Fatal(err)
+	} else if stage == nil {
+		test.Fatal("Unable to find stage")
+	}
+
 	stages, err := connection.Stages.Read.GetAll(stageVerificationId)
 	if err != nil {
 		test.Fatal(err)

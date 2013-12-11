@@ -50,6 +50,7 @@ type StagesCreateHandler interface {
 
 type StagesReadHandler interface {
 	Get(stageId uint64) (*Stage, error)
+	GetBySectionNumberAndName(verificationId, sectionNumber uint64, name string) (*Stage, error)
 	GetAll(verificationId uint64) ([]Stage, error)
 	GetRun(stageRunId uint64) (*StageRun, error)
 	GetAllRuns(stageId uint64) ([]StageRun, error)
@@ -62,8 +63,8 @@ type StagesReadHandler interface {
 
 type StagesUpdateHandler interface {
 	SetReturnCode(stageRunId uint64, returnCode int) error
-	SetStartTime(verificationId uint64, startTime time.Time) error
-	SetEndTime(verificationId uint64, endTime time.Time) error
+	SetStartTime(stageRunId uint64, startTime time.Time) error
+	SetEndTime(stageRunId uint64, endTime time.Time) error
 	AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error
 	AddXunitResults(stageRunId uint64, xunitResults []XunitResult) error
 	AddExports(stageRunId uint64, exports []Export) error
