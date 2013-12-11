@@ -54,11 +54,6 @@ func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command, stdin io.R
 	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdin, stdout, stderr)
 }
 
-func (ec2Vm *EC2VirtualMachine) ProvisionCommand() shell.Command {
-	panic("Not implemented")
-	return shell.Command("false")
-}
-
 func (ec2Vm *EC2VirtualMachine) Patch(patchConfig *vm.PatchConfig) (shell.Executable, error) {
 	return ec2Vm.patcher.Patch(patchConfig)
 }

@@ -13,6 +13,7 @@ import (
 	"mime/multipart"
 	"net/textproto"
 	"os"
+	"os/user"
 	"strconv"
 	"strings"
 	"time"
@@ -203,17 +204,30 @@ func (launcher *EC2VirtualMachineLauncher) getUserData(username string) []byte {
 	multipartWriter := multipart.NewWriter(buffer)
 	buffer.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\nMIME-Version: 1.0\n\n", multipartWriter.Boundary()))
 
-	err := writeCloudInitMimePart(multipartWriter, launcher.getDefaultUserData(username), "koality-data")
+	err := writeCloudInitMimePart(multipartWriter, launcher.getDefaultUserData(username), "koality-default-data")
 	if err != nil {
 		panic(err)
 	}
+
+	customUserData := launcher.getCustomUserData()
+	if customUserData != "" {
+		err := writeCloudInitMimePart(multipartWriter, customUserData, "koality-custom-data")
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	multipartWriter.Close()
 
 	return buffer.Bytes()
 }
 
 func (launcher *EC2VirtualMachineLauncher) getDefaultUserData(username string) string {
-	keyBytes, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa.pub", os.Getenv("HOME")))
+	currentUser, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	keyBytes, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa.pub", currentUser.HomeDir))
 	if err != nil {
 		panic(err)
 	}
@@ -233,6 +247,10 @@ func (launcher *EC2VirtualMachineLauncher) getDefaultUserData(username string) s
 		shell.Commandf("chmod 0440 /etc/sudoers.d/koality-%s", username),
 	)
 	return fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand)
+}
+
+func (launcher *EC2VirtualMachineLauncher) getCustomUserData() string {
+	return ""
 }
 
 func writeCloudInitMimePart(multipartWriter *multipart.Writer, contents, name string) error {

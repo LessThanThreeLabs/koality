@@ -35,7 +35,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		return false, err
 	}
 
-	err = verificationServer.createStages(currentVerification, verificationConfig.Sections)
+	err = verificationServer.createStages(currentVerification, verificationConfig.Sections, verificationConfig.FinalSections)
 	if err != nil {
 		verificationServer.failVerification(currentVerification)
 		return false, err
@@ -43,7 +43,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 
 	numNodes := verificationConfig.Params.Nodes
 	if numNodes <= 0 {
-		numNodes = 4 // TEMPORARY
+		numNodes = 1 // TEMPORARY
 	}
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
@@ -57,7 +57,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 
 		newStageRunnersChan <- stageRunner
 
-		err := stageRunner.RunStages(verificationConfig.Sections)
+		err := stageRunner.RunStages(verificationConfig.Sections, verificationConfig.FinalSections)
 		if err != nil {
 			panic(err)
 		}
@@ -152,8 +152,8 @@ func (verificationServer *VerificationServer) getVerificationConfig(currentVerif
 	return config.FromYaml(string(example_yaml))
 }
 
-func (verificationServer *VerificationServer) createStages(currentVerification *resources.Verification, sections []section.Section) error {
-	for sectionNumber, section := range sections {
+func (verificationServer *VerificationServer) createStages(currentVerification *resources.Verification, sections, finalSections []section.Section) error {
+	for sectionNumber, section := range append(sections, finalSections...) {
 		var err error
 
 		stageNumber := 0

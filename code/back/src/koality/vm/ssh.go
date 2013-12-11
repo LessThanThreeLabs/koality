@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"koality/shell"
 	"os"
+	"os/user"
 	"path"
 	"strconv"
 )
@@ -30,7 +31,12 @@ type keychain struct {
 }
 
 func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
-	privateKey, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa", os.Getenv("HOME")))
+	currentUser, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa", currentUser.HomeDir))
 	if err != nil {
 		return nil, err
 	}

@@ -4,15 +4,9 @@ import (
 	"koality/shell"
 )
 
-// TODO: move this elsewhere
-type Provisioner interface {
-	ProvisionCommand() shell.Command
-}
-
 type VirtualMachine interface {
 	shell.ExecutableMaker
 	Patcher
-	Provisioner
 	shell.FileCopier
 
 	Terminate() error

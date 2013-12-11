@@ -48,4 +48,4 @@ final:
 - deploy:
     run on: single
     scripts:
-    - if [ $CHICKEN == "true" ]; echo chicken; fi
+    - if [ "$CHICKEN" == "true" ]; then echo chicken; fi

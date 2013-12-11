@@ -48,10 +48,6 @@ func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io
 	return localMachine.executableMaker.MakeExecutable(fullCommand, stdin, stdout, stderr)
 }
 
-func (localMachine *LocalMachine) ProvisionCommand() shell.Command {
-	panic("Not implemented")
-}
-
 func (localMachine *LocalMachine) Patch(patchConfig *vm.PatchConfig) (shell.Executable, error) {
 	return localMachine.patcher.Patch(patchConfig)
 }

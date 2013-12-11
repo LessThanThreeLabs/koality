@@ -20,26 +20,46 @@ import (
 )
 
 type StageRunner struct {
+	ResultsChan         chan verification.SectionResult
 	resourcesConnection *resources.Connection
 	virtualMachine      vm.VirtualMachine
-	ResultsChan         chan verification.SectionResult
 	verification        *resources.Verification
 }
 
 func New(resourcesConnection *resources.Connection, virtualMachine vm.VirtualMachine, currentVerification *resources.Verification) *StageRunner {
 	return &StageRunner{
+		ResultsChan:         make(chan verification.SectionResult),
 		resourcesConnection: resourcesConnection,
 		virtualMachine:      virtualMachine,
-		ResultsChan:         make(chan verification.SectionResult),
 		verification:        currentVerification,
 	}
 }
 
-func (stageRunner *StageRunner) RunStages(sections []section.Section) error {
+func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Section) error {
 	for sectionNumber, section := range sections {
 		shouldContinue, err := stageRunner.runSection(uint64(sectionNumber), section)
-		if err != nil || !shouldContinue {
+		if err != nil {
 			return err
+		}
+		if !shouldContinue {
+			break
+		}
+	}
+	// TODO (bbland): do something smarter than just sleep and poll
+	for stageRunner.verification.VerificationStatus == "running" {
+		time.Sleep(time.Second)
+	}
+	if stageRunner.verification.VerificationStatus == "cancelled" {
+		return nil
+	}
+	// TODO (bbland): inject a KOALITY_STATUS environment variable somehow
+	for finalSectionNumber, finalSection := range finalSections {
+		shouldContinue, err := stageRunner.runSection(uint64(finalSectionNumber+len(sections)), finalSection)
+		if err != nil {
+			return err
+		}
+		if !shouldContinue {
+			break
 		}
 	}
 	return nil
@@ -105,7 +125,12 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)
 		syncConsoleWriter := &syncWriter{writer: consoleWriter}
 
-		returnCode, runErr := stageRunner.runCommand(command, os.Stdin, io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stdout), io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stderr))
+		err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		if err != nil {
+			return false, err
+		}
+
+		returnCode, runErr := stageRunner.runCommand(command, nil, io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stdout), io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stderr))
 		factoryCommands.Done()
 		closeErr := consoleWriter.Close()
 
@@ -119,7 +144,6 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			}
 		}
 
-		stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
 		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRunId, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRunId, returnCode)
 
@@ -216,7 +240,12 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)
 		syncConsoleWriter := &syncWriter{writer: consoleWriter}
 
-		returnCode, runErr := stageRunner.runCommand(command, os.Stdin, io.MultiWriter(syncConsoleWriter, os.Stdout), io.MultiWriter(syncConsoleWriter, os.Stderr))
+		err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		if err != nil {
+			return false, err
+		}
+
+		returnCode, runErr := stageRunner.runCommand(command, nil, io.MultiWriter(syncConsoleWriter, os.Stdout), io.MultiWriter(syncConsoleWriter, os.Stderr))
 		commands.Done()
 		closeErr := consoleWriter.Close()
 
@@ -230,7 +259,6 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			}
 		}
 
-		stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
 		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRunId, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRunId, returnCode)
 
@@ -261,7 +289,7 @@ func (stageRunner *StageRunner) runCommand(command verification.Command, stdin i
 	shellCommand := command.ShellCommand()
 	executable, err := stageRunner.virtualMachine.MakeExecutable(shellCommand, stdin, stdout, stderr)
 	if err != nil {
-		return -1, err
+		return 255, err
 	}
 
 	exitErr := executable.Run()
@@ -278,7 +306,7 @@ func (stageRunner *StageRunner) runCommand(command verification.Command, stdin i
 				return waitStatus.ExitStatus(), nil
 			}
 		}
-		return -1, exitErr
+		return 255, exitErr
 	}
 	return 0, nil
 }
