@@ -10,8 +10,8 @@ import (
 
 const (
 	numRepositories               = 3
-	numVerificationsPerRepository = 50
-	parallelizationLevel          = 4
+	numVerificationsPerRepository = 25
+	parallelizationLevel          = 2
 )
 
 func main() {
@@ -27,7 +27,13 @@ func main() {
 	createUsers(connection)
 	createRepositories(connection)
 	fmt.Printf("Completed populating database (%s)\n", getTimeString())
-	fmt.Printf("TODO: Saving dump (%s)\n", getTimeString())
+
+	fmt.Printf("Saving dump (%s)\n", getTimeString())
+	err = database.SaveDump()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Completed saving dump (%s)\n", getTimeString())
 }
 
 func getTimeString() string {

@@ -1,8 +1,8 @@
 ![Koala](http://i.imgur.com/dquB6fL.png)
 
 #Getting started
-1. Download Vagrant [v1.3.5](http://downloads.vagrantup.com/tags/v1.3.5)
-2. Download VirtualBox [v4.2.18](https://www.virtualbox.org/wiki/Download_Old_Builds_4_2)
+1. Download Vagrant [v1.4.0](http://www.vagrantup.com/downloads.html)
+2. Download VirtualBox [v4.3.4](https://www.virtualbox.org/wiki/Downloads)
 3. Run `git clone --recursive git@github.com:LessThanThreeLabs/koality.git`
 
 
