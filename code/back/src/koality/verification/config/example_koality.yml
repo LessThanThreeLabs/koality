@@ -7,12 +7,12 @@ parameters:
   gitClean: false
 sections:
 - setup chicken:
-    run on: single
+    run on: all
     fail on: first
-    factories:
-    - echo -n "- " && chicken chicken
+    scripts:
+    - chicken chicken
     - chicken chicken:
-        command: echo "- chicken" && echo "- chicken"
+        command: echo "chicken"
         timeout: 42
         xunit:
         - chicken chicken

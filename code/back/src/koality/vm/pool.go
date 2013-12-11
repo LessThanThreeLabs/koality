@@ -15,6 +15,7 @@ type virtualMachinePool struct {
 	readyCount             int
 	allocatedCount         int
 	readyChannel           chan VirtualMachine
+	waitingChannel         chan chan VirtualMachine
 	locker                 sync.Locker
 }
 
@@ -28,17 +29,27 @@ func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize in
 	if maxSize <= 0 {
 		panic(fmt.Sprintf("maxSize must be positive: (was %d)", maxSize))
 	}
-	readyChannel := make(chan VirtualMachine, 64)
-	locker := new(sync.Mutex)
 	pool := virtualMachinePool{
 		virtualMachineLauncher: virtualMachineLauncher,
 		minReady:               minReady,
 		maxSize:                maxSize,
-		readyChannel:           readyChannel,
-		locker:                 locker,
+		readyChannel:           make(chan VirtualMachine, 64),
+		waitingChannel:         make(chan chan VirtualMachine, 64),
+		locker:                 new(sync.Mutex),
 	}
 	go pool.ensureReadyInstances()
+	go pool.transferReadyToWaiting()
 	return &pool
+}
+
+func (pool *virtualMachinePool) transferReadyToWaiting() {
+	for waiting := range pool.waitingChannel {
+		ready, ok := <-pool.readyChannel
+		if !ok {
+			panic("Ready channel closed")
+		}
+		waiting <- ready
+	}
 }
 
 func (pool *virtualMachinePool) allocateN(numToAllocate int) {
@@ -103,18 +114,28 @@ func (pool *virtualMachinePool) Get() VirtualMachine {
 
 func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
 	machinesChan := make(chan VirtualMachine, numMachines)
+	returnChan := make(chan VirtualMachine, numMachines)
+
 	pool.allocateN(numMachines)
 
 	// TODO (bbland): handle case where this errors out
 	go pool.ensureReadyInstances()
 
-	go func(machinesChan chan VirtualMachine) {
+	go func() {
 		for x := 0; x < numMachines; x++ {
-			machinesChan <- <-pool.readyChannel
+			pool.waitingChannel <- machinesChan
 		}
-		close(machinesChan)
-	}(machinesChan)
-	return machinesChan
+	}()
+
+	// Necessary for closing the channel after numMachines are put on it
+	go func() {
+		for x := 0; x < numMachines; x++ {
+			returnChan <- <-machinesChan
+		}
+		close(returnChan)
+	}()
+
+	return returnChan
 }
 
 func (pool *virtualMachinePool) Free() {
