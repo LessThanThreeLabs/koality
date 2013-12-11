@@ -36,7 +36,7 @@ func New() (*resources.Connection, error) {
 	database.SetMaxIdleConns(10)
 	database.SetMaxOpenConns(100)
 
-	err = setSchema(database)
+	err = loadSchema(database)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,12 @@ func Reseed() error {
 		return err
 	}
 
-	_, err = database.Exec("DROP SCHEMA public CASCADE")
+	_, err = database.Exec("DROP SCHEMA IF EXISTS public CASCADE")
+	if err != nil {
+		return err
+	}
+
+	err = loadSchema(database)
 	return err
 }
 
@@ -83,26 +88,35 @@ func SaveDump() error {
 		return err
 	}
 
-	command := exec.Command("pg_dump", "--file", currentUser.HomeDir+dumpLocation, "--format", "tar")
-	_, err = command.CombinedOutput()
+	command := exec.Command("pg_dump", "--file", currentUser.HomeDir+dumpLocation, "--format", "custom")
+	err = command.Run()
 	return err
 }
 
-func RestoreDump() error {
-	setEnvironment()
+func LoadDump() error {
+	database, err := getDatabaseConnection()
+	if err != nil {
+		return err
+	}
+
+	_, err = database.Exec("DROP SCHEMA IF EXISTS public CASCADE")
+	if err != nil {
+		return err
+	}
+
+	_, err = database.Exec("CREATE SCHEMA IF NOT EXISTS public")
+	if err != nil {
+		return err
+	}
 
 	currentUser, err := user.Current()
 	if err != nil {
 		return err
 	}
 
-	inputFile, err := os.Open(currentUser.HomeDir + dumpLocation)
-	if err != nil {
-		return err
-	}
-	defer inputFile.Close()
-
-	return nil
+	command := exec.Command("pg_restore", "--dbname", databaseName, "--jobs", "4", currentUser.HomeDir+dumpLocation)
+	err = command.Run()
+	return err
 }
 
 func setEnvironment() {
@@ -118,7 +132,7 @@ func getDatabaseConnection() (*sql.DB, error) {
 	return sql.Open("postgres", "")
 }
 
-func setSchema(database *sql.DB) error {
+func loadSchema(database *sql.DB) error {
 	currentUser, err := user.Current()
 	if err != nil {
 		return err
