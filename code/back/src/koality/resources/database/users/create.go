@@ -28,10 +28,7 @@ func (createHandler *CreateHandler) Create(email, firstName, lastName string, pa
 	query := "INSERT INTO users (email, first_name, last_name, password_hash, password_salt, is_admin)" +
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 	err = createHandler.database.QueryRow(query, email, firstName, lastName, passwordHashBase64, passwordSaltBase64, admin).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return id, err
 }
 
 func (createHandler *CreateHandler) getUserParamsError(email, firstName, lastName string) error {

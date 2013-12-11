@@ -23,10 +23,7 @@ func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri st
 	id := uint64(0)
 	query := "INSERT INTO repositories (name, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4) RETURNING id"
 	err = createHandler.database.QueryRow(query, name, vcsType, localUri, remoteUri).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return id, err
 }
 
 func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (uint64, error) {

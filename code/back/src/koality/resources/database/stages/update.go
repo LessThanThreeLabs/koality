@@ -104,10 +104,7 @@ func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleTe
 
 	query := "INSERT INTO console_texts (run_id, number, text) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, consoleTextLinesToArray()...)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResults []resources.XunitResult) error {
@@ -141,10 +138,7 @@ func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResu
 
 	query := "INSERT INTO xunit_results (run_id, name, path, sysout, syserr, failure_text, error_text, started, seconds) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, xunitResultsToArray()...)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []resources.Export) error {
@@ -171,8 +165,5 @@ func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []reso
 
 	query := "INSERT INTO exports (run_id, path, uri) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, exportsToArray()...)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }

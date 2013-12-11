@@ -67,10 +67,7 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetI
 	query := "INSERT INTO verifications (repository_id, changeset_id, merge_target, owner_email, status)" +
 		" VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	err := createHandler.database.QueryRow(query, repositoryId, changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return id, err
 }
 
 func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail string) error {

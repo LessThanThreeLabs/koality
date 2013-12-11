@@ -69,10 +69,7 @@ func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey strin
 	id := uint64(0)
 	query := "INSERT INTO ssh_keys (user_id, alias, public_key) VALUES ($1, $2, $3) RETURNING id"
 	err := updateHandler.database.QueryRow(query, userId, alias, publicKey).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	return id, err
 }
 
 func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
