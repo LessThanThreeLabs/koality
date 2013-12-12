@@ -10,15 +10,16 @@ import (
 )
 
 const (
-	verificationHeadShaLength          = 40
-	verificationBaseShaLength          = 40
-	verificationMaxHeadUsernameLength  = 128
-	verificationMaxHeadEmailLength     = 256
-	verificationMaxMergeTargetLength   = 1024
-	verificationMaxEmailToNotifyLength = 128
-	headShaRegex                       = "^[a-fA-F0-9]+$"
-	baseShaRegex                       = "^[a-fA-F0-9]+$"
-	emailToNotifyRegex                 = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+	headShaLength          = 40
+	baseShaLength          = 40
+	maxHeadUsernameLength  = 128
+	maxHeadEmailLength     = 256
+	maxMergeTargetLength   = 1024
+	maxEmailToNotifyLength = 128
+	minResults             = 1
+	headShaRegex           = "^[a-fA-F0-9]+$"
+	baseShaRegex           = "^[a-fA-F0-9]+$"
+	emailToNotifyRegex     = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 )
 
 var (
@@ -35,8 +36,8 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyHeadSha(headSha string) error {
-	if len(headSha) != verificationHeadShaLength {
-		return fmt.Errorf("Head SHA must be %d characters long", verificationHeadShaLength)
+	if len(headSha) != headShaLength {
+		return fmt.Errorf("Head SHA must be %d characters long", headShaLength)
 	} else if ok, err := regexp.MatchString(headShaRegex, headSha); !ok || err != nil {
 		return errors.New("Head SHA must match regex: " + headSha)
 	}
@@ -44,8 +45,8 @@ func (verifier *Verifier) verifyHeadSha(headSha string) error {
 }
 
 func (verifier *Verifier) verifyBaseSha(baseSha string) error {
-	if len(baseSha) != verificationBaseShaLength {
-		return fmt.Errorf("Base SHA must be %d characters long", verificationBaseShaLength)
+	if len(baseSha) != baseShaLength {
+		return fmt.Errorf("Base SHA must be %d characters long", baseShaLength)
 	} else if ok, err := regexp.MatchString(baseShaRegex, baseSha); !ok || err != nil {
 		return errors.New("Base SHA must match regex: " + baseSha)
 	}
@@ -57,29 +58,29 @@ func (verifier *Verifier) verifyHeadMessage(message string) error {
 }
 
 func (verifier *Verifier) verifyHeadUsername(username string) error {
-	if len(username) > verificationMaxHeadUsernameLength {
-		return fmt.Errorf("Head username cannot exceed %d characters long", verificationMaxHeadUsernameLength)
+	if len(username) > maxHeadUsernameLength {
+		return fmt.Errorf("Head username cannot exceed %d characters long", maxHeadUsernameLength)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyHeadEmail(email string) error {
-	if len(email) > verificationMaxHeadEmailLength {
-		return fmt.Errorf("Head email cannot exceed %d characters long", verificationMaxHeadEmailLength)
+	if len(email) > maxHeadEmailLength {
+		return fmt.Errorf("Head email cannot exceed %d characters long", maxHeadEmailLength)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyMergeTarget(mergeTarget string) error {
-	if len(mergeTarget) > verificationMaxMergeTargetLength {
-		return fmt.Errorf("Merge target cannot exceed %d characters long", verificationMaxMergeTargetLength)
+	if len(mergeTarget) > maxMergeTargetLength {
+		return fmt.Errorf("Merge target cannot exceed %d characters long", maxMergeTargetLength)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyEmailToNotify(emailToNotify string) error {
-	if len(emailToNotify) > verificationMaxEmailToNotifyLength {
-		return fmt.Errorf("Email to notify cannot exceed %d characters long", verificationMaxEmailToNotifyLength)
+	if len(emailToNotify) > maxEmailToNotifyLength {
+		return fmt.Errorf("Email to notify cannot exceed %d characters long", maxEmailToNotifyLength)
 	} else if ok, err := regexp.MatchString(emailToNotifyRegex, emailToNotify); !ok || err != nil {
 		return errors.New("Email to notify must match regex: " + emailToNotifyRegex)
 	}
@@ -116,6 +117,13 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 		return errors.New("Start time cannot be before create time")
 	} else if ended.Before(started) {
 		return errors.New("End time cannot be before start time")
+	}
+	return nil
+}
+
+func (verifier *Verifier) verifyTailResultsNumber(results int) error {
+	if results < minResults {
+		return fmt.Errorf("Must request at least %d results", minResults)
 	}
 	return nil
 }

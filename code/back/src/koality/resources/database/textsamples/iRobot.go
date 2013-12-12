@@ -1,10 +1,10 @@
-package main
+package textsamples
 
 import (
 	"strings"
 )
 
-var iRobot []string = strings.Split(
+var IRobot []string = strings.Split(
 	`"NINETY-EIGHT - NINETY-NINE - ONE HUNDRED." Gloria withdrew 
 her chubby little forearm from before her eyes and stood for a moment, 
 wrinkling her nose and blinking in the sunlight. Then, trying to watch in all directions at once, she withdrew a few cautious steps from the tree against which she had been leaning.

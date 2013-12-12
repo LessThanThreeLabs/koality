@@ -1,10 +1,10 @@
-package main
+package textsamples
 
 import (
 	"strings"
 )
 
-var greatExpectations []string = strings.Split(
+var GreatExpectations []string = strings.Split(
 	`Chapter I
 
 My father's family name being Pirrip, and my Christian name Philip, my infant tongue could make of both names nothing longer or more explicit than Pip. So, I called myself Pip, and came to be called Pip.

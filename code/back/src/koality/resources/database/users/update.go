@@ -64,6 +64,8 @@ func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey strin
 		return 0, err
 	} else if err := updateHandler.verifier.verifyPublicKey(publicKey); err != nil {
 		return 0, err
+	} else if err := updateHandler.verifier.verifyUserExists(userId); err != nil {
+		return 0, err
 	}
 
 	id := uint64(0)
@@ -73,6 +75,10 @@ func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey strin
 }
 
 func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
+	if err := updateHandler.verifier.verifyUserExists(userId); err != nil {
+		return err
+	}
+
 	query := "DELETE FROM ssh_keys WHERE user_id=$1 AND id=$2"
 	result, err := updateHandler.database.Exec(query, userId, keyId)
 	if err != nil {

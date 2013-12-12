@@ -6,25 +6,55 @@ import (
 	"testing"
 )
 
-const (
-	userEmail     = "test-email@address.com"
-	userFirstName = "First"
-	userLastName  = "Last"
-	userAdmin     = false
-)
+func TestCreateInvalidUser(test *testing.T) {
+	PopulateDatabase()
 
-var (
-	userPasswordHash []byte = []byte("password-hash")
-	userPasswordSalt []byte = []byte("password-salt")
-)
-
-func TestCreateUser(test *testing.T) {
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	userId, err := connection.Users.Create.Create(userEmail, userFirstName, userLastName, userPasswordHash, userPasswordSalt, userAdmin)
+	email := "test-email@address.com"
+	firstName := "First"
+	lastName := "Last"
+	passwordHash := []byte("password-hash")
+	passwordSalt := []byte("password-hash")
+
+	_, err = connection.Users.Create.Create("", firstName, lastName, passwordHash, passwordSalt, false)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid email")
+	}
+
+	_, err = connection.Users.Create.Create(email, "", lastName, passwordHash, passwordSalt, false)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid first name")
+	}
+
+	_, err = connection.Users.Create.Create(email, "!!First", lastName, passwordHash, passwordSalt, false)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid first name")
+	}
+
+	_, err = connection.Users.Create.Create(email, firstName, "1234", passwordHash, passwordSalt, false)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid last name")
+	}
+
+	_, err = connection.Users.Create.Create(email, firstName, "Last$", passwordHash, passwordSalt, false)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid last name")
+	}
+}
+
+func TestCreateAndDeleteUser(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	userId, err := connection.Users.Create.Create("test-email@address.com", "First", "Last", []byte("password-hash"), []byte("password-salt"), false)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -54,33 +84,9 @@ func TestCreateUser(test *testing.T) {
 	}
 }
 
-// TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
-func TestSingleUserRead(test *testing.T) {
-	connection, err := New()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	user, err := connection.Users.Read.Get(1000)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	if user.Id != 1000 {
-		test.Fatal("user.Id mismatch")
-	}
-
-	user, err = connection.Users.Read.GetByEmail(user.Email)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	if user.Id != 1000 {
-		test.Fatal("user.Id mismatch")
-	}
-}
-
 func TestUsersRead(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
@@ -96,10 +102,30 @@ func TestUsersRead(test *testing.T) {
 			test.Fatal("user.Id < 1000")
 		}
 	}
+
+	firstUser := users[0]
+	user, err := connection.Users.Read.Get(firstUser.Id)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if user.Id != firstUser.Id {
+		test.Fatal("user.Id mismatch")
+	}
+
+	user, err = connection.Users.Read.GetByEmail(user.Email)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if user.Id != firstUser.Id {
+		test.Fatal("user.Id mismatch")
+	}
 }
 
-// TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
 func TestUsersUpdateName(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
@@ -121,12 +147,28 @@ func TestUsersUpdateName(test *testing.T) {
 		}
 	}
 
-	updateAndCheckName(1000, "McJordan", "McPotter")
-	updateAndCheckName(1000, "Jordan", "Potter")
+	users, err := connection.Users.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstUser := users[0]
+	updateAndCheckName(firstUser.Id, "McJordan", "McPotter")
+	updateAndCheckName(firstUser.Id, "First", "Last")
+
+	lastUser := users[len(users)-1]
+	updateAndCheckName(lastUser.Id, "First", "Last")
+	updateAndCheckName(lastUser.Id, "McJordan", "McPotter")
+
+	err = connection.Users.Update.SetName(13370, "First", "Last")
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		test.Fatal("Expected NoSuchUserError when trying to set name for nonexistent user")
+	}
 }
 
-// TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
 func TestUsersUpdatePassword(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
@@ -148,11 +190,28 @@ func TestUsersUpdatePassword(test *testing.T) {
 		}
 	}
 
-	updateAndCheckPassword(1000, []byte("password-hash-2"), []byte("password-salt-2"))
+	users, err := connection.Users.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstUser := users[0]
+	updateAndCheckPassword(firstUser.Id, []byte("password-hash-2"), []byte("password-salt-2"))
+	updateAndCheckPassword(firstUser.Id, []byte("password-hash"), []byte("password-salt"))
+
+	lastUser := users[len(users)-1]
+	updateAndCheckPassword(lastUser.Id, []byte("password-hash"), []byte("password-salt"))
+	updateAndCheckPassword(lastUser.Id, []byte("password-hash-2"), []byte("password-salt-2"))
+
+	err = connection.Users.Update.SetPassword(13370, []byte("password-hash"), []byte("password-salt"))
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		test.Fatal("Expected NoSuchUserError when trying to set password for nonexistent user")
+	}
 }
 
-// TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
 func TestUsersUpdateGitHubOauth(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
@@ -174,10 +233,25 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 		}
 	}
 
-	updateAndCheckGitHubOauth(1000, "github-oauth")
+	users, err := connection.Users.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstUser := users[0]
+	updateAndCheckGitHubOauth(firstUser.Id, "github-oauth")
+	updateAndCheckGitHubOauth(firstUser.Id, "github-oauth-2")
+
+	lastUser := users[len(users)-1]
+	updateAndCheckGitHubOauth(lastUser.Id, "github-oauth-2")
+	updateAndCheckGitHubOauth(lastUser.Id, "github-oauth")
+
+	err = connection.Users.Update.SetGitHubOauth(13370, "github-oauth")
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		test.Fatal("Expected NoSuchUserError when trying to set github oauth for nonexistent user")
+	}
 }
 
-// TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
 func TestUsersUpdateAdmin(test *testing.T) {
 	connection, err := New()
 	if err != nil {
@@ -200,16 +274,37 @@ func TestUsersUpdateAdmin(test *testing.T) {
 		}
 	}
 
-	updateAndCheckAdmin(1000, false)
-	updateAndCheckAdmin(1000, true)
+	users, err := connection.Users.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstUser := users[0]
+	updateAndCheckAdmin(firstUser.Id, false)
+	updateAndCheckAdmin(firstUser.Id, true)
+
+	lastUser := users[len(users)-1]
+	updateAndCheckAdmin(lastUser.Id, true)
+	updateAndCheckAdmin(lastUser.Id, false)
+
+	err = connection.Users.Update.SetAdmin(13370, true)
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		test.Fatal("Expected NoSuchUserError when trying to set admin status for nonexistent user")
+	}
 }
 
-// TODO: IS EXPECTING SOME STATE ALREADY IN DATABASE
 func TestUsersSshKeys(test *testing.T) {
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
 	}
+
+	users, err := connection.Users.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	firstUser := users[0]
 
 	testPublicKey1 := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxvvK4FBlsGz6xbr5IME" +
 		"fvp0LfaPg2LHJlrHPqawe66136PrXPQHDJUN5rUb8LEulVVMsW6fRjG5oAytmOZ/DCGlxLN7" +
@@ -217,7 +312,7 @@ func TestUsersSshKeys(test *testing.T) {
 		"H7DJmzk69PzU3AdL7DbUZAvIay9cPFV5sQ3B2TpHSQlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PY" +
 		"p7+aBRpbPDJ4f3uiMzcmzSxAqcoz+PuCzljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9F" +
 		"Wvg6W5DcdPsUQGqeyJta7ppIQW88HOpNk5 jordannpotter@gmail.com"
-	keyId, err := connection.Users.Update.AddKey(1000, "test-alias", testPublicKey1)
+	keyId, err := connection.Users.Update.AddKey(firstUser.Id, "test-alias", testPublicKey1)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -228,18 +323,28 @@ func TestUsersSshKeys(test *testing.T) {
 		"H7DJmzk69DzU3AdL7DbUZAvIay9cPFV5sQ3B2TpHSQlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PY" +
 		"p7+aBRpbPDJ4f3uiMzAmzSxAqcoz+PuCzljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9F" +
 		"Wvg6W5DcdPsUQGqeyJta7ppIQW88HOpNk5 jordannpotter@gmail.com"
-	_, err = connection.Users.Update.AddKey(1000, "test-alias", testPublicKey2)
+	_, err = connection.Users.Update.AddKey(firstUser.Id, "test-alias", testPublicKey2)
 	if _, ok := err.(resources.KeyAlreadyExistsError); !ok {
 		test.Fatal("Expected KeyAlreadyExistsError when trying to add same key twice")
 	}
 
-	err = connection.Users.Update.RemoveKey(1000, keyId)
+	_, err = connection.Users.Update.AddKey(13370, "test-alias", testPublicKey2)
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		test.Fatal("Expected NoSuchUserError when trying to add ssh key for nonexistent user")
+	}
+
+	err = connection.Users.Update.RemoveKey(firstUser.Id, keyId)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = connection.Users.Update.RemoveKey(1000, keyId)
+	err = connection.Users.Update.RemoveKey(firstUser.Id, keyId)
 	if _, ok := err.(resources.NoSuchKeyError); !ok {
 		test.Fatal("Expected NoSuchKeyError when trying to delete same user twice")
+	}
+
+	err = connection.Users.Update.RemoveKey(13370, 17)
+	if _, ok := err.(resources.NoSuchUserError); !ok {
+		test.Fatal("Expected NoSuchUserError when trying to remove ssh key for nonexistent user")
 	}
 }

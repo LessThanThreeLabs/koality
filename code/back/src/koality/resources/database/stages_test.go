@@ -7,61 +7,107 @@ import (
 	"time"
 )
 
-const (
-	stageRepositoryName       = "stage-repository-name"
-	stageRepositoryVcsType    = "git"
-	stageRepositoryLocalUri   = "git@local.uri.com:stage-name.git"
-	stageRepositoryRemoteUri  = "git@remote.uri.com:stage-name.git"
-	verificationHeadSha       = "a5a1134e5ca1050a2ea01b1b8aaf945bc758ec49"
-	verificationBaseSha       = "5984b365f6a7287d8b3674b200525bb769a5a3de"
-	verificationHeadMessage   = "This is an awesome commit message"
-	verificationHeadUsername  = "Jordan Potter"
-	verificationHeadEmail     = "jpotter@koalitycode.com"
-	verificationMergeTarget   = "refs/heads/master"
-	verificationEmailToNotify = "koalas@koalitycode.com"
-	stageSectionNumber        = 4
-	stageName                 = "awesome stage"
-	stageOrderNumber          = 17
-)
+// const (
+// 	stageRepositoryName       = "stage-repository-name"
+// 	stageRepositoryVcsType    = "git"
+// 	stageRepositoryLocalUri   = "git@local.uri.com:stage-name.git"
+// 	stageRepositoryRemoteUri  = "git@remote.uri.com:stage-name.git"
+// 	verificationHeadSha       = "a5a1134e5ca1050a2ea01b1b8aaf945bc758ec49"
+// 	verificationBaseSha       = "5984b365f6a7287d8b3674b200525bb769a5a3de"
+// 	verificationHeadMessage   = "This is an awesome commit message"
+// 	verificationHeadUsername  = "Jordan Potter"
+// 	verificationHeadEmail     = "jpotter@koalitycode.com"
+// 	verificationMergeTarget   = "refs/heads/master"
+// 	verificationEmailToNotify = "koalas@koalitycode.com"
+// 	stageSectionNumber        = 4
+// 	stageName                 = "awesome stage"
+// 	stageOrderNumber          = 17
+// )
 
-var (
-	// connection          *resources.Connection
-	stageRepositoryId   uint64
-	stageVerificationId uint64
-)
+// var (
+// 	// connection          *resources.Connection
+// 	stageRepositoryId   uint64
+// 	stageVerificationId uint64
+// )
 
-// TODO: get rid of this, import database dump instead
-func TestStagesPrepareOtherTests(test *testing.T) {
-	var err error
-	connection, err = New()
-	if err != nil {
-		test.Fatal(err)
-	}
+// // TODO: get rid of this, import database dump instead
+// func TestStagesPrepareOtherTests(test *testing.T) {
+// 	var err error
+// 	connection, err = New()
+// 	if err != nil {
+// 		test.Fatal(err)
+// 	}
 
-	stageRepositoryId, err = connection.Repositories.Create.Create(stageRepositoryName, stageRepositoryVcsType, stageRepositoryLocalUri, stageRepositoryRemoteUri)
-	if err != nil {
-		test.Fatal(err)
-	}
+// 	stageRepositoryId, err = connection.Repositories.Create.Create(stageRepositoryName, stageRepositoryVcsType, stageRepositoryLocalUri, stageRepositoryRemoteUri)
+// 	if err != nil {
+// 		test.Fatal(err)
+// 	}
 
-	stageVerificationId, err = connection.Verifications.Create.Create(stageRepositoryId, verificationHeadSha, verificationBaseSha, verificationHeadMessage, verificationHeadUsername, verificationHeadEmail, verificationMergeTarget, verificationEmailToNotify)
-	if err != nil {
-		test.Fatal(err)
-	}
-}
+// 	stageVerificationId, err = connection.Verifications.Create.Create(stageRepositoryId, verificationHeadSha, verificationBaseSha, verificationHeadMessage, verificationHeadUsername, verificationHeadEmail, verificationMergeTarget, verificationEmailToNotify)
+// 	if err != nil {
+// 		test.Fatal(err)
+// 	}
+// }
 
 func TestCreateInvalidStage(test *testing.T) {
-	_, err := connection.Stages.Create.Create(0, stageSectionNumber, stageName, stageOrderNumber)
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	_, err = connection.Stages.Create.Create(0, stageSectionNumber, stageName, stageOrderNumber)
 	if _, ok := err.(resources.NoSuchVerificationError); !ok {
 		test.Fatal("Expected NoSuchVerificationError when providing invalid verification id")
 	}
-	_, err = connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, "", stageOrderNumber)
+	_, err = connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, "", stageOrderNumber)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid stage name")
 	}
 }
 
 func TestCreateStage(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName, stageOrderNumber)
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -80,14 +126,14 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal("Unable to find stage")
 	}
 
-	stages, err := connection.Stages.Read.GetAll(stageVerificationId)
+	stages, err := connection.Stages.Read.GetAll(firstVerification.Id)
 	if err != nil {
 		test.Fatal(err)
-	} else if len(stages) != 1 {
+	} else if len(stages) == 0 {
 		test.Fatal("Unexpected number of stages")
 	}
 
-	_, err = connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName, stageOrderNumber)
+	_, err = connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if _, ok := err.(resources.StageAlreadyExistsError); !ok {
 		test.Fatal("Expected StageAlreadyExistsError when trying to add same stage twice")
 	}
@@ -168,7 +214,30 @@ func TestCreateStage(test *testing.T) {
 }
 
 func TestConsoleText(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName+"-console-text", stageOrderNumber)
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -211,7 +280,30 @@ func TestConsoleText(test *testing.T) {
 }
 
 func TestXunit(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName+"-xunit", stageOrderNumber)
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName+"-xunit", stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -240,7 +332,30 @@ func TestXunit(test *testing.T) {
 }
 
 func TestExport(test *testing.T) {
-	stageId, err := connection.Stages.Create.Create(stageVerificationId, stageSectionNumber, stageName+"-export", stageOrderNumber)
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName+"-export", stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}

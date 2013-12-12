@@ -5,75 +5,69 @@ import (
 	"testing"
 )
 
-const (
-	repositoryName      = "repository-name"
-	repositoryVcsType   = "git"
-	repositoryLocalUri  = "git@local.uri.com:name.git"
-	repositoryRemoteUri = "git@remote.uri.com:name.git"
-	gitHubOwner         = "jordanpotter"
-	gitHubName          = "repository-github-name"
-	gitHubHookId        = 17
-	gitHubHookSecret    = "hook-secret"
-)
-
-var (
-	gitHubHookTypes []string = []string{"push", "pull_request"}
-)
-
 func TestCreateInvalidRepository(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	_, err = connection.Repositories.Create.Create("", repositoryVcsType, repositoryLocalUri, repositoryRemoteUri)
+	name := "repository-name"
+	vcsType := "git"
+	localUri := "git@local.uri.com:name.git"
+	remoteUri := "git@remote.uri.com:name.git"
+
+	_, err = connection.Repositories.Create.Create("", vcsType, localUri, remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository name")
 	}
 
-	_, err = connection.Repositories.Create.Create("inv@lid-repos!tory-name^", repositoryVcsType, repositoryLocalUri, repositoryRemoteUri)
+	_, err = connection.Repositories.Create.Create("inv@lid-repos!tory-name^", vcsType, localUri, remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository name")
 	}
 
-	_, err = connection.Repositories.Create.Create(repositoryName, "", repositoryLocalUri, repositoryRemoteUri)
+	_, err = connection.Repositories.Create.Create(name, "", localUri, remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository VCS type")
 	}
 
-	_, err = connection.Repositories.Create.Create(repositoryName, "blah", repositoryLocalUri, repositoryRemoteUri)
+	_, err = connection.Repositories.Create.Create(name, "blah", localUri, remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository VCS type")
 	}
 
-	_, err = connection.Repositories.Create.Create(repositoryName, repositoryVcsType, "", repositoryRemoteUri)
+	_, err = connection.Repositories.Create.Create(name, vcsType, "", remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository local uri")
 	}
 
-	_, err = connection.Repositories.Create.Create(repositoryName, repositoryVcsType, "google.com", repositoryRemoteUri)
+	_, err = connection.Repositories.Create.Create(name, vcsType, "google.com", remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository local uri")
 	}
 
-	_, err = connection.Repositories.Create.Create(repositoryName, repositoryVcsType, repositoryLocalUri, "")
+	_, err = connection.Repositories.Create.Create(name, vcsType, localUri, "")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository remote uri")
 	}
 
-	_, err = connection.Repositories.Create.Create(repositoryName, repositoryVcsType, repositoryLocalUri, "google.com")
+	_, err = connection.Repositories.Create.Create(name, vcsType, localUri, "google.com")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository remote uri")
 	}
 }
 
 func TestCreateRepository(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repositoryId, err := connection.Repositories.Create.Create(repositoryName, repositoryVcsType, repositoryLocalUri, repositoryRemoteUri)
+	repositoryId, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@local.uri.com/name", "hg@remote.uri.com/name")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -92,7 +86,7 @@ func TestCreateRepository(test *testing.T) {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
 
-	err = connection.Repositories.Update.SetGitHubHook(repositoryId, gitHubHookId, gitHubHookSecret, gitHubHookTypes)
+	err = connection.Repositories.Update.SetGitHubHook(repositoryId, 17, "hook-secret", []string{"push", "pull_request"})
 	if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
 		test.Fatal("Expected NoSuchRepositoryHookError when trying to add repository hook")
 	}
@@ -114,12 +108,14 @@ func TestCreateRepository(test *testing.T) {
 }
 
 func TestCreateGitHubRepository(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repositoryId, err := connection.Repositories.Create.CreateWithGitHub(repositoryName, repositoryVcsType, repositoryLocalUri, repositoryRemoteUri, gitHubOwner, gitHubName)
+	repositoryId, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git@local.uri.com:name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -146,32 +142,5 @@ func TestCreateGitHubRepository(test *testing.T) {
 	err = connection.Repositories.Delete.Delete(repositoryId)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when trying to delete same repository twice")
-	}
-}
-
-func TestGitHubHook(test *testing.T) {
-	connection, err := New()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	repositoryId, err := connection.Repositories.Create.CreateWithGitHub(repositoryName, repositoryVcsType, repositoryLocalUri, repositoryRemoteUri, gitHubOwner, gitHubName)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	err = connection.Repositories.Update.SetGitHubHook(repositoryId, gitHubHookId, gitHubHookSecret, gitHubHookTypes)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	err = connection.Repositories.Update.ClearGitHubHook(repositoryId)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	err = connection.Repositories.Delete.Delete(repositoryId)
-	if err != nil {
-		test.Fatal(err)
 	}
 }

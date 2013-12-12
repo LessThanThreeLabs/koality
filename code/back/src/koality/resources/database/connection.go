@@ -80,7 +80,23 @@ func Reseed() error {
 	return err
 }
 
-func SaveDump() error {
+func DumpExists() (bool, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return false, err
+	}
+
+	_, err = os.Stat(currentUser.HomeDir + dumpLocation)
+	if os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	} else {
+		return true, nil
+	}
+}
+
+func CreateDump() error {
 	setEnvironment()
 
 	currentUser, err := user.Current()
