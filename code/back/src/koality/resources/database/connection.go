@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	_ "github.com/lib/pq" // Adds the Postgres driver
-
 	"io/ioutil"
 	"koality/resources"
 	"koality/resources/database/repositories"
