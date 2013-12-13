@@ -41,6 +41,7 @@ type StagesHandler struct {
 	Create StagesCreateHandler
 	Read   StagesReadHandler
 	Update StagesUpdateHandler
+	Delete StagesDeleteHandler
 }
 
 type StagesCreateHandler interface {
@@ -54,10 +55,10 @@ type StagesReadHandler interface {
 	GetAll(verificationId uint64) ([]Stage, error)
 	GetRun(stageRunId uint64) (*StageRun, error)
 	GetAllRuns(stageId uint64) ([]StageRun, error)
-	GetConsoleTextHead(stageRunId uint64, offset, results int) (map[uint64]string, error)
-	GetConsoleTextTail(stageRunId uint64, offset, results int) (map[uint64]string, error)
-	GetAllConsoleText(stageRunId uint64) (map[uint64]string, error)
-	GetXunitResults(stageRunId uint64) ([]XunitResult, error)
+	GetConsoleLinesHead(stageRunId uint64, offset, results int) (map[uint64]string, error)
+	GetConsoleLinesTail(stageRunId uint64, offset, results int) (map[uint64]string, error)
+	GetAllConsoleLines(stageRunId uint64) (map[uint64]string, error)
+	GetAllXunitResults(stageRunId uint64) ([]XunitResult, error)
 	GetExports(stageRunId uint64) ([]Export, error)
 }
 
@@ -65,9 +66,14 @@ type StagesUpdateHandler interface {
 	SetReturnCode(stageRunId uint64, returnCode int) error
 	SetStartTime(stageRunId uint64, startTime time.Time) error
 	SetEndTime(stageRunId uint64, endTime time.Time) error
-	AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error
+	AddConsoleLines(stageRunId uint64, consoleLines map[uint64]string) error
 	AddXunitResults(stageRunId uint64, xunitResults []XunitResult) error
 	AddExports(stageRunId uint64, exports []Export) error
+}
+
+type StagesDeleteHandler interface {
+	DeleteAllConsoleLines(stageRunId uint64) error
+	DeleteAllXunitResults(stageRunId uint64) error
 }
 
 type NoSuchStageError struct {

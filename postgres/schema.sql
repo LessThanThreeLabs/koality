@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS stage_runs (
 	CHECK (started IS NULL OR ended IS NULL OR started <= ended)
 );
 
-CREATE TABLE IF NOT EXISTS console_texts (
+CREATE TABLE IF NOT EXISTS console_lines (
 	id 					serial PRIMARY KEY,
 	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
 	number				integer NOT NULL,
@@ -118,22 +118,22 @@ CREATE TABLE IF NOT EXISTS console_texts (
 );
 
 -- DO
--- $create_console_texts_run_id_idx$
+-- $create_console_lines_run_id_idx$
 -- BEGIN
--- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_run_id_idx') THEN
--- 		CREATE INDEX console_texts_run_id_idx ON console_texts(run_id);
+-- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_lines_run_id_idx') THEN
+-- 		CREATE INDEX console_lines_run_id_idx ON console_lines(run_id);
 -- 	END IF;
 -- END
--- $create_console_texts_run_id_idx$;
+-- $create_console_lines_run_id_idx$;
 
 -- DO
--- $create_console_texts_number_idx$
+-- $create_console_lines_number_idx$
 -- BEGIN
--- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_texts_number_idx') THEN
--- 		CREATE INDEX console_texts_number_idx ON console_texts(number);
+-- 	IF NOT EXISTS (SELECT 1 FROM pg_class where relname = 'console_lines_number_idx') THEN
+-- 		CREATE INDEX console_lines_number_idx ON console_lines(number);
 -- 	END IF;
 -- END
--- $create_console_texts_number_idx$;
+-- $create_console_lines_number_idx$;
 
 CREATE TABLE IF NOT EXISTS xunit_results (
 	id 					serial PRIMARY KEY,

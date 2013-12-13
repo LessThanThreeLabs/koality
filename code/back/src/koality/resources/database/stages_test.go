@@ -7,48 +7,6 @@ import (
 	"time"
 )
 
-// const (
-// 	stageRepositoryName       = "stage-repository-name"
-// 	stageRepositoryVcsType    = "git"
-// 	stageRepositoryLocalUri   = "git@local.uri.com:stage-name.git"
-// 	stageRepositoryRemoteUri  = "git@remote.uri.com:stage-name.git"
-// 	verificationHeadSha       = "a5a1134e5ca1050a2ea01b1b8aaf945bc758ec49"
-// 	verificationBaseSha       = "5984b365f6a7287d8b3674b200525bb769a5a3de"
-// 	verificationHeadMessage   = "This is an awesome commit message"
-// 	verificationHeadUsername  = "Jordan Potter"
-// 	verificationHeadEmail     = "jpotter@koalitycode.com"
-// 	verificationMergeTarget   = "refs/heads/master"
-// 	verificationEmailToNotify = "koalas@koalitycode.com"
-// 	stageSectionNumber        = 4
-// 	stageName                 = "awesome stage"
-// 	stageOrderNumber          = 17
-// )
-
-// var (
-// 	// connection          *resources.Connection
-// 	stageRepositoryId   uint64
-// 	stageVerificationId uint64
-// )
-
-// // TODO: get rid of this, import database dump instead
-// func TestStagesPrepareOtherTests(test *testing.T) {
-// 	var err error
-// 	connection, err = New()
-// 	if err != nil {
-// 		test.Fatal(err)
-// 	}
-
-// 	stageRepositoryId, err = connection.Repositories.Create.Create(stageRepositoryName, stageRepositoryVcsType, stageRepositoryLocalUri, stageRepositoryRemoteUri)
-// 	if err != nil {
-// 		test.Fatal(err)
-// 	}
-
-// 	stageVerificationId, err = connection.Verifications.Create.Create(stageRepositoryId, verificationHeadSha, verificationBaseSha, verificationHeadMessage, verificationHeadUsername, verificationHeadEmail, verificationMergeTarget, verificationEmailToNotify)
-// 	if err != nil {
-// 		test.Fatal(err)
-// 	}
-// }
-
 func TestCreateInvalidStage(test *testing.T) {
 	PopulateDatabase()
 
@@ -213,7 +171,7 @@ func TestCreateStage(test *testing.T) {
 	}
 }
 
-func TestConsoleText(test *testing.T) {
+func TestConsoleLines(test *testing.T) {
 	PopulateDatabase()
 
 	connection, err := New()
@@ -257,25 +215,37 @@ func TestConsoleText(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	lines, err = connection.Stages.Read.GetAllConsoleText(stageRunId)
+	lines, err = connection.Stages.Read.GetAllConsoleLines(stageRunId)
 	if err != nil {
 		test.Fatal(err)
 	} else if len(lines) != 3 {
-		test.Fatal("Expected three lines of console text in result")
+		test.Fatal("Expected three lines of console in result")
 	}
 
-	lines, err = connection.Stages.Read.GetConsoleTextHead(stageRunId, 7, 1)
+	lines, err = connection.Stages.Read.GetConsoleLinesHead(stageRunId, 7, 1)
 	if err != nil {
 		test.Fatal(err)
 	} else if len(lines) != 1 {
-		test.Fatal("Expected one line of console text in result")
+		test.Fatal("Expected one line of console in result")
 	}
 
-	lines, err = connection.Stages.Read.GetConsoleTextTail(stageRunId, 0, 1)
+	lines, err = connection.Stages.Read.GetConsoleLinesTail(stageRunId, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	} else if len(lines) != 1 {
-		test.Fatal("Expected one line of console text in result")
+		test.Fatal("Expected one line of console in result")
+	}
+
+	err = connection.Stages.Delete.DeleteAllConsoleLines(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	lines, err = connection.Stages.Read.GetAllConsoleLines(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(lines) != 0 {
+		test.Fatal("Expected zero lines of console in result")
 	}
 }
 
@@ -303,7 +273,7 @@ func TestXunit(test *testing.T) {
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName+"-xunit", stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -321,13 +291,23 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	returnedXunitResults, err := connection.Stages.Read.GetXunitResults(stageRunId)
+	returnedXunitResults, err := connection.Stages.Read.GetAllXunitResults(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(returnedXunitResults) != 2 {
+		test.Fatal("Expected two xunit results")
+	}
+
+	err = connection.Stages.Delete.DeleteAllXunitResults(stageRunId)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if len(returnedXunitResults) != 2 {
-		test.Fatal("Unexpected numebr of xunit results")
+	returnedXunitResults, err = connection.Stages.Read.GetAllXunitResults(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	} else if len(returnedXunitResults) != 0 {
+		test.Fatal("Expected zero xunit results")
 	}
 }
 
@@ -355,7 +335,7 @@ func TestExport(test *testing.T) {
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName+"-export", stageOrderNumber)
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}

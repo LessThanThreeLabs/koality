@@ -113,7 +113,7 @@ func (readHandler *ReadHandler) GetAllRuns(stageId uint64) ([]resources.StageRun
 	return stageRuns, nil
 }
 
-func (readHandler *ReadHandler) getConsoleTextLines(query string, params ...interface{}) (map[uint64]string, error) {
+func (readHandler *ReadHandler) getConsoleLines(query string, params ...interface{}) (map[uint64]string, error) {
 	rows, err := readHandler.database.Query(query, params...)
 	if err != nil {
 		return nil, err
@@ -135,24 +135,24 @@ func (readHandler *ReadHandler) getConsoleTextLines(query string, params ...inte
 	return consoleText, nil
 }
 
-func (readHandler *ReadHandler) GetConsoleTextHead(stageRunId uint64, offset, results int) (map[uint64]string, error) {
+func (readHandler *ReadHandler) GetConsoleLinesHead(stageRunId uint64, offset, results int) (map[uint64]string, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}
 
 	lowerBound := offset
 	upperBound := offset + results
-	query := "SELECT number, text FROM console_texts WHERE run_id=$1 AND number >= $2 AND number < $3 ORDER BY id ASC"
-	return readHandler.getConsoleTextLines(query, stageRunId, lowerBound, upperBound)
+	query := "SELECT number, text FROM console_lines WHERE run_id=$1 AND number >= $2 AND number < $3 ORDER BY id ASC"
+	return readHandler.getConsoleLines(query, stageRunId, lowerBound, upperBound)
 }
 
-func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, results int) (map[uint64]string, error) {
+func (readHandler *ReadHandler) GetConsoleLinesTail(stageRunId uint64, offset, results int) (map[uint64]string, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}
 
 	var maxLineNumber int
-	maxLineNumberQuery := "SELECT number FROM console_texts WHERE run_id=$1 ORDER BY number DESC LIMIT 1"
+	maxLineNumberQuery := "SELECT number FROM console_lines WHERE run_id=$1 ORDER BY number DESC LIMIT 1"
 	row := readHandler.database.QueryRow(maxLineNumberQuery, stageRunId)
 	err := row.Scan(&maxLineNumber)
 	if err == sql.ErrNoRows {
@@ -163,17 +163,17 @@ func (readHandler *ReadHandler) GetConsoleTextTail(stageRunId uint64, offset, re
 
 	lowerBound := maxLineNumber - offset - results
 	upperBound := maxLineNumber - offset
-	consoleTextQuery := "SELECT number, text FROM console_texts WHERE run_id=$1 AND number > $2 AND number <= $3 ORDER BY id ASC"
-	return readHandler.getConsoleTextLines(consoleTextQuery, stageRunId, lowerBound, upperBound)
+	consoleTextQuery := "SELECT number, text FROM console_lines WHERE run_id=$1 AND number > $2 AND number <= $3 ORDER BY id ASC"
+	return readHandler.getConsoleLines(consoleTextQuery, stageRunId, lowerBound, upperBound)
 }
 
-func (readHandler *ReadHandler) GetAllConsoleText(stageRunId uint64) (map[uint64]string, error) {
+func (readHandler *ReadHandler) GetAllConsoleLines(stageRunId uint64) (map[uint64]string, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}
 
-	query := "SELECT number, text FROM console_texts WHERE run_id=$1 ORDER BY id ASC"
-	return readHandler.getConsoleTextLines(query, stageRunId)
+	query := "SELECT number, text FROM console_lines WHERE run_id=$1 ORDER BY id ASC"
+	return readHandler.getConsoleLines(query, stageRunId)
 }
 
 func (readHandler *ReadHandler) scanXunitResult(scannable *sql.Rows) (*resources.XunitResult, error) {
@@ -201,7 +201,7 @@ func (readHandler *ReadHandler) scanXunitResult(scannable *sql.Rows) (*resources
 	return xunitResult, nil
 }
 
-func (readHandler *ReadHandler) GetXunitResults(stageRunId uint64) ([]resources.XunitResult, error) {
+func (readHandler *ReadHandler) GetAllXunitResults(stageRunId uint64) ([]resources.XunitResult, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}

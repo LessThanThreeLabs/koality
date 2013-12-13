@@ -80,30 +80,30 @@ func (updateHandler *UpdateHandler) SetEndTime(stageRunId uint64, endTime time.T
 	return updateHandler.updateStageRun(query, endTime, stageRunId)
 }
 
-func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleTextLines map[uint64]string) error {
+func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleLines map[uint64]string) error {
 	// We don't verify that stageRunId exists for performance reasons
 
 	getValuesString := func() string {
-		valuesStringArray := make([]string, len(consoleTextLines))
-		for index := 0; index < len(consoleTextLines); index++ {
+		valuesStringArray := make([]string, len(consoleLines))
+		for index := 0; index < len(consoleLines); index++ {
 			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d)", stageRunId, index*2+1, index*2+2)
 		}
 		return strings.Join(valuesStringArray, ", ")
 	}
 
-	consoleTextLinesToArray := func() []interface{} {
+	consoleLinesToArray := func() []interface{} {
 		count := 0
-		linesArray := make([]interface{}, len(consoleTextLines)*2)
-		for number, text := range consoleTextLines {
-			linesArray[count*2] = number
-			linesArray[count*2+1] = text
+		conoleLinesArray := make([]interface{}, len(consoleLines)*2)
+		for number, text := range consoleLines {
+			conoleLinesArray[count*2] = number
+			conoleLinesArray[count*2+1] = text
 			count++
 		}
-		return linesArray
+		return conoleLinesArray
 	}
 
-	query := "INSERT INTO console_texts (run_id, number, text) VALUES " + getValuesString()
-	_, err := updateHandler.database.Exec(query, consoleTextLinesToArray()...)
+	query := "INSERT INTO console_lines (run_id, number, text) VALUES " + getValuesString()
+	_, err := updateHandler.database.Exec(query, consoleLinesToArray()...)
 	return err
 }
 
