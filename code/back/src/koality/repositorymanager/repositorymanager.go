@@ -1,7 +1,7 @@
-package repomanager
+package repositorymanager
 
 import (
-	"koality/repomanager/repostore"
+	"koality/repositorymanager/repositorystore"
 	"koality/resources"
 )
 
@@ -24,11 +24,11 @@ func GetYamlFile(repo *resources.Repository, ref string) (yamlFile string, err e
 }
 
 func pullYamlFromGitRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
-	return
+	return repositorystore.GetYamlFile(repo, ref)
 }
 
 func pullYamlFromHgRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
-	return
+	return repositorystore.GetYamlFile(repo, ref)
 }
 
 func pullYamlFromPerforceRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
@@ -50,11 +50,11 @@ func GetCommitAttributes(repo *resources.Repository, ref string) (message, usern
 }
 
 func getCommitAttributesFromGitRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {
-	return
+	return repositorystore.GetCommitAttributes(repo, ref)
 }
 
 func getCommitAttributesFromHgRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {
-	return
+	return repositorystore.GetCommitAttributes(repo, ref)
 }
 
 func getCommitAttributesFromPerforceRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {

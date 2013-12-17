@@ -1,14 +1,15 @@
-package pathgen
+package pathgenerator
 
 import (
 	"errors"
 	"fmt"
+	"koality/resources"
 	"path/filepath"
 	"strconv"
 )
 
-func ToPath(repoId uint64, repoName string) string {
-	return filepath.Join(fmt.Sprintf("%%d", repoId), repoName)
+func ToPath(repo *resources.Repository) string {
+	return filepath.Join(fmt.Sprintf("%%d", repo.Id), repo.Name)
 }
 
 func GitHiddenRef(commitId string) string {

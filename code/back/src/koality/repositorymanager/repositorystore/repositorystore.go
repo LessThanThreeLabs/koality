@@ -1,4 +1,4 @@
-package repostore
+package repositorystore
 
 import (
 	"koality/resources"
@@ -21,5 +21,9 @@ func MergeChangeset(repo *resources.Repository, headRef, baseRef, mergeIntoRef s
 }
 
 func GetCommitAttributes(repo *resources.Repository, ref string) (message, username, email string, err error) {
+	return
+}
+
+func GetYamlFile(repo *resources.Repository, ref string) (yamlFile string, err error) {
 	return
 }
