@@ -1,4 +1,4 @@
-package verificationserver
+package runner
 
 import (
 	"fmt"
@@ -15,29 +15,29 @@ import (
 	"time"
 )
 
-type VerificationServer struct {
+type VerificationRunner struct {
 	ResourcesConnection *resources.Connection
 	VirtualMachinePools map[uint64]vm.VirtualMachinePool
 }
 
-func (verificationServer *VerificationServer) RunVerification(currentVerification *resources.Verification) (bool, error) {
+func (verificationRunner *VerificationRunner) RunVerification(currentVerification *resources.Verification) (bool, error) {
 	if currentVerification == nil {
 		panic("Cannot run a nil verification")
 	}
-	virtualMachinePool, ok := verificationServer.VirtualMachinePools[currentVerification.RepositoryId]
+	virtualMachinePool, ok := verificationRunner.VirtualMachinePools[currentVerification.RepositoryId]
 	if !ok {
-		verificationServer.failVerification(currentVerification)
+		verificationRunner.failVerification(currentVerification)
 		return false, fmt.Errorf("No virtual machine pool found for repository: %d", currentVerification.RepositoryId)
 	}
-	verificationConfig, err := verificationServer.getVerificationConfig(currentVerification)
+	verificationConfig, err := verificationRunner.getVerificationConfig(currentVerification)
 	if err != nil {
-		verificationServer.failVerification(currentVerification)
+		verificationRunner.failVerification(currentVerification)
 		return false, err
 	}
 
-	err = verificationServer.createStages(currentVerification, verificationConfig.Sections, verificationConfig.FinalSections)
+	err = verificationRunner.createStages(currentVerification, verificationConfig.Sections, verificationConfig.FinalSections)
 	if err != nil {
-		verificationServer.failVerification(currentVerification)
+		verificationRunner.failVerification(currentVerification)
 		return false, err
 	}
 
@@ -52,7 +52,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		defer virtualMachinePool.Free()
 		defer virtualMachine.Terminate()
 
-		stageRunner := stagerunner.New(verificationServer.ResourcesConnection, virtualMachine, currentVerification)
+		stageRunner := stagerunner.New(verificationRunner.ResourcesConnection, virtualMachine, currentVerification)
 		defer close(stageRunner.ResultsChan)
 
 		newStageRunnersChan <- stageRunner
@@ -70,7 +70,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		}
 	}(newMachinesChan)
 
-	resultsChan := verificationServer.combineResults(currentVerification, newStageRunnersChan)
+	resultsChan := verificationRunner.combineResults(currentVerification, newStageRunnersChan)
 	receivedResult := make(map[string]bool)
 
 	for {
@@ -78,7 +78,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 		if !hasMoreResults {
 			verificationPassed := currentVerification.VerificationStatus != "cancelled" && currentVerification.VerificationStatus != "failed"
 			if verificationPassed {
-				err := verificationServer.passVerification(currentVerification)
+				err := verificationRunner.passVerification(currentVerification)
 				if err != nil {
 					return false, err
 				}
@@ -91,7 +91,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 				// Do nothing
 			case section.FailOnAny:
 				if currentVerification.VerificationStatus != "cancelled" && currentVerification.VerificationStatus != "failed" {
-					err := verificationServer.failVerification(currentVerification)
+					err := verificationRunner.failVerification(currentVerification)
 					if err != nil {
 						return false, err
 					}
@@ -99,7 +99,7 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 			case section.FailOnFirst:
 				if !receivedResult[result.Section] {
 					if currentVerification.VerificationStatus != "cancelled" && currentVerification.VerificationStatus != "failed" {
-						err := verificationServer.failVerification(currentVerification)
+						err := verificationRunner.failVerification(currentVerification)
 						if err != nil {
 							return false, err
 						}
@@ -111,32 +111,32 @@ func (verificationServer *VerificationServer) RunVerification(currentVerificatio
 	}
 }
 
-func (verificationServer *VerificationServer) failVerification(verification *resources.Verification) error {
+func (verificationRunner *VerificationRunner) failVerification(verification *resources.Verification) error {
 	(*verification).VerificationStatus = "failed"
 	fmt.Printf("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
+	err := verificationRunner.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
 	if err != nil {
 		return err
 	}
 
-	err = verificationServer.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	err = verificationRunner.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
 	return err
 }
 
-func (verificationServer *VerificationServer) passVerification(verification *resources.Verification) error {
+func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification) error {
 	(*verification).VerificationStatus = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := verificationServer.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
+	err := verificationRunner.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
 	if err != nil {
 		return err
 	}
 
-	err = verificationServer.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	err = verificationRunner.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
 	return err
 }
 
 // TODO (bbland): make this not bogus
-func (verificationServer *VerificationServer) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
+func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
 	var emptyConfig config.VerificationConfig
 
 	usr, err := user.Current()
@@ -152,7 +152,7 @@ func (verificationServer *VerificationServer) getVerificationConfig(currentVerif
 	return config.FromYaml(string(example_yaml))
 }
 
-func (verificationServer *VerificationServer) createStages(currentVerification *resources.Verification, sections, finalSections []section.Section) error {
+func (verificationRunner *VerificationRunner) createStages(currentVerification *resources.Verification, sections, finalSections []section.Section) error {
 	for sectionNumber, section := range append(sections, finalSections...) {
 		var err error
 
@@ -161,7 +161,7 @@ func (verificationServer *VerificationServer) createStages(currentVerification *
 		factoryCommands := section.FactoryCommands(true)
 
 		for command, err := factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
-			_, err := verificationServer.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
+			_, err := verificationRunner.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
 			if err != nil {
 				return err
 			}
@@ -173,7 +173,7 @@ func (verificationServer *VerificationServer) createStages(currentVerification *
 
 		commands := section.Commands(true)
 		for command, err := commands.Next(); err == nil; command, err = commands.Next() {
-			_, err := verificationServer.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
+			_, err := verificationRunner.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
 			if err != nil {
 				return err
 			}
@@ -186,7 +186,7 @@ func (verificationServer *VerificationServer) createStages(currentVerification *
 	return nil
 }
 
-func (verificationServer *VerificationServer) combineResults(currentVerification *resources.Verification, newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan verification.SectionResult {
+func (verificationRunner *VerificationRunner) combineResults(currentVerification *resources.Verification, newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan verification.SectionResult {
 	resultsChan := make(chan verification.SectionResult)
 	go func(newStageRunnersChan <-chan *stagerunner.StageRunner) {
 		isStarted := false
@@ -217,7 +217,7 @@ func (verificationServer *VerificationServer) combineResults(currentVerification
 				}
 				if !isStarted {
 					isStarted = true
-					verificationServer.ResourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
+					verificationRunner.ResourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
 				}
 				stageRunners = append(stageRunners, stageRunner)
 				go handleNewStageRunner(stageRunner)
