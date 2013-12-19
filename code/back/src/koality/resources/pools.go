@@ -39,6 +39,9 @@ type PoolsReadHandler interface {
 }
 
 type PoolsUpdateHandler interface {
+	SetEc2Settings(poolId uint64, accessKey, secretKey,
+		username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
+		numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) error
 }
 
 type PoolsDeleteHandler interface {

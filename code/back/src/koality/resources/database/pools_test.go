@@ -163,3 +163,77 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal("Expected there to be two pools")
 	}
 }
+
+func TestUsersEc2Settings(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	name := "ec2-pool"
+	accessKey := "aaaabbbbccccddddeeee"
+	accessKey2 := "eeeeddddccccbbbbaaaa"
+	secretKey := "0000111122223333444455556666777788889999"
+	secretKey2 := "9999888877776666555544443333222211110000"
+	username := "koality"
+	username2 := "koality2"
+	baseAmiId := "ami-12345678"
+	baseAmiId2 := "ami-87654321"
+	securityGroupId := "sg-12345678"
+	securityGroupId2 := "sg-87654321"
+	vpcSubnetId := "subnet-12345678"
+	vpcSubnetId2 := "subnet-87654321"
+	instanceType := "m1.medium"
+	instanceType2 := "m1.large"
+	numReadyInstances := uint64(2)
+	numReadyInstances2 := uint64(4)
+	numMaxInstances := uint64(10)
+	numMaxInstances2 := uint64(100)
+	rootDriveSize := uint64(100)
+	rootDriveSize2 := uint64(150)
+	userData := "echo hello"
+	userData2 := "echo hello 2"
+
+	poolId, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Pools.Update.SetEc2Settings(poolId, accessKey2, secretKey2, username2, baseAmiId2, securityGroupId2, vpcSubnetId2,
+		instanceType2, numReadyInstances2, numMaxInstances2, rootDriveSize2, userData2)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	pool, err := connection.Pools.Read.GetEc2Pool(poolId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if pool.AccessKey != accessKey2 {
+		test.Fatal("pool.AccessKey mismatch")
+	} else if pool.SecretKey != secretKey2 {
+		test.Fatal("pool.SecretKey mismatch")
+	} else if pool.Username != username2 {
+		test.Fatal("pool.Username mismatch")
+	} else if pool.BaseAmiId != baseAmiId2 {
+		test.Fatal("pool.BaseAmiId mismatch")
+	} else if pool.SecurityGroupId != securityGroupId2 {
+		test.Fatal("pool.SecurityGroupId mismatch")
+	} else if pool.VpcSubnetId != vpcSubnetId2 {
+		test.Fatal("pool.VpcSubnetId mismatch")
+	} else if pool.InstanceType != instanceType2 {
+		test.Fatal("pool.InstanceType mismatch")
+	} else if pool.NumReadyInstances != numReadyInstances2 {
+		test.Fatal("pool.NumReadyInstances mismatch")
+	} else if pool.NumMaxInstances != numMaxInstances2 {
+		test.Fatal("pool.NumMaxInstances mismatch")
+	} else if pool.RootDriveSize != rootDriveSize2 {
+		test.Fatal("pool.RootDriveSize mismatch")
+	} else if pool.UserData != userData2 {
+		test.Fatal("pool.UserData mismatch")
+	}
+}
