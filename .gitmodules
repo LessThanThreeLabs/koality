@@ -43,3 +43,6 @@
 [submodule "code/back/src/github.com/lib/pq"]
 	path = code/back/src/github.com/lib/pq
 	url = git@github.com:lib/pq.git
+[submodule "code/back/src/github.com/VictorLowther/go-git"]
+	path = code/back/src/github.com/VictorLowther/go-git
+	url = git@github.com:VictorLowther/go-git.git
