@@ -1,5 +1,9 @@
 package resources
 
+import (
+	"time"
+)
+
 type Ec2Pool struct {
 	Id                uint64
 	Name              string
@@ -14,6 +18,7 @@ type Ec2Pool struct {
 	NumMaxInstances   uint64
 	RootDriveSize     uint64
 	UserData          string
+	Created           *time.Time
 }
 
 type PoolsHandler struct {
@@ -29,6 +34,8 @@ type PoolsCreateHandler interface {
 }
 
 type PoolsReadHandler interface {
+	GetEc2Pool(ec2PoolId uint64) (*Ec2Pool, error)
+	GetAllEc2Pools() ([]Ec2Pool, error)
 }
 
 type PoolsUpdateHandler interface {

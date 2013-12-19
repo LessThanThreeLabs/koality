@@ -16,10 +16,10 @@ func New(database *sql.DB) (*resources.PoolsHandler, error) {
 		return nil, err
 	}
 
-	// readHandler, err := NewReadHandler(database, verifier)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	readHandler, err := NewReadHandler(database, verifier)
+	if err != nil {
+		return nil, err
+	}
 
 	// updateHandler, err := NewUpdateHandler(database, verifier)
 	// if err != nil {
@@ -32,5 +32,5 @@ func New(database *sql.DB) (*resources.PoolsHandler, error) {
 	// }
 
 	// return &resources.StagesHandler{createHandler, readHandler, updateHandler, deleteHandler}, nil
-	return &resources.PoolsHandler{createHandler, nil, nil, nil}, nil
+	return &resources.PoolsHandler{createHandler, readHandler, nil, nil}, nil
 }

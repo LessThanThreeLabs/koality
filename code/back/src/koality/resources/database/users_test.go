@@ -97,6 +97,10 @@ func TestUsersRead(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	if len(users) != 4 {
+		test.Fatal("Expected 4 users")
+	}
+
 	for _, user := range users {
 		if user.Id < 1000 {
 			test.Fatal("user.Id < 1000")
