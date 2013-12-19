@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	stageMinNameLength = 1
-	stageMaxNameLength = 1024
+	minNameLength = 1
+	maxNameLength = 1024
 )
 
 type Verifier struct {
@@ -22,10 +22,10 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 }
 
 func (verifier *Verifier) verifyName(name string) error {
-	if len(name) < stageMinNameLength {
-		return fmt.Errorf("Name must be at least %d characters long", stageMinNameLength)
-	} else if len(name) > stageMaxNameLength {
-		return fmt.Errorf("Name cannot exceed %d characters long", stageMaxNameLength)
+	if len(name) < minNameLength {
+		return fmt.Errorf("Name must be at least %d characters long", minNameLength)
+	} else if len(name) > maxNameLength {
+		return fmt.Errorf("Name cannot exceed %d characters long", maxNameLength)
 	}
 	return nil
 }

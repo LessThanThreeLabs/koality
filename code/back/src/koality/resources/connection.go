@@ -5,4 +5,5 @@ type Connection struct {
 	Repositories  *RepositoriesHandler
 	Verifications *VerificationsHandler
 	Stages        *StagesHandler
+	Pools         *PoolsHandler
 }

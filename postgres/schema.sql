@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS users (
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
 
-	UNIQUE (email, deleted)
+	UNIQUE (email, deleted),
+	CHECK (deleted == 0 OR deleted == id)
 );
 
 CREATE TABLE IF NOT EXISTS ssh_keys (
@@ -44,7 +45,8 @@ CREATE TABLE IF NOT EXISTS repositories (
 
 	UNIQUE (name, deleted),
 	UNIQUE (local_uri, deleted),
-	UNIQUE (remote_uri, deleted)
+	UNIQUE (remote_uri, deleted),
+	CHECK (deleted == 0 OR deleted == id)
 );
 
 CREATE TABLE IF NOT EXISTS repository_github_metadatas (
@@ -165,6 +167,28 @@ CREATE TABLE IF NOT EXISTS exports (
 
 	UNIQUE (run_id, path),
 	UNIQUE (run_id, uri)
+);
+
+CREATE TABLE IF NOT EXISTS ec2_pools (
+	id 					serial PRIMARY KEY,
+	name 				varchar(256) NOT NULL,
+	access_key 			varchar(20) NOT NULL,
+	secret_key 			varchar(40) NOT NULL,
+	username 			varchar(256) NOT NULL,
+	base_ami_id 		varchar(12) NOT NULL,
+	security_group_id 	varchar(11) NOT NULL,
+	vpc_subnet_id 		varchar(15),
+	instance_type 		varchar(64) NOT NULL,
+	num_ready_instances integer NOT NULL,
+	num_max_instances 	integer NOT NULL,
+	root_drive_size 	integer NOT NULL,  -- in GB
+	user_data 			varchar(1000000),  -- 1MB
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
+	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
+
+	UNIQUE (name, deleted),
+	CHECK (deleted = 0 OR deleted = id),
+	CHECK (num_ready_instances <= num_max_instances)
 );
 
 CREATE TABLE IF NOT EXISTS settings (

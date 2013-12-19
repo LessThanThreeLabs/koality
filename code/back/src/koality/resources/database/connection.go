@@ -5,6 +5,7 @@ import (
 	_ "github.com/lib/pq" // Adds the Postgres driver
 	"io/ioutil"
 	"koality/resources"
+	"koality/resources/database/pools"
 	"koality/resources/database/repositories"
 	"koality/resources/database/stages"
 	"koality/resources/database/users"
@@ -60,7 +61,12 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	connection := resources.Connection{usersHandler, repositoriesHandler, verificationsHandler, stagesHandler}
+	poolsHandler, err := pools.New(database)
+	if err != nil {
+		return nil, err
+	}
+
+	connection := resources.Connection{usersHandler, repositoriesHandler, verificationsHandler, stagesHandler, poolsHandler}
 	return &connection, nil
 }
 
