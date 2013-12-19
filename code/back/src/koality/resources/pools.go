@@ -45,6 +45,7 @@ type PoolsUpdateHandler interface {
 }
 
 type PoolsDeleteHandler interface {
+	DeleteEc2Pool(poolId uint64) error
 }
 
 type NoSuchPoolError struct {

@@ -1,8 +1,7 @@
 package database
 
 import (
-
-	// "koality/resources"
+	"koality/resources"
 	"testing"
 )
 
@@ -235,5 +234,52 @@ func TestUsersEc2Settings(test *testing.T) {
 		test.Fatal("pool.RootDriveSize mismatch")
 	} else if pool.UserData != userData2 {
 		test.Fatal("pool.UserData mismatch")
+	}
+}
+
+func TestDeleteEc2Pool(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	name := "ec2-pool"
+	accessKey := "aaaabbbbccccddddeeee"
+	secretKey := "0000111122223333444455556666777788889999"
+	username := "koality"
+	baseAmiId := "ami-12345678"
+	securityGroupId := "sg-12345678"
+	vpcSubnetId := "subnet-12345678"
+	instanceType := "m1.medium"
+	numReadyInstances := uint64(2)
+	numMaxInstances := uint64(10)
+	rootDriveSize := uint64(100)
+	userData := "echo hello"
+
+	poolId, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Pools.Delete.DeleteEc2Pool(poolId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Pools.Delete.DeleteEc2Pool(poolId)
+	if _, ok := err.(resources.NoSuchPoolError); !ok {
+		test.Fatal("Expected NoSuchPoolError when trying to delete same pool twice")
+	}
+
+	pools, err := connection.Pools.Read.GetAllEc2Pools()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if len(pools) != 0 {
+		test.Fatal("Expected there to only no pools")
 	}
 }

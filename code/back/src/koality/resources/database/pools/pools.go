@@ -26,11 +26,10 @@ func New(database *sql.DB) (*resources.PoolsHandler, error) {
 		return nil, err
 	}
 
-	// deleteHandler, err := NewDeleteHandler(database, verifier)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	deleteHandler, err := NewDeleteHandler(database, verifier)
+	if err != nil {
+		return nil, err
+	}
 
-	// return &resources.StagesHandler{createHandler, readHandler, updateHandler, deleteHandler}, nil
-	return &resources.PoolsHandler{createHandler, readHandler, updateHandler, nil}, nil
+	return &resources.PoolsHandler{createHandler, readHandler, updateHandler, deleteHandler}, nil
 }
