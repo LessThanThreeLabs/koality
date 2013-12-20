@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"koality/resources"
 	"testing"
+	"time"
 )
 
 func TestCreateInvalidUser(test *testing.T) {
@@ -54,18 +55,22 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	userCreatedEventReceived := make(chan bool, 1)
 	userCreatedEventId := uint64(0)
 	userCreatedHandler := func(userId uint64) {
 		userCreatedEventId = userId
+		userCreatedEventReceived <- true
 	}
 	_, err = connection.Users.Subscription.SubscribeToUserCreatedEvents(userCreatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
+	userDeletedEventReceived := make(chan bool, 1)
 	userDeletedEventId := uint64(0)
 	userDeletedHandler := func(userId uint64) {
 		userDeletedEventId = userId
+		userDeletedEventReceived <- true
 	}
 	_, err = connection.Users.Subscription.SubscribeToUserDeletedEvents(userDeletedHandler)
 	if err != nil {
@@ -77,8 +82,15 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-userCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear user creation event")
+	}
+
 	if userCreatedEventId != userId {
-		test.Fatal("Bad userId in creation event")
+		test.Fatal("Bad userId in user creation event")
 	}
 
 	user, err := connection.Users.Read.Get(userId)
@@ -100,8 +112,15 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-userDeletedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear user creation event")
+	}
+
 	if userDeletedEventId != userId {
-		test.Fatal("Bad userId in deletion event")
+		test.Fatal("Bad userId in user deletion event")
 	}
 
 	err = connection.Users.Delete.Delete(userId)
@@ -162,6 +181,7 @@ func TestUsersUpdateName(test *testing.T) {
 	}
 
 	updateAndCheckName := func(userId uint64, firstName, lastName string) {
+		userEventReceived := make(chan bool, 1)
 		userEventId := uint64(0)
 		userEventFirstName := ""
 		userEventLastName := ""
@@ -169,6 +189,7 @@ func TestUsersUpdateName(test *testing.T) {
 			userEventId = userId
 			userEventFirstName = firstName
 			userEventLastName = lastName
+			userEventReceived <- true
 		}
 		subscriptionId, err := connection.Users.Subscription.SubscribeToNameUpdatedEvents(userNameUpdatedHandler)
 		if err != nil {
@@ -178,6 +199,13 @@ func TestUsersUpdateName(test *testing.T) {
 		err = connection.Users.Update.SetName(userId, firstName, lastName)
 		if err != nil {
 			test.Fatal(err)
+		}
+
+		timeout := time.After(10 * time.Second)
+		select {
+		case <-userEventReceived:
+		case <-timeout:
+			test.Fatal("Failed to hear user name updated event")
 		}
 
 		if userEventId != userId {
@@ -317,11 +345,13 @@ func TestUsersUpdateAdmin(test *testing.T) {
 	}
 
 	updateAndCheckAdmin := func(userId uint64, admin bool) {
+		userEventReceived := make(chan bool, 1)
 		userEventId := uint64(0)
 		userEventAdmin := false
 		userAdminUpdatedHandler := func(userId uint64, admin bool) {
 			userEventId = userId
 			userEventAdmin = admin
+			userEventReceived <- true
 		}
 		subscriptionId, err := connection.Users.Subscription.SubscribeToAdminUpdatedEvents(userAdminUpdatedHandler)
 		if err != nil {
@@ -333,10 +363,17 @@ func TestUsersUpdateAdmin(test *testing.T) {
 			test.Fatal(err)
 		}
 
+		timeout := time.After(10 * time.Second)
+		select {
+		case <-userEventReceived:
+		case <-timeout:
+			test.Fatal("Failed to hear user admin updated event")
+		}
+
 		if userEventId != userId {
-			test.Fatal("Bad userId in admin updated event")
+			test.Fatal("Bad userId in user admin updated event")
 		} else if userEventAdmin != admin {
-			test.Fatal("Bad admin in admin updated event")
+			test.Fatal("Bad admin in user admin updated event")
 		}
 
 		err = connection.Users.Subscription.UnsubscribeFromAdminUpdatedEvents(subscriptionId)
@@ -381,22 +418,26 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	userSshKeyAddedEventReceived := make(chan bool, 1)
 	userSshKeyAddedEventUserId := uint64(0)
 	userSshKeyAddedEventSshKeyId := uint64(0)
 	userSshKeyAddedHandler := func(userId, sshKeyId uint64) {
 		userSshKeyAddedEventUserId = userId
 		userSshKeyAddedEventSshKeyId = sshKeyId
+		userSshKeyAddedEventReceived <- true
 	}
 	_, err = connection.Users.Subscription.SubscribeToSshKeyAddedEvents(userSshKeyAddedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
+	userSshKeyRemovedEventReceived := make(chan bool, 1)
 	userSshKeyRemovedEventUserId := uint64(0)
 	userSshKeyRemovedEventSshKeyId := uint64(0)
 	userSshKeyRemovedHandler := func(userId, sshKeyId uint64) {
 		userSshKeyRemovedEventUserId = userId
 		userSshKeyRemovedEventSshKeyId = sshKeyId
+		userSshKeyRemovedEventReceived <- true
 	}
 	_, err = connection.Users.Subscription.SubscribeToSshKeyRemovedEvents(userSshKeyRemovedHandler)
 	if err != nil {
@@ -419,6 +460,13 @@ func TestUsersSshKeys(test *testing.T) {
 	keyId, err := connection.Users.Update.AddKey(firstUser.Id, "test-name", testPublicKey1)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-userSshKeyAddedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear user ssh key added event")
 	}
 
 	if userSshKeyAddedEventUserId != firstUser.Id {
@@ -446,6 +494,13 @@ func TestUsersSshKeys(test *testing.T) {
 	err = connection.Users.Update.RemoveKey(firstUser.Id, keyId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-userSshKeyRemovedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear user ssh key removed event")
 	}
 
 	if userSshKeyRemovedEventUserId != firstUser.Id {

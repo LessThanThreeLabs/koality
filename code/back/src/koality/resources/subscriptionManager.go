@@ -68,7 +68,7 @@ func (subscriptionManager *SubscriptionManager) Fire(params ...interface{}) {
 
 	subscriptionManager.subscriptionsMutex.Lock()
 	for _, subscription := range subscriptionManager.subscriptions {
-		subscription.reflectedFunction.Call(reflectedParams)
+		go subscription.reflectedFunction.Call(reflectedParams)
 	}
 	subscriptionManager.subscriptionsMutex.Unlock()
 }
