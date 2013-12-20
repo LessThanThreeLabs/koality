@@ -20,17 +20,17 @@ CREATE TABLE IF NOT EXISTS users (
 	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
 
 	UNIQUE (email, deleted),
-	CHECK (deleted == 0 OR deleted == id)
+	CHECK (deleted = 0 OR deleted = id)
 );
 
 CREATE TABLE IF NOT EXISTS ssh_keys (
 	id 					serial PRIMARY KEY,
 	user_id 			integer NOT NULL references users(id) ON DELETE CASCADE,
-	alias				varchar(256) NOT NULL,
+	name				varchar(256) NOT NULL,
 	public_key			varchar(1024) NOT NULL,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 
-	UNIQUE (user_id, alias),
+	UNIQUE (user_id, name),
 	UNIQUE (public_key)
 );
 
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS repositories (
 	UNIQUE (name, deleted),
 	UNIQUE (local_uri, deleted),
 	UNIQUE (remote_uri, deleted),
-	CHECK (deleted == 0 OR deleted == id)
+	CHECK (deleted = 0 OR deleted = id)
 );
 
 CREATE TABLE IF NOT EXISTS repository_github_metadatas (

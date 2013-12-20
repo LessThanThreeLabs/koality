@@ -31,5 +31,10 @@ func New(database *sql.DB) (*resources.UsersHandler, error) {
 		return nil, err
 	}
 
-	return &resources.UsersHandler{createHandler, readHandler, updateHandler, deleteHandler}, nil
+	subscriptionsHandler, err := NewSubscriptionHandler()
+	if err != nil {
+		return nil, err
+	}
+
+	return &resources.UsersHandler{createHandler, readHandler, updateHandler, deleteHandler, subscriptionsHandler}, nil
 }

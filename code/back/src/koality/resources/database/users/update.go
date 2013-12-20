@@ -59,8 +59,8 @@ func (updateHandler *UpdateHandler) SetAdmin(userId uint64, admin bool) error {
 	return updateHandler.updateUser(query, admin, userId)
 }
 
-func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey string) (uint64, error) {
-	if err := updateHandler.verifier.verifyKeyAlias(userId, alias); err != nil {
+func (updateHandler *UpdateHandler) AddKey(userId uint64, name, publicKey string) (uint64, error) {
+	if err := updateHandler.verifier.verifyKeyName(userId, name); err != nil {
 		return 0, err
 	} else if err := updateHandler.verifier.verifyPublicKey(publicKey); err != nil {
 		return 0, err
@@ -69,8 +69,8 @@ func (updateHandler *UpdateHandler) AddKey(userId uint64, alias, publicKey strin
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO ssh_keys (user_id, alias, public_key) VALUES ($1, $2, $3) RETURNING id"
-	err := updateHandler.database.QueryRow(query, userId, alias, publicKey).Scan(&id)
+	query := "INSERT INTO ssh_keys (user_id, name, public_key) VALUES ($1, $2, $3) RETURNING id"
+	err := updateHandler.database.QueryRow(query, userId, name, publicKey).Scan(&id)
 	return id, err
 }
 

@@ -257,6 +257,8 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 }
 
 func TestUsersUpdateAdmin(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
@@ -298,6 +300,8 @@ func TestUsersUpdateAdmin(test *testing.T) {
 }
 
 func TestUsersSshKeys(test *testing.T) {
+	PopulateDatabase()
+
 	connection, err := New()
 	if err != nil {
 		test.Fatal(err)
@@ -316,7 +320,7 @@ func TestUsersSshKeys(test *testing.T) {
 		"H7DJmzk69PzU3AdL7DbUZAvIay9cPFV5sQ3B2TpHSQlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PY" +
 		"p7+aBRpbPDJ4f3uiMzcmzSxAqcoz+PuCzljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9F" +
 		"Wvg6W5DcdPsUQGqeyJta7ppIQW88HOpNk5 jordannpotter@gmail.com"
-	keyId, err := connection.Users.Update.AddKey(firstUser.Id, "test-alias", testPublicKey1)
+	keyId, err := connection.Users.Update.AddKey(firstUser.Id, "test-name", testPublicKey1)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -327,12 +331,12 @@ func TestUsersSshKeys(test *testing.T) {
 		"H7DJmzk69DzU3AdL7DbUZAvIay9cPFV5sQ3B2TpHSQlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PY" +
 		"p7+aBRpbPDJ4f3uiMzAmzSxAqcoz+PuCzljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9F" +
 		"Wvg6W5DcdPsUQGqeyJta7ppIQW88HOpNk5 jordannpotter@gmail.com"
-	_, err = connection.Users.Update.AddKey(firstUser.Id, "test-alias", testPublicKey2)
+	_, err = connection.Users.Update.AddKey(firstUser.Id, "test-name", testPublicKey2)
 	if _, ok := err.(resources.KeyAlreadyExistsError); !ok {
 		test.Fatal("Expected KeyAlreadyExistsError when trying to add same key twice")
 	}
 
-	_, err = connection.Users.Update.AddKey(13370, "test-alias", testPublicKey2)
+	_, err = connection.Users.Update.AddKey(13370, "test-name", testPublicKey2)
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to add ssh key for nonexistent user")
 	}

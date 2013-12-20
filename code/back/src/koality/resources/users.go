@@ -18,16 +18,17 @@ type User struct {
 
 type SshKey struct {
 	Id        uint64
-	Alias     string
+	Name      string
 	PublicKey string
 	Created   *time.Time
 }
 
 type UsersHandler struct {
-	Create UsersCreateHandler
-	Read   UsersReadHandler
-	Update UsersUpdateHandler
-	Delete UsersDeleteHandler
+	Create       UsersCreateHandler
+	Read         UsersReadHandler
+	Update       UsersUpdateHandler
+	Delete       UsersDeleteHandler
+	Subscription UsersSubscriptionHandler
 }
 
 type UsersCreateHandler interface {
@@ -46,12 +47,39 @@ type UsersUpdateHandler interface {
 	SetPassword(userId uint64, passwordHash, passwordSalt []byte) error
 	SetGitHubOauth(userId uint64, gitHubOauth string) error
 	SetAdmin(userId uint64, admin bool) error
-	AddKey(userId uint64, alias, publicKey string) (uint64, error)
+	AddKey(userId uint64, name, publicKey string) (uint64, error)
 	RemoveKey(userId, keyId uint64) error
 }
 
 type UsersDeleteHandler interface {
 	Delete(userId uint64) error
+}
+
+type UserCreatedHandler func(userId uint64, email, firstName, lastName string, admin bool)
+type UserDeletedHandler func(userId uint64)
+type UserNameUpdateHandler func(userId uint64, firstName, lastName string)
+type UserAdminUpdateHandler func(userId uint64, admin bool)
+type UserSshKeyAddedHandler func(userId, sshKeyId uint64, name, publicKey string)
+type UserSshKeyRemovedHandler func(userId uint64, sshKeyId uint64)
+
+type UsersSubscriptionHandler interface {
+	SubscribeToUserCreatedEvents(updateHandler UserCreatedHandler) (SubscriptionId, error)
+	UnsubscribeFromUserCreatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToUserDeletedEvents(updateHandler UserDeletedHandler) (SubscriptionId, error)
+	UnsubscribeFromUserDeletedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToNameEvents(updateHandler UserNameUpdateHandler) (SubscriptionId, error)
+	UnsubscribeFromNameEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToAdminEvents(updateHandler UserAdminUpdateHandler) (SubscriptionId, error)
+	UnsubscribeFromAdminEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToSshKeyAddedEvents(updateHandler UserSshKeyAddedHandler) (SubscriptionId, error)
+	UnsubscribeFromSshKeyAddedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToSshKeyRemovedEvents(updateHandler UserSshKeyRemovedHandler) (SubscriptionId, error)
+	UnsubscribeFromSshKeyRemovedEvents(subscriptionId SubscriptionId) error
 }
 
 type UserAlreadyExistsError struct {

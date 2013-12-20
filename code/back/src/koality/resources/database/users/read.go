@@ -90,7 +90,7 @@ func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 }
 
 func (readHandler *ReadHandler) GetKeys(userId uint64) ([]resources.SshKey, error) {
-	query := "SELECT id, alias, public_key, created FROM ssh_keys WHERE user_id=$1"
+	query := "SELECT id, name, public_key, created FROM ssh_keys WHERE user_id=$1"
 	rows, err := readHandler.database.Query(query, userId)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (readHandler *ReadHandler) GetKeys(userId uint64) ([]resources.SshKey, erro
 	sshKeys := make([]resources.SshKey, 0, 5)
 	for rows.Next() {
 		sshKey := resources.SshKey{}
-		err = rows.Scan(&sshKey.Id, &sshKey.Alias, &sshKey.PublicKey, &sshKey.Created)
+		err = rows.Scan(&sshKey.Id, &sshKey.Name, &sshKey.PublicKey, &sshKey.Created)
 		if err != nil {
 			return nil, err
 		}

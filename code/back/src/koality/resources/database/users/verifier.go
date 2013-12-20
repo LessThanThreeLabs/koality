@@ -12,12 +12,12 @@ const (
 	maxEmailLength     = 256
 	maxFirstNameLength = 64
 	maxLastNameLength  = 64
-	maxKeyAliasLength  = 256
+	maxKeyNameLength   = 256
 	maxPublicKeyLength = 1024
 	emailRegex         = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 	firstNameRegex     = "^[-'a-zA-Z ]+$"
 	lastNameRegex      = "^[-'a-zA-Z ]+$"
-	keyAliasRegex      = "^[-'a-zA-Z ]+$"
+	keyNameRegex       = "^[-'a-zA-Z ]+$"
 	publicKeyRegex     = "^ssh-(?:dss|rsa) [A-Za-z0-9+/]+={0,2}"
 )
 
@@ -58,12 +58,12 @@ func (verifier *Verifier) verifyLastName(lastName string) error {
 	return nil
 }
 
-func (verifier *Verifier) verifyKeyAlias(userId uint64, alias string) error {
-	if len(alias) > maxKeyAliasLength {
-		return fmt.Errorf("Key alias cannot exceed %d characters long", maxKeyAliasLength)
-	} else if ok, err := regexp.MatchString(keyAliasRegex, alias); !ok || err != nil {
-		return errors.New("SSH Key alias must match regex: " + keyAliasRegex)
-	} else if err := verifier.verifyKeyDoesNotExistWithAlias(userId, alias); err != nil {
+func (verifier *Verifier) verifyKeyName(userId uint64, name string) error {
+	if len(name) > maxKeyNameLength {
+		return fmt.Errorf("SSH Key name cannot exceed %d characters long", maxKeyNameLength)
+	} else if ok, err := regexp.MatchString(keyNameRegex, name); !ok || err != nil {
+		return errors.New("SSH Key name must match regex: " + keyNameRegex)
+	} else if err := verifier.verifyKeyDoesNotExistWithName(userId, name); err != nil {
 		return err
 	}
 	return nil
@@ -103,13 +103,13 @@ func (verifier *Verifier) verifyUserDoesNotExistWithEmail(email string) error {
 	return nil
 }
 
-func (verifier *Verifier) verifyKeyDoesNotExistWithAlias(userId uint64, alias string) error {
-	query := "SELECT id FROM ssh_keys WHERE user_id=$1 and alias=$2"
-	err := verifier.database.QueryRow(query, userId, alias).Scan(new(uint64))
+func (verifier *Verifier) verifyKeyDoesNotExistWithName(userId uint64, name string) error {
+	query := "SELECT id FROM ssh_keys WHERE user_id=$1 and name=$2"
+	err := verifier.database.QueryRow(query, userId, name).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {
-		return resources.KeyAlreadyExistsError{"SSH Public key already exists with alias: " + alias}
+		return resources.KeyAlreadyExistsError{"SSH Public key already exists with name: " + name}
 	}
 	return nil
 }
