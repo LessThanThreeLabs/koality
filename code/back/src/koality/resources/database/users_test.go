@@ -54,9 +54,31 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	userCreatedEventId := uint64(0)
+	userCreatedHandler := func(userId uint64) {
+		userCreatedEventId = userId
+	}
+	_, err = connection.Users.Subscription.SubscribeToUserCreatedEvents(userCreatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	userDeletedEventId := uint64(0)
+	userDeletedHandler := func(userId uint64) {
+		userDeletedEventId = userId
+	}
+	_, err = connection.Users.Subscription.SubscribeToUserDeletedEvents(userDeletedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	userId, err := connection.Users.Create.Create("test-email@address.com", "First", "Last", []byte("password-hash"), []byte("password-salt"), false)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if userCreatedEventId != userId {
+		test.Fatal("Bad userId in creation event")
 	}
 
 	user, err := connection.Users.Read.Get(userId)
@@ -76,6 +98,10 @@ func TestCreateAndDeleteUser(test *testing.T) {
 	err = connection.Users.Delete.Delete(userId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if userDeletedEventId != userId {
+		test.Fatal("Bad userId in deletion event")
 	}
 
 	err = connection.Users.Delete.Delete(userId)
@@ -136,7 +162,33 @@ func TestUsersUpdateName(test *testing.T) {
 	}
 
 	updateAndCheckName := func(userId uint64, firstName, lastName string) {
+		userEventId := uint64(0)
+		userEventFirstName := ""
+		userEventLastName := ""
+		userNameUpdatedHandler := func(userId uint64, firstName, lastName string) {
+			userEventId = userId
+			userEventFirstName = firstName
+			userEventLastName = lastName
+		}
+		subscriptionId, err := connection.Users.Subscription.SubscribeToNameUpdatedEvents(userNameUpdatedHandler)
+		if err != nil {
+			test.Fatal(err)
+		}
+
 		err = connection.Users.Update.SetName(userId, firstName, lastName)
+		if err != nil {
+			test.Fatal(err)
+		}
+
+		if userEventId != userId {
+			test.Fatal("Bad userId in name updated event")
+		} else if userEventFirstName != firstName {
+			test.Fatal("Bad firstName in name updated event")
+		} else if userEventLastName != lastName {
+			test.Fatal("Bad lastName in name updated event")
+		}
+
+		err = connection.Users.Subscription.UnsubscribeFromNameUpdatedEvents(subscriptionId)
 		if err != nil {
 			test.Fatal(err)
 		}
@@ -265,7 +317,29 @@ func TestUsersUpdateAdmin(test *testing.T) {
 	}
 
 	updateAndCheckAdmin := func(userId uint64, admin bool) {
+		userEventId := uint64(0)
+		userEventAdmin := false
+		userAdminUpdatedHandler := func(userId uint64, admin bool) {
+			userEventId = userId
+			userEventAdmin = admin
+		}
+		subscriptionId, err := connection.Users.Subscription.SubscribeToAdminUpdatedEvents(userAdminUpdatedHandler)
+		if err != nil {
+			test.Fatal(err)
+		}
+
 		err = connection.Users.Update.SetAdmin(userId, admin)
+		if err != nil {
+			test.Fatal(err)
+		}
+
+		if userEventId != userId {
+			test.Fatal("Bad userId in admin updated event")
+		} else if userEventAdmin != admin {
+			test.Fatal("Bad admin in admin updated event")
+		}
+
+		err = connection.Users.Subscription.UnsubscribeFromAdminUpdatedEvents(subscriptionId)
 		if err != nil {
 			test.Fatal(err)
 		}
@@ -307,6 +381,28 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	userSshKeyAddedEventUserId := uint64(0)
+	userSshKeyAddedEventSshKeyId := uint64(0)
+	userSshKeyAddedHandler := func(userId, sshKeyId uint64) {
+		userSshKeyAddedEventUserId = userId
+		userSshKeyAddedEventSshKeyId = sshKeyId
+	}
+	_, err = connection.Users.Subscription.SubscribeToSshKeyAddedEvents(userSshKeyAddedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	userSshKeyRemovedEventUserId := uint64(0)
+	userSshKeyRemovedEventSshKeyId := uint64(0)
+	userSshKeyRemovedHandler := func(userId, sshKeyId uint64) {
+		userSshKeyRemovedEventUserId = userId
+		userSshKeyRemovedEventSshKeyId = sshKeyId
+	}
+	_, err = connection.Users.Subscription.SubscribeToSshKeyRemovedEvents(userSshKeyRemovedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	users, err := connection.Users.Read.GetAll()
 	if err != nil {
 		test.Fatal(err)
@@ -323,6 +419,12 @@ func TestUsersSshKeys(test *testing.T) {
 	keyId, err := connection.Users.Update.AddKey(firstUser.Id, "test-name", testPublicKey1)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if userSshKeyAddedEventUserId != firstUser.Id {
+		test.Fatal("Bad userId in ssh key added event")
+	} else if userSshKeyAddedEventSshKeyId != keyId {
+		test.Fatal("Bad sshKeyId in ssh key added event")
 	}
 
 	testPublicKey2 := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxvvK4FBlsDz6xbr5IME" +
@@ -344,6 +446,12 @@ func TestUsersSshKeys(test *testing.T) {
 	err = connection.Users.Update.RemoveKey(firstUser.Id, keyId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if userSshKeyRemovedEventUserId != firstUser.Id {
+		test.Fatal("Bad userId in ssh key removed event")
+	} else if userSshKeyRemovedEventSshKeyId != keyId {
+		test.Fatal("Bad sshKeyId in ssh key removed event")
 	}
 
 	err = connection.Users.Update.RemoveKey(firstUser.Id, keyId)

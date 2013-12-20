@@ -8,12 +8,13 @@ import (
 )
 
 type UpdateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalUsersSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.UsersUpdateHandler, error) {
-	return &UpdateHandler{database, verifier}, nil
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalUsersSubscriptionHandler) (resources.UsersUpdateHandler, error) {
+	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (updateHandler *UpdateHandler) updateUser(query string, params ...interface{}) error {
@@ -38,7 +39,13 @@ func (updateHandler *UpdateHandler) SetName(userId uint64, firstName, lastName s
 		return err
 	}
 	query := "UPDATE users SET first_name=$1, last_name=$2 WHERE id=$3"
-	return updateHandler.updateUser(query, firstName, lastName, userId)
+	err := updateHandler.updateUser(query, firstName, lastName, userId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireNameUpdatedEvent(userId, firstName, lastName)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) SetPassword(userId uint64, passwordHash, passwordSalt []byte) error {
@@ -56,7 +63,13 @@ func (updateHandler *UpdateHandler) SetGitHubOauth(userId uint64, gitHubOauth st
 
 func (updateHandler *UpdateHandler) SetAdmin(userId uint64, admin bool) error {
 	query := "UPDATE users SET is_admin=$1 WHERE id=$2"
-	return updateHandler.updateUser(query, admin, userId)
+	err := updateHandler.updateUser(query, admin, userId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireAdminUpdatedEvent(userId, admin)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) AddKey(userId uint64, name, publicKey string) (uint64, error) {
@@ -71,7 +84,12 @@ func (updateHandler *UpdateHandler) AddKey(userId uint64, name, publicKey string
 	id := uint64(0)
 	query := "INSERT INTO ssh_keys (user_id, name, public_key) VALUES ($1, $2, $3) RETURNING id"
 	err := updateHandler.database.QueryRow(query, userId, name, publicKey).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+
+	updateHandler.subscriptionHandler.FireSshKeyAddedEvent(userId, id)
+	return id, nil
 }
 
 func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
@@ -92,5 +110,7 @@ func (updateHandler *UpdateHandler) RemoveKey(userId, keyId uint64) error {
 		errorText := fmt.Sprintf("Unable to find key for user with id: %d ", keyId)
 		return resources.NoSuchKeyError{errorText}
 	}
+
+	updateHandler.subscriptionHandler.FireSshKeyRemovedEvent(userId, keyId)
 	return nil
 }

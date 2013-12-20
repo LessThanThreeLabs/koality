@@ -10,7 +10,7 @@ import (
 
 const (
 	numRepositories               = 2
-	numVerificationsPerRepository = 15
+	numVerificationsPerRepository = 10
 	parallelizationLevel          = 2
 )
 
@@ -230,7 +230,7 @@ func addConsoleText(connection *resources.Connection, stageRunId uint64) error {
 	}
 
 	text := books[rand.Intn(len(books))]
-	maxLines := rand.Intn(len(text)-200) + 200
+	maxLines := rand.Intn(len(text)-750) + 200
 	textToAdd := text[0:maxLines]
 	err := connection.Stages.Update.AddConsoleLines(stageRunId, textToTextMap(textToAdd))
 	return err

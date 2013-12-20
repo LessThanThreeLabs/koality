@@ -7,12 +7,13 @@ import (
 )
 
 type CreateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalUsersSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier) (resources.UsersCreateHandler, error) {
-	return &CreateHandler{database, verifier}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalUsersSubscriptionHandler) (resources.UsersCreateHandler, error) {
+	return &CreateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (createHandler *CreateHandler) Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (uint64, error) {
@@ -28,7 +29,12 @@ func (createHandler *CreateHandler) Create(email, firstName, lastName string, pa
 	query := "INSERT INTO users (email, first_name, last_name, password_hash, password_salt, is_admin)" +
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 	err = createHandler.database.QueryRow(query, email, firstName, lastName, passwordHashBase64, passwordSaltBase64, admin).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+
+	createHandler.subscriptionHandler.FireCreatedEvent(id)
+	return id, nil
 }
 
 func (createHandler *CreateHandler) getUserParamsError(email, firstName, lastName string) error {

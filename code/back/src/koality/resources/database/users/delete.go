@@ -7,12 +7,13 @@ import (
 )
 
 type DeleteHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalUsersSubscriptionHandler
 }
 
-func NewDeleteHandler(database *sql.DB, verifier *Verifier) (resources.UsersDeleteHandler, error) {
-	return &DeleteHandler{database, verifier}, nil
+func NewDeleteHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalUsersSubscriptionHandler) (resources.UsersDeleteHandler, error) {
+	return &DeleteHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (deleteHandler *DeleteHandler) Delete(userId uint64) error {
@@ -29,5 +30,7 @@ func (deleteHandler *DeleteHandler) Delete(userId uint64) error {
 		errorText := fmt.Sprintf("Unable to find user with id: %d ", userId)
 		return resources.NoSuchUserError{errorText}
 	}
+
+	deleteHandler.subscriptionHandler.FireDeletedEvent(userId)
 	return nil
 }
