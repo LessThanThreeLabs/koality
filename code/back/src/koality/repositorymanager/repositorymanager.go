@@ -12,7 +12,7 @@ type repoManager struct {
 type RepoManager interface {
 }
 
-func GetYamlFile(repo *resources.Repository, ref string) (yamlFile string, err error) {
+func GetYamlFile(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	vcsDispatcher := map[string]func(*resources.Repository, string) (string, error){
 		"git":      pullYamlFromGitRepo,
 		"hg":       pullYamlFromHgRepo,
@@ -20,25 +20,25 @@ func GetYamlFile(repo *resources.Repository, ref string) (yamlFile string, err e
 		"svn":      pullYamlFromSvnRepo,
 	}
 
-	return vcsDispatcher[repo.VcsType](repo, ref)
+	return vcsDispatcher[repository.VcsType](repository, ref)
 }
 
-func pullYamlFromGitRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
-	return repositorystore.GetYamlFile(repo, ref)
+func pullYamlFromGitRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
+	return repositorystore.GetYamlFile(repository, ref)
 }
 
-func pullYamlFromHgRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
-	return repositorystore.GetYamlFile(repo, ref)
+func pullYamlFromHgRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
+	return repositorystore.GetYamlFile(repository, ref)
 }
 
-func pullYamlFromPerforceRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
+func pullYamlFromPerforceRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	return
 }
-func pullYamlFromSvnRepo(repo *resources.Repository, ref string) (yamlFile string, err error) {
+func pullYamlFromSvnRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	return
 }
 
-func GetCommitAttributes(repo *resources.Repository, ref string) (message, username, email string, err error) {
+func GetCommitAttributes(repository *resources.Repository, ref string) (message, username, email string, err error) {
 	vcsDispatcher := map[string]func(*resources.Repository, string) (string, string, string, error){
 		"git":      getCommitAttributesFromGitRepo,
 		"hg":       getCommitAttributesFromHgRepo,
@@ -46,21 +46,21 @@ func GetCommitAttributes(repo *resources.Repository, ref string) (message, usern
 		"svn":      getCommitAttributesFromSvnRepo,
 	}
 
-	return vcsDispatcher[repo.VcsType](repo, ref)
+	return vcsDispatcher[repository.VcsType](repository, ref)
 }
 
-func getCommitAttributesFromGitRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {
-	return repositorystore.GetCommitAttributes(repo, ref)
+func getCommitAttributesFromGitRepo(repository *resources.Repository, ref string) (message, username, email string, err error) {
+	return repositorystore.GetCommitAttributes(repository, ref)
 }
 
-func getCommitAttributesFromHgRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {
-	return repositorystore.GetCommitAttributes(repo, ref)
+func getCommitAttributesFromHgRepo(repository *resources.Repository, ref string) (message, username, email string, err error) {
+	return repositorystore.GetCommitAttributes(repository, ref)
 }
 
-func getCommitAttributesFromPerforceRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {
+func getCommitAttributesFromPerforceRepo(repository *resources.Repository, ref string) (message, username, email string, err error) {
 	return
 }
 
-func getCommitAttributesFromSvnRepo(repo *resources.Repository, ref string) (message, username, email string, err error) {
+func getCommitAttributesFromSvnRepo(repository *resources.Repository, ref string) (message, username, email string, err error) {
 	return
 }

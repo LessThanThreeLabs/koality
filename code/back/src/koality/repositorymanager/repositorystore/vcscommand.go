@@ -12,6 +12,12 @@ type Repository struct {
 	path           string
 }
 
+type VcsCommand struct {
+	Command *exec.Cmd
+	Stdout  *bytes.Buffer
+	Stderr  *bytes.Buffer
+}
+
 func Open(vcsType string, path string) (vcsRepository *Repository, err error) {
 	// TODO(akostov) the keys for this map should be constants defined in resources.
 	vcsDispatcher := map[string]string{
@@ -29,26 +35,26 @@ func Open(vcsType string, path string) (vcsRepository *Repository, err error) {
 	return
 }
 
-func (repository *Repository) Command(Env []string, cmd string, args ...string) (command *exec.Cmd) {
+func (repository *Repository) Command(Env []string, cmd string, args ...string) *VcsCommand {
 	var arguments []string
 
 	arguments = append(arguments, cmd)
 	arguments = append(arguments, args...)
-	command = exec.Command(repository.vcsBaseCommand, arguments...)
+	command := exec.Command(repository.vcsBaseCommand, arguments...)
 
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	command.Stdout, command.Stderr = stdout, stderr
 
 	command.Dir = repository.path
 
-	return
+	return &VcsCommand{command, stdout, stderr}
 }
 
-func RunCommand(command *exec.Cmd) (success bool, err error) {
-	if err = command.Run(); err != nil {
+func RunCommand(command *VcsCommand) (success bool, err error) {
+	if err = command.Command.Run(); err != nil {
 		return
 	}
 
-	success = command.ProcessState.Success()
+	success = command.Command.ProcessState.Success()
 	return
 }

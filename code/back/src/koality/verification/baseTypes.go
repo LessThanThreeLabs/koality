@@ -9,11 +9,6 @@ type Command interface {
 	ShellCommand() shell.Command
 }
 
-type TestCommand interface {
-	Command
-	GetXunitCommand() shell.Command
-}
-
 type SectionResult struct {
 	Section       string
 	FailSectionOn string
