@@ -1,7 +1,6 @@
 package pathgenerator
 
 import (
-	"errors"
 	"fmt"
 	"koality/resources"
 	"path/filepath"
@@ -22,7 +21,7 @@ func GetRepoID(absPath string) (int64, error) {
 	repoId, err := strconv.ParseInt(list[len(list)-2], 10, 64)
 
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("Invalid repo path %s. This repository was not stored by the repostore.", absPath))
+		return 0, fmt.Errorf("Invalid repo path %s. This repository was not stored by the repostore.", absPath)
 	}
 
 	return repoId, nil

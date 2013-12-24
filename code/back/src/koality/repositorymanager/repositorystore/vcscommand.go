@@ -50,11 +50,10 @@ func (repository *Repository) Command(Env []string, cmd string, args ...string) 
 	return &VcsCommand{command, stdout, stderr}
 }
 
-func RunCommand(command *VcsCommand) (success bool, err error) {
-	if err = command.Command.Run(); err != nil {
-		return
+func RunCommand(vcsCommand *VcsCommand) (err error) {
+	err = vcsCommand.Command.Run()
+	if success := vcsCommand.Command.ProcessState.Success(); !success {
+		return fmt.Errorf("Attempting to run command %v resulted in a non-zero return state.", vcsCommand.Command)
 	}
-
-	success = command.Command.ProcessState.Success()
 	return
 }
