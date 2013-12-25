@@ -235,6 +235,12 @@ func TestUsersEc2Settings(test *testing.T) {
 	} else if pool.UserData != userData2 {
 		test.Fatal("pool.UserData mismatch")
 	}
+
+	err = connection.Pools.Update.SetEc2Settings(0, accessKey2, secretKey2, username2, baseAmiId2, securityGroupId2, vpcSubnetId2,
+		instanceType2, numReadyInstances2, numMaxInstances2, rootDriveSize2, userData2)
+	if _, ok := err.(resources.NoSuchPoolError); !ok {
+		test.Fatal("Expected NoSuchPoolError when trying to update nonexistent ec2 pool")
+	}
 }
 
 func TestDeleteEc2Pool(test *testing.T) {

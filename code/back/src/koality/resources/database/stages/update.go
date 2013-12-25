@@ -43,7 +43,7 @@ func (updateHandler *UpdateHandler) getTimes(stageRunId uint64) (createTime, sta
 	err = updateHandler.database.QueryRow(query, stageRunId).Scan(&createTime, &startTime, &endTime)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage run with id: %d", stageRunId)
-		err = resources.NoSuchVerificationError{errorText}
+		err = resources.NoSuchStageRunError{errorText}
 	}
 	return
 }

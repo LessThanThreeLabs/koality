@@ -24,7 +24,7 @@ func (updateHandler *UpdateHandler) updatePool(query string, params ...interface
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchUserError{"Unable to find pool"}
+		return resources.NoSuchPoolError{"Unable to find pool"}
 	}
 	return nil
 }

@@ -131,6 +131,11 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	err = connection.Stages.Update.SetReturnCode(0, 17)
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to set return code for nonexistent stage")
+	}
+
 	stageRun, err := connection.Stages.Read.GetRun(stageRun1Id)
 	if err != nil {
 		test.Fatal(err)
@@ -144,30 +149,75 @@ func TestCreateStage(test *testing.T) {
 	} else if len(stageRuns) != 2 {
 		test.Fatal("Unexpected number of stage runs")
 	}
+}
 
-	err = connection.Stages.Update.SetEndTime(stageRun1Id, time.Now())
+func TestStageTimes(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunId, err := connection.Stages.Create.CreateRun(stageId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Stages.Update.SetEndTime(stageRunId, time.Now())
 	if err == nil {
 		test.Fatal("Expected error when setting end time without start time")
 	}
 
-	err = connection.Stages.Update.SetStartTime(stageRun1Id, time.Unix(0, 0))
+	err = connection.Stages.Update.SetStartTime(stageRunId, time.Unix(0, 0))
 	if err == nil {
 		test.Fatal("Expected error when setting start time before create time")
 	}
 
-	err = connection.Stages.Update.SetStartTime(stageRun1Id, time.Now())
+	err = connection.Stages.Update.SetStartTime(stageRunId, time.Now())
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = connection.Stages.Update.SetEndTime(stageRun1Id, time.Unix(0, 0))
+	err = connection.Stages.Update.SetStartTime(0, time.Now())
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to set start time for nonexistent stage run")
+	}
+
+	err = connection.Stages.Update.SetEndTime(stageRunId, time.Unix(0, 0))
 	if err == nil {
 		test.Fatal("Expected error when setting end time before create time")
 	}
 
-	err = connection.Stages.Update.SetEndTime(stageRun1Id, time.Now())
+	err = connection.Stages.Update.SetEndTime(stageRunId, time.Now())
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	err = connection.Stages.Update.SetEndTime(0, time.Now())
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to set end time for nonexistent stage run")
 	}
 }
 
@@ -215,6 +265,13 @@ func TestConsoleLines(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	// The existence of a stage run id isn't checked
+	// when adding console lines for performance reasons
+	// err = connection.Stages.Update.AddConsoleLines(0, lines)
+	// if _, ok := err.(resources.NoSuchStageRunError); !ok {
+	// 	test.Fatal("Expected NoSuchStageRunError when trying to add console lines for nonexistent stage run")
+	// }
+
 	lines, err = connection.Stages.Read.GetAllConsoleLines(stageRunId)
 	if err != nil {
 		test.Fatal(err)
@@ -239,6 +296,11 @@ func TestConsoleLines(test *testing.T) {
 	err = connection.Stages.Delete.DeleteAllConsoleLines(stageRunId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	err = connection.Stages.Delete.DeleteAllConsoleLines(0)
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to delete console lines for nonexistent stage run")
 	}
 
 	lines, err = connection.Stages.Read.GetAllConsoleLines(stageRunId)
@@ -291,6 +353,11 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	err = connection.Stages.Update.AddXunitResults(0, xunitResults)
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to add xunit results for nonexistent stage run")
+	}
+
 	returnedXunitResults, err := connection.Stages.Read.GetAllXunitResults(stageRunId)
 	if err != nil {
 		test.Fatal(err)
@@ -301,6 +368,11 @@ func TestXunit(test *testing.T) {
 	err = connection.Stages.Delete.DeleteAllXunitResults(stageRunId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	err = connection.Stages.Delete.DeleteAllXunitResults(0)
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to delete xunit results for nonexistent stage run")
 	}
 
 	returnedXunitResults, err = connection.Stages.Read.GetAllXunitResults(stageRunId)

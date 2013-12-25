@@ -244,7 +244,7 @@ func TestUsersUpdateName(test *testing.T) {
 	updateAndCheckName(lastUser.Id, "First", "Last")
 	updateAndCheckName(lastUser.Id, "McJordan", "McPotter")
 
-	err = connection.Users.Update.SetName(13370, "First", "Last")
+	err = connection.Users.Update.SetName(0, "First", "Last")
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to set name for nonexistent user")
 	}
@@ -287,7 +287,7 @@ func TestUsersUpdatePassword(test *testing.T) {
 	updateAndCheckPassword(lastUser.Id, []byte("password-hash"), []byte("password-salt"))
 	updateAndCheckPassword(lastUser.Id, []byte("password-hash-2"), []byte("password-salt-2"))
 
-	err = connection.Users.Update.SetPassword(13370, []byte("password-hash"), []byte("password-salt"))
+	err = connection.Users.Update.SetPassword(0, []byte("password-hash"), []byte("password-salt"))
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to set password for nonexistent user")
 	}
@@ -330,7 +330,7 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 	updateAndCheckGitHubOauth(lastUser.Id, "github-oauth-2")
 	updateAndCheckGitHubOauth(lastUser.Id, "github-oauth")
 
-	err = connection.Users.Update.SetGitHubOauth(13370, "github-oauth")
+	err = connection.Users.Update.SetGitHubOauth(0, "github-oauth")
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to set github oauth for nonexistent user")
 	}
@@ -404,7 +404,7 @@ func TestUsersUpdateAdmin(test *testing.T) {
 	updateAndCheckAdmin(lastUser.Id, true)
 	updateAndCheckAdmin(lastUser.Id, false)
 
-	err = connection.Users.Update.SetAdmin(13370, true)
+	err = connection.Users.Update.SetAdmin(0, true)
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to set admin status for nonexistent user")
 	}
@@ -486,7 +486,7 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal("Expected KeyAlreadyExistsError when trying to add same key twice")
 	}
 
-	_, err = connection.Users.Update.AddKey(13370, "test-name", testPublicKey2)
+	_, err = connection.Users.Update.AddKey(0, "test-name", testPublicKey2)
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to add ssh key for nonexistent user")
 	}
@@ -514,7 +514,7 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal("Expected NoSuchKeyError when trying to delete same user twice")
 	}
 
-	err = connection.Users.Update.RemoveKey(13370, 17)
+	err = connection.Users.Update.RemoveKey(0, 17)
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to remove ssh key for nonexistent user")
 	}
