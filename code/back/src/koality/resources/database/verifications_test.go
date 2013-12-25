@@ -80,9 +80,7 @@ func TestCreateVerification(test *testing.T) {
 	verification, err := connection.Verifications.Read.Get(verificationId)
 	if err != nil {
 		test.Fatal(err)
-	}
-
-	if verification.Id != verificationId {
+	} else if verification.Id != verificationId {
 		test.Fatal("verification.Id mismatch")
 	}
 
@@ -90,10 +88,45 @@ func TestCreateVerification(test *testing.T) {
 	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
 		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add verification with same changeset params twice")
 	}
+}
+
+func TestVerificationStatuses(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	headSha := "a5a1134e5ca1050a2ea01b1b8a9f945bc758ec49"
+	baseSha := "5984b365f6a7287d8b3673b200525bb769a5a3de"
+	headMessage := "This is an awesome commit message"
+	headUsername := "Jordan Potter"
+	headEmail := "jpotter@koalitycode.com"
+	mergeTarget := "refs/heads/master"
+	emailToNotify := "koalas@koalitycode.com"
+
+	verificationId, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if err != nil {
+		test.Fatal(err)
+	}
 
 	err = connection.Verifications.Update.SetStatus(verificationId, "passed")
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	verification, err := connection.Verifications.Read.Get(verificationId)
+	if err != nil {
+		test.Fatal(err)
+	} else if verification.Status != "passed" {
+		test.Fatal("Failed to update verification status")
 	}
 
 	err = connection.Verifications.Update.SetStatus(verificationId, "bad-status")
@@ -106,9 +139,44 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	verification, err = connection.Verifications.Read.Get(verificationId)
+	if err != nil {
+		test.Fatal(err)
+	} else if verification.MergeStatus != "passed" {
+		test.Fatal("Failed to update verification merge status")
+	}
+
 	err = connection.Verifications.Update.SetMergeStatus(verificationId, "bad-merge-status")
 	if _, ok := err.(resources.InvalidVerificationMergeStatusError); !ok {
 		test.Fatal("Expected InvalidVerificationMergeStatusError when trying to set merge status")
+	}
+}
+
+func TestVerificationTimes(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	headSha := "a5a1134e5ca1050a2ea01b1b8a9f945bc758ec49"
+	baseSha := "5984b365f6a7287d8b3673b200525bb769a5a3de"
+	headMessage := "This is an awesome commit message"
+	headUsername := "Jordan Potter"
+	headEmail := "jpotter@koalitycode.com"
+	mergeTarget := "refs/heads/master"
+	emailToNotify := "koalas@koalitycode.com"
+
+	verificationId, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if err != nil {
+		test.Fatal(err)
 	}
 
 	err = connection.Verifications.Update.SetEndTime(verificationId, time.Now())
@@ -126,6 +194,11 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	err = connection.Verifications.Update.SetStartTime(0, time.Now())
+	if _, ok := err.(resources.NoSuchVerificationError); !ok {
+		test.Fatal("Expected NoSuchVerificationError when trying to set start time for nonexistent verification")
+	}
+
 	err = connection.Verifications.Update.SetEndTime(verificationId, time.Unix(0, 0))
 	if err == nil {
 		test.Fatal("Expected error when setting end time before create time")
@@ -134,6 +207,11 @@ func TestCreateVerification(test *testing.T) {
 	err = connection.Verifications.Update.SetEndTime(verificationId, time.Now())
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	err = connection.Verifications.Update.SetEndTime(0, time.Now())
+	if _, ok := err.(resources.NoSuchVerificationError); !ok {
+		test.Fatal("Expected NoSuchVerificationError when trying to set end time for nonexistent verification")
 	}
 }
 
