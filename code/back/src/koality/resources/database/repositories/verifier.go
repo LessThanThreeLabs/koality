@@ -17,6 +17,10 @@ const (
 	hgUriRegex                   = "[-_\\./a-zA-Z0-9]+@[-_\\./a-zA-Z0-9]+$"
 )
 
+var (
+	allowedStatuses []string = []string{"preparing", "installed"}
+)
+
 type Verifier struct {
 	database *sql.DB
 }
@@ -34,6 +38,15 @@ func (verifier *Verifier) verifyName(name string) error {
 		return err
 	}
 	return nil
+}
+
+func (verifier *Verifier) verifyStatus(status string) error {
+	for _, allowedVerificationStatus := range allowedStatuses {
+		if status == allowedVerificationStatus {
+			return nil
+		}
+	}
+	return resources.InvalidRepositoryStatusError{"Unexpected repository status: " + status}
 }
 
 func (verifier *Verifier) verifyVcsType(vcsType string) error {

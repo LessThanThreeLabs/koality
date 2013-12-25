@@ -5,16 +5,16 @@ import (
 )
 
 type Verification struct {
-	Id                 uint64
-	RepositoryId       uint64
-	MergeTarget        string
-	EmailToNotify      string
-	VerificationStatus string
-	MergeStatus        string
-	Created            *time.Time
-	Started            *time.Time
-	Ended              *time.Time
-	Changeset          Changeset
+	Id            uint64
+	RepositoryId  uint64
+	MergeTarget   string
+	EmailToNotify string
+	Status        string
+	MergeStatus   string
+	Created       *time.Time
+	Started       *time.Time
+	Ended         *time.Time
+	Changeset     Changeset
 }
 
 type Changeset struct {

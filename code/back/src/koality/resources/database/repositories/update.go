@@ -15,6 +15,26 @@ func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.Repositor
 	return &UpdateHandler{database, verifier}, nil
 }
 
+func (updateHandler *UpdateHandler) SetStatus(repositoryId uint64, status string) error {
+	if err := updateHandler.verifier.verifyStatus(status); err != nil {
+		return err
+	}
+
+	query := "UPDATE repositories SET status=$1 WHERE id=$2"
+	result, err := updateHandler.database.Exec(query, status, repositoryId)
+	if err != nil {
+		return err
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	} else if count != 1 {
+		return resources.NoSuchRepositoryError{"Unable to find repository"}
+	}
+	return nil
+}
+
 func (updateHandler *UpdateHandler) updateRepositoryHook(query string, params ...interface{}) error {
 	result, err := updateHandler.database.Exec(query, params...)
 	if err != nil {

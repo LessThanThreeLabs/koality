@@ -21,9 +21,9 @@ func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.Verificatio
 func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resources.Verification, error) {
 	verification := new(resources.Verification)
 
-	var mergeTarget, emailToNotify, verificationStatus, mergeStatus sql.NullString
+	var mergeTarget, emailToNotify, status, mergeStatus sql.NullString
 	err := scannable.Scan(&verification.Id, &verification.RepositoryId, &mergeStatus, &emailToNotify,
-		&verificationStatus, &mergeStatus, &verification.Created, &verification.Started, &verification.Ended,
+		&status, &mergeStatus, &verification.Created, &verification.Started, &verification.Ended,
 		&verification.Changeset.Id, &verification.Changeset.RepositoryId, &verification.Changeset.HeadSha,
 		&verification.Changeset.BaseSha, &verification.Changeset.HeadMessage, &verification.Changeset.HeadUsername,
 		&verification.Changeset.HeadEmail, &verification.Changeset.Created)
@@ -39,8 +39,8 @@ func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resource
 	if emailToNotify.Valid {
 		verification.EmailToNotify = emailToNotify.String
 	}
-	if verificationStatus.Valid {
-		verification.VerificationStatus = verificationStatus.String
+	if status.Valid {
+		verification.Status = status.String
 	}
 	if mergeStatus.Valid {
 		verification.MergeStatus = mergeStatus.String

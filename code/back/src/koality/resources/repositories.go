@@ -7,6 +7,7 @@ import (
 type Repository struct {
 	Id        uint64
 	Name      string
+	Status    string
 	VcsType   string
 	LocalUri  string
 	RemoteUri string
@@ -40,6 +41,7 @@ type RepositoriesReadHandler interface {
 }
 
 type RepositoriesUpdateHandler interface {
+	SetStatus(repositoryId uint64, status string) error
 	SetGitHubHook(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) error
 	ClearGitHubHook(repositoryId uint64) error
 }
@@ -61,6 +63,14 @@ type NoSuchRepositoryError struct {
 }
 
 func (err NoSuchRepositoryError) Error() string {
+	return err.Message
+}
+
+type InvalidRepositoryStatusError struct {
+	Message string
+}
+
+func (err InvalidRepositoryStatusError) Error() string {
 	return err.Message
 }
 

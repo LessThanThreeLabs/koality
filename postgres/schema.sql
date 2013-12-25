@@ -37,10 +37,11 @@ CREATE TABLE IF NOT EXISTS ssh_keys (
 CREATE TABLE IF NOT EXISTS repositories (
 	id 					serial PRIMARY KEY,
 	name 				varchar(256) NOT NULL,
+	status 				varchar(32),
 	vcs_type			varchar(32) NOT NULL,
 	local_uri			varchar(1024) NOT NULL,
 	remote_uri			varchar(1024) NOT NULL,
-	created 			timestamp with time zone DEFAULT current_timestamp,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
 
 	UNIQUE (name, deleted),

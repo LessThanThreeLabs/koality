@@ -144,3 +144,39 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("Expected NoSuchRepositoryError when trying to delete same repository twice")
 	}
 }
+
+func TestRepositoryStatus(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositoryId, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@local.uri.com/name", "hg@remote.uri.com/name")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repository, err := connection.Repositories.Read.Get(repositoryId)
+	if err != nil {
+		test.Fatal(err)
+	} else if repository.Status != "" {
+		test.Fatal("Expected initial repository status to be empty")
+	}
+
+	err = connection.Repositories.Update.SetStatus(repositoryId, "preparing")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Repositories.Update.SetStatus(repositoryId, "installed")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	err = connection.Repositories.Update.SetStatus(repositoryId, "bad-status")
+	if _, ok := err.(resources.InvalidRepositoryStatusError); !ok {
+		test.Fatal("Expected InvalidRepositoryStatusError when trying to set to invalid repository status")
+	}
+}
