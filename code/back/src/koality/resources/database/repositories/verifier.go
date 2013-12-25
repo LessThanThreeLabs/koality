@@ -18,7 +18,8 @@ const (
 )
 
 var (
-	allowedStatuses []string = []string{"preparing", "installed"}
+	allowedStatuses  []string = []string{"preparing", "installed"}
+	allowedHookTypes []string = []string{"push", "pull_request"}
 )
 
 type Verifier struct {
@@ -96,6 +97,24 @@ func (verifier *Verifier) verifyRemoteHgUri(remoteUri string) error {
 		return errors.New("Hg local uri must match regex: " + hgUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
 		return err
+	}
+	return nil
+}
+
+func (verifier *Verifier) verifyHookTypes(hookTypes []string) error {
+	hookTypeAllowed := func(hookType string) bool {
+		for _, allowedHookType := range allowedHookTypes {
+			if hookType == allowedHookType {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, hookType := range hookTypes {
+		if !hookTypeAllowed(hookType) {
+			return resources.InvalidRepositoryHookTypeError{"Unexpected hook type: " + hookType}
+		}
 	}
 	return nil
 }

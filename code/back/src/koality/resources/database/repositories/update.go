@@ -51,6 +51,10 @@ func (updateHandler *UpdateHandler) updateRepositoryHook(query string, params ..
 }
 
 func (updateHandler *UpdateHandler) SetGitHubHook(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) error {
+	if err := updateHandler.verifier.verifyHookTypes(hookTypes); err != nil {
+		return err
+	}
+
 	hookTypesString := strings.Join(hookTypes, ",")
 	query := "UPDATE repository_github_metadatas SET hook_id=$1, hook_secret=$2, hook_types=$3 WHERE repository_id=$4"
 	return updateHandler.updateRepositoryHook(query, hookId, hookSecret, hookTypesString, repositoryId)

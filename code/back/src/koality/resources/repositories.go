@@ -81,3 +81,11 @@ type NoSuchRepositoryHookError struct {
 func (err NoSuchRepositoryHookError) Error() string {
 	return err.Message
 }
+
+type InvalidRepositoryHookTypeError struct {
+	Message string
+}
+
+func (err InvalidRepositoryHookTypeError) Error() string {
+	return err.Message
+}

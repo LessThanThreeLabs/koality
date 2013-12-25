@@ -179,4 +179,73 @@ func TestRepositoryStatus(test *testing.T) {
 	if _, ok := err.(resources.InvalidRepositoryStatusError); !ok {
 		test.Fatal("Expected InvalidRepositoryStatusError when trying to set to invalid repository status")
 	}
+
+	err = connection.Repositories.Update.SetStatus(0, "installed")
+	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
+		test.Fatal("Expected NoSuchRepositoryError when trying to set to status for nonexistent repository")
+	}
+}
+
+func TestRepositoryHook(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositoryId, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git@local.uri.com:name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	hookId := int64(17)
+	hookSecret := "hook-secret"
+	hookTypes := []string{"push", "pull_request"}
+
+	err = connection.Repositories.Update.SetGitHubHook(repositoryId, hookId, hookSecret, hookTypes)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repository, err := connection.Repositories.Read.Get(repositoryId)
+	if err != nil {
+		test.Fatal(err)
+	} else if repository.GitHub.HookId != hookId {
+		test.Fatal("Hook id not updated")
+	} else if repository.GitHub.HookSecret != hookSecret {
+		test.Fatal("Hook secret not updated")
+	} else if len(repository.GitHub.HookTypes) != len(hookTypes) {
+		test.Fatal("Hook types not updated")
+	} else if repository.GitHub.HookTypes[0] != hookTypes[0] {
+		test.Fatal("Hook types not updated")
+	} else if repository.GitHub.HookTypes[1] != hookTypes[1] {
+		test.Fatal("Hook types not updated")
+	}
+
+	err = connection.Repositories.Update.ClearGitHubHook(repositoryId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repository, err = connection.Repositories.Read.Get(repositoryId)
+	if err != nil {
+		test.Fatal(err)
+	} else if repository.GitHub.HookId != 0 {
+		test.Fatal("Hook id not updated")
+	} else if repository.GitHub.HookSecret != "" {
+		test.Fatal("Hook secret not updated")
+	} else if len(repository.GitHub.HookTypes) != 0 {
+		test.Fatal("Hook types not updated")
+	}
+
+	err = connection.Repositories.Update.SetGitHubHook(0, hookId, hookSecret, hookTypes)
+	if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
+		test.Fatal("Expected NoSuchRepositoryHookError when trying to set hook for nonexistent repository")
+	}
+
+	err = connection.Repositories.Update.ClearGitHubHook(0)
+	if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
+		test.Fatal("Expected NoSuchRepositoryHookError when trying to clear hook for nonexistent repository")
+	}
 }
