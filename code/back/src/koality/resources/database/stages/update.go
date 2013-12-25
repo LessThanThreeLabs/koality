@@ -107,6 +107,16 @@ func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleLi
 	return err
 }
 
+func (updateHandler *UpdateHandler) RemoveAllConsoleLines(stageRunId uint64) error {
+	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return err
+	}
+
+	query := "DELETE FROM console_lines WHERE run_id=$1"
+	_, err := updateHandler.database.Exec(query, stageRunId)
+	return err
+}
+
 func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResults []resources.XunitResult) error {
 	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return err
@@ -138,6 +148,16 @@ func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResu
 
 	query := "INSERT INTO xunit_results (run_id, name, path, sysout, syserr, failure_text, error_text, started, seconds) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, xunitResultsToArray()...)
+	return err
+}
+
+func (updateHandler *UpdateHandler) RemoveAllXunitResults(stageRunId uint64) error {
+	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
+		return err
+	}
+
+	query := "DELETE FROM xunit_results WHERE run_id=$1"
+	_, err := updateHandler.database.Exec(query, stageRunId)
 	return err
 }
 

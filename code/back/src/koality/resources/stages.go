@@ -41,7 +41,6 @@ type StagesHandler struct {
 	Create StagesCreateHandler
 	Read   StagesReadHandler
 	Update StagesUpdateHandler
-	Delete StagesDeleteHandler
 }
 
 type StagesCreateHandler interface {
@@ -67,13 +66,10 @@ type StagesUpdateHandler interface {
 	SetStartTime(stageRunId uint64, startTime time.Time) error
 	SetEndTime(stageRunId uint64, endTime time.Time) error
 	AddConsoleLines(stageRunId uint64, consoleLines map[uint64]string) error
+	RemoveAllConsoleLines(stageRunId uint64) error
 	AddXunitResults(stageRunId uint64, xunitResults []XunitResult) error
+	RemoveAllXunitResults(stageRunId uint64) error
 	AddExports(stageRunId uint64, exports []Export) error
-}
-
-type StagesDeleteHandler interface {
-	DeleteAllConsoleLines(stageRunId uint64) error
-	DeleteAllXunitResults(stageRunId uint64) error
 }
 
 type NoSuchStageError struct {

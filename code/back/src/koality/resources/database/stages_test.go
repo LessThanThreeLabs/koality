@@ -293,12 +293,12 @@ func TestConsoleLines(test *testing.T) {
 		test.Fatal("Expected one line of console in result")
 	}
 
-	err = connection.Stages.Delete.DeleteAllConsoleLines(stageRunId)
+	err = connection.Stages.Update.RemoveAllConsoleLines(stageRunId)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = connection.Stages.Delete.DeleteAllConsoleLines(0)
+	err = connection.Stages.Update.RemoveAllConsoleLines(0)
 	if _, ok := err.(resources.NoSuchStageRunError); !ok {
 		test.Fatal("Expected NoSuchStageRunError when trying to delete console lines for nonexistent stage run")
 	}
@@ -365,12 +365,12 @@ func TestXunit(test *testing.T) {
 		test.Fatal("Expected two xunit results")
 	}
 
-	err = connection.Stages.Delete.DeleteAllXunitResults(stageRunId)
+	err = connection.Stages.Update.RemoveAllXunitResults(stageRunId)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = connection.Stages.Delete.DeleteAllXunitResults(0)
+	err = connection.Stages.Update.RemoveAllXunitResults(0)
 	if _, ok := err.(resources.NoSuchStageRunError); !ok {
 		test.Fatal("Expected NoSuchStageRunError when trying to delete xunit results for nonexistent stage run")
 	}
