@@ -17,11 +17,11 @@ func NewInternalSubscriptionHandler() (resources.InternalUsersSubscriptionHandle
 	return &SubscriptionHandler{}, nil
 }
 
-func (subscriptionHandler *SubscriptionHandler) SubscribeToUserCreatedEvents(updateHandler resources.UserCreatedHandler) (resources.SubscriptionId, error) {
+func (subscriptionHandler *SubscriptionHandler) SubscribeToCreatedEvents(updateHandler resources.UserCreatedHandler) (resources.SubscriptionId, error) {
 	return subscriptionHandler.createdSubscriptionManager.Add(updateHandler)
 }
 
-func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromUserCreatedEvents(subscriptionId resources.SubscriptionId) error {
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCreatedEvents(subscriptionId resources.SubscriptionId) error {
 	return subscriptionHandler.createdSubscriptionManager.Remove(subscriptionId)
 }
 
@@ -29,11 +29,11 @@ func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(userId uint64) 
 	subscriptionHandler.createdSubscriptionManager.Fire(userId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) SubscribeToUserDeletedEvents(updateHandler resources.UserDeletedHandler) (resources.SubscriptionId, error) {
+func (subscriptionHandler *SubscriptionHandler) SubscribeToDeletedEvents(updateHandler resources.UserDeletedHandler) (resources.SubscriptionId, error) {
 	return subscriptionHandler.deletedSubscriptionManager.Add(updateHandler)
 }
 
-func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromUserDeletedEvents(subscriptionId resources.SubscriptionId) error {
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromDeletedEvents(subscriptionId resources.SubscriptionId) error {
 	return subscriptionHandler.deletedSubscriptionManager.Remove(subscriptionId)
 }
 

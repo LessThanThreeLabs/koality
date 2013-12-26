@@ -61,7 +61,7 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		userCreatedEventId = userId
 		userCreatedEventReceived <- true
 	}
-	_, err = connection.Users.Subscription.SubscribeToUserCreatedEvents(userCreatedHandler)
+	_, err = connection.Users.Subscription.SubscribeToCreatedEvents(userCreatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		userDeletedEventId = userId
 		userDeletedEventReceived <- true
 	}
-	_, err = connection.Users.Subscription.SubscribeToUserDeletedEvents(userDeletedHandler)
+	_, err = connection.Users.Subscription.SubscribeToDeletedEvents(userDeletedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}

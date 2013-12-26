@@ -63,11 +63,11 @@ type UserSshKeyAddedHandler func(userId, sshKeyId uint64)
 type UserSshKeyRemovedHandler func(userId uint64, sshKeyId uint64)
 
 type UsersSubscriptionHandler interface {
-	SubscribeToUserCreatedEvents(updateHandler UserCreatedHandler) (SubscriptionId, error)
-	UnsubscribeFromUserCreatedEvents(subscriptionId SubscriptionId) error
+	SubscribeToCreatedEvents(updateHandler UserCreatedHandler) (SubscriptionId, error)
+	UnsubscribeFromCreatedEvents(subscriptionId SubscriptionId) error
 
-	SubscribeToUserDeletedEvents(updateHandler UserDeletedHandler) (SubscriptionId, error)
-	UnsubscribeFromUserDeletedEvents(subscriptionId SubscriptionId) error
+	SubscribeToDeletedEvents(updateHandler UserDeletedHandler) (SubscriptionId, error)
+	UnsubscribeFromDeletedEvents(subscriptionId SubscriptionId) error
 
 	SubscribeToNameUpdatedEvents(updateHandler UserNameUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromNameUpdatedEvents(subscriptionId SubscriptionId) error

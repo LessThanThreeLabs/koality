@@ -7,12 +7,13 @@ import (
 )
 
 type UpdateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.RepositoriesUpdateHandler, error) {
-	return &UpdateHandler{database, verifier}, nil
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesUpdateHandler, error) {
+	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (updateHandler *UpdateHandler) SetStatus(repositoryId uint64, status string) error {

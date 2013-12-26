@@ -7,12 +7,13 @@ import (
 )
 
 type DeleteHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler
 }
 
-func NewDeleteHandler(database *sql.DB, verifier *Verifier) (resources.RepositoriesDeleteHandler, error) {
-	return &DeleteHandler{database, verifier}, nil
+func NewDeleteHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesDeleteHandler, error) {
+	return &DeleteHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (deleteHandler *DeleteHandler) Delete(repositoryId uint64) error {

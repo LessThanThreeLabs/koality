@@ -6,12 +6,13 @@ import (
 )
 
 type CreateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier) (resources.RepositoriesCreateHandler, error) {
-	return &CreateHandler{database, verifier}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesCreateHandler, error) {
+	return &CreateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri string) (uint64, error) {

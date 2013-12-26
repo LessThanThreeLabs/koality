@@ -24,10 +24,11 @@ type GitHubMetadata struct {
 }
 
 type RepositoriesHandler struct {
-	Create RepositoriesCreateHandler
-	Read   RepositoriesReadHandler
-	Update RepositoriesUpdateHandler
-	Delete RepositoriesDeleteHandler
+	Create       RepositoriesCreateHandler
+	Read         RepositoriesReadHandler
+	Update       RepositoriesUpdateHandler
+	Delete       RepositoriesDeleteHandler
+	Subscription RepositoriesSubscriptionHandler
 }
 
 type RepositoriesCreateHandler interface {
@@ -48,6 +49,33 @@ type RepositoriesUpdateHandler interface {
 
 type RepositoriesDeleteHandler interface {
 	Delete(repositoryId uint64) error
+}
+
+type RepositoryCreatedHandler func(repositoryId uint64)
+type RepositoryDeletedHandler func(repositoryId uint64)
+type RepositoryStatusUpdatedHandler func(repositoryId uint64, status string)
+type RepositoryGitHubHookUpdatedHandler func(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string)
+
+type RepositoriesSubscriptionHandler interface {
+	SubscribeToCreatedEvents(updateHandler RepositoryCreatedHandler) (SubscriptionId, error)
+	UnsubscribeFromCreatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToDeletedEvents(updateHandler RepositoryDeletedHandler) (SubscriptionId, error)
+	UnsubscribeFromDeletedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToStatusUpdatedEvents(updateHandler RepositoryStatusUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromStatusUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToGitHubHookUpdatedEvents(updateHandler RepositoryGitHubHookUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromGitHubHookUpdatedEvents(subscriptionId SubscriptionId) error
+}
+
+type InternalRepositoriesSubscriptionHandler interface {
+	FireCreatedEvent(repositoryId uint64)
+	FireDeletedEvent(repositoryId uint64)
+	FireStatusUpdatedEvent(repositoryId uint64, status string)
+	FireGitHubHookUpdatedEvent(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string)
+	RepositoriesSubscriptionHandler
 }
 
 type RepositoryAlreadyExistsError struct {

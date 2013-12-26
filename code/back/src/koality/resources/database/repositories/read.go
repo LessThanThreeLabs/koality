@@ -11,12 +11,13 @@ type Scannable interface {
 }
 
 type ReadHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler
 }
 
-func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.RepositoriesReadHandler, error) {
-	return &ReadHandler{database, verifier}, nil
+func NewReadHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesReadHandler, error) {
+	return &ReadHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.Repository, error) {
