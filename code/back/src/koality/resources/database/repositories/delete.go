@@ -30,5 +30,7 @@ func (deleteHandler *DeleteHandler) Delete(repositoryId uint64) error {
 		errorText := fmt.Sprintf("Unable to find repository with id: %d ", repositoryId)
 		return resources.NoSuchRepositoryError{errorText}
 	}
+
+	deleteHandler.subscriptionHandler.FireDeletedEvent(repositoryId)
 	return nil
 }

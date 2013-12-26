@@ -33,6 +33,8 @@ func (updateHandler *UpdateHandler) SetStatus(repositoryId uint64, status string
 	} else if count != 1 {
 		return resources.NoSuchRepositoryError{"Unable to find repository"}
 	}
+
+	updateHandler.subscriptionHandler.FireStatusUpdatedEvent(repositoryId, status)
 	return nil
 }
 
@@ -58,10 +60,22 @@ func (updateHandler *UpdateHandler) SetGitHubHook(repositoryId uint64, hookId in
 
 	hookTypesString := strings.Join(hookTypes, ",")
 	query := "UPDATE repository_github_metadatas SET hook_id=$1, hook_secret=$2, hook_types=$3 WHERE repository_id=$4"
-	return updateHandler.updateRepositoryHook(query, hookId, hookSecret, hookTypesString, repositoryId)
+	err := updateHandler.updateRepositoryHook(query, hookId, hookSecret, hookTypesString, repositoryId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireGitHubHookUpdatedEvent(repositoryId, hookId, hookSecret, hookTypes)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) ClearGitHubHook(repositoryId uint64) error {
 	query := "UPDATE repository_github_metadatas SET hook_id=DEFAULT, hook_secret=DEFAULT, hook_types=DEFAULT WHERE repository_id=$1"
-	return updateHandler.updateRepositoryHook(query, repositoryId)
+	err := updateHandler.updateRepositoryHook(query, repositoryId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireGitHubHookUpdatedEvent(repositoryId, 0, "", []string{})
+	return nil
 }

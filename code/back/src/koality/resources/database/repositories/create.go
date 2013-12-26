@@ -24,7 +24,12 @@ func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri st
 	id := uint64(0)
 	query := "INSERT INTO repositories (name, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4) RETURNING id"
 	err = createHandler.database.QueryRow(query, name, vcsType, localUri, remoteUri).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+
+	createHandler.subscriptionHandler.FireCreatedEvent(id)
+	return id, nil
 }
 
 func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (uint64, error) {
@@ -54,6 +59,8 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, re
 	}
 
 	transaction.Commit()
+
+	createHandler.subscriptionHandler.FireCreatedEvent(id)
 	return id, nil
 }
 
