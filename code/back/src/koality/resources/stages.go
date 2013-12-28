@@ -72,6 +72,63 @@ type StagesUpdateHandler interface {
 	AddExports(stageRunId uint64, exports []Export) error
 }
 
+type StageCreatedHandler func(stageId uint64)
+type StageRunCreatedHandler func(stageRunId uint64)
+type StageReturnCodeUpdatedHandler func(stageRunId uint64, returnCode int)
+type StageStartTimeUpdatedHandler func(stageRunId uint64, startTime time.Time)
+type StageEndTimeUpdatedHandler func(stageRunId uint64, endTime time.Time)
+type StageConsoleLinesAddedHandler func(stageRunId uint64)
+type StageAllConsoleLinesRemovedHandler func(stageRunId uint64)
+type StageXunitResultsAddedHandler func(stageRunId uint64)
+type StageAllXunitResultsRemovedHandler func(stageRunId uint64)
+type StageExportsAddedHandler func(stageRunId uint64)
+
+type StagesSubscriptionHandler interface {
+	SubscribeToCreatedEvents(updateHandler StageCreatedHandler) (SubscriptionId, error)
+	UnsubscribeFromCreatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToRunCreatedEvents(updateHandler StageRunCreatedHandler) (SubscriptionId, error)
+	UnsubscribeFromRunCreatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToReturnCodeUpdatedEvents(updateHandler StageReturnCodeUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromReturnCodeUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToStartTimeUpdatedEvents(updateHandler StageStartTimeUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromStartTimeUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToEndTimeUpdatedEvents(updateHandler StageEndTimeUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromEndTimeUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToConsoleLinesAddedEvents(updateHandler StageConsoleLinesAddedHandler) (SubscriptionId, error)
+	UnsubscribeFromConsoleLinesAddedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToAllConsoleLinesRemovedEvents(updateHandler StageAllConsoleLinesRemovedHandler) (SubscriptionId, error)
+	UnsubscribeFromAllConsoleLinesRemovedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToXunitResultsAddedEvents(updateHandler StageXunitResultsAddedHandler) (SubscriptionId, error)
+	UnsubscribeFromXunitResultsAddedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToAllXunitResultsRemovedEvents(updateHandler StageAllXunitResultsRemovedHandler) (SubscriptionId, error)
+	UnsubscribeFromAllXunitResultsRemovedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToExportsAddedEvents(updateHandler StageExportsAddedHandler) (SubscriptionId, error)
+	UnsubscribeFromExportsAddedEvents(subscriptionId SubscriptionId) error
+}
+
+type InternalStagesSubscriptionHandler interface {
+	FireCreatedEvent(stageId uint64)
+	FireRunCreatedEvent(stageRunId uint64)
+	FireReturnCodeUpdatedEvent(stageRunId uint64, returnCode int)
+	FireStartTimeUpdatedEvent(stageRunId uint64, startTime time.Time)
+	FireEndTimeUpdatedEvent(stageRunId uint64, endTime time.Time)
+	FireConsoleLinesAddedEvent(stageRunId uint64, consoleLines map[uint64]string)
+	FireAllConsoleLinesRemovedEvent(stageRunId uint64)
+	FireXunitResultsAddedEvent(stageRunId uint64, xunitResuts []XunitResult)
+	FireAllXunitResultsRemovedEvent(stageRunId uint64)
+	FireExportsAddedEvent(stageRunId uint64, exports []Export)
+	StagesSubscriptionHandler
+}
+
 type NoSuchStageError struct {
 	Message string
 }
