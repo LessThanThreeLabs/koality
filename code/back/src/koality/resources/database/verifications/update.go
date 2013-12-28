@@ -9,12 +9,13 @@ import (
 )
 
 type UpdateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalVerificationsSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.VerificationsUpdateHandler, error) {
-	return &UpdateHandler{database, verifier}, nil
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalVerificationsSubscriptionHandler) (resources.VerificationsUpdateHandler, error) {
+	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (updateHandler *UpdateHandler) updateVerification(query string, params ...interface{}) error {
@@ -36,16 +37,30 @@ func (updateHandler *UpdateHandler) SetStatus(verificationId uint64, status stri
 	if err := updateHandler.verifier.verifyStatus(status); err != nil {
 		return err
 	}
+
 	query := "UPDATE verifications SET status=$1 WHERE id=$2"
-	return updateHandler.updateVerification(query, status, verificationId)
+	err := updateHandler.updateVerification(query, status, verificationId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireStatusUpdatedEvent(verificationId, status)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) SetMergeStatus(verificationId uint64, mergeStatus string) error {
 	if err := updateHandler.verifier.verifyMergeStatus(mergeStatus); err != nil {
 		return err
 	}
+
 	query := "UPDATE verifications SET merge_status=$1 WHERE id=$2"
-	return updateHandler.updateVerification(query, mergeStatus, verificationId)
+	err := updateHandler.updateVerification(query, mergeStatus, verificationId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireMergeStatusUpdatedEvent(verificationId, mergeStatus)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) getTimes(verificationId uint64) (createTime, startTime, endTime *time.Time, err error) {
@@ -69,8 +84,15 @@ func (updateHandler *UpdateHandler) SetStartTime(verificationId uint64, startTim
 	if err := updateHandler.verifier.verifyStartTime(*createTime, startTime); err != nil {
 		return err
 	}
+
 	query := "UPDATE verifications SET started=$1 WHERE id=$2"
-	return updateHandler.updateVerification(query, startTime, verificationId)
+	err = updateHandler.updateVerification(query, startTime, verificationId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireStartTimeUpdatedEvent(verificationId, startTime)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) SetEndTime(verificationId uint64, endTime time.Time) error {
@@ -86,6 +108,13 @@ func (updateHandler *UpdateHandler) SetEndTime(verificationId uint64, endTime ti
 	if err := updateHandler.verifier.verifyEndTime(*createTime, *startTime, endTime); err != nil {
 		return err
 	}
+
 	query := "UPDATE verifications SET ended=$1 WHERE id=$2"
-	return updateHandler.updateVerification(query, endTime, verificationId)
+	err = updateHandler.updateVerification(query, endTime, verificationId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireEndTimeUpdatedEvent(verificationId, endTime)
+	return nil
 }

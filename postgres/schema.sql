@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS ssh_keys (
 CREATE TABLE IF NOT EXISTS repositories (
 	id 					serial PRIMARY KEY,
 	name 				varchar(256) NOT NULL,
-	status 				varchar(32),
+	status 				varchar(32) NOT NULL,
 	vcs_type			varchar(32) NOT NULL,
 	local_uri			varchar(1024) NOT NULL,
 	remote_uri			varchar(1024) NOT NULL,

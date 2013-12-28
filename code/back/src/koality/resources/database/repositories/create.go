@@ -5,6 +5,10 @@ import (
 	"koality/resources"
 )
 
+const (
+	initialRepositoryStatus = "declared"
+)
+
 type CreateHandler struct {
 	database            *sql.DB
 	verifier            *Verifier
@@ -22,8 +26,8 @@ func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri st
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO repositories (name, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4) RETURNING id"
-	err = createHandler.database.QueryRow(query, name, vcsType, localUri, remoteUri).Scan(&id)
+	query := "INSERT INTO repositories (name, status, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	err = createHandler.database.QueryRow(query, name, initialRepositoryStatus, vcsType, localUri, remoteUri).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -44,8 +48,8 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, re
 	}
 
 	id := uint64(0)
-	repositoryQuery := "INSERT INTO repositories (name, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4) RETURNING id"
-	err = transaction.QueryRow(repositoryQuery, name, vcsType, localUri, remoteUri).Scan(&id)
+	repositoryQuery := "INSERT INTO repositories (name, status, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	err = transaction.QueryRow(repositoryQuery, name, initialRepositoryStatus, vcsType, localUri, remoteUri).Scan(&id)
 	if err != nil {
 		transaction.Rollback()
 		return 0, err

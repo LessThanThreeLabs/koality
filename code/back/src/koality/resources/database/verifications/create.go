@@ -6,16 +6,17 @@ import (
 )
 
 const (
-	initialVerificationStatus = "received"
+	initialVerificationStatus = "declared"
 )
 
 type CreateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalVerificationsSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier) (resources.VerificationsCreateHandler, error) {
-	return &CreateHandler{database, verifier}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalVerificationsSubscriptionHandler) (resources.VerificationsCreateHandler, error) {
+	return &CreateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (uint64, error) {
@@ -51,6 +52,8 @@ func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha
 	}
 
 	transaction.Commit()
+
+	createHandler.subscriptionHandler.FireCreatedEvent(verificationId)
 	return verificationId, nil
 }
 
@@ -64,10 +67,15 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetI
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO verifications (repository_id, changeset_id, merge_target, owner_email, status)" +
+	query := "INSERT INTO verifications (repository_id, changeset_id, merge_target, email_to_notify, status)" +
 		" VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	err := createHandler.database.QueryRow(query, repositoryId, changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+
+	createHandler.subscriptionHandler.FireCreatedEvent(id)
+	return id, nil
 }
 
 func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail string) error {

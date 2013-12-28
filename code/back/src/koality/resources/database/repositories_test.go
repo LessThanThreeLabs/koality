@@ -263,8 +263,8 @@ func TestRepositoryStatus(test *testing.T) {
 	repository, err := connection.Repositories.Read.Get(repositoryId)
 	if err != nil {
 		test.Fatal(err)
-	} else if repository.Status != "" {
-		test.Fatal("Expected initial repository status to be empty")
+	} else if repository.Status != "declared" {
+		test.Fatal("Expected initial repository status to be 'declared'")
 	}
 
 	err = connection.Repositories.Update.SetStatus(repositoryId, "preparing")

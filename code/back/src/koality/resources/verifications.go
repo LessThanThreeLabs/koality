@@ -29,9 +29,10 @@ type Changeset struct {
 }
 
 type VerificationsHandler struct {
-	Create VerificationsCreateHandler
-	Read   VerificationsReadHandler
-	Update VerificationsUpdateHandler
+	Create       VerificationsCreateHandler
+	Read         VerificationsReadHandler
+	Update       VerificationsUpdateHandler
+	Subscription VerificationsSubscriptionHandler
 }
 
 type VerificationsCreateHandler interface {
@@ -49,6 +50,38 @@ type VerificationsUpdateHandler interface {
 	SetMergeStatus(verificationId uint64, mergeStatus string) error
 	SetStartTime(verificationId uint64, startTime time.Time) error
 	SetEndTime(verificationId uint64, endTime time.Time) error
+}
+
+type VerificationCreatedHandler func(verificationId uint64)
+type VerificationStatusUpdatedHandler func(verificationId uint64, status string)
+type VerificationMergeStatusUpdatedHandler func(verificationId uint64, mergeStatus string)
+type VerificationStartTimeUpdatedHandler func(verificationId uint64, startTime time.Time)
+type VerificationEndTimeUpdatedHandler func(verificationId uint64, endTime time.Time)
+
+type VerificationsSubscriptionHandler interface {
+	SubscribeToCreatedEvents(updateHandler VerificationCreatedHandler) (SubscriptionId, error)
+	UnsubscribeFromCreatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToStatusUpdatedEvents(updateHandler VerificationStatusUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromStatusUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToMergeStatusUpdatedEvents(updateHandler VerificationMergeStatusUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromMergeStatusUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToStartTimeUpdatedEvents(updateHandler VerificationStartTimeUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromStartTimeUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToEndTimeUpdatedEvents(updateHandler VerificationEndTimeUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromEndTimeUpdatedEvents(subscriptionId SubscriptionId) error
+}
+
+type InternalVerificationsSubscriptionHandler interface {
+	FireCreatedEvent(verificationId uint64)
+	FireStatusUpdatedEvent(verificationId uint64, status string)
+	FireMergeStatusUpdatedEvent(verificationId uint64, mergeStatus string)
+	FireStartTimeUpdatedEvent(verificationId uint64, startTime time.Time)
+	FireEndTimeUpdatedEvent(verificationId uint64, endTime time.Time)
+	VerificationsSubscriptionHandler
 }
 
 type NoSuchVerificationError struct {

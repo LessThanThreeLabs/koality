@@ -58,6 +58,17 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	verificationCreatedEventReceived := make(chan bool, 1)
+	verificationCreatedEventId := uint64(0)
+	verificationCreatedHandler := func(verificationId uint64) {
+		verificationCreatedEventId = verificationId
+		verificationCreatedEventReceived <- true
+	}
+	_, err = connection.Verifications.Subscription.SubscribeToCreatedEvents(verificationCreatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		test.Fatal(err)
@@ -75,6 +86,17 @@ func TestCreateVerification(test *testing.T) {
 	verificationId, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-verificationCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear verification creation event")
+	}
+
+	if verificationCreatedEventId != verificationId {
+		test.Fatal("Bad verificationId in verification creation event")
 	}
 
 	verification, err := connection.Verifications.Read.Get(verificationId)
@@ -88,12 +110,61 @@ func TestCreateVerification(test *testing.T) {
 	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
 		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add verification with same changeset params twice")
 	}
+
+	verificationId2, err := connection.Verifications.Create.CreateFromChangeset(firstRepository.Id, verification.Changeset.Id, mergeTarget, emailToNotify)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-verificationCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear verification creation event")
+	}
+
+	if verificationCreatedEventId != verificationId2 {
+		test.Fatal("Bad verificationId in verification creation event")
+	}
+
+	verification2, err := connection.Verifications.Read.Get(verificationId2)
+	if err != nil {
+		test.Fatal(err)
+	} else if verification2.Id != verificationId2 {
+		test.Fatal("verification.Id mismatch")
+	}
 }
 
 func TestVerificationStatuses(test *testing.T) {
 	PopulateDatabase()
 
 	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	verificationStatusEventReceived := make(chan bool, 1)
+	verificationStatusEventId := uint64(0)
+	verificationStatusEventStatus := ""
+	verificationStatusUpdatedHandler := func(verificationId uint64, status string) {
+		verificationStatusEventId = verificationId
+		verificationStatusEventStatus = status
+		verificationStatusEventReceived <- true
+	}
+	_, err = connection.Verifications.Subscription.SubscribeToStatusUpdatedEvents(verificationStatusUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	verificationMergeStatusEventReceived := make(chan bool, 1)
+	verificationMergeStatusEventId := uint64(0)
+	verificationMergeStatusEventStatus := ""
+	verificationMergeStatusUpdatedHandler := func(verificationId uint64, mergeStatus string) {
+		verificationMergeStatusEventId = verificationId
+		verificationMergeStatusEventStatus = mergeStatus
+		verificationMergeStatusEventReceived <- true
+	}
+	_, err = connection.Verifications.Subscription.SubscribeToMergeStatusUpdatedEvents(verificationMergeStatusUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -117,12 +188,32 @@ func TestVerificationStatuses(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	verification, err := connection.Verifications.Read.Get(verificationId)
+	if err != nil {
+		test.Fatal(err)
+	} else if verification.Status != "declared" {
+		test.Fatal("Expected initial verification status to be 'declared'")
+	}
+
 	err = connection.Verifications.Update.SetStatus(verificationId, "passed")
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	verification, err := connection.Verifications.Read.Get(verificationId)
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-verificationStatusEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear verification status updated event")
+	}
+
+	if verificationStatusEventId != verificationId {
+		test.Fatal("Bad verificationId in status updated event")
+	} else if verificationStatusEventStatus != "passed" {
+		test.Fatal("Bad verification status in status updated event")
+	}
+
+	verification, err = connection.Verifications.Read.Get(verificationId)
 	if err != nil {
 		test.Fatal(err)
 	} else if verification.Status != "passed" {
@@ -134,15 +225,28 @@ func TestVerificationStatuses(test *testing.T) {
 		test.Fatal("Expected InvalidVerificationStatusError when trying to set status")
 	}
 
-	err = connection.Verifications.Update.SetMergeStatus(verificationId, "passed")
+	err = connection.Verifications.Update.SetMergeStatus(verificationId, "failed")
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-verificationMergeStatusEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear verification merge status updated event")
+	}
+
+	if verificationMergeStatusEventId != verificationId {
+		test.Fatal("Bad verificationId in merge status updated event")
+	} else if verificationMergeStatusEventStatus != "failed" {
+		test.Fatal("Bad verification merge status in merge status updated event")
 	}
 
 	verification, err = connection.Verifications.Read.Get(verificationId)
 	if err != nil {
 		test.Fatal(err)
-	} else if verification.MergeStatus != "passed" {
+	} else if verification.MergeStatus != "failed" {
 		test.Fatal("Failed to update verification merge status")
 	}
 
@@ -156,6 +260,32 @@ func TestVerificationTimes(test *testing.T) {
 	PopulateDatabase()
 
 	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	verificationStartTimeEventReceived := make(chan bool, 1)
+	verificationStartTimeEventId := uint64(0)
+	verificationStartTimeEventTime := time.Now()
+	verificationStartTimeUpdatedHandler := func(verificationId uint64, startTime time.Time) {
+		verificationStartTimeEventId = verificationId
+		verificationStartTimeEventTime = startTime
+		verificationStartTimeEventReceived <- true
+	}
+	_, err = connection.Verifications.Subscription.SubscribeToStartTimeUpdatedEvents(verificationStartTimeUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	verificationEndTimeEventReceived := make(chan bool, 1)
+	verificationEndTimeEventId := uint64(0)
+	verificationEndTimeEventTime := time.Now()
+	verificationEndTimeUpdatedHandler := func(verificationId uint64, endTime time.Time) {
+		verificationEndTimeEventId = verificationId
+		verificationEndTimeEventTime = endTime
+		verificationEndTimeEventReceived <- true
+	}
+	_, err = connection.Verifications.Subscription.SubscribeToEndTimeUpdatedEvents(verificationEndTimeUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -189,9 +319,23 @@ func TestVerificationTimes(test *testing.T) {
 		test.Fatal("Expected error when setting start time before create time")
 	}
 
-	err = connection.Verifications.Update.SetStartTime(verificationId, time.Now())
+	startTime := time.Now()
+	err = connection.Verifications.Update.SetStartTime(verificationId, startTime)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-verificationStartTimeEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear verification start time event")
+	}
+
+	if verificationStartTimeEventId != verificationId {
+		test.Fatal("Bad verificationId in start time event")
+	} else if verificationStartTimeEventTime != startTime {
+		test.Fatal("Bad verification start time in start time event")
 	}
 
 	err = connection.Verifications.Update.SetStartTime(0, time.Now())
@@ -204,9 +348,23 @@ func TestVerificationTimes(test *testing.T) {
 		test.Fatal("Expected error when setting end time before create time")
 	}
 
-	err = connection.Verifications.Update.SetEndTime(verificationId, time.Now())
+	endTime := time.Now()
+	err = connection.Verifications.Update.SetEndTime(verificationId, endTime)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-verificationEndTimeEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear verification end time event")
+	}
+
+	if verificationEndTimeEventId != verificationId {
+		test.Fatal("Bad verificationId in end time event")
+	} else if verificationEndTimeEventTime != endTime {
+		test.Fatal("Bad verification end time in end time event")
 	}
 
 	err = connection.Verifications.Update.SetEndTime(0, time.Now())
