@@ -675,7 +675,7 @@ func TestExport(test *testing.T) {
 	select {
 	case <-stageRunEventReceived:
 	case <-timeout:
-		test.Fatal("Failed to hear stage run xunit results added event")
+		test.Fatal("Failed to hear stage run exports added event")
 	}
 
 	if stageRunEventId != stageRunId {

@@ -3,6 +3,7 @@ package database
 import (
 	"koality/resources"
 	"testing"
+	"time"
 )
 
 func TestCreateInvalidEc2Pool(test *testing.T) {
@@ -101,6 +102,28 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	poolCreatedEventReceived := make(chan bool, 1)
+	poolCreatedEventId := uint64(0)
+	poolEc2CreatedHandler := func(ec2PoolId uint64) {
+		poolCreatedEventId = ec2PoolId
+		poolCreatedEventReceived <- true
+	}
+	_, err = connection.Pools.Subscription.SubscribeToEc2CreatedEvents(poolEc2CreatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	poolDeletedEventReceived := make(chan bool, 1)
+	poolDeletedEventId := uint64(0)
+	poolEc2DeletedHandler := func(ec2PoolId uint64) {
+		poolDeletedEventId = ec2PoolId
+		poolDeletedEventReceived <- true
+	}
+	_, err = connection.Pools.Subscription.SubscribeToEc2DeletedEvents(poolEc2DeletedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	name := "ec2-pool"
 	accessKey := "aaaabbbbccccddddeeee"
 	secretKey := "0000111122223333444455556666777788889999"
@@ -114,18 +137,29 @@ func TestCreateEc2Pool(test *testing.T) {
 	rootDriveSize := uint64(100)
 	userData := "echo hello"
 
-	poolId, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+	pool1Id, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
 		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	pool, err := connection.Pools.Read.GetEc2Pool(poolId)
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-poolCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear ec2 pool creation event")
+	}
+
+	if poolCreatedEventId != pool1Id {
+		test.Fatal("Bad poolId in ec2 pool creation event")
+	}
+
+	pool1, err := connection.Pools.Read.GetEc2Pool(pool1Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if pool.Id != poolId {
+	if pool1.Id != pool1Id {
 		test.Fatal("pool.Id mismatch")
 	}
 
@@ -161,12 +195,77 @@ func TestCreateEc2Pool(test *testing.T) {
 	if len(pools) != 2 {
 		test.Fatal("Expected there to be two pools")
 	}
+
+	err = connection.Pools.Delete.DeleteEc2Pool(pool1Id)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-poolDeletedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear ec2 pool deletion event")
+	}
+
+	if poolDeletedEventId != pool1Id {
+		test.Fatal("Bad poolId in ec2 pool deletion event")
+	}
+
+	err = connection.Pools.Delete.DeleteEc2Pool(pool1Id)
+	if _, ok := err.(resources.NoSuchPoolError); !ok {
+		test.Fatal("Expected NoSuchPoolError when trying to delete same pool twice")
+	}
+
+	pools, err = connection.Pools.Read.GetAllEc2Pools()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if len(pools) != 1 {
+		test.Fatal("Expected there to be only one pool")
+	}
 }
 
 func TestUsersEc2Settings(test *testing.T) {
 	PopulateDatabase()
 
 	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	poolEventReceived := make(chan bool, 1)
+	poolEventId := uint64(0)
+	poolEventAccessKey := ""
+	poolEventSecretKey := ""
+	poolEventUsername := ""
+	poolEventBaseAmiId := ""
+	poolEventSecurityGroupId := ""
+	poolEventVpcSubnetId := ""
+	poolEventInstanceType := ""
+	poolEventNumReadyInstances := uint64(0)
+	poolEventNumMaxInstances := uint64(0)
+	poolEventRootDriveSize := uint64(0)
+	poolEventUserData := ""
+	ec2PoolSettingsUpdatedHandler := func(ec2PoolId uint64, accessKey, secretKey,
+		username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
+		numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) {
+		poolEventId = ec2PoolId
+		poolEventAccessKey = accessKey
+		poolEventSecretKey = secretKey
+		poolEventUsername = username
+		poolEventBaseAmiId = baseAmiId
+		poolEventSecurityGroupId = securityGroupId
+		poolEventVpcSubnetId = vpcSubnetId
+		poolEventInstanceType = instanceType
+		poolEventNumReadyInstances = numReadyInstances
+		poolEventNumMaxInstances = numMaxInstances
+		poolEventRootDriveSize = rootDriveSize
+		poolEventUserData = userData
+		poolEventReceived <- true
+	}
+	_, err = connection.Pools.Subscription.SubscribeToEc2SettingsUpdatedEvents(ec2PoolSettingsUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -207,6 +306,39 @@ func TestUsersEc2Settings(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-poolEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear ec2 pool settings updated updated event")
+	}
+
+	if poolEventId != poolId {
+		test.Fatal("Bad poolId in ec2 pool settings updated event")
+	} else if poolEventAccessKey != accessKey2 {
+		test.Fatal("Bad access key in ec2 pool settings updated event")
+	} else if poolEventSecretKey != secretKey2 {
+		test.Fatal("Bad secret key in ec2 pool settings updated event")
+	} else if poolEventUsername != username2 {
+		test.Fatal("Bad username in ec2 pool settings updated event")
+	} else if poolEventBaseAmiId != baseAmiId2 {
+		test.Fatal("Bad base ami id in ec2 pool settings updated event")
+	} else if poolEventSecurityGroupId != securityGroupId2 {
+		test.Fatal("Bad security group id in ec2 pool settings updated event")
+	} else if poolEventVpcSubnetId != vpcSubnetId2 {
+		test.Fatal("Bad vpc subnet id in ec2 pool settings updated event")
+	} else if poolEventInstanceType != instanceType2 {
+		test.Fatal("Bad instance type in ec2 pool settings updated event")
+	} else if poolEventNumReadyInstances != numReadyInstances2 {
+		test.Fatal("Bad num ready instances in ec2 pool settings updated event")
+	} else if poolEventNumMaxInstances != numMaxInstances2 {
+		test.Fatal("Bad num max instances in ec2 pool settings updated event")
+	} else if poolEventRootDriveSize != rootDriveSize2 {
+		test.Fatal("Bad root drive size in ec2 pool settings updated event")
+	} else if poolEventUserData != userData2 {
+		test.Fatal("Bad user data in ec2 pool settings updated event")
+	}
+
 	pool, err := connection.Pools.Read.GetEc2Pool(poolId)
 	if err != nil {
 		test.Fatal(err)
@@ -240,52 +372,5 @@ func TestUsersEc2Settings(test *testing.T) {
 		instanceType2, numReadyInstances2, numMaxInstances2, rootDriveSize2, userData2)
 	if _, ok := err.(resources.NoSuchPoolError); !ok {
 		test.Fatal("Expected NoSuchPoolError when trying to update nonexistent ec2 pool")
-	}
-}
-
-func TestDeleteEc2Pool(test *testing.T) {
-	PopulateDatabase()
-
-	connection, err := New()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	name := "ec2-pool"
-	accessKey := "aaaabbbbccccddddeeee"
-	secretKey := "0000111122223333444455556666777788889999"
-	username := "koality"
-	baseAmiId := "ami-12345678"
-	securityGroupId := "sg-12345678"
-	vpcSubnetId := "subnet-12345678"
-	instanceType := "m1.medium"
-	numReadyInstances := uint64(2)
-	numMaxInstances := uint64(10)
-	rootDriveSize := uint64(100)
-	userData := "echo hello"
-
-	poolId, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
-		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	err = connection.Pools.Delete.DeleteEc2Pool(poolId)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	err = connection.Pools.Delete.DeleteEc2Pool(poolId)
-	if _, ok := err.(resources.NoSuchPoolError); !ok {
-		test.Fatal("Expected NoSuchPoolError when trying to delete same pool twice")
-	}
-
-	pools, err := connection.Pools.Read.GetAllEc2Pools()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	if len(pools) != 0 {
-		test.Fatal("Expected there to only no pools")
 	}
 }

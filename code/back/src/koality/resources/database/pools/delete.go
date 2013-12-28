@@ -7,12 +7,13 @@ import (
 )
 
 type DeleteHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalPoolsSubscriptionHandler
 }
 
-func NewDeleteHandler(database *sql.DB, verifier *Verifier) (resources.PoolsDeleteHandler, error) {
-	return &DeleteHandler{database, verifier}, nil
+func NewDeleteHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalPoolsSubscriptionHandler) (resources.PoolsDeleteHandler, error) {
+	return &DeleteHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (deleteHandler *DeleteHandler) DeleteEc2Pool(poolId uint64) error {
@@ -29,5 +30,7 @@ func (deleteHandler *DeleteHandler) DeleteEc2Pool(poolId uint64) error {
 		errorText := fmt.Sprintf("Unable to find pool with id: %d ", poolId)
 		return resources.NoSuchPoolError{errorText}
 	}
+
+	deleteHandler.subscriptionHandler.FireEc2DeletedEvent(poolId)
 	return nil
 }

@@ -6,12 +6,13 @@ import (
 )
 
 type CreateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalPoolsSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier) (resources.PoolsCreateHandler, error) {
-	return &CreateHandler{database, verifier}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalPoolsSubscriptionHandler) (resources.PoolsCreateHandler, error) {
+	return &CreateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (createHandler *CreateHandler) CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
@@ -31,7 +32,12 @@ func (createHandler *CreateHandler) CreateEc2Pool(name, accessKey, secretKey, us
 	err = createHandler.database.QueryRow(query, name, accessKey, secretKey, username,
 		baseAmiId, securityGroupId, vpcSubnetId, instanceType,
 		numReadyInstances, numMaxInstances, rootDriveSize, userData).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+
+	createHandler.subscriptionHandler.FireEc2CreatedEvent(id)
+	return id, nil
 }
 
 func (createHandler *CreateHandler) getEc2ParamsError(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,

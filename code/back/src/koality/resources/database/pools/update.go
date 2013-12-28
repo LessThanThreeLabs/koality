@@ -6,12 +6,13 @@ import (
 )
 
 type UpdateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalPoolsSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.PoolsUpdateHandler, error) {
-	return &UpdateHandler{database, verifier}, nil
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalPoolsSubscriptionHandler) (resources.PoolsUpdateHandler, error) {
+	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (updateHandler *UpdateHandler) updatePool(query string, params ...interface{}) error {
@@ -46,7 +47,14 @@ func (updateHandler *UpdateHandler) SetEc2Settings(poolId uint64, accessKey, sec
 	err = updateHandler.updatePool(query, accessKey, secretKey, username,
 		baseAmiId, securityGroupId, vpcSubnetId, instanceType,
 		numReadyInstances, numMaxInstances, rootDriveSize, userData, poolId)
-	return err
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireEc2SettingsUpdatedEvent(poolId, accessKey, secretKey, username,
+		baseAmiId, securityGroupId, vpcSubnetId, instanceType,
+		numReadyInstances, numMaxInstances, rootDriveSize, userData)
+	return nil
 }
 
 func (UpdateHandler *UpdateHandler) getEc2ParamsError(accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,

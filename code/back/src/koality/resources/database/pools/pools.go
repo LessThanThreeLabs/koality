@@ -11,25 +11,30 @@ func New(database *sql.DB) (*resources.PoolsHandler, error) {
 		return nil, err
 	}
 
-	createHandler, err := NewCreateHandler(database, verifier)
+	internalSubscriptionHandler, err := NewInternalSubscriptionHandler()
 	if err != nil {
 		return nil, err
 	}
 
-	readHandler, err := NewReadHandler(database, verifier)
+	createHandler, err := NewCreateHandler(database, verifier, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	updateHandler, err := NewUpdateHandler(database, verifier)
+	readHandler, err := NewReadHandler(database, verifier, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	deleteHandler, err := NewDeleteHandler(database, verifier)
+	updateHandler, err := NewUpdateHandler(database, verifier, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	return &resources.PoolsHandler{createHandler, readHandler, updateHandler, deleteHandler}, nil
+	deleteHandler, err := NewDeleteHandler(database, verifier, internalSubscriptionHandler)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resources.PoolsHandler{createHandler, readHandler, updateHandler, deleteHandler, internalSubscriptionHandler}, nil
 }
