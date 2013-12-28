@@ -10,12 +10,13 @@ import (
 )
 
 type UpdateHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalStagesSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier) (resources.StagesUpdateHandler, error) {
-	return &UpdateHandler{database, verifier}, nil
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalStagesSubscriptionHandler) (resources.StagesUpdateHandler, error) {
+	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (updateHandler *UpdateHandler) updateStageRun(query string, params ...interface{}) error {
@@ -35,7 +36,13 @@ func (updateHandler *UpdateHandler) updateStageRun(query string, params ...inter
 
 func (updateHandler *UpdateHandler) SetReturnCode(stageRunId uint64, returnCode int) error {
 	query := "UPDATE stage_runs SET return_code=$1 WHERE id=$2"
-	return updateHandler.updateStageRun(query, returnCode, stageRunId)
+	err := updateHandler.updateStageRun(query, returnCode, stageRunId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireReturnCodeUpdatedEvent(stageRunId, returnCode)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) getTimes(stageRunId uint64) (createTime, startTime, endTime *time.Time, err error) {
@@ -59,8 +66,15 @@ func (updateHandler *UpdateHandler) SetStartTime(stageRunId uint64, startTime ti
 	if err := updateHandler.verifier.verifyStartTime(*createTime, startTime); err != nil {
 		return err
 	}
+
 	query := "UPDATE stage_runs SET started=$1 WHERE id=$2"
-	return updateHandler.updateStageRun(query, startTime, stageRunId)
+	err = updateHandler.updateStageRun(query, startTime, stageRunId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireStartTimeUpdatedEvent(stageRunId, startTime)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) SetEndTime(stageRunId uint64, endTime time.Time) error {
@@ -76,8 +90,15 @@ func (updateHandler *UpdateHandler) SetEndTime(stageRunId uint64, endTime time.T
 	if err := updateHandler.verifier.verifyEndTime(*createTime, *startTime, endTime); err != nil {
 		return err
 	}
+
 	query := "UPDATE stage_runs SET ended=$1 WHERE id=$2"
-	return updateHandler.updateStageRun(query, endTime, stageRunId)
+	err = updateHandler.updateStageRun(query, endTime, stageRunId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireEndTimeUpdatedEvent(stageRunId, endTime)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleLines map[uint64]string) error {
@@ -104,7 +125,12 @@ func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleLi
 
 	query := "INSERT INTO console_lines (run_id, number, text) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, consoleLinesToArray()...)
-	return err
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireConsoleLinesAddedEvent(stageRunId, consoleLines)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) RemoveAllConsoleLines(stageRunId uint64) error {
@@ -148,7 +174,12 @@ func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResu
 
 	query := "INSERT INTO xunit_results (run_id, name, path, sysout, syserr, failure_text, error_text, started, seconds) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, xunitResultsToArray()...)
-	return err
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireXunitResultsAddedEvent(stageRunId, xunitResults)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) RemoveAllXunitResults(stageRunId uint64) error {
@@ -185,5 +216,10 @@ func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []reso
 
 	query := "INSERT INTO exports (run_id, path, uri) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, exportsToArray()...)
-	return err
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireExportsAddedEvent(stageRunId, exports)
+	return nil
 }

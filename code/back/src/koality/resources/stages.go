@@ -38,9 +38,10 @@ type Export struct {
 }
 
 type StagesHandler struct {
-	Create StagesCreateHandler
-	Read   StagesReadHandler
-	Update StagesUpdateHandler
+	Create       StagesCreateHandler
+	Read         StagesReadHandler
+	Update       StagesUpdateHandler
+	Subscription StagesSubscriptionHandler
 }
 
 type StagesCreateHandler interface {
@@ -77,11 +78,9 @@ type StageRunCreatedHandler func(stageRunId uint64)
 type StageReturnCodeUpdatedHandler func(stageRunId uint64, returnCode int)
 type StageStartTimeUpdatedHandler func(stageRunId uint64, startTime time.Time)
 type StageEndTimeUpdatedHandler func(stageRunId uint64, endTime time.Time)
-type StageConsoleLinesAddedHandler func(stageRunId uint64)
-type StageAllConsoleLinesRemovedHandler func(stageRunId uint64)
-type StageXunitResultsAddedHandler func(stageRunId uint64)
-type StageAllXunitResultsRemovedHandler func(stageRunId uint64)
-type StageExportsAddedHandler func(stageRunId uint64)
+type StageConsoleLinesAddedHandler func(stageRunId uint64, consoleLines map[uint64]string)
+type StageXunitResultsAddedHandler func(stageRunId uint64, xunitResults []XunitResult)
+type StageExportsAddedHandler func(stageRunId uint64, exports []Export)
 
 type StagesSubscriptionHandler interface {
 	SubscribeToCreatedEvents(updateHandler StageCreatedHandler) (SubscriptionId, error)
@@ -102,14 +101,8 @@ type StagesSubscriptionHandler interface {
 	SubscribeToConsoleLinesAddedEvents(updateHandler StageConsoleLinesAddedHandler) (SubscriptionId, error)
 	UnsubscribeFromConsoleLinesAddedEvents(subscriptionId SubscriptionId) error
 
-	SubscribeToAllConsoleLinesRemovedEvents(updateHandler StageAllConsoleLinesRemovedHandler) (SubscriptionId, error)
-	UnsubscribeFromAllConsoleLinesRemovedEvents(subscriptionId SubscriptionId) error
-
 	SubscribeToXunitResultsAddedEvents(updateHandler StageXunitResultsAddedHandler) (SubscriptionId, error)
 	UnsubscribeFromXunitResultsAddedEvents(subscriptionId SubscriptionId) error
-
-	SubscribeToAllXunitResultsRemovedEvents(updateHandler StageAllXunitResultsRemovedHandler) (SubscriptionId, error)
-	UnsubscribeFromAllXunitResultsRemovedEvents(subscriptionId SubscriptionId) error
 
 	SubscribeToExportsAddedEvents(updateHandler StageExportsAddedHandler) (SubscriptionId, error)
 	UnsubscribeFromExportsAddedEvents(subscriptionId SubscriptionId) error
@@ -122,9 +115,7 @@ type InternalStagesSubscriptionHandler interface {
 	FireStartTimeUpdatedEvent(stageRunId uint64, startTime time.Time)
 	FireEndTimeUpdatedEvent(stageRunId uint64, endTime time.Time)
 	FireConsoleLinesAddedEvent(stageRunId uint64, consoleLines map[uint64]string)
-	FireAllConsoleLinesRemovedEvent(stageRunId uint64)
 	FireXunitResultsAddedEvent(stageRunId uint64, xunitResuts []XunitResult)
-	FireAllXunitResultsRemovedEvent(stageRunId uint64)
 	FireExportsAddedEvent(stageRunId uint64, exports []Export)
 	StagesSubscriptionHandler
 }

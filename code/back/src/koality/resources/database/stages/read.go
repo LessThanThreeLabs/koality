@@ -7,12 +7,13 @@ import (
 )
 
 type ReadHandler struct {
-	database *sql.DB
-	verifier *Verifier
+	database            *sql.DB
+	verifier            *Verifier
+	subscriptionHandler resources.InternalStagesSubscriptionHandler
 }
 
-func NewReadHandler(database *sql.DB, verifier *Verifier) (resources.StagesReadHandler, error) {
-	return &ReadHandler{database, verifier}, nil
+func NewReadHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalStagesSubscriptionHandler) (resources.StagesReadHandler, error) {
+	return &ReadHandler{database, verifier, subscriptionHandler}, nil
 }
 
 func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {

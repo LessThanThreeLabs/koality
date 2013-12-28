@@ -49,6 +49,28 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	stageCreatedEventReceived := make(chan bool, 1)
+	stageCreatedEventId := uint64(0)
+	stageCreatedHandler := func(stageId uint64) {
+		stageCreatedEventId = stageId
+		stageCreatedEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToCreatedEvents(stageCreatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunCreatedEventReceived := make(chan bool, 1)
+	stageRunCreatedEventId := uint64(0)
+	stageRunCreatedHandler := func(stageRunId uint64) {
+		stageRunCreatedEventId = stageRunId
+		stageRunCreatedEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToRunCreatedEvents(stageRunCreatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		test.Fatal(err)
@@ -68,6 +90,17 @@ func TestCreateStage(test *testing.T) {
 	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-stageCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage creation event")
+	}
+
+	if stageCreatedEventId != stageId {
+		test.Fatal("Bad stageId in stage creation event")
 	}
 
 	stage, err := connection.Stages.Read.Get(stageId)
@@ -101,9 +134,31 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-stageRunCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run creation event")
+	}
+
+	if stageRunCreatedEventId != stageRun1Id {
+		test.Fatal("Bad stageRunId in stage run creation event")
+	}
+
 	stageRun2Id, err := connection.Stages.Create.CreateRun(stageId)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-stageRunCreatedEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run creation event")
+	}
+
+	if stageRunCreatedEventId != stageRun2Id {
+		test.Fatal("Bad stageRunId in stage run creation event")
 	}
 
 	stage, err = connection.Stages.Read.Get(stageId)
@@ -126,23 +181,6 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(fmt.Sprintf("Failed to find stage run with id: %d", stageRun2Id))
 	}
 
-	err = connection.Stages.Update.SetReturnCode(stageRun1Id, 17)
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	err = connection.Stages.Update.SetReturnCode(0, 17)
-	if _, ok := err.(resources.NoSuchStageRunError); !ok {
-		test.Fatal("Expected NoSuchStageRunError when trying to set return code for nonexistent stage")
-	}
-
-	stageRun, err := connection.Stages.Read.GetRun(stageRun1Id)
-	if err != nil {
-		test.Fatal(err)
-	} else if stageRun.ReturnCode != 17 {
-		test.Fatal("stageRun.ReturnCode mismatch")
-	}
-
 	stageRuns, err := connection.Stages.Read.GetAllRuns(stageId)
 	if err != nil {
 		test.Fatal(err)
@@ -151,10 +189,115 @@ func TestCreateStage(test *testing.T) {
 	}
 }
 
+func TestStageReturnCode(test *testing.T) {
+	PopulateDatabase()
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunEventReceived := make(chan bool, 1)
+	stageRunEventId := uint64(0)
+	stageRunEventReturnCode := 0
+	stageRunHandler := func(stageId uint64, returnCode int) {
+		stageRunEventId = stageId
+		stageRunEventReturnCode = returnCode
+		stageRunEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToReturnCodeUpdatedEvents(stageRunHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	stageSectionNumber := uint64(4)
+	stageName := "awesome stage"
+	stageOrderNumber := uint64(17)
+
+	stageId, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunId, err := connection.Stages.Create.CreateRun(stageId)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	returnCode := 17
+	err = connection.Stages.Update.SetReturnCode(stageRunId, returnCode)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-stageRunEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run return code updated event")
+	}
+
+	if stageRunEventId != stageRunId {
+		test.Fatal("Bad stageRunId in stage run return code updated event")
+	} else if stageRunEventReturnCode != returnCode {
+		test.Fatal("Bad return code in stage run return code updated event")
+	}
+
+	err = connection.Stages.Update.SetReturnCode(0, returnCode)
+	if _, ok := err.(resources.NoSuchStageRunError); !ok {
+		test.Fatal("Expected NoSuchStageRunError when trying to set return code for nonexistent stage")
+	}
+
+	stageRun, err := connection.Stages.Read.GetRun(stageRunId)
+	if err != nil {
+		test.Fatal(err)
+	} else if stageRun.ReturnCode != returnCode {
+		test.Fatal("stageRun.ReturnCode mismatch")
+	}
+}
+
 func TestStageTimes(test *testing.T) {
 	PopulateDatabase()
 
 	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunStartTimeEventReceived := make(chan bool, 1)
+	stageRunStartTimeEventId := uint64(0)
+	stageRunStartTimeEventTime := time.Now()
+	stageRunStartTimeUpdatedHandler := func(stageRunId uint64, startTime time.Time) {
+		stageRunStartTimeEventId = stageRunId
+		stageRunStartTimeEventTime = startTime
+		stageRunStartTimeEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToStartTimeUpdatedEvents(stageRunStartTimeUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunEndTimeEventReceived := make(chan bool, 1)
+	stageRunEndTimeEventId := uint64(0)
+	stageRunEndTimeEventTime := time.Now()
+	stageRunEndTimeUpdatedHandler := func(stageRunId uint64, endTime time.Time) {
+		stageRunEndTimeEventId = stageRunId
+		stageRunEndTimeEventTime = endTime
+		stageRunEndTimeEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToEndTimeUpdatedEvents(stageRunEndTimeUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -195,9 +338,23 @@ func TestStageTimes(test *testing.T) {
 		test.Fatal("Expected error when setting start time before create time")
 	}
 
-	err = connection.Stages.Update.SetStartTime(stageRunId, time.Now())
+	startTime := time.Now()
+	err = connection.Stages.Update.SetStartTime(stageRunId, startTime)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-stageRunStartTimeEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run start time event")
+	}
+
+	if stageRunStartTimeEventId != stageRunId {
+		test.Fatal("Bad stageRunId in start time event")
+	} else if stageRunStartTimeEventTime != startTime {
+		test.Fatal("Bad stage run start time in start time event")
 	}
 
 	err = connection.Stages.Update.SetStartTime(0, time.Now())
@@ -210,9 +367,23 @@ func TestStageTimes(test *testing.T) {
 		test.Fatal("Expected error when setting end time before create time")
 	}
 
-	err = connection.Stages.Update.SetEndTime(stageRunId, time.Now())
+	endTime := time.Now()
+	err = connection.Stages.Update.SetEndTime(stageRunId, endTime)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout = time.After(10 * time.Second)
+	select {
+	case <-stageRunEndTimeEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run end time event")
+	}
+
+	if stageRunEndTimeEventId != stageRunId {
+		test.Fatal("Bad stageRunId in end time event")
+	} else if stageRunEndTimeEventTime != endTime {
+		test.Fatal("Bad stage run end time in end time event")
 	}
 
 	err = connection.Stages.Update.SetEndTime(0, time.Now())
@@ -225,6 +396,19 @@ func TestConsoleLines(test *testing.T) {
 	PopulateDatabase()
 
 	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	stageRunEventReceived := make(chan bool, 1)
+	stageRunEventId := uint64(0)
+	stageRunEventConsoleLines := map[uint64]string{}
+	stageRunConsoleLinesAddedHandler := func(stageId uint64, consoleLines map[uint64]string) {
+		stageRunEventId = stageId
+		stageRunEventConsoleLines = consoleLines
+		stageRunEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToConsoleLinesAddedEvents(stageRunConsoleLinesAddedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -263,6 +447,25 @@ func TestConsoleLines(test *testing.T) {
 	err = connection.Stages.Update.AddConsoleLines(stageRunId, lines)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-stageRunEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run console lines added event")
+	}
+
+	if stageRunEventId != stageRunId {
+		test.Fatal("Bad stageRunId in console lines added event")
+	} else if len(stageRunEventConsoleLines) != len(lines) {
+		test.Fatal("Bad console lines in console lines added event")
+	} else if stageRunEventConsoleLines[0] != lines[0] {
+		test.Fatal("Bad console lines in console lines added event")
+	} else if stageRunEventConsoleLines[7] != lines[7] {
+		test.Fatal("Bad console lines in console lines added event")
+	} else if stageRunEventConsoleLines[42] != lines[42] {
+		test.Fatal("Bad console lines in console lines added event")
 	}
 
 	// The existence of a stage run id isn't checked
@@ -319,6 +522,19 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	stageRunEventReceived := make(chan bool, 1)
+	stageRunEventId := uint64(0)
+	stageRunEventXunitResults := []resources.XunitResult{}
+	stageRunXunitResultsAddedHandler := func(stageId uint64, xunitResults []resources.XunitResult) {
+		stageRunEventId = stageId
+		stageRunEventXunitResults = xunitResults
+		stageRunEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToXunitResultsAddedEvents(stageRunXunitResultsAddedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		test.Fatal(err)
@@ -351,6 +567,23 @@ func TestXunit(test *testing.T) {
 	err = connection.Stages.Update.AddXunitResults(stageRunId, xunitResults)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-stageRunEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run xunit results added event")
+	}
+
+	if stageRunEventId != stageRunId {
+		test.Fatal("Bad stageRunId in xunit results added event")
+	} else if len(stageRunEventXunitResults) != len(xunitResults) {
+		test.Fatal("Bad xunit results in xunit results added event")
+	} else if stageRunEventXunitResults[0] != xunitResults[0] {
+		test.Fatal("Bad xunit results in xunit results added event")
+	} else if stageRunEventXunitResults[1] != xunitResults[1] {
+		test.Fatal("Bad xunit results in xunit results added event")
 	}
 
 	err = connection.Stages.Update.AddXunitResults(0, xunitResults)
@@ -391,6 +624,19 @@ func TestExport(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	stageRunEventReceived := make(chan bool, 1)
+	stageRunEventId := uint64(0)
+	stageRunEventExports := []resources.Export{}
+	stageRunExportsAddedHandler := func(stageId uint64, exports []resources.Export) {
+		stageRunEventId = stageId
+		stageRunEventExports = exports
+		stageRunEventReceived <- true
+	}
+	_, err = connection.Stages.Subscription.SubscribeToExportsAddedEvents(stageRunExportsAddedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		test.Fatal(err)
@@ -423,6 +669,23 @@ func TestExport(test *testing.T) {
 	err = connection.Stages.Update.AddExports(stageRunId, exports)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	timeout := time.After(10 * time.Second)
+	select {
+	case <-stageRunEventReceived:
+	case <-timeout:
+		test.Fatal("Failed to hear stage run xunit results added event")
+	}
+
+	if stageRunEventId != stageRunId {
+		test.Fatal("Bad stageRunId in expots added event")
+	} else if len(stageRunEventExports) != len(exports) {
+		test.Fatal("Bad exports in expots added event")
+	} else if stageRunEventExports[0] != exports[0] {
+		test.Fatal("Bad exports in expots added event")
+	} else if stageRunEventExports[1] != exports[1] {
+		test.Fatal("Bad exports in expots added event")
 	}
 
 	returnedExports, err := connection.Stages.Read.GetExports(stageRunId)

@@ -11,20 +11,25 @@ func New(database *sql.DB) (*resources.StagesHandler, error) {
 		return nil, err
 	}
 
-	createHandler, err := NewCreateHandler(database, verifier)
+	internalSubscriptionHandler, err := NewInternalSubscriptionHandler()
 	if err != nil {
 		return nil, err
 	}
 
-	readHandler, err := NewReadHandler(database, verifier)
+	createHandler, err := NewCreateHandler(database, verifier, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	updateHandler, err := NewUpdateHandler(database, verifier)
+	readHandler, err := NewReadHandler(database, verifier, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	return &resources.StagesHandler{createHandler, readHandler, updateHandler}, nil
+	updateHandler, err := NewUpdateHandler(database, verifier, internalSubscriptionHandler)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resources.StagesHandler{createHandler, readHandler, updateHandler, internalSubscriptionHandler}, nil
 }
