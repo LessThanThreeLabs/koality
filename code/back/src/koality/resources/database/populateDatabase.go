@@ -14,6 +14,10 @@ const (
 	parallelizationLevel          = 2
 )
 
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
+
 func PopulateDatabase() error {
 	err := makeSureDumpExists()
 	if err != nil {
@@ -95,13 +99,8 @@ func createRepositories(connection *resources.Connection) error {
 				return
 			}
 
-			err = createVerifications(connection, repositoryId)
-			if err != nil {
-				errorChannel <- err
-				return
-			}
-
-			errorChannel <- nil
+			err = createVerifications(connection, repositoryId, numVerificationsPerRepository)
+			errorChannel <- err
 		}(index)
 	}
 
@@ -114,7 +113,7 @@ func createRepositories(connection *resources.Connection) error {
 	return nil
 }
 
-func createVerifications(connection *resources.Connection, repositoryId uint64) error {
+func createVerifications(connection *resources.Connection, repositoryId uint64, numVerifications int) error {
 	userNames := []string{"Jonathan Chu", "Jordan Potter", "Brian Bland", "Andrey Kostov"}
 	userEmails := []string{"jchu@koalitycode.com", "jpotter@koalitycode.com", "bbland@koalitycode.com", "akostov@koalitycode.com"}
 	mergeTargets := []string{"master", "development", "feature_branch_1", "feature_branch_2"}
@@ -129,9 +128,9 @@ func createVerifications(connection *resources.Connection, repositoryId uint64) 
 		return sha
 	}
 
-	errorChannel := make(chan error, numVerificationsPerRepository)
+	errorChannel := make(chan error, numVerifications)
 
-	for index := 0; index < numVerificationsPerRepository; index++ {
+	for index := 0; index < numVerifications; index++ {
 		go func(index int) {
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
 			verificationId, err := connection.Verifications.Create.Create(repositoryId, createSha(), createSha(),
@@ -143,12 +142,7 @@ func createVerifications(connection *resources.Connection, repositoryId uint64) 
 			}
 
 			err = createStages(connection, verificationId)
-			if err != nil {
-				errorChannel <- err
-				return
-			}
-
-			errorChannel <- nil
+			errorChannel <- err
 		}(index)
 	}
 

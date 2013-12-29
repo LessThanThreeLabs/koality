@@ -43,6 +43,7 @@ type VerificationsCreateHandler interface {
 type VerificationsReadHandler interface {
 	Get(verificationId uint64) (*Verification, error)
 	GetTail(repositoryId uint64, offset, results int) ([]Verification, error)
+	GetOld(repositoryId uint64, numToRetain uint64) ([]Verification, error)
 }
 
 type VerificationsUpdateHandler interface {

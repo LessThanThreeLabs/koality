@@ -1,19 +1,71 @@
 package database
 
 import (
-	"fmt"
 	"koality/resources"
 	"sync"
 	"time"
+)
+
+const (
+	defaultNumVerificationsToRetain = 250
 )
 
 var (
 	cleanTimerSync sync.Once
 )
 
-// TODO: write a test for this when it's implemented
-func Clean(connection *resources.Connection) error {
-	fmt.Println("Need to clean...")
+func Clean(connection *resources.Connection, numVerificationsToRetain uint64) error {
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		return err
+	}
+
+	verificationCount := 0
+	errorChannel := make(chan error, 100)
+	for _, repository := range repositories {
+		oldVerifications, err := connection.Verifications.Read.GetOld(repository.Id, numVerificationsToRetain)
+		if err != nil {
+			return err
+		}
+
+		for _, oldVerification := range oldVerifications {
+			verificationCount++
+			go func(verificationId uint64) {
+				err := cleanVerification(connection, verificationId)
+				errorChannel <- err
+			}(oldVerification.Id)
+		}
+	}
+
+	for index := 0; index < verificationCount; index++ {
+		err := <-errorChannel
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func cleanVerification(connection *resources.Connection, verificationId uint64) error {
+	stages, err := connection.Stages.Read.GetAll(verificationId)
+	if err != nil {
+		return err
+	}
+
+	for _, stage := range stages {
+		for _, stageRun := range stage.Runs {
+			err = connection.Stages.Update.RemoveAllConsoleLines(stageRun.Id)
+			if err != nil {
+				return err
+			}
+
+			err = connection.Stages.Update.RemoveAllXunitResults(stageRun.Id)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -25,7 +77,7 @@ func createStartCleanTimer(connection *resources.Connection) func() {
 	startCleanTimer := func() {
 		timer := time.NewTimer(getDurationUntilNextClean())
 		for _ = range timer.C {
-			err := Clean(connection)
+			err := Clean(connection, defaultNumVerificationsToRetain)
 			if err != nil {
 				panic(err)
 			}
