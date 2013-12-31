@@ -18,7 +18,9 @@ type VcsCommand struct {
 	Stderr  *bytes.Buffer
 }
 
-func Open(vcsType string, path string) (vcsRepository *Repository, err error) {
+func Open(vcsType string, path string) (*Repository, error) {
+	var vcsRepository Repository
+
 	// TODO(akostov) the keys for this map should be constants defined in resources.
 	vcsDispatcher := map[string]string{
 		"git": "git",
@@ -27,12 +29,12 @@ func Open(vcsType string, path string) (vcsRepository *Repository, err error) {
 
 	vcsRepository.vcsBaseCommand = vcsDispatcher[vcsType]
 
-	if _, err = os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return nil, NoSuchRepositoryInStoreError{fmt.Sprintf("The path %v does not exist.", path)}
 	}
 	vcsRepository.path = path
 
-	return
+	return &vcsRepository, nil
 }
 
 func (repository *Repository) Command(Env []string, cmd string, args ...string) *VcsCommand {

@@ -85,7 +85,7 @@ func gitGetYamlFile(repository *resources.Repository, ref string) (yamlFile stri
 	}
 
 	// TODO(akostov) .koality.yml file?
-	command := gitRepository.Command(nil, "show", "koality.yml")
+	command := gitRepository.Command(nil, "show", fmt.Sprintf("%s:koality.yml", ref))
 	if err := RunCommand(command); err != nil {
 		return "", err
 	}

@@ -8,7 +8,8 @@ import (
 )
 
 func ToPath(repo *resources.Repository) string {
-	return filepath.Join(fmt.Sprintf("%%d", repo.Id), repo.Name)
+	return filepath.Join("/", "etc", "repositories", fmt.Sprintf("%d", repo.Id), repo.Name)
+
 }
 
 func GitHiddenRef(commitId string) string {

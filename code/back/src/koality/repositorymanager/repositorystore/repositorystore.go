@@ -31,6 +31,13 @@ func DeleteRepository(repository *resources.Repository) (err error) {
 		return err
 	}
 
+	if repository.VcsType == "git" {
+		err = os.RemoveAll(path + ".slave")
+		if err != nil {
+			return err
+		}
+	}
+
 	return os.RemoveAll(path)
 }
 
