@@ -21,8 +21,6 @@ func TestMaid(test *testing.T) {
 
 	numVerificationsToRetain := uint64(10)
 	Clean(connection, numVerificationsToRetain)
-
-	fmt.Println("...need to confirm that only first ", numVerificationsToRetain, " have console lines")
 	err = checkVerificationsCleaned(connection, numVerificationsToRetain)
 	if err != nil {
 		test.Fatal(err)
@@ -68,7 +66,7 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 		verificationCount += len(verifications)
 
 		for index, verification := range verifications {
-			go func(verificationId uint64) {
+			go func(index int, verificationId uint64) {
 				containsOutput, err := doesVerificationContainOutput(connection, verificationId)
 				if err != nil {
 					errorChannel <- err
@@ -79,8 +77,10 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 					errorChannel <- fmt.Errorf("Expected output for verification #%d with id: %d\n", index, verificationId)
 				} else if index >= int(numVerificationsToRetain) && containsOutput {
 					errorChannel <- fmt.Errorf("Expected no output for verification #%d with id: %d\n", index, verificationId)
+				} else {
+					errorChannel <- nil
 				}
-			}(verification.Id)
+			}(index, verification.Id)
 		}
 	}
 
@@ -94,5 +94,28 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 }
 
 func doesVerificationContainOutput(connection *resources.Connection, verificationId uint64) (bool, error) {
-	return true, nil
+	stages, err := connection.Stages.Read.GetAll(verificationId)
+	if err != nil {
+		return false, err
+	}
+
+	for _, stage := range stages {
+		for _, stageRun := range stage.Runs {
+			consoleLines, err := connection.Stages.Read.GetAllConsoleLines(stageRun.Id)
+			if err != nil {
+				return false, err
+			}
+
+			xunitResults, err := connection.Stages.Read.GetAllXunitResults(stageRun.Id)
+			if err != nil {
+				return false, err
+			}
+
+			if len(consoleLines) != 0 || len(xunitResults) != 0 {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }

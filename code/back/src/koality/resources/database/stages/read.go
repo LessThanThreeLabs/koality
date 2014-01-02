@@ -28,7 +28,7 @@ func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 		return nil, err
 	}
 
-	stage.Runs, err = readHandler.GetAllRuns(stageId)
+	stage.Runs, err = readHandler.GetAllRuns(stage.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +70,12 @@ func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage
 		if err != nil {
 			return nil, err
 		}
+
+		stage.Runs, err = readHandler.GetAllRuns(stage.Id)
+		if err != nil {
+			return nil, err
+		}
+
 		stages = append(stages, stage)
 	}
 	if err := rows.Err(); err != nil {
