@@ -32,8 +32,8 @@ type RepositoriesHandler struct {
 }
 
 type RepositoriesCreateHandler interface {
-	Create(name, vcsType, localUri, remoteUri string) (uint64, error)
-	CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (uint64, error)
+	Create(name, vcsType, localUri, remoteUri string) (*Repository, error)
+	CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (*Repository, error)
 }
 
 type RepositoriesReadHandler interface {
@@ -51,7 +51,7 @@ type RepositoriesDeleteHandler interface {
 	Delete(repositoryId uint64) error
 }
 
-type RepositoryCreatedHandler func(repositoryId uint64)
+type RepositoryCreatedHandler func(repository *Repository)
 type RepositoryDeletedHandler func(repositoryId uint64)
 type RepositoryStatusUpdatedHandler func(repositoryId uint64, status string)
 type RepositoryGitHubHookUpdatedHandler func(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string)
@@ -71,7 +71,7 @@ type RepositoriesSubscriptionHandler interface {
 }
 
 type InternalRepositoriesSubscriptionHandler interface {
-	FireCreatedEvent(repositoryId uint64)
+	FireCreatedEvent(repository *Repository)
 	FireDeletedEvent(repositoryId uint64)
 	FireStatusUpdatedEvent(repositoryId uint64, status string)
 	FireGitHubHookUpdatedEvent(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string)

@@ -25,8 +25,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCreatedEvents(sub
 	return subscriptionHandler.createdSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(userId uint64) {
-	subscriptionHandler.createdSubscriptionManager.Fire(userId)
+func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(user *resources.User) {
+	subscriptionHandler.createdSubscriptionManager.Fire(user)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToDeletedEvents(updateHandler resources.UserDeletedHandler) (resources.SubscriptionId, error) {

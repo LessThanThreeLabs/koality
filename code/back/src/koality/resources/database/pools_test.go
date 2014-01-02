@@ -103,9 +103,9 @@ func TestCreateEc2Pool(test *testing.T) {
 	}
 
 	poolCreatedEventReceived := make(chan bool, 1)
-	poolCreatedEventId := uint64(0)
-	poolEc2CreatedHandler := func(ec2PoolId uint64) {
-		poolCreatedEventId = ec2PoolId
+	var poolCreatedEventEc2Pool *resources.Ec2Pool
+	poolEc2CreatedHandler := func(ec2Pool *resources.Ec2Pool) {
+		poolCreatedEventEc2Pool = ec2Pool
 		poolCreatedEventReceived <- true
 	}
 	_, err = connection.Pools.Subscription.SubscribeToEc2CreatedEvents(poolEc2CreatedHandler)
@@ -137,10 +137,36 @@ func TestCreateEc2Pool(test *testing.T) {
 	rootDriveSize := uint64(100)
 	userData := "echo hello"
 
-	pool1Id, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+	pool1, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
 		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if pool1.Name != name {
+		test.Fatal("pool.Name mismatch")
+	} else if pool1.AccessKey != accessKey {
+		test.Fatal("pool.AccessKey mismatch")
+	} else if pool1.SecretKey != secretKey {
+		test.Fatal("pool.SecretKey mismatch")
+	} else if pool1.Username != username {
+		test.Fatal("pool.Username mismatch")
+	} else if pool1.BaseAmiId != baseAmiId {
+		test.Fatal("pool.BaseAmiId mismatch")
+	} else if pool1.SecurityGroupId != securityGroupId {
+		test.Fatal("pool.SecurityGroupId mismatch")
+	} else if pool1.VpcSubnetId != vpcSubnetId {
+		test.Fatal("pool.VpcSubnetId mismatch")
+	} else if pool1.InstanceType != instanceType {
+		test.Fatal("pool.InstanceType mismatch")
+	} else if pool1.NumReadyInstances != numReadyInstances {
+		test.Fatal("pool.NumReadyInstances mismatch")
+	} else if pool1.NumMaxInstances != numMaxInstances {
+		test.Fatal("pool.NumMaxInstances mismatch")
+	} else if pool1.RootDriveSize != rootDriveSize {
+		test.Fatal("pool.RootDriveSize mismatch")
+	} else if pool1.UserData != userData {
+		test.Fatal("pool.UserData mismatch")
 	}
 
 	timeout := time.After(10 * time.Second)
@@ -150,17 +176,63 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal("Failed to hear ec2 pool creation event")
 	}
 
-	if poolCreatedEventId != pool1Id {
-		test.Fatal("Bad poolId in ec2 pool creation event")
+	if poolCreatedEventEc2Pool.Id != pool1.Id {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.Name != pool1.Name {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.AccessKey != pool1.AccessKey {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.SecretKey != pool1.SecretKey {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.Username != pool1.Username {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.BaseAmiId != pool1.BaseAmiId {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.SecurityGroupId != pool1.SecurityGroupId {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.VpcSubnetId != pool1.VpcSubnetId {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.InstanceType != pool1.InstanceType {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.NumReadyInstances != pool1.NumReadyInstances {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.NumMaxInstances != pool1.NumMaxInstances {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.RootDriveSize != pool1.RootDriveSize {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
+	} else if poolCreatedEventEc2Pool.UserData != pool1.UserData {
+		test.Fatal("Bad pool.Id in ec2 pool creation event")
 	}
 
-	pool1, err := connection.Pools.Read.GetEc2Pool(pool1Id)
+	pool1Again, err := connection.Pools.Read.GetEc2Pool(pool1.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if pool1.Id != pool1Id {
-		test.Fatal("pool.Id mismatch")
+	if pool1.Name != pool1Again.Name {
+		test.Fatal("pool.Name mismatch")
+	} else if pool1.AccessKey != pool1Again.AccessKey {
+		test.Fatal("pool.AccessKey mismatch")
+	} else if pool1.SecretKey != pool1Again.SecretKey {
+		test.Fatal("pool.SecretKey mismatch")
+	} else if pool1.Username != pool1Again.Username {
+		test.Fatal("pool.Username mismatch")
+	} else if pool1.BaseAmiId != pool1Again.BaseAmiId {
+		test.Fatal("pool.BaseAmiId mismatch")
+	} else if pool1.SecurityGroupId != pool1Again.SecurityGroupId {
+		test.Fatal("pool.SecurityGroupId mismatch")
+	} else if pool1.VpcSubnetId != pool1Again.VpcSubnetId {
+		test.Fatal("pool.VpcSubnetId mismatch")
+	} else if pool1.InstanceType != pool1Again.InstanceType {
+		test.Fatal("pool.InstanceType mismatch")
+	} else if pool1.NumReadyInstances != pool1Again.NumReadyInstances {
+		test.Fatal("pool.NumReadyInstances mismatch")
+	} else if pool1.NumMaxInstances != pool1Again.NumMaxInstances {
+		test.Fatal("pool.NumMaxInstances mismatch")
+	} else if pool1.RootDriveSize != pool1Again.RootDriveSize {
+		test.Fatal("pool.RootDriveSize mismatch")
+	} else if pool1.UserData != pool1Again.UserData {
+		test.Fatal("pool.UserData mismatch")
 	}
 
 	pools, err := connection.Pools.Read.GetAllEc2Pools()
@@ -172,19 +244,41 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal("Expected there to only be one pool")
 	}
 
-	pool2Id, err := connection.Pools.Create.CreateEc2Pool(name+"2", accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+	pool2, err := connection.Pools.Create.CreateEc2Pool(name+"2", accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
 		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	pool2, err := connection.Pools.Read.GetEc2Pool(pool2Id)
+	pool2Again, err := connection.Pools.Read.GetEc2Pool(pool2.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if pool2.Id != pool2Id {
-		test.Fatal("pool2.Id mismatch")
+	if pool2.Name != pool2Again.Name {
+		test.Fatal("pool.Name mismatch")
+	} else if pool2.AccessKey != pool2Again.AccessKey {
+		test.Fatal("pool.AccessKey mismatch")
+	} else if pool2.SecretKey != pool2Again.SecretKey {
+		test.Fatal("pool.SecretKey mismatch")
+	} else if pool2.Username != pool2Again.Username {
+		test.Fatal("pool.Username mismatch")
+	} else if pool2.BaseAmiId != pool2Again.BaseAmiId {
+		test.Fatal("pool.BaseAmiId mismatch")
+	} else if pool2.SecurityGroupId != pool2Again.SecurityGroupId {
+		test.Fatal("pool.SecurityGroupId mismatch")
+	} else if pool2.VpcSubnetId != pool2Again.VpcSubnetId {
+		test.Fatal("pool.VpcSubnetId mismatch")
+	} else if pool2.InstanceType != pool2Again.InstanceType {
+		test.Fatal("pool.InstanceType mismatch")
+	} else if pool2.NumReadyInstances != pool2Again.NumReadyInstances {
+		test.Fatal("pool.NumReadyInstances mismatch")
+	} else if pool2.NumMaxInstances != pool2Again.NumMaxInstances {
+		test.Fatal("pool.NumMaxInstances mismatch")
+	} else if pool2.RootDriveSize != pool2Again.RootDriveSize {
+		test.Fatal("pool.RootDriveSize mismatch")
+	} else if pool2.UserData != pool2Again.UserData {
+		test.Fatal("pool.UserData mismatch")
 	}
 
 	pools, err = connection.Pools.Read.GetAllEc2Pools()
@@ -196,7 +290,7 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal("Expected there to be two pools")
 	}
 
-	err = connection.Pools.Delete.DeleteEc2Pool(pool1Id)
+	err = connection.Pools.Delete.DeleteEc2Pool(pool1.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -208,11 +302,11 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal("Failed to hear ec2 pool deletion event")
 	}
 
-	if poolDeletedEventId != pool1Id {
+	if poolDeletedEventId != pool1.Id {
 		test.Fatal("Bad poolId in ec2 pool deletion event")
 	}
 
-	err = connection.Pools.Delete.DeleteEc2Pool(pool1Id)
+	err = connection.Pools.Delete.DeleteEc2Pool(pool1.Id)
 	if _, ok := err.(resources.NoSuchPoolError); !ok {
 		test.Fatal("Expected NoSuchPoolError when trying to delete same pool twice")
 	}
@@ -294,13 +388,13 @@ func TestUsersEc2Settings(test *testing.T) {
 	userData := "echo hello"
 	userData2 := "echo hello 2"
 
-	poolId, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+	pool, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
 		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = connection.Pools.Update.SetEc2Settings(poolId, accessKey2, secretKey2, username2, baseAmiId2, securityGroupId2, vpcSubnetId2,
+	err = connection.Pools.Update.SetEc2Settings(pool.Id, accessKey2, secretKey2, username2, baseAmiId2, securityGroupId2, vpcSubnetId2,
 		instanceType2, numReadyInstances2, numMaxInstances2, rootDriveSize2, userData2)
 	if err != nil {
 		test.Fatal(err)
@@ -313,7 +407,7 @@ func TestUsersEc2Settings(test *testing.T) {
 		test.Fatal("Failed to hear ec2 pool settings updated updated event")
 	}
 
-	if poolEventId != poolId {
+	if poolEventId != pool.Id {
 		test.Fatal("Bad poolId in ec2 pool settings updated event")
 	} else if poolEventAccessKey != accessKey2 {
 		test.Fatal("Bad access key in ec2 pool settings updated event")
@@ -339,32 +433,32 @@ func TestUsersEc2Settings(test *testing.T) {
 		test.Fatal("Bad user data in ec2 pool settings updated event")
 	}
 
-	pool, err := connection.Pools.Read.GetEc2Pool(poolId)
+	pool2, err := connection.Pools.Read.GetEc2Pool(pool.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if pool.AccessKey != accessKey2 {
+	if pool2.AccessKey != accessKey2 {
 		test.Fatal("pool.AccessKey mismatch")
-	} else if pool.SecretKey != secretKey2 {
+	} else if pool2.SecretKey != secretKey2 {
 		test.Fatal("pool.SecretKey mismatch")
-	} else if pool.Username != username2 {
+	} else if pool2.Username != username2 {
 		test.Fatal("pool.Username mismatch")
-	} else if pool.BaseAmiId != baseAmiId2 {
+	} else if pool2.BaseAmiId != baseAmiId2 {
 		test.Fatal("pool.BaseAmiId mismatch")
-	} else if pool.SecurityGroupId != securityGroupId2 {
+	} else if pool2.SecurityGroupId != securityGroupId2 {
 		test.Fatal("pool.SecurityGroupId mismatch")
-	} else if pool.VpcSubnetId != vpcSubnetId2 {
+	} else if pool2.VpcSubnetId != vpcSubnetId2 {
 		test.Fatal("pool.VpcSubnetId mismatch")
-	} else if pool.InstanceType != instanceType2 {
+	} else if pool2.InstanceType != instanceType2 {
 		test.Fatal("pool.InstanceType mismatch")
-	} else if pool.NumReadyInstances != numReadyInstances2 {
+	} else if pool2.NumReadyInstances != numReadyInstances2 {
 		test.Fatal("pool.NumReadyInstances mismatch")
-	} else if pool.NumMaxInstances != numMaxInstances2 {
+	} else if pool2.NumMaxInstances != numMaxInstances2 {
 		test.Fatal("pool.NumMaxInstances mismatch")
-	} else if pool.RootDriveSize != rootDriveSize2 {
+	} else if pool2.RootDriveSize != rootDriveSize2 {
 		test.Fatal("pool.RootDriveSize mismatch")
-	} else if pool.UserData != userData2 {
+	} else if pool2.UserData != userData2 {
 		test.Fatal("pool.UserData mismatch")
 	}
 

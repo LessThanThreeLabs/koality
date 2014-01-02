@@ -9,17 +9,20 @@ import (
 type CreateHandler struct {
 	database            *sql.DB
 	verifier            *Verifier
+	readHandler         resources.UsersReadHandler
 	subscriptionHandler resources.InternalUsersSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalUsersSubscriptionHandler) (resources.UsersCreateHandler, error) {
-	return &CreateHandler{database, verifier, subscriptionHandler}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resources.UsersReadHandler,
+	subscriptionHandler resources.InternalUsersSubscriptionHandler) (resources.UsersCreateHandler, error) {
+
+	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (uint64, error) {
+func (createHandler *CreateHandler) Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (*resources.User, error) {
 	err := createHandler.getUserParamsError(email, firstName, lastName)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	passwordHashBase64 := base64.StdEncoding.EncodeToString(passwordHash)
@@ -30,11 +33,16 @@ func (createHandler *CreateHandler) Create(email, firstName, lastName string, pa
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 	err = createHandler.database.QueryRow(query, email, firstName, lastName, passwordHashBase64, passwordSaltBase64, admin).Scan(&id)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	createHandler.subscriptionHandler.FireCreatedEvent(id)
-	return id, nil
+	user, err := createHandler.readHandler.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	createHandler.subscriptionHandler.FireCreatedEvent(user)
+	return user, nil
 }
 
 func (createHandler *CreateHandler) getUserParamsError(email, firstName, lastName string) error {

@@ -68,51 +68,87 @@ func TestCreateRepository(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repositoryCreatedEventReceived := make(chan bool, 1)
-	repositoryCreatedEventId := uint64(0)
-	repositoryCreatedHandler := func(repositoryId uint64) {
-		repositoryCreatedEventId = repositoryId
-		repositoryCreatedEventReceived <- true
+	createdEventReceived := make(chan bool, 1)
+	var createdEventRepository *resources.Repository
+	repositoryCreatedHandler := func(repository *resources.Repository) {
+		createdEventRepository = repository
+		createdEventReceived <- true
 	}
 	_, err = connection.Repositories.Subscription.SubscribeToCreatedEvents(repositoryCreatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repositoryDeletedEventReceived := make(chan bool, 1)
-	repositoryDeletedEventId := uint64(0)
+	deletedEventReceived := make(chan bool, 1)
+	deletedEventId := uint64(0)
 	repositoryDeletedHandler := func(repositoryId uint64) {
-		repositoryDeletedEventId = repositoryId
-		repositoryDeletedEventReceived <- true
+		deletedEventId = repositoryId
+		deletedEventReceived <- true
 	}
 	_, err = connection.Repositories.Subscription.SubscribeToDeletedEvents(repositoryDeletedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repositoryId, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@local.uri.com/name", "hg@remote.uri.com/name")
+	name := "repository-name"
+	vcsType := "hg"
+	localUri := "hg@local.uri.com/name"
+	remoteUri := "hg@remote.uri.com/name"
+	repository, err := connection.Repositories.Create.Create(name, vcsType, localUri, remoteUri)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if repository.Name != name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != vcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.LocalUri != localUri {
+		test.Fatal("repository.LocalUri mismatch")
+	} else if repository.RemoteUri != remoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub != nil {
+		test.Fatal("Expected repository.GitHub to be nil")
 	}
 
 	timeout := time.After(10 * time.Second)
 	select {
-	case <-repositoryCreatedEventReceived:
+	case <-createdEventReceived:
 	case <-timeout:
 		test.Fatal("Failed to hear repository creation event")
 	}
 
-	if repositoryCreatedEventId != repositoryId {
-		test.Fatal("Bad repositoryId in repository creation event")
+	if createdEventRepository.Id != repository.Id {
+		test.Fatal("Bad repository.Id in repository creation event")
+	} else if createdEventRepository.Name != repository.Name {
+		test.Fatal("Bad repository.Name in repository creation event")
+	} else if createdEventRepository.VcsType != repository.VcsType {
+		test.Fatal("Bad repository.VcsType in repository creation event")
+	} else if createdEventRepository.LocalUri != repository.LocalUri {
+		test.Fatal("Bad repository.LocalUri in repository creation event")
+	} else if createdEventRepository.RemoteUri != repository.RemoteUri {
+		test.Fatal("Bad repository.RemoteUri in repository creation event")
+	} else if createdEventRepository.GitHub != repository.GitHub {
+		test.Fatal("Bad repository.GitHub in repository creation event")
 	}
 
-	repository, err := connection.Repositories.Read.Get(repositoryId)
+	repository2, err := connection.Repositories.Read.Get(repository.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if repository.Id != repositoryId {
+	if repository.Id != repository2.Id {
 		test.Fatal("repository.Id mismatch")
+	} else if repository.Name != repository2.Name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != repository2.VcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.LocalUri != repository2.LocalUri {
+		test.Fatal("repository.LocalUri mismatch")
+	} else if repository.RemoteUri != repository2.RemoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub != repository2.GitHub {
+		test.Fatal("repository.GitHub mismatch")
 	}
 
 	_, err = connection.Repositories.Create.Create(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri)
@@ -120,33 +156,33 @@ func TestCreateRepository(test *testing.T) {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
 
-	err = connection.Repositories.Update.SetGitHubHook(repositoryId, 17, "hook-secret", []string{"push", "pull_request"})
+	err = connection.Repositories.Update.SetGitHubHook(repository.Id, 17, "hook-secret", []string{"push", "pull_request"})
 	if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
 		test.Fatal("Expected NoSuchRepositoryHookError when trying to add repository hook")
 	}
 
-	err = connection.Repositories.Update.ClearGitHubHook(repositoryId)
+	err = connection.Repositories.Update.ClearGitHubHook(repository.Id)
 	if _, ok := err.(resources.NoSuchRepositoryHookError); !ok {
 		test.Fatal("Expected NoSuchRepositoryHookError when trying to clear repository hook")
 	}
 
-	err = connection.Repositories.Delete.Delete(repositoryId)
+	err = connection.Repositories.Delete.Delete(repository.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	timeout = time.After(10 * time.Second)
 	select {
-	case <-repositoryDeletedEventReceived:
+	case <-deletedEventReceived:
 	case <-timeout:
 		test.Fatal("Failed to hear repository deletion event")
 	}
 
-	if repositoryDeletedEventId != repositoryId {
-		test.Fatal("Bad repositoryId in repository deletion event")
+	if deletedEventId != repository.Id {
+		test.Fatal("Bad repository.Id in repository deletion event")
 	}
 
-	err = connection.Repositories.Delete.Delete(repositoryId)
+	err = connection.Repositories.Delete.Delete(repository.Id)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when trying to delete same repository twice")
 	}
@@ -160,51 +196,95 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repositoryCreatedEventReceived := make(chan bool, 1)
-	repositoryCreatedEventId := uint64(0)
-	repositoryCreatedHandler := func(repositoryId uint64) {
-		repositoryCreatedEventId = repositoryId
-		repositoryCreatedEventReceived <- true
+	createdEventReceived := make(chan bool, 1)
+	var createdEventRepository *resources.Repository
+	repositoryCreatedHandler := func(repository *resources.Repository) {
+		createdEventRepository = repository
+		createdEventReceived <- true
 	}
 	_, err = connection.Repositories.Subscription.SubscribeToCreatedEvents(repositoryCreatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repositoryDeletedEventReceived := make(chan bool, 1)
-	repositoryDeletedEventId := uint64(0)
+	deletedEventReceived := make(chan bool, 1)
+	deletedEventId := uint64(0)
 	repositoryDeletedHandler := func(repositoryId uint64) {
-		repositoryDeletedEventId = repositoryId
-		repositoryDeletedEventReceived <- true
+		deletedEventId = repositoryId
+		deletedEventReceived <- true
 	}
 	_, err = connection.Repositories.Subscription.SubscribeToDeletedEvents(repositoryDeletedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repositoryId, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git@local.uri.com:name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	name := "repository-name"
+	vcsType := "hg"
+	localUri := "hg@local.uri.com/name"
+	remoteUri := "hg@remote.uri.com/name"
+	gitHubOwner := "jordanpotter"
+	gitHubName := "repository-github-name"
+	repository, err := connection.Repositories.Create.CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if repository.Name != name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != vcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.LocalUri != localUri {
+		test.Fatal("repository.LocalUri mismatch")
+	} else if repository.RemoteUri != remoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub.Owner != gitHubOwner {
+		test.Fatal("repository.GitHub.Owner mismatch")
+	} else if repository.GitHub.Name != gitHubName {
+		test.Fatal("repository.GitHub.Name mismatch")
 	}
 
 	timeout := time.After(10 * time.Second)
 	select {
-	case <-repositoryCreatedEventReceived:
+	case <-createdEventReceived:
 	case <-timeout:
 		test.Fatal("Failed to hear repository creation event")
 	}
 
-	if repositoryCreatedEventId != repositoryId {
-		test.Fatal("Bad repositoryId in repository creation event")
+	if createdEventRepository.Id != repository.Id {
+		test.Fatal("Bad repository.Id in repository creation event")
+	} else if createdEventRepository.Name != repository.Name {
+		test.Fatal("Bad repository.Name in repository creation event")
+	} else if createdEventRepository.VcsType != repository.VcsType {
+		test.Fatal("Bad repository.VcsType in repository creation event")
+	} else if createdEventRepository.LocalUri != repository.LocalUri {
+		test.Fatal("Bad repository.LocalUri in repository creation event")
+	} else if createdEventRepository.RemoteUri != repository.RemoteUri {
+		test.Fatal("Bad repository.RemoteUri in repository creation event")
+	} else if createdEventRepository.GitHub.Owner != repository.GitHub.Owner {
+		test.Fatal("Bad repository.GitHub.Owner in repository creation event")
+	} else if createdEventRepository.GitHub.Name != repository.GitHub.Name {
+		test.Fatal("Bad repository.GitHub.Name in repository creation event")
 	}
 
-	repository, err := connection.Repositories.Read.Get(repositoryId)
+	repository2, err := connection.Repositories.Read.Get(repository.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if repository.Id != repositoryId {
+	if repository.Id != repository2.Id {
 		test.Fatal("repository.Id mismatch")
+	} else if repository.Name != repository2.Name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != repository2.VcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.LocalUri != repository2.LocalUri {
+		test.Fatal("repository.LocalUri mismatch")
+	} else if repository.RemoteUri != repository2.RemoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub.Owner != repository2.GitHub.Owner {
+		test.Fatal("repository.GitHub.Owner mismatch")
+	} else if repository.GitHub.Name != repository2.GitHub.Name {
+		test.Fatal("repository.GitHub.Name mismatch")
 	}
 
 	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
@@ -212,23 +292,23 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
 
-	err = connection.Repositories.Delete.Delete(repositoryId)
+	err = connection.Repositories.Delete.Delete(repository.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	timeout = time.After(10 * time.Second)
 	select {
-	case <-repositoryDeletedEventReceived:
+	case <-deletedEventReceived:
 	case <-timeout:
 		test.Fatal("Failed to hear repository deletion event")
 	}
 
-	if repositoryDeletedEventId != repositoryId {
+	if deletedEventId != repository.Id {
 		test.Fatal("Bad repositoryId in repository deletion event")
 	}
 
-	err = connection.Repositories.Delete.Delete(repositoryId)
+	err = connection.Repositories.Delete.Delete(repository.Id)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when trying to delete same repository twice")
 	}
@@ -255,19 +335,16 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repositoryId, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@local.uri.com/name", "hg@remote.uri.com/name")
+	repository, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@local.uri.com/name", "hg@remote.uri.com/name")
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Read.Get(repositoryId)
-	if err != nil {
-		test.Fatal(err)
-	} else if repository.Status != "declared" {
+	if repository.Status != "declared" {
 		test.Fatal("Expected initial repository status to be 'declared'")
 	}
 
-	err = connection.Repositories.Update.SetStatus(repositoryId, "preparing")
+	err = connection.Repositories.Update.SetStatus(repository.Id, "preparing")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -279,13 +356,13 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal("Failed to hear repository status updated event")
 	}
 
-	if repositoryEventId != repositoryId {
+	if repositoryEventId != repository.Id {
 		test.Fatal("Bad repositoryId in status updated event")
 	} else if repositoryEventStatus != "preparing" {
 		test.Fatal("Bad repository status in status updated event")
 	}
 
-	err = connection.Repositories.Update.SetStatus(repositoryId, "installed")
+	err = connection.Repositories.Update.SetStatus(repository.Id, "installed")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -297,13 +374,13 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal("Failed to hear repository status event")
 	}
 
-	if repositoryEventId != repositoryId {
+	if repositoryEventId != repository.Id {
 		test.Fatal("Bad repositoryId in status event")
 	} else if repositoryEventStatus != "installed" {
 		test.Fatal("Bad repository status in status event")
 	}
 
-	err = connection.Repositories.Update.SetStatus(repositoryId, "bad-status")
+	err = connection.Repositories.Update.SetStatus(repository.Id, "bad-status")
 	if _, ok := err.(resources.InvalidRepositoryStatusError); !ok {
 		test.Fatal("Expected InvalidRepositoryStatusError when trying to set to invalid repository status")
 	}
@@ -339,7 +416,7 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repositoryId, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git@local.uri.com:name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git@local.uri.com:name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -348,7 +425,7 @@ func TestRepositoryHook(test *testing.T) {
 	hookSecret := "hook-secret"
 	hookTypes := []string{"push", "pull_request"}
 
-	err = connection.Repositories.Update.SetGitHubHook(repositoryId, hookId, hookSecret, hookTypes)
+	err = connection.Repositories.Update.SetGitHubHook(repository.Id, hookId, hookSecret, hookTypes)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -360,7 +437,7 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal("Failed to hear repository hook event")
 	}
 
-	if repositoryEventId != repositoryId {
+	if repositoryEventId != repository.Id {
 		test.Fatal("Bad repositoryId in hook updated event")
 	} else if repositoryEventHookId != hookId {
 		test.Fatal("Bad repository hook id in hook updated event")
@@ -374,22 +451,22 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal("Bad repository hook types in hook updated event")
 	}
 
-	repository, err := connection.Repositories.Read.Get(repositoryId)
+	repository2, err := connection.Repositories.Read.Get(repository.Id)
 	if err != nil {
 		test.Fatal(err)
-	} else if repository.GitHub.HookId != hookId {
+	} else if repository2.GitHub.HookId != hookId {
 		test.Fatal("Hook id not updated")
-	} else if repository.GitHub.HookSecret != hookSecret {
+	} else if repository2.GitHub.HookSecret != hookSecret {
 		test.Fatal("Hook secret not updated")
-	} else if len(repository.GitHub.HookTypes) != len(hookTypes) {
+	} else if len(repository2.GitHub.HookTypes) != len(hookTypes) {
 		test.Fatal("Hook types not updated")
-	} else if repository.GitHub.HookTypes[0] != hookTypes[0] {
+	} else if repository2.GitHub.HookTypes[0] != hookTypes[0] {
 		test.Fatal("Hook types not updated")
-	} else if repository.GitHub.HookTypes[1] != hookTypes[1] {
+	} else if repository2.GitHub.HookTypes[1] != hookTypes[1] {
 		test.Fatal("Hook types not updated")
 	}
 
-	err = connection.Repositories.Update.ClearGitHubHook(repositoryId)
+	err = connection.Repositories.Update.ClearGitHubHook(repository.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -401,7 +478,7 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal("Failed to hear repository hook event")
 	}
 
-	if repositoryEventId != repositoryId {
+	if repositoryEventId != repository.Id {
 		test.Fatal("Bad repositoryId in hook updated event")
 	} else if repositoryEventHookId != 0 {
 		test.Fatal("Bad repository hook id in hook updated event")
@@ -411,14 +488,14 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal("Bad repository hook types in hook updated event")
 	}
 
-	repository, err = connection.Repositories.Read.Get(repositoryId)
+	repository2, err = connection.Repositories.Read.Get(repository2.Id)
 	if err != nil {
 		test.Fatal(err)
-	} else if repository.GitHub.HookId != 0 {
+	} else if repository2.GitHub.HookId != 0 {
 		test.Fatal("Hook id not updated")
-	} else if repository.GitHub.HookSecret != "" {
+	} else if repository2.GitHub.HookSecret != "" {
 		test.Fatal("Hook secret not updated")
-	} else if len(repository.GitHub.HookTypes) != 0 {
+	} else if len(repository2.GitHub.HookTypes) != 0 {
 		test.Fatal("Hook types not updated")
 	}
 

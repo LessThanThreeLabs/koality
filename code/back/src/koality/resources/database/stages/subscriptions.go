@@ -28,8 +28,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCreatedEvents(sub
 	return subscriptionHandler.createdSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(stageId uint64) {
-	subscriptionHandler.createdSubscriptionManager.Fire(stageId)
+func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(stage *resources.Stage) {
+	subscriptionHandler.createdSubscriptionManager.Fire(stage)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToRunCreatedEvents(updateHandler resources.StageRunCreatedHandler) (resources.SubscriptionId, error) {
@@ -40,8 +40,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromRunCreatedEvents(
 	return subscriptionHandler.runCreatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireRunCreatedEvent(stageRunId uint64) {
-	subscriptionHandler.runCreatedSubscriptionManager.Fire(stageRunId)
+func (subscriptionHandler *SubscriptionHandler) FireRunCreatedEvent(stageRun *resources.StageRun) {
+	subscriptionHandler.runCreatedSubscriptionManager.Fire(stageRun)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToReturnCodeUpdatedEvents(updateHandler resources.StageReturnCodeUpdatedHandler) (resources.SubscriptionId, error) {

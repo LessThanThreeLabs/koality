@@ -55,51 +55,95 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	userCreatedEventReceived := make(chan bool, 1)
-	userCreatedEventId := uint64(0)
-	userCreatedHandler := func(userId uint64) {
-		userCreatedEventId = userId
-		userCreatedEventReceived <- true
+	createdEventReceived := make(chan bool, 1)
+	var createdEventUser *resources.User
+	userCreatedHandler := func(user *resources.User) {
+		createdEventUser = user
+		createdEventReceived <- true
 	}
 	_, err = connection.Users.Subscription.SubscribeToCreatedEvents(userCreatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	userDeletedEventReceived := make(chan bool, 1)
-	userDeletedEventId := uint64(0)
+	deletedEventReceived := make(chan bool, 1)
+	deletedEventId := uint64(0)
 	userDeletedHandler := func(userId uint64) {
-		userDeletedEventId = userId
-		userDeletedEventReceived <- true
+		deletedEventId = userId
+		deletedEventReceived <- true
 	}
 	_, err = connection.Users.Subscription.SubscribeToDeletedEvents(userDeletedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	userId, err := connection.Users.Create.Create("test-email@address.com", "First", "Last", []byte("password-hash"), []byte("password-salt"), false)
+	email := "test-email@address.com"
+	firstName := "First"
+	lastName := "Last"
+	passwordHash := []byte("password-hash")
+	passwordSalt := []byte("password-salt")
+	isAdmin := false
+	user, err := connection.Users.Create.Create(email, firstName, lastName, passwordHash, passwordSalt, isAdmin)
 	if err != nil {
 		test.Fatal(err)
+	}
+
+	if user.Email != email {
+		test.Fatal("user.Email mismatch")
+	} else if user.FirstName != firstName {
+		test.Fatal("user.FirstName mismatch")
+	} else if user.LastName != lastName {
+		test.Fatal("user.LastName mismatch")
+	} else if bytes.Compare(user.PasswordHash, passwordHash) != 0 {
+		test.Fatal("user.PasswordHash mismatch")
+	} else if bytes.Compare(user.PasswordSalt, passwordSalt) != 0 {
+		test.Fatal("user.PasswordSalt mismatch")
+	} else if user.IsAdmin != isAdmin {
+		test.Fatal("user.IsAdmin mismatch")
 	}
 
 	timeout := time.After(10 * time.Second)
 	select {
-	case <-userCreatedEventReceived:
+	case <-createdEventReceived:
 	case <-timeout:
 		test.Fatal("Failed to hear user creation event")
 	}
 
-	if userCreatedEventId != userId {
-		test.Fatal("Bad userId in user creation event")
+	if createdEventUser.Id != user.Id {
+		test.Fatal("Bad user.Id in user creation event")
+	} else if createdEventUser.Email != user.Email {
+		test.Fatal("Bad user.Email in user creation event")
+	} else if createdEventUser.FirstName != user.FirstName {
+		test.Fatal("Bad user.FirstName in user creation event")
+	} else if createdEventUser.LastName != user.LastName {
+		test.Fatal("Bad user.LastName in user creation event")
+	} else if bytes.Compare(createdEventUser.PasswordHash, user.PasswordHash) != 0 {
+		test.Fatal("Bad user.PasswordHash in user creation event")
+	} else if bytes.Compare(createdEventUser.PasswordSalt, user.PasswordSalt) != 0 {
+		test.Fatal("Bad user.PasswordSalt in user creation event")
+	} else if createdEventUser.IsAdmin != user.IsAdmin {
+		test.Fatal("Bad user.IsAdmin in user creation event")
 	}
 
-	user, err := connection.Users.Read.Get(userId)
+	user2, err := connection.Users.Read.Get(user.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if user.Id != userId {
+	if user.Id != user2.Id {
 		test.Fatal("user.Id mismatch")
+	} else if user.Email != user2.Email {
+		test.Fatal("user.Email mismatch")
+	} else if user.FirstName != user2.FirstName {
+		test.Fatal("user.FirstName mismatch")
+	} else if user.LastName != user2.LastName {
+		test.Fatal("user.LastName mismatch")
+	} else if bytes.Compare(user.PasswordHash, user2.PasswordHash) != 0 {
+		test.Fatal("user.PasswordHash mismatch")
+	} else if bytes.Compare(user.PasswordSalt, user2.PasswordSalt) != 0 {
+		test.Fatal("user.PasswordSalt mismatch")
+	} else if user.IsAdmin != user2.IsAdmin {
+		test.Fatal("user.IsAdmin mismatch")
 	}
 
 	_, err = connection.Users.Create.Create(user.Email, user.FirstName, user.LastName, user.PasswordHash, user.PasswordSalt, user.IsAdmin)
@@ -107,23 +151,23 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal("Expected UserAlreadyExistsError when trying to add same user twice")
 	}
 
-	err = connection.Users.Delete.Delete(userId)
+	err = connection.Users.Delete.Delete(user.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	timeout = time.After(10 * time.Second)
 	select {
-	case <-userDeletedEventReceived:
+	case <-deletedEventReceived:
 	case <-timeout:
 		test.Fatal("Failed to hear user creation event")
 	}
 
-	if userDeletedEventId != userId {
-		test.Fatal("Bad userId in user deletion event")
+	if deletedEventId != user.Id {
+		test.Fatal("Bad user.Id in user deletion event")
 	}
 
-	err = connection.Users.Delete.Delete(userId)
+	err = connection.Users.Delete.Delete(user.Id)
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to delete same user twice")
 	}

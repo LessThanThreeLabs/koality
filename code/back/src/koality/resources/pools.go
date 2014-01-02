@@ -31,7 +31,7 @@ type PoolsHandler struct {
 
 type PoolsCreateHandler interface {
 	CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
-		numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) (uint64, error)
+		numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) (*Ec2Pool, error)
 }
 
 type PoolsReadHandler interface {
@@ -49,7 +49,7 @@ type PoolsDeleteHandler interface {
 	DeleteEc2Pool(poolId uint64) error
 }
 
-type PoolEc2CreatedHandler func(ec2PoolId uint64)
+type PoolEc2CreatedHandler func(ec2Pool *Ec2Pool)
 type PoolEc2DeletedHandler func(ec2PoolId uint64)
 type PoolEc2SettingsUpdatedHandler func(ec2PoolId uint64, accessKey, secretKey,
 	username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
@@ -67,7 +67,7 @@ type PoolsSubscriptionHandler interface {
 }
 
 type InternalPoolsSubscriptionHandler interface {
-	FireEc2CreatedEvent(ec2PoolId uint64)
+	FireEc2CreatedEvent(ec2Pool *Ec2Pool)
 	FireEc2DeletedEvent(ec2PoolId uint64)
 	FireEc2SettingsUpdatedEvent(ec2PoolId uint64, accessKey, secretKey,
 		username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,

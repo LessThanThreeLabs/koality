@@ -22,8 +22,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromEc2CreatedEvents(
 	return subscriptionHandler.ec2CreatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireEc2CreatedEvent(ec2PoolId uint64) {
-	subscriptionHandler.ec2CreatedSubscriptionManager.Fire(ec2PoolId)
+func (subscriptionHandler *SubscriptionHandler) FireEc2CreatedEvent(ec2Pool *resources.Ec2Pool) {
+	subscriptionHandler.ec2CreatedSubscriptionManager.Fire(ec2Pool)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToEc2DeletedEvents(updateHandler resources.PoolEc2DeletedHandler) (resources.SubscriptionId, error) {

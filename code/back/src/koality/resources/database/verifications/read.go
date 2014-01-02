@@ -23,7 +23,7 @@ func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resource
 	verification := new(resources.Verification)
 
 	var mergeTarget, emailToNotify, status, mergeStatus sql.NullString
-	err := scannable.Scan(&verification.Id, &verification.RepositoryId, &mergeStatus, &emailToNotify,
+	err := scannable.Scan(&verification.Id, &verification.RepositoryId, &mergeTarget, &emailToNotify,
 		&status, &mergeStatus, &verification.Created, &verification.Started, &verification.Ended,
 		&verification.Changeset.Id, &verification.Changeset.RepositoryId, &verification.Changeset.HeadSha,
 		&verification.Changeset.BaseSha, &verification.Changeset.HeadMessage, &verification.Changeset.HeadUsername,

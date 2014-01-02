@@ -23,8 +23,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCreatedEvents(sub
 	return subscriptionHandler.createdSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(repositoryId uint64) {
-	subscriptionHandler.createdSubscriptionManager.Fire(repositoryId)
+func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(repository *resources.Repository) {
+	subscriptionHandler.createdSubscriptionManager.Fire(repository)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToDeletedEvents(updateHandler resources.RepositoryDeletedHandler) (resources.SubscriptionId, error) {

@@ -36,8 +36,8 @@ type VerificationsHandler struct {
 }
 
 type VerificationsCreateHandler interface {
-	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (uint64, error)
-	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (uint64, error)
+	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Verification, error)
+	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*Verification, error)
 }
 
 type VerificationsReadHandler interface {
@@ -53,7 +53,7 @@ type VerificationsUpdateHandler interface {
 	SetEndTime(verificationId uint64, endTime time.Time) error
 }
 
-type VerificationCreatedHandler func(verificationId uint64)
+type VerificationCreatedHandler func(verification *Verification)
 type VerificationStatusUpdatedHandler func(verificationId uint64, status string)
 type VerificationMergeStatusUpdatedHandler func(verificationId uint64, mergeStatus string)
 type VerificationStartTimeUpdatedHandler func(verificationId uint64, startTime time.Time)
@@ -77,7 +77,7 @@ type VerificationsSubscriptionHandler interface {
 }
 
 type InternalVerificationsSubscriptionHandler interface {
-	FireCreatedEvent(verificationId uint64)
+	FireCreatedEvent(verification *Verification)
 	FireStatusUpdatedEvent(verificationId uint64, status string)
 	FireMergeStatusUpdatedEvent(verificationId uint64, mergeStatus string)
 	FireStartTimeUpdatedEvent(verificationId uint64, startTime time.Time)

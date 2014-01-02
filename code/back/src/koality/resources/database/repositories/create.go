@@ -12,39 +12,47 @@ const (
 type CreateHandler struct {
 	database            *sql.DB
 	verifier            *Verifier
+	readHandler         resources.RepositoriesReadHandler
 	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesCreateHandler, error) {
-	return &CreateHandler{database, verifier, subscriptionHandler}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resources.RepositoriesReadHandler,
+	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesCreateHandler, error) {
+
+	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri string) (uint64, error) {
+func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri string) (*resources.Repository, error) {
 	err := createHandler.getRepositoryParamsError(name, vcsType, localUri, remoteUri)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	id := uint64(0)
 	query := "INSERT INTO repositories (name, status, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	err = createHandler.database.QueryRow(query, name, initialRepositoryStatus, vcsType, localUri, remoteUri).Scan(&id)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	createHandler.subscriptionHandler.FireCreatedEvent(id)
-	return id, nil
+	repository, err := createHandler.readHandler.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	createHandler.subscriptionHandler.FireCreatedEvent(repository)
+	return repository, nil
 }
 
-func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (uint64, error) {
+func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (*resources.Repository, error) {
 	err := createHandler.getRepositoryParamsError(name, vcsType, localUri, remoteUri)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	transaction, err := createHandler.database.Begin()
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	id := uint64(0)
@@ -52,20 +60,25 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, re
 	err = transaction.QueryRow(repositoryQuery, name, initialRepositoryStatus, vcsType, localUri, remoteUri).Scan(&id)
 	if err != nil {
 		transaction.Rollback()
-		return 0, err
+		return nil, err
 	}
 
 	gitHubQuery := "INSERT INTO repository_github_metadatas (repository_id, owner, name) VALUES ($1, $2, $3)"
 	_, err = transaction.Exec(gitHubQuery, id, gitHubOwner, gitHubName)
 	if err != nil {
 		transaction.Rollback()
-		return 0, err
+		return nil, err
 	}
 
 	transaction.Commit()
 
-	createHandler.subscriptionHandler.FireCreatedEvent(id)
-	return id, nil
+	repository, err := createHandler.readHandler.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	createHandler.subscriptionHandler.FireCreatedEvent(repository)
+	return repository, nil
 }
 
 func (createHandler *CreateHandler) getRepositoryParamsError(name, vcsType, localUri, remoteUri string) error {

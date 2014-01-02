@@ -32,7 +32,7 @@ type UsersHandler struct {
 }
 
 type UsersCreateHandler interface {
-	Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (uint64, error)
+	Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (*User, error)
 }
 
 type UsersReadHandler interface {
@@ -55,7 +55,7 @@ type UsersDeleteHandler interface {
 	Delete(userId uint64) error
 }
 
-type UserCreatedHandler func(userId uint64)
+type UserCreatedHandler func(user *User)
 type UserDeletedHandler func(userId uint64)
 type UserNameUpdatedHandler func(userId uint64, firstName, lastName string)
 type UserAdminUpdatedHandler func(userId uint64, admin bool)
@@ -83,7 +83,7 @@ type UsersSubscriptionHandler interface {
 }
 
 type InternalUsersSubscriptionHandler interface {
-	FireCreatedEvent(userId uint64)
+	FireCreatedEvent(user *User)
 	FireDeletedEvent(userId uint64)
 	FireNameUpdatedEvent(userId uint64, firstName, lastName string)
 	FireAdminUpdatedEvent(userId uint64, admin bool)

@@ -16,12 +16,12 @@ func New(database *sql.DB) (*resources.PoolsHandler, error) {
 		return nil, err
 	}
 
-	createHandler, err := NewCreateHandler(database, verifier, internalSubscriptionHandler)
+	readHandler, err := NewReadHandler(database, verifier, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	readHandler, err := NewReadHandler(database, verifier, internalSubscriptionHandler)
+	createHandler, err := NewCreateHandler(database, verifier, readHandler, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}

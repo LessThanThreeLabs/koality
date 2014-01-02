@@ -25,8 +25,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCreatedEvents(sub
 	return subscriptionHandler.createdSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(verificationId uint64) {
-	subscriptionHandler.createdSubscriptionManager.Fire(verificationId)
+func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(verification *resources.Verification) {
+	subscriptionHandler.createdSubscriptionManager.Fire(verification)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToStatusUpdatedEvents(updateHandler resources.VerificationStatusUpdatedHandler) (resources.SubscriptionId, error) {

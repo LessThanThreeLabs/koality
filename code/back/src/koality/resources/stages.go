@@ -45,8 +45,8 @@ type StagesHandler struct {
 }
 
 type StagesCreateHandler interface {
-	Create(verificationId, sectionNumber uint64, name string, orderNumber uint64) (uint64, error)
-	CreateRun(stageId uint64) (uint64, error)
+	Create(verificationId, sectionNumber uint64, name string, orderNumber uint64) (*Stage, error)
+	CreateRun(stageId uint64) (*StageRun, error)
 }
 
 type StagesReadHandler interface {
@@ -73,8 +73,8 @@ type StagesUpdateHandler interface {
 	AddExports(stageRunId uint64, exports []Export) error
 }
 
-type StageCreatedHandler func(stageId uint64)
-type StageRunCreatedHandler func(stageRunId uint64)
+type StageCreatedHandler func(stage *Stage)
+type StageRunCreatedHandler func(stageRun *StageRun)
 type StageReturnCodeUpdatedHandler func(stageRunId uint64, returnCode int)
 type StageStartTimeUpdatedHandler func(stageRunId uint64, startTime time.Time)
 type StageEndTimeUpdatedHandler func(stageRunId uint64, endTime time.Time)
@@ -109,8 +109,8 @@ type StagesSubscriptionHandler interface {
 }
 
 type InternalStagesSubscriptionHandler interface {
-	FireCreatedEvent(stageId uint64)
-	FireRunCreatedEvent(stageRunId uint64)
+	FireCreatedEvent(stage *Stage)
+	FireRunCreatedEvent(stageRun *StageRun)
 	FireReturnCodeUpdatedEvent(stageRunId uint64, returnCode int)
 	FireStartTimeUpdatedEvent(stageRunId uint64, startTime time.Time)
 	FireEndTimeUpdatedEvent(stageRunId uint64, endTime time.Time)

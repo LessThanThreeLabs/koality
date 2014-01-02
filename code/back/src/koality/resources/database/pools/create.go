@@ -8,20 +8,23 @@ import (
 type CreateHandler struct {
 	database            *sql.DB
 	verifier            *Verifier
+	readHandler         resources.PoolsReadHandler
 	subscriptionHandler resources.InternalPoolsSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalPoolsSubscriptionHandler) (resources.PoolsCreateHandler, error) {
-	return &CreateHandler{database, verifier, subscriptionHandler}, nil
+func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resources.PoolsReadHandler,
+	subscriptionHandler resources.InternalPoolsSubscriptionHandler) (resources.PoolsCreateHandler, error) {
+
+	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
 func (createHandler *CreateHandler) CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
-	numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) (uint64, error) {
+	numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) (*resources.Ec2Pool, error) {
 
 	err := createHandler.getEc2ParamsError(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType,
 		numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	id := uint64(0)
@@ -33,11 +36,16 @@ func (createHandler *CreateHandler) CreateEc2Pool(name, accessKey, secretKey, us
 		baseAmiId, securityGroupId, vpcSubnetId, instanceType,
 		numReadyInstances, numMaxInstances, rootDriveSize, userData).Scan(&id)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	createHandler.subscriptionHandler.FireEc2CreatedEvent(id)
-	return id, nil
+	ec2Pool, err := createHandler.readHandler.GetEc2Pool(id)
+	if err != nil {
+		return nil, err
+	}
+
+	createHandler.subscriptionHandler.FireEc2CreatedEvent(ec2Pool)
+	return ec2Pool, nil
 }
 
 func (createHandler *CreateHandler) getEc2ParamsError(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,

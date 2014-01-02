@@ -93,13 +93,13 @@ func createRepositories(connection *resources.Connection) error {
 			repositoryName := fmt.Sprintf("Repository %d", index)
 			repositoryLocalUri := fmt.Sprintf("git@test-data.koalitycode.com:koality-%d.git", index)
 			repositoryRemoteUri := fmt.Sprintf("git@github.com:KoalityCode/koality-%d.git", index)
-			repositoryId, err := connection.Repositories.Create.Create(repositoryName, "git", repositoryLocalUri, repositoryRemoteUri)
+			repository, err := connection.Repositories.Create.Create(repositoryName, "git", repositoryLocalUri, repositoryRemoteUri)
 			if err != nil {
 				errorChannel <- err
 				return
 			}
 
-			err = createVerifications(connection, repositoryId, numVerificationsPerRepository)
+			err = createVerifications(connection, repository.Id, numVerificationsPerRepository)
 			errorChannel <- err
 		}(index)
 	}
@@ -133,7 +133,7 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 	for index := 0; index < numVerifications; index++ {
 		go func(index int) {
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
-			verificationId, err := connection.Verifications.Create.Create(repositoryId, createSha(), createSha(),
+			verification, err := connection.Verifications.Create.Create(repositoryId, createSha(), createSha(),
 				headMessage, userNames[index%len(userNames)], userEmails[index%len(userEmails)],
 				mergeTargets[index%len(mergeTargets)], userEmails[rand.Intn(len(userEmails))])
 			if err != nil {
@@ -141,7 +141,7 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 				return
 			}
 
-			err = createStages(connection, verificationId)
+			err = createStages(connection, verification.Id)
 			errorChannel <- err
 		}(index)
 	}
@@ -159,12 +159,12 @@ func createStages(connection *resources.Connection, verificationId uint64) error
 	stageNames := []string{"install dependencies", "prepare database", "frontend tests", "backend tests"}
 
 	for index, stageName := range stageNames {
-		stageId, err := connection.Stages.Create.Create(verificationId, uint64(index/2), stageName, uint64(index%2))
+		stage, err := connection.Stages.Create.Create(verificationId, uint64(index/2), stageName, uint64(index%2))
 		if err != nil {
 			return err
 		}
 
-		err = createStageRuns(connection, stageId)
+		err = createStageRuns(connection, stage.Id)
 		if err != nil {
 			return err
 		}
@@ -183,27 +183,27 @@ func createStageRuns(connection *resources.Connection, stageId uint64) error {
 	}
 
 	for index := 0; index < parallelizationLevel; index++ {
-		stageRunId, err := connection.Stages.Create.CreateRun(stageId)
+		stageRun, err := connection.Stages.Create.CreateRun(stageId)
 		if err != nil {
 			return err
 		}
 
-		err = connection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		err = connection.Stages.Update.SetStartTime(stageRun.Id, time.Now())
 		if err != nil {
 			return err
 		}
 
-		err = addConsoleText(connection, stageRunId)
+		err = addConsoleText(connection, stageRun.Id)
 		if err != nil {
 			return err
 		}
 
-		err = connection.Stages.Update.SetReturnCode(stageRunId, getReturnCode())
+		err = connection.Stages.Update.SetReturnCode(stageRun.Id, getReturnCode())
 		if err != nil {
 			return err
 		}
 
-		err = connection.Stages.Update.SetEndTime(stageRunId, time.Now())
+		err = connection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
 		if err != nil {
 			return err
 		}
