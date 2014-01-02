@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+const (
+	//TODO(akostov or bbland) hook these up.
+	defaultTimeout        = 120
+	defaultSshScript      = ""
+	defaultPrivateKeyPath = ""
+)
+
 func checkRepositoryExists(repository *resources.Repository) (path string, err error) {
 	path = pathgenerator.ToPath(repository)
 	if _, err = os.Stat(path); os.IsNotExist(err) {
@@ -41,14 +48,23 @@ func DeleteRepository(repository *resources.Repository) (err error) {
 	return os.RemoveAll(path)
 }
 
+/* TODO(akostov) Broken! Determine if this goes with a database change
 func RenameRepository(repository *resources.Repository, newName string) (err error) {
 	path, err := checkRepositoryExists(repository)
 	if err != nil {
 		return err
 	}
 
+	if repository.VcsType == "git" {
+		err = os.Rename(path + ".slave", )
+		if err != nil {
+			return err
+		}
+	}
+
 	return os.Rename(path, newName)
 }
+*/
 
 func MergeChangeset(repository *resources.Repository, headRef, baseRef, mergeIntoRef string) error {
 	return gitMergeChangeset(repository, headRef, baseRef, mergeIntoRef)
@@ -84,6 +100,10 @@ type BadRepositorySetupError struct {
 	Message string
 }
 
+type NoSuchCommitInRepositoryError struct {
+	Message string
+}
+
 func (err RepositoryAlreadyExistsInStoreError) Error() string {
 	return err.Message
 }
@@ -93,5 +113,9 @@ func (err NoSuchRepositoryInStoreError) Error() string {
 }
 
 func (err BadRepositorySetupError) Error() string {
+	return err.Message
+}
+
+func (err NoSuchCommitInRepositoryError) Error() string {
 	return err.Message
 }

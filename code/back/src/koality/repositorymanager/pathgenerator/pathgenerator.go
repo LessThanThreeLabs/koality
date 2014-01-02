@@ -8,7 +8,8 @@ import (
 )
 
 func ToPath(repo *resources.Repository) string {
-	return filepath.Join("/", "etc", "repositories", fmt.Sprintf("%d", repo.Id), repo.Name)
+	//return filepath.Join("/", "etc", "repositories", fmt.Sprintf("%d", repo.Id), repo.Name)
+	return filepath.Join("/", "home", "vagrant", "repositories", fmt.Sprintf("%d", repo.Id), repo.Name)
 
 }
 
