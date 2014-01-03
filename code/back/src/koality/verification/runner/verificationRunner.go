@@ -2,7 +2,8 @@ package runner
 
 import (
 	"fmt"
-	"io/ioutil"
+	"koality/repositorymanager"
+	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
 	"koality/shell"
 	"koality/verification"
@@ -11,7 +12,7 @@ import (
 	"koality/verification/config/section"
 	"koality/verification/stagerunner"
 	"koality/vm"
-	"os/user"
+	"koality/vm/vcs"
 	"time"
 )
 
@@ -136,21 +137,31 @@ func (verificationRunner *VerificationRunner) passVerification(verification *res
 	return err
 }
 
-// TODO (bbland): make this not bogus
 func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
 	var emptyConfig config.VerificationConfig
 
-	usr, err := user.Current()
+	repository, err := verificationRunner.ResourcesConnection.Repositories.Read.Get(currentVerification.RepositoryId)
 	if err != nil {
 		return emptyConfig, err
 	}
 
-	example_yaml, err := ioutil.ReadFile(fmt.Sprintf("%s/code/back/src/koality/verification/config/example_koality.yml", usr.HomeDir))
+	configYaml, err := repositorymanager.GetYamlFile(repository, currentVerification.Changeset.HeadSha)
+	if err != nil {
+		panic(err)
+		return emptyConfig, err
+	}
+
+	verificationConfig, err := config.FromYaml(configYaml)
 	if err != nil {
 		return emptyConfig, err
 	}
 
-	return config.FromYaml(string(example_yaml))
+	// TODO (bbland): add retry logic
+	checkoutCommand := vcs.CheckoutCommand(repository, pathgenerator.GitHiddenRef(currentVerification.Changeset.HeadSha))
+	setupCommands := []verification.Command{verification.NewShellCommand(repository.VcsType, checkoutCommand)}
+	setupSection := section.New("setup", section.RunOnAll, section.FailOnFirst, false, nil, commandgroup.New(setupCommands), nil)
+	verificationConfig.Sections = append([]section.Section{setupSection}, verificationConfig.Sections...)
+	return verificationConfig, nil
 }
 
 func (verificationRunner *VerificationRunner) createStages(currentVerification *resources.Verification, sections, finalSections []section.Section) error {

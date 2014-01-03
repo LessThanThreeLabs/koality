@@ -1,47 +1,44 @@
 package vcs
 
 import (
-	"fmt"
+	"koality/resources"
 	"koality/shell"
+	"path"
 )
 
 type Git struct{} // Empty struct?
 
-func (git Git) Type() VcsType {
-	return VcsType("git")
-}
+var ensureGitInstalledCommand = shell.Or(
+	shell.Silent("which git"),
+	shell.Advertised(shell.Sudo("apt-get install -y git-core")),
+)
 
-func (git Git) CloneCommand(vcsConfig VcsConfig) shell.Command {
-	repositoryUrl := fmt.Sprintf("%s:%s", vcsConfig.RepositoryHost, vcsConfig.RepositoryPath)
-	cloneCommand := shell.And(
+func (git Git) CloneCommand(repository *resources.Repository) shell.Command {
+	return shell.And(
+		ensureGitInstalledCommand,
 		shell.Or(
-			shell.Not(shell.Test(shell.Command(fmt.Sprintf("-e %s", vcsConfig.RepositoryName)))),
-			shell.Advertised(shell.Command(fmt.Sprintf("rm -rf %s", vcsConfig.RepositoryName))),
+			shell.Not(shell.Test(shell.Commandf("-e %s", repository.Name))),
+			shell.Advertised(shell.Commandf("rm -rf %s", repository.Name)),
 		),
-		hostAccessCheckCommand(vcsConfig.RepositoryHost),
-		shell.Advertised(shell.Command(fmt.Sprintf("git clone %s %s", repositoryUrl, vcsConfig.RepositoryName))),
+		shell.Advertised(shell.Commandf("git clone %s %s", repository.RemoteUri, repository.Name)),
 	)
-	return cloneCommand
 }
 
-func (git Git) CheckoutCommand(vcsConfig VcsConfig, ref string) shell.Command {
-	repositoryUrl := fmt.Sprintf("%s:%s", vcsConfig.RepositoryHost, vcsConfig.RepositoryPath)
-	checkoutCommand := shell.And(
-		hostAccessCheckCommand(vcsConfig.RepositoryHost),
+func (git Git) CheckoutCommand(repository *resources.Repository, ref string) shell.Command {
+	return shell.And(
+		ensureGitInstalledCommand,
 		shell.Or(
-			shell.Silent(shell.Command("which git")),
-			shell.Sudo(shell.Command("apt-get install -y git")), // TODO: make this not just apt
-		),
-		shell.Or(
-			shell.Silent(shell.Command(fmt.Sprintf("mv /repositories/cached/%s %s", vcsConfig.RepositoryName, vcsConfig.RepositoryName))),
+			shell.And(
+				shell.Test(shell.Commandf("-d %s", path.Join("/", "koality", "repositories", repository.Name))),
+				shell.Advertised(shell.Commandf("mv %s %s", path.Join("/", "koality", "repositories", repository.Name), repository.Name)),
+			),
 			shell.Chain(
-				shell.Silent(shell.Command(fmt.Sprintf("rm -rf %s", vcsConfig.RepositoryName))),
-				shell.Advertised(shell.Command(fmt.Sprintf("git init %s", vcsConfig.RepositoryName))),
+				shell.Silent(shell.Commandf("rm -rf %s", repository.Name)),
+				shell.Advertised(shell.Commandf("git init %s", repository.Name)),
 			),
 		),
-		shell.Advertised(shell.Command(fmt.Sprintf("cd %s", vcsConfig.RepositoryName))),
-		shell.Advertised(shell.Command(fmt.Sprintf("git fetch %s %s -n --depth 1", repositoryUrl, ref))),
-		shell.Advertised(shell.Command("git checkout --force FETCH_HEAD")),
+		shell.Advertised(shell.Commandf("cd %s", repository.Name)),
+		shell.Advertised(shell.Commandf("git fetch %s %s -n --depth 1", repository.RemoteUri, ref)),
+		shell.Advertised("git checkout --force FETCH_HEAD"),
 	)
-	return checkoutCommand
 }
