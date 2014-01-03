@@ -14,27 +14,27 @@ type RepoManager interface {
 
 func GetYamlFile(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	vcsDispatcher := map[string]func(*resources.Repository, string) (string, error){
-		"git":      pullYamlFromGitRepo,
-		"hg":       pullYamlFromHgRepo,
-		"perforce": pullYamlFromPerforceRepo,
-		"svn":      pullYamlFromSvnRepo,
+		"git":      getYamlFromGitRepo,
+		"hg":       getYamlFromHgRepo,
+		"perforce": getYamlFromPerforceRepo,
+		"svn":      getYamlFromSvnRepo,
 	}
 
 	return vcsDispatcher[repository.VcsType](repository, ref)
 }
 
-func pullYamlFromGitRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
+func getYamlFromGitRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	return repositorystore.GetYamlFile(repository, ref)
 }
 
-func pullYamlFromHgRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
+func getYamlFromHgRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	return repositorystore.GetYamlFile(repository, ref)
 }
 
-func pullYamlFromPerforceRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
+func getYamlFromPerforceRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	return
 }
-func pullYamlFromSvnRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
+func getYamlFromSvnRepo(repository *resources.Repository, ref string) (yamlFile string, err error) {
 	return
 }
 

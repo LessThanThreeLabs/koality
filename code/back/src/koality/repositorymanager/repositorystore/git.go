@@ -22,7 +22,7 @@ func gitFetchWithPrivateKey(repository *Repository, remoteUri string, args ...st
 		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
 	}
 
-	if err := RunCommand(repository.Command(env, "remote", "prune")); err != nil {
+	if err := RunCommand(repository.Command(env, "remote", "prune", remoteUri)); err != nil {
 		return err
 	}
 
@@ -195,11 +195,12 @@ func gitGetHeadSha(repository *Repository) (headSha string, err error) {
 		return
 	}
 
-	headSha = strings.TrimPrefix(shaLine, "commit ")
-	if headSha == shaLine {
+	if !strings.HasPrefix(shaLine, "commit ") {
 		err = fmt.Errorf("git show HEAD output data for repository at %s was not formatted as expected.", repository.path)
 		return
 	}
+
+	headSha = strings.Trim(strings.TrimPrefix(shaLine, "commit "), "\n")
 	return
 }
 
@@ -321,16 +322,17 @@ func gitGetCommitAttributes(repository *resources.Repository, ref string) (messa
 
 	authorLine, err := commitDataReader.ReadString('\n')
 
-	author := strings.TrimPrefix(authorLine, "Author: ")
-	if author == authorLine {
+	if !strings.HasPrefix(authorLine, "Author") {
 		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
 
+	author := strings.Trim(strings.TrimPrefix(authorLine, "Author: "), "\n")
+
 	authorSplit := strings.Split(author, " <")
 
 	username = strings.Trim(authorSplit[0], " ")
-	email = strings.Trim(authorSplit[1], "> ")
+	email = strings.Trim(authorSplit[1], "> \n")
 
 	dateLine, err := commitDataReader.ReadString('\n')
 
@@ -341,14 +343,14 @@ func gitGetCommitAttributes(repository *resources.Repository, ref string) (messa
 
 	blankLine, err := commitDataReader.ReadString('\n')
 
-	if blankLine != "" {
+	if blankLine != "\n" {
 		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
 
 	messageLine, err := commitDataReader.ReadString('\n')
 
-	message = strings.Trim(messageLine, " ")
+	message = strings.Trim(messageLine, " \n")
 
 	return
 }

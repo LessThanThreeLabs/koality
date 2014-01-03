@@ -1,10 +1,12 @@
 package repositorystore
 
 import (
+	"bufio"
 	"fmt"
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
 	"os"
+	"strings"
 )
 
 func hgFetchWithPrivateKey(repository *Repository, remoteUri string, args ...string) (err error) {
@@ -93,7 +95,7 @@ func hgGetCommitAttributes(repository *resources.Repository, ref string) (messag
 
 	messageLine, err := commitDataReader.ReadString('\n')
 
-	if !strings.HasPrefix("summary:") {
+	if !strings.HasPrefix(messageLine, "summary:") {
 		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
