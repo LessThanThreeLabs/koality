@@ -2,13 +2,15 @@
 # vi: set ft=ruby :
 
 VAGRANTFILE_API_VERSION = "2"
-VAGRANT_HOME_DIRECTORY = "/home/vagrant"
+KOALITY_HOME_DIRECTORY = "/home/koality"
 
-# Vagrant.require_version ">= 1.4.0"
+Vagrant.require_version ">= 1.4.0"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-	config.vm.box = "precise64"
-	config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+	config.vm.box = "koality-v0"
+	config.vm.box_url = "https://s3-us-west-2.amazonaws.com/koality-boxes/v0.box"
+	
+	config.ssh.username = "koality"
 
 	config.vm.provider "virtualbox" do |v|
 		v.customize ["modifyvm", :id, "--name", "koality"]
@@ -22,12 +24,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.network :forwarded_port, guest: 80,    host: 1080  # Nginx
 	config.vm.network :forwarded_port, guest: 443,   host: 10443 # Nginx
 	config.vm.network :forwarded_port, guest: 8080,  host: 8080  # Webserver
-	config.vm.network :forwarded_port, guest: 5672,  host: 5672  # RabbitMQ
-	config.vm.network :forwarded_port, guest: 15672, host: 15672 # RabbitMQ Management
 
-	config.vm.synced_folder "code/", "#{VAGRANT_HOME_DIRECTORY}/code", nfs: true
-	config.vm.synced_folder "nginx/", "#{VAGRANT_HOME_DIRECTORY}/nginx", nfs: true
-	config.vm.synced_folder "postgres/", "#{VAGRANT_HOME_DIRECTORY}/postgres", nfs: true
+	config.vm.synced_folder "code/", "#{KOALITY_HOME_DIRECTORY}/code", nfs: true
+	config.vm.synced_folder "nginx/", "#{KOALITY_HOME_DIRECTORY}/nginx", nfs: true
+	config.vm.synced_folder "postgres/", "#{KOALITY_HOME_DIRECTORY}/postgres", nfs: true
 
 	config.vm.provision :chef_solo do |chef|
 		chefRoot = "chef"
@@ -40,8 +40,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "git"
 		chef.add_recipe "oh-my-zsh"
 		chef.add_recipe "golang"
-		chef.add_recipe "erlang"
-		chef.add_recipe "rabbitmq"
 		chef.add_recipe "nginx"
 		chef.add_recipe "postgres"
 
@@ -49,7 +47,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			:oh_my_zsh => {
 				:users => [
 					{
-					:login => "vagrant",
+					:login => "koality",
 					:theme => {:name => "bbland", :source => "https://gist.github.com/BrianBland/7884348/raw/934802429044760bc5a2b90c773e71b13d261563/bbland.zsh-theme" },
 					:plugins => ["git", "golang"]
 					}
@@ -57,14 +55,11 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			},
 			:go => {
 				:version => "1.2",
-				:gopath => "#{VAGRANT_HOME_DIRECTORY}/code/back",
-				:gobin => "#{VAGRANT_HOME_DIRECTORY}/code/back/bin"
-			},
-			:rabbitmq => {
-				:version => "3.1.5"
+				:gopath => "#{KOALITY_HOME_DIRECTORY}/code/back",
+				:gobin => "#{KOALITY_HOME_DIRECTORY}/code/back/bin"
 			},
 			:nginx => {
-				:conf_path => "#{VAGRANT_HOME_DIRECTORY}/nginx/nginx.conf"
+				:conf_path => "#{KOALITY_HOME_DIRECTORY}/nginx/nginx.conf"
 			}
 		}
 	end
