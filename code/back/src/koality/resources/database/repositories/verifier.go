@@ -12,9 +12,10 @@ const (
 	repositoryMaxNameLength      = 256
 	repositoryMaxLocalUriLength  = 256
 	repositoryMaxRemoteUriLength = 256
-	nameRegex                    = "^[-_a-zA-Z0-9 ]+$"
-	gitUriRegex                  = "[-_\\./a-zA-Z0-9]+@[-_\\.:/a-zA-Z0-9]+$"
-	hgUriRegex                   = "[-_\\./a-zA-Z0-9]+@[-_\\./a-zA-Z0-9]+$"
+	nameRegex                    = "^[-_a-zA-Z0-9]+$"
+	filePathRegex                = "^[-__\\./a-zA-Z0-9]+$"
+	remoteGitUriRegex            = "[-_\\./a-zA-Z0-9]+@[-_\\.:/a-zA-Z0-9]+$"
+	remoteHgUriRegex             = "[-_\\./a-zA-Z0-9]+@[-_\\./a-zA-Z0-9]+$"
 )
 
 var (
@@ -60,8 +61,8 @@ func (verifier *Verifier) verifyVcsType(vcsType string) error {
 func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
 	if len(localUri) > repositoryMaxLocalUriLength {
 		return fmt.Errorf("Git local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
-	} else if ok, err := regexp.MatchString(gitUriRegex, localUri); !ok || err != nil {
-		return errors.New("Git local uri must match regex: " + gitUriRegex)
+	} else if ok, err := regexp.MatchString(filePathRegex, localUri); !ok || err != nil {
+		return errors.New("Git local uri must match regex: " + filePathRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
 		return err
 	}
@@ -71,8 +72,8 @@ func (verifier *Verifier) verifyLocalGitUri(localUri string) error {
 func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 	if len(remoteUri) > repositoryMaxRemoteUriLength {
 		return fmt.Errorf("Git remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
-	} else if ok, err := regexp.MatchString(gitUriRegex, remoteUri); !ok || err != nil {
-		return errors.New("Git local uri must match regex: " + gitUriRegex)
+	} else if ok, err := regexp.MatchString(remoteGitUriRegex, remoteUri); !ok || err != nil {
+		return errors.New("Git remote uri must match regex: " + remoteGitUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
 		return err
 	}
@@ -82,8 +83,8 @@ func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 func (verifier *Verifier) verifyLocalHgUri(localUri string) error {
 	if len(localUri) > repositoryMaxLocalUriLength {
 		return fmt.Errorf("Hg local uri cannot exceed %d characters long", repositoryMaxLocalUriLength)
-	} else if ok, err := regexp.MatchString(hgUriRegex, localUri); !ok || err != nil {
-		return errors.New("Hg local uri must match regex: " + hgUriRegex)
+	} else if ok, err := regexp.MatchString(filePathRegex, localUri); !ok || err != nil {
+		return errors.New("Hg local uri must match regex: " + filePathRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithLocalUri(localUri); err != nil {
 		return err
 	}
@@ -93,8 +94,8 @@ func (verifier *Verifier) verifyLocalHgUri(localUri string) error {
 func (verifier *Verifier) verifyRemoteHgUri(remoteUri string) error {
 	if len(remoteUri) > repositoryMaxRemoteUriLength {
 		return fmt.Errorf("Hg remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
-	} else if ok, err := regexp.MatchString(hgUriRegex, remoteUri); !ok || err != nil {
-		return errors.New("Hg local uri must match regex: " + hgUriRegex)
+	} else if ok, err := regexp.MatchString(remoteHgUriRegex, remoteUri); !ok || err != nil {
+		return errors.New("Hg remote uri must match regex: " + remoteHgUriRegex)
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
 		return err
 	}

@@ -16,7 +16,7 @@ func TestCreateInvalidRepository(test *testing.T) {
 
 	name := "repository-name"
 	vcsType := "git"
-	localUri := "git@local.uri.com:name.git"
+	localUri := "git/local_uri/name.git"
 	remoteUri := "git@remote.uri.com:name.git"
 
 	_, err = connection.Repositories.Create.Create("", vcsType, localUri, remoteUri)
@@ -44,7 +44,7 @@ func TestCreateInvalidRepository(test *testing.T) {
 		test.Fatal("Expected error after providing invalid repository local uri")
 	}
 
-	_, err = connection.Repositories.Create.Create(name, vcsType, "google.com", remoteUri)
+	_, err = connection.Repositories.Create.Create(name, vcsType, "git@google.com", remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository local uri")
 	}
@@ -92,7 +92,7 @@ func TestCreateRepository(test *testing.T) {
 
 	name := "repository-name"
 	vcsType := "hg"
-	localUri := "hg@local.uri.com/name"
+	localUri := "hg/local_uri/name"
 	remoteUri := "hg@remote.uri.com/name"
 	repository, err := connection.Repositories.Create.Create(name, vcsType, localUri, remoteUri)
 	if err != nil {
@@ -221,7 +221,7 @@ func TestCreateGitHubRepository(test *testing.T) {
 	name := "repository-name"
 	vcsType := "hg"
 	localUri := "hg@local.uri.com/name"
-	remoteUri := "hg@remote.uri.com/name"
+	remoteUri := "hg/remote_uri/name"
 	gitHubOwner := "jordanpotter"
 	gitHubName := "repository-github-name"
 	repository, err := connection.Repositories.Create.CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName)
@@ -335,7 +335,7 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@local.uri.com/name", "hg@remote.uri.com/name")
+	repository, err := connection.Repositories.Create.Create("repository-name", "hg", "hg/local_uri/name", "hg@remote.uri.com/name")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -416,7 +416,7 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git@local.uri.com:name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git/local_uri/name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
 	if err != nil {
 		test.Fatal(err)
 	}
