@@ -9,7 +9,7 @@ import (
 )
 
 func TestPoolSizeAssertions(testing *testing.T) {
-	poolSizeAllowed := func(minReady, maxSize int) (allowed bool) {
+	poolSizeAllowed := func(minReady, maxSize uint64) (allowed bool) {
 		defer func() {
 			allowed = recover() == nil
 		}()
@@ -17,7 +17,7 @@ func TestPoolSizeAssertions(testing *testing.T) {
 		return
 	}
 
-	assertPoolSizeAllowed := func(minReady, maxSize int, shouldBeAllowed bool) {
+	assertPoolSizeAllowed := func(minReady, maxSize uint64, shouldBeAllowed bool) {
 		if poolSizeAllowed(minReady, maxSize) != shouldBeAllowed {
 			if shouldBeAllowed {
 				testing.Errorf("Pool size not allowed, should be allowed, size params: (%d, %d)", minReady, maxSize)
@@ -29,7 +29,7 @@ func TestPoolSizeAssertions(testing *testing.T) {
 
 	assertPoolSizeAllowed(0, 0, false)
 
-	for maxSize := 10; maxSize < 100; maxSize += 10 {
+	for maxSize := uint64(10); maxSize < 100; maxSize += 10 {
 		assertPoolSizeAllowed(0, maxSize, true)
 		assertPoolSizeAllowed(maxSize/2, maxSize, true)
 		assertPoolSizeAllowed(maxSize, maxSize, true)
@@ -40,13 +40,13 @@ func TestPoolSizeAssertions(testing *testing.T) {
 }
 
 func TestPoolReachesCap(testing *testing.T) {
-	testPoolReachesCap := func(poolSize int) {
+	testPoolReachesCap := func(poolSize uint64) {
 		pool := vm.NewPool(NewLauncher(), 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(poolSize)
 
-		for x := 0; x < poolSize; x++ {
+		for x := uint64(0); x < poolSize; x++ {
 			select {
 			case <-timeout:
 				testing.Error("Timed out!")
@@ -66,13 +66,13 @@ func TestPoolReachesCap(testing *testing.T) {
 }
 
 func TestPoolEnforcesCap(testing *testing.T) {
-	testPoolEnforcesCap := func(poolSize int) {
+	testPoolEnforcesCap := func(poolSize uint64) {
 		pool := vm.NewPool(NewLauncher(), 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(poolSize + 1)
 
-		for x := 0; x < poolSize+1; x++ {
+		for x := uint64(0); x < poolSize+1; x++ {
 			select {
 			case <-timeout:
 				if x != poolSize {
@@ -100,13 +100,13 @@ func TestPoolEnforcesCap(testing *testing.T) {
 }
 
 func TestPoolMaxSizeIncrease(testing *testing.T) {
-	testPoolMaxSizeIncrease := func(startingPoolSize, endingPoolSize int) {
+	testPoolMaxSizeIncrease := func(startingPoolSize, endingPoolSize uint64) {
 		pool := vm.NewPool(NewLauncher(), 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(startingPoolSize)
 
-		for x := 0; x < startingPoolSize; x++ {
+		for x := uint64(0); x < startingPoolSize; x++ {
 			select {
 			case <-timeout:
 				testing.Error("Timed out!")
@@ -153,13 +153,13 @@ func TestPoolMaxSizeIncrease(testing *testing.T) {
 }
 
 func TestPoolMaxSizeDecrease(testing *testing.T) {
-	testPoolMaxSizeDecrease := func(startingPoolSize, endingPoolSize, amountToRequest int) {
+	testPoolMaxSizeDecrease := func(startingPoolSize, endingPoolSize, amountToRequest uint64) {
 		pool := vm.NewPool(NewLauncher(), 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(amountToRequest)
 
-		for x := 0; x < amountToRequest; x++ {
+		for x := uint64(0); x < amountToRequest; x++ {
 			select {
 			case <-timeout:
 				testing.Error("Timed out!")
