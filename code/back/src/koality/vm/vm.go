@@ -18,10 +18,10 @@ type VirtualMachineLauncher interface {
 
 type VirtualMachinePool interface {
 	Get() VirtualMachine
-	GetN(int) <-chan VirtualMachine
+	GetN(uint64) <-chan VirtualMachine
 	Free()
-	MaxSize() int
-	SetMaxSize(int)
-	MinReady() int
-	SetMinReady(int)
+	MaxSize() uint64
+	SetMaxSize(uint64)
+	MinReady() uint64
+	SetMinReady(uint64)
 }

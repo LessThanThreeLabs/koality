@@ -24,15 +24,16 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	if currentVerification == nil {
 		panic("Cannot run a nil verification")
 	}
-	virtualMachinePool, ok := verificationRunner.VirtualMachinePools[currentVerification.RepositoryId]
-	if !ok {
-		verificationRunner.failVerification(currentVerification)
-		return false, fmt.Errorf("No virtual machine pool found for repository: %d", currentVerification.RepositoryId)
-	}
 	verificationConfig, err := verificationRunner.getVerificationConfig(currentVerification)
 	if err != nil {
 		verificationRunner.failVerification(currentVerification)
 		return false, err
+	}
+
+	virtualMachinePool, ok := verificationRunner.VirtualMachinePools[verificationConfig.Params.PoolId]
+	if !ok {
+		verificationRunner.failVerification(currentVerification)
+		return false, fmt.Errorf("No virtual machine pool found for repository: %d", currentVerification.RepositoryId)
 	}
 
 	err = verificationRunner.createStages(currentVerification, verificationConfig.Sections, verificationConfig.FinalSections)
@@ -42,7 +43,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	}
 
 	numNodes := verificationConfig.Params.Nodes
-	if numNodes <= 0 {
+	if numNodes == 0 {
 		numNodes = 1 // TEMPORARY
 	}
 
@@ -63,7 +64,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		}
 	}
 
-	newMachinesChan := virtualMachinePool.GetN(int(numNodes))
+	newMachinesChan := virtualMachinePool.GetN(numNodes)
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
 			go runStages(newMachine)
@@ -76,7 +77,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	for {
 		result, hasMoreResults := <-resultsChan
 		if !hasMoreResults {
-			verificationPassed := currentVerification.VerificationStatus != "cancelled" && currentVerification.VerificationStatus != "failed"
+			verificationPassed := currentVerification.Status != "cancelled" && currentVerification.Status != "failed"
 			if verificationPassed {
 				err := verificationRunner.passVerification(currentVerification)
 				if err != nil {
@@ -90,7 +91,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 			case section.FailOnNever:
 				// Do nothing
 			case section.FailOnAny:
-				if currentVerification.VerificationStatus != "cancelled" && currentVerification.VerificationStatus != "failed" {
+				if currentVerification.Status != "cancelled" && currentVerification.Status != "failed" {
 					err := verificationRunner.failVerification(currentVerification)
 					if err != nil {
 						return false, err
@@ -98,7 +99,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 				}
 			case section.FailOnFirst:
 				if !receivedResult[result.Section] {
-					if currentVerification.VerificationStatus != "cancelled" && currentVerification.VerificationStatus != "failed" {
+					if currentVerification.Status != "cancelled" && currentVerification.Status != "failed" {
 						err := verificationRunner.failVerification(currentVerification)
 						if err != nil {
 							return false, err
@@ -112,7 +113,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 }
 
 func (verificationRunner *VerificationRunner) failVerification(verification *resources.Verification) error {
-	(*verification).VerificationStatus = "failed"
+	(*verification).Status = "failed"
 	fmt.Printf("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
 	err := verificationRunner.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
 	if err != nil {
@@ -124,7 +125,7 @@ func (verificationRunner *VerificationRunner) failVerification(verification *res
 }
 
 func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification) error {
-	(*verification).VerificationStatus = "passed"
+	(*verification).Status = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
 	err := verificationRunner.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
 	if err != nil {

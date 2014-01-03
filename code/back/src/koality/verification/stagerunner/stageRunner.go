@@ -46,10 +46,10 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 		}
 	}
 	// TODO (bbland): do something smarter than just sleep and poll
-	for stageRunner.verification.VerificationStatus == "running" {
+	for stageRunner.verification.Status == "running" {
 		time.Sleep(time.Second)
 	}
-	if stageRunner.verification.VerificationStatus == "cancelled" {
+	if stageRunner.verification.Status == "cancelled" {
 		return nil
 	}
 	// TODO (bbland): inject a KOALITY_STATUS environment variable somehow
@@ -96,7 +96,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 	factoryCommands := sectionToRun.FactoryCommands(false)
 
 	for command, err = factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
-		if stageRunner.verification.VerificationStatus == "cancelled" {
+		if stageRunner.verification.Status == "cancelled" {
 			return false, nil
 		}
 
@@ -114,7 +114,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			}
 		}
 
-		stageRunId, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
+		stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
 		if err != nil {
 			return false, err
 		}
@@ -122,10 +122,10 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		outputBuffer := new(bytes.Buffer)
 		syncOutputBuffer := &syncWriter{writer: outputBuffer}
 
-		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)
+		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRun.Id)
 		syncConsoleWriter := &syncWriter{writer: consoleWriter}
 
-		err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRun.Id, time.Now())
 		if err != nil {
 			return false, err
 		}
@@ -144,8 +144,8 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			}
 		}
 
-		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRunId, time.Now())
-		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRunId, returnCode)
+		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
+		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, returnCode)
 
 		if closeErr != nil {
 			return false, closeErr
@@ -214,7 +214,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 
 	commands := sectionToRun.Commands(false)
 	for command, err = commands.Next(); err == nil; command, err = commands.Next() {
-		if stageRunner.verification.VerificationStatus == "cancelled" {
+		if stageRunner.verification.Status == "cancelled" {
 			return false, nil
 		}
 
@@ -232,15 +232,15 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			}
 		}
 
-		stageRunId, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
+		stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
 		if err != nil {
 			return false, err
 		}
 
-		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRunId)
+		consoleWriter := newConsoleTextWriter(stageRunner.resourcesConnection.Stages.Update, stageRun.Id)
 		syncConsoleWriter := &syncWriter{writer: consoleWriter}
 
-		err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRunId, time.Now())
+		err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRun.Id, time.Now())
 		if err != nil {
 			return false, err
 		}
@@ -259,8 +259,8 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			}
 		}
 
-		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRunId, time.Now())
-		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRunId, returnCode)
+		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
+		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, returnCode)
 
 		if closeErr != nil {
 			return false, closeErr

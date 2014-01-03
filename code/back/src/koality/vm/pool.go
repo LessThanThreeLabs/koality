@@ -9,25 +9,22 @@ import (
 
 type virtualMachinePool struct {
 	virtualMachineLauncher VirtualMachineLauncher
-	minReady               int
-	maxSize                int
-	startingCount          int
-	readyCount             int
-	allocatedCount         int
+	minReady               uint64
+	maxSize                uint64
+	startingCount          uint64
+	readyCount             int64 // This can be negative when overallocated
+	allocatedCount         uint64
 	readyChannel           chan VirtualMachine
 	waitingChannel         chan chan VirtualMachine
 	locker                 sync.Locker
 }
 
-func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize int) *virtualMachinePool {
+func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize uint64) *virtualMachinePool {
 	if minReady > maxSize {
 		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, maxSize))
 	}
-	if minReady < 0 {
-		panic(fmt.Sprintf("minReady must be nonnegative: (was %d)", minReady))
-	}
-	if maxSize <= 0 {
-		panic(fmt.Sprintf("maxSize must be positive: (was %d)", maxSize))
+	if maxSize == 0 {
+		panic("maxSize must be positive: (was 0)")
 	}
 	pool := virtualMachinePool{
 		virtualMachineLauncher: virtualMachineLauncher,
@@ -52,11 +49,11 @@ func (pool *virtualMachinePool) transferReadyToWaiting() {
 	}
 }
 
-func (pool *virtualMachinePool) allocateN(numToAllocate int) {
+func (pool *virtualMachinePool) allocateN(numToAllocate uint64) {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
 
-	pool.readyCount -= numToAllocate
+	pool.readyCount -= int64(numToAllocate)
 	pool.allocatedCount += numToAllocate
 	// fmt.Printf("Allocate %d: %#v\n", pool, numToAllocate)
 }
@@ -69,31 +66,32 @@ func (pool *virtualMachinePool) unallocateOne() {
 }
 
 func (pool *virtualMachinePool) ensureReadyInstances() error {
-	numToLaunch := func() int {
+	numToLaunch := func() uint64 {
 		pool.locker.Lock()
 		defer pool.locker.Unlock()
 
-		numToLaunch := pool.minReady - (pool.readyCount + pool.startingCount)
+		numToLaunch := int64(pool.minReady) - (pool.readyCount + int64(pool.startingCount))
 
-		if numToLaunch > pool.maxSize-(pool.readyCount+pool.startingCount+pool.allocatedCount) {
-			numToLaunch = pool.maxSize - (pool.readyCount + pool.startingCount + pool.allocatedCount)
+		maxLaunchable := int64(pool.maxSize) - (pool.readyCount + int64(pool.startingCount+pool.allocatedCount))
+		if numToLaunch > maxLaunchable {
+			numToLaunch = maxLaunchable
 		}
 		// fmt.Printf("%#v\n", pool)
 		// fmt.Printf("Num to launch: %d\n", numToLaunch)
 		if numToLaunch <= 0 {
 			return 0
 		}
-		pool.startingCount += numToLaunch
-		return numToLaunch
+		pool.startingCount += uint64(numToLaunch)
+		return uint64(numToLaunch)
 	}()
 
-	if numToLaunch <= 0 {
+	if numToLaunch == 0 {
 		return nil
 	}
 
 	doneChannel := make(chan error, numToLaunch)
 
-	for x := 0; x < numToLaunch; x++ {
+	for x := uint64(0); x < numToLaunch; x++ {
 		go func(doneChannel chan error) {
 			doneChannel <- pool.newReadyInstance()
 		}(doneChannel)
@@ -112,7 +110,7 @@ func (pool *virtualMachinePool) Get() VirtualMachine {
 	return <-pool.GetN(1)
 }
 
-func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
+func (pool *virtualMachinePool) GetN(numMachines uint64) <-chan VirtualMachine {
 	machinesChan := make(chan VirtualMachine, numMachines)
 	returnChan := make(chan VirtualMachine, numMachines)
 
@@ -122,14 +120,14 @@ func (pool *virtualMachinePool) GetN(numMachines int) <-chan VirtualMachine {
 	go pool.ensureReadyInstances()
 
 	go func() {
-		for x := 0; x < numMachines; x++ {
+		for x := uint64(0); x < numMachines; x++ {
 			pool.waitingChannel <- machinesChan
 		}
 	}()
 
 	// Necessary for closing the channel after numMachines are put on it
 	go func() {
-		for x := 0; x < numMachines; x++ {
+		for x := uint64(0); x < numMachines; x++ {
 			returnChan <- <-machinesChan
 		}
 		close(returnChan)
@@ -145,24 +143,24 @@ func (pool *virtualMachinePool) Free() {
 	go pool.ensureReadyInstances()
 }
 
-func (pool *virtualMachinePool) MaxSize() int {
+func (pool *virtualMachinePool) MaxSize() uint64 {
 	return pool.maxSize
 }
 
-func (pool *virtualMachinePool) SetMaxSize(maxSize int) {
+func (pool *virtualMachinePool) SetMaxSize(maxSize uint64) {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
 
 	if maxSize < pool.minReady {
 		panic(fmt.Sprintf("maxSize should not be smaller than minReady: (%d < %d)", maxSize, pool.minReady))
 	}
-	if maxSize <= 0 {
-		panic(fmt.Sprintf("maxSize must be positive: (was %d)", maxSize))
+	if maxSize == 0 {
+		panic("maxSize must be positive: (was 0)")
 	}
 
 	pool.maxSize = maxSize
 
-	numToRemove := pool.startingCount + pool.readyCount + pool.allocatedCount - maxSize
+	numToRemove := int64(pool.startingCount+pool.allocatedCount) + pool.readyCount - int64(maxSize)
 	if numToRemove <= 0 || pool.readyCount <= 0 {
 		return
 	}
@@ -171,7 +169,7 @@ func (pool *virtualMachinePool) SetMaxSize(maxSize int) {
 		numToRemove = pool.readyCount
 	}
 
-	for x := 0; x < numToRemove; x++ {
+	for x := int64(0); x < numToRemove; x++ {
 		select {
 		case ready := <-pool.readyChannel:
 			go ready.Terminate()
@@ -182,19 +180,16 @@ func (pool *virtualMachinePool) SetMaxSize(maxSize int) {
 	}
 }
 
-func (pool *virtualMachinePool) MinReady() int {
+func (pool *virtualMachinePool) MinReady() uint64 {
 	return pool.minReady
 }
 
-func (pool *virtualMachinePool) SetMinReady(minReady int) {
+func (pool *virtualMachinePool) SetMinReady(minReady uint64) {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
 
 	if minReady > pool.maxSize {
 		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, pool.maxSize))
-	}
-	if minReady < 0 {
-		panic(fmt.Sprintf("minReady must be nonnegative: (was %d)", minReady))
 	}
 
 	pool.minReady = minReady
@@ -218,7 +213,7 @@ func (pool *virtualMachinePool) newReadyInstance() error {
 
 		// fmt.Printf("New instance: %#v\n", pool)
 
-		if pool.readyCount+pool.startingCount > pool.minReady {
+		if pool.readyCount > int64(pool.minReady) {
 			pool.readyCount--
 			fmt.Println("Ermahgherd")
 			return nil, newVm.Terminate()

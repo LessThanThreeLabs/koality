@@ -10,15 +10,15 @@ import (
 	"koality/vm/ec2/ec2broker"
 )
 
-type EC2VirtualMachine struct {
+type Ec2VirtualMachine struct {
 	sshExecutableMaker *vm.SshExecutableMaker
 	fileCopier         shell.FileCopier
 	patcher            vm.Patcher
 	instance           *ec2.Instance
-	ec2Broker          *ec2broker.EC2Broker
+	ec2Broker          *ec2broker.Ec2Broker
 }
 
-func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (*EC2VirtualMachine, error) {
+func New(instance *ec2.Instance, broker *ec2broker.Ec2Broker, username string) (*Ec2VirtualMachine, error) {
 	sshConfig := vm.SshConfig{
 		Username: username,
 		Hostname: instance.IPAddress,
@@ -40,7 +40,7 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (
 	}
 	fileCopier := &vm.ScpFileCopier{scper}
 	patcher := vm.NewPatcher(fileCopier, sshExecutableMaker)
-	ec2Vm := EC2VirtualMachine{
+	ec2Vm := Ec2VirtualMachine{
 		sshExecutableMaker: sshExecutableMaker,
 		fileCopier:         fileCopier,
 		patcher:            patcher,
@@ -50,20 +50,20 @@ func New(instance *ec2.Instance, broker *ec2broker.EC2Broker, username string) (
 	return &ec2Vm, nil
 }
 
-func (ec2Vm *EC2VirtualMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
+func (ec2Vm *Ec2VirtualMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
 	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdin, stdout, stderr)
 }
 
-func (ec2Vm *EC2VirtualMachine) Patch(patchConfig *vm.PatchConfig) (shell.Executable, error) {
+func (ec2Vm *Ec2VirtualMachine) Patch(patchConfig *vm.PatchConfig) (shell.Executable, error) {
 	return ec2Vm.patcher.Patch(patchConfig)
 }
 
-func (ec2Vm *EC2VirtualMachine) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
+func (ec2Vm *Ec2VirtualMachine) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
 	return ec2Vm.fileCopier.FileCopy(sourceFilePath, destFilePath)
 }
 
-func (ec2Vm *EC2VirtualMachine) Terminate() error {
-	terminateResp, err := ec2Vm.ec2Broker.EC2().TerminateInstances([]string{ec2Vm.instance.InstanceId})
+func (ec2Vm *Ec2VirtualMachine) Terminate() error {
+	terminateResp, err := ec2Vm.ec2Broker.Ec2().TerminateInstances([]string{ec2Vm.instance.InstanceId})
 	if err != nil {
 		return err
 	}

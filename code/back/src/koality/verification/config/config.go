@@ -23,7 +23,8 @@ type VerificationConfig struct {
 }
 
 type Params struct {
-	Nodes          uint
+	PoolId         uint64
+	Nodes          uint64
 	Environment    map[string]string
 	SnapshotUntil  string
 	RecursiveClone bool
@@ -210,13 +211,14 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 				if err != nil {
 					return
 				}
+			// TODO: handle pool id/name (defaults to 0 which is ok for now)
 			case "nodes":
-				option, ok := option.(uint)
+				option, ok := option.(uint64)
 				if !ok || option < 0 {
 					err = BadConfigurationError{"The number of nodes must be a positive integer."}
 				}
 
-				params.Nodes = uint(option)
+				params.Nodes = uint64(option)
 			case "snapshot until":
 				snapshot, ok := option.(string)
 				if !ok {
