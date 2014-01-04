@@ -3,13 +3,12 @@ package repositorystore
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"os/exec"
 )
 
-type Repository struct {
-	vcsBaseCommand string
-	path           string
+type Repository interface {
+	getVcsBaseCommand() string
+	getPath() string
 }
 
 type VcsCommand struct {
@@ -18,36 +17,15 @@ type VcsCommand struct {
 	Stderr  *bytes.Buffer
 }
 
-func Open(vcsType string, path string) (*Repository, error) {
-	var vcsRepository Repository
-
-	// TODO(akostov) the keys for this map should be constants defined in resources.
-	vcsDispatcher := map[string]string{
-		"git": "git",
-		"hg":  "hg",
-	}
-
-	vcsRepository.vcsBaseCommand = vcsDispatcher[vcsType]
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return nil, NoSuchRepositoryInStoreError{fmt.Sprintf("The path %v does not exist.", path)}
-	}
-	vcsRepository.path = path
-
-	return &vcsRepository, nil
-}
-
-func (repository *Repository) Command(Env []string, cmd string, args ...string) *VcsCommand {
-	var arguments []string
-
-	arguments = append(arguments, cmd)
+func Command(repository Repository, Env []string, cmd string, args ...string) *VcsCommand {
+	arguments := append([]string{cmd}, args...)
 	arguments = append(arguments, args...)
-	command := exec.Command(repository.vcsBaseCommand, arguments...)
+	command := exec.Command(repository.getVcsBaseCommand(), arguments...)
 
 	stdout, stderr := new(bytes.Buffer), new(bytes.Buffer)
 	command.Stdout, command.Stderr = stdout, stderr
 
-	command.Dir = repository.path
+	command.Dir = repository.getPath()
 
 	return &VcsCommand{command, stdout, stderr}
 }

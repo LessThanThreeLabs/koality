@@ -9,53 +9,62 @@ import (
 	"strings"
 )
 
-func hgFetchWithPrivateKey(repository *Repository, remoteUri string, args ...string) (err error) {
+type HgRepository struct {
+	path      string
+	remoteUri string
+}
+
+func OpenHgRepository(repository *resources.Repository) *HgRepository {
+	return &HgRepository{pathgenerator.ToPath(repository), repository.RemoteUri}
+}
+
+func (repository *HgRepository) getVcsBaseCommand() string {
+	return "hg"
+}
+
+func (repository *HgRepository) getPath() string {
+	return repository.path
+}
+
+func (repository *HgRepository) fetchWithPrivateKey(args ...string) (err error) {
 	//TODO(akostov) GIT_PRIVATE_KEY_PATH = change script much
-	if err := RunCommand(repository.Command(nil, "pull", append([]string{"--ssh ", fmt.Sprintf("\"GIT_PRIVATE_KEY_PATH=%s %s -o ConnectTimeout=%s\"", defaultPrivateKeyPath, defaultSshScript, defaultTimeout), remoteUri}, args...)...)); err != nil {
+	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh ", fmt.Sprintf("\"GIT_PRIVATE_KEY_PATH=%s %s -o ConnectTimeout=%s\"", defaultPrivateKeyPath, defaultSshScript, defaultTimeout), repository.remoteUri}, args...)...)); err != nil {
 		return err
 	}
 
 	return
 }
 
-func hgCreateRepository(repository *resources.Repository) (err error) {
-	path := pathgenerator.ToPath(repository)
-	if _, err = os.Stat(path); !os.IsNotExist(err) {
-		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository %v already exists in the repository store.", repository.Name)}
+func (repository *HgRepository) CreateRepository() (err error) {
+	if _, err = os.Stat(repository.path); !os.IsNotExist(err) {
+		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository at %s already exists in the repository store.", repository.path)}
 	}
 
-	if err = os.MkdirAll(path, 0700); err != nil {
+	if err = os.MkdirAll(repository.path, 0700); err != nil {
 		return
 	}
 
-	localRepository, err := Open(repository.VcsType, path)
-	if err != nil {
+	if err := RunCommand(Command(repository, nil, "init")); err != nil {
 		return err
 	}
 
-	if err := RunCommand(localRepository.Command(nil, "init")); err != nil {
-		return err
-	}
-
-	if err = hgFetchWithPrivateKey(localRepository, repository.RemoteUri); err != nil {
+	if err = repository.fetchWithPrivateKey(); err != nil {
 		return
 	}
 
 	return
 }
 
-func hgGetCommitAttributes(repository *resources.Repository, ref string) (message, username, email string, err error) {
-	path, err := checkRepositoryExists(repository)
-	if err != nil {
-		return
+func (repository *HgRepository) DeleteRepository() (err error) {
+	if err = checkRepositoryExists(repository.path); err != nil {
+		return err
 	}
 
-	storedRepository, err := Open(repository.VcsType, path)
-	if err != nil {
-		return
-	}
+	return os.RemoveAll(repository.path)
+}
 
-	command := storedRepository.Command(nil, "log", "-r", ref)
+func (repository *HgRepository) GetCommitAttributes(ref string) (message, username, email string, err error) {
+	command := Command(repository, nil, "log", "-r", ref)
 	if err = RunCommand(command); err != nil {
 		err = NoSuchCommitInRepositoryError{fmt.Sprintf(fmt.Sprintf("The repository %v does not contain commit %s", repository, ref))}
 		return
@@ -105,18 +114,8 @@ func hgGetCommitAttributes(repository *resources.Repository, ref string) (messag
 	return
 }
 
-func hgGetYamlFile(repository *resources.Repository, ref string) (yamlFile string, err error) {
-	path, err := checkRepositoryExists(repository)
-	if err != nil {
-		return
-	}
-
-	storedRepository, err := Open(repository.VcsType, path)
-	if err != nil {
-		return
-	}
-
-	command := storedRepository.Command(nil, "cat", ref, "koality.yml")
+func (repository *HgRepository) GetYamlFile(ref string) (yamlFile string, err error) {
+	command := Command(repository, nil, "cat", ref, "koality.yml")
 	if err = RunCommand(command); err != nil {
 		return
 	}

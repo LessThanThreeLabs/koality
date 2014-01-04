@@ -15,125 +15,150 @@ const (
 	retryTimeout     = 1000000000 // In nanoseconds
 )
 
-func gitFetchWithPrivateKey(repository *Repository, remoteUri string, args ...string) (err error) {
-	env := []string{
-		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
-		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
-	}
-
-	if err := RunCommand(repository.Command(env, "remote", "prune", remoteUri)); err != nil {
-		return err
-	}
-
-	if err := RunCommand(repository.Command(env, "fetch", append([]string{remoteUri}, args...)...)); err != nil {
-		return err
-	}
-
-	return
+type SubRepository struct {
+	vcsBaseCommand string
+	path           string
 }
 
-func gitPushWithPrivateKey(repository *Repository, remoteUri string, args ...string) (err error) {
-	env := []string{
-		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
-		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
-	}
-
-	if err := RunCommand(repository.Command(env, "push", append([]string{remoteUri}, args...)...)); err != nil {
-		return err
-	}
-
-	return
+func (repository *SubRepository) getVcsBaseCommand() string {
+	return repository.vcsBaseCommand
 }
 
-func gitStorePending(repository *Repository, ref, remoteUri string, args ...string) (err error) {
-	if err = gitFetchWithPrivateKey(repository, remoteUri, "+refs/*:refs/*"); err != nil {
-		return
-	}
-
-	if err = RunCommand(repository.Command(nil, "show", ref)); err != nil {
-		return NoSuchCommitInRepositoryError{fmt.Sprintf("The repository at %s does not contain commit %s", repository.path, ref)}
-	}
-
-	if err = gitPushWithPrivateKey(repository, remoteUri, fmt.Sprintf("%s:refs/pending/%s", ref, ref)); err != nil {
-		return
-	}
-
-	return
+func (repository *SubRepository) getPath() string {
+	return repository.path
 }
 
-func gitCreateRepository(repository *resources.Repository) (err error) {
+type GitRepository struct {
+	bare  *SubRepository
+	slave *SubRepository
+
+	remoteUri string
+}
+
+func OpenGitRepository(repository *resources.Repository) *GitRepository {
 	path := pathgenerator.ToPath(repository)
-	if _, err = os.Stat(path); !os.IsNotExist(err) {
-		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository %v already exists in the repository store.", repository.Name)}
+	return &GitRepository{&SubRepository{"git", path}, &SubRepository{"git", path + ".slave"}, repository.RemoteUri}
+}
+
+func (repository *SubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
+	env := []string{
+		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
+		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
+		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
 	}
 
-	if err = os.MkdirAll(path, 0700); err != nil {
-		return
-	}
-
-	bareRepository, err := Open(repository.VcsType, path)
-	if err != nil {
+	if err := RunCommand(Command(repository, env, "remote", "prune", remoteUri)); err != nil {
 		return err
 	}
 
-	if err := RunCommand(bareRepository.Command(nil, "init", "--bare")); err != nil {
-		return err
-	}
-
-	if err = gitFetchWithPrivateKey(bareRepository, repository.RemoteUri, "+refs/heads/*:refs/heads/*"); err != nil {
-		return
-	}
-
-	if err = RunCommand(bareRepository.Command(nil, "clone", path, path+".slave")); err != nil {
+	if err := RunCommand(Command(repository, env, "fetch", append([]string{remoteUri}, args...)...)); err != nil {
 		return err
 	}
 
 	return
 }
 
-func gitMergeChangeset(repository *resources.Repository, headRef, baseRef, refToMergeInto string) (err error) {
-	path, err := checkRepositoryExists(repository)
-	if err != nil {
+func (repository *SubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
+	env := []string{
+		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
+		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
+		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
+	}
+
+	if err := RunCommand(Command(repository, env, "push", append([]string{remoteUri}, args...)...)); err != nil {
+		return err
+	}
+
+	return
+}
+
+func (repository *GitRepository) StorePending(ref, remoteUri string, args ...string) (err error) {
+	if err = repository.bare.fetchWithPrivateKey(remoteUri, "+refs/*:refs/*"); err != nil {
 		return
 	}
 
-	bareRepository, err := Open(repository.VcsType, path)
-	if err != nil {
-		return
+	if err = RunCommand(Command(repository.bare, nil, "show", ref)); err != nil {
+		return NoSuchCommitInRepositoryError{fmt.Sprintf("The repository at %s does not contain commit %s", repository.bare.path, ref)}
 	}
 
-	slaveRepository, err := Open(repository.VcsType, path+".slave")
-	if err != nil {
-		return
-	}
-
-	originalHead, err := gitMergeRefs(slaveRepository, headRef, refToMergeInto)
-	if err != nil {
-		return
-	}
-
-	if err = gitPushMergeRetry(bareRepository, slaveRepository, repository.RemoteUri, refToMergeInto, originalHead); err != nil {
+	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:refs/pending/%s", ref, ref)); err != nil {
 		return
 	}
 
 	return
 }
 
-func gitMergeRefs(slaveRepository *Repository, refToMerge, refToMergeInto string) (originalHead string, err error) {
-	defer RunCommand(slaveRepository.Command(nil, "reset", "--hard"))
-
-	if err = RunCommand(slaveRepository.Command(nil, "remote", "prune", "origin")); err != nil {
+func (repository *GitRepository) CreateRepository() (err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "fetch")); err != nil {
+	if _, err = os.Stat(repository.bare.path); !os.IsNotExist(err) {
+		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository at %s already exists in the repository store.", repository.bare.path)}
+	}
+
+	if err = os.MkdirAll(repository.bare.path, 0700); err != nil {
+		return
+	}
+
+	if err := RunCommand(Command(repository.bare, nil, "init", "--bare")); err != nil {
+		return err
+	}
+
+	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/heads/*:refs/heads/*"); err != nil {
+		return
+	}
+
+	if err = RunCommand(Command(repository.bare, nil, "clone", repository.bare.path, repository.slave.path)); err != nil {
+		return err
+	}
+
+	return
+}
+
+func (repository *GitRepository) DeleteRepository() (err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
+		return err
+	}
+
+	err = os.RemoveAll(repository.slave.path)
+	if err != nil {
+		return err
+	}
+
+	return os.RemoveAll(repository.bare.path)
+}
+
+func (repository *GitRepository) MergeChangeset(headRef, baseRef, refToMergeInto string) (err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
+		return
+	}
+
+	originalHead, err := repository.mergeRefs(headRef, refToMergeInto)
+	if err != nil {
+		return
+	}
+
+	if err = repository.pushMergeRetry(repository.remoteUri, refToMergeInto, originalHead); err != nil {
+		return
+	}
+
+	return
+}
+
+func (repository *GitRepository) mergeRefs(refToMerge, refToMergeInto string) (originalHead string, err error) {
+	defer RunCommand(Command(repository.slave, nil, "reset", "--hard"))
+
+	if err = RunCommand(Command(repository.slave, nil, "remote", "prune", "origin")); err != nil {
+		return
+	}
+
+	if err = RunCommand(Command(repository.slave, nil, "fetch")); err != nil {
 		return
 	}
 
 	remoteBranch := fmt.Sprintf("origin/%s", refToMergeInto)
-	branchCommand := slaveRepository.Command(nil, "branch", "-r")
+	branchCommand := Command(repository.slave, nil, "branch", "-r")
 	if err = RunCommand(branchCommand); err != nil {
 		return
 	}
@@ -146,44 +171,44 @@ func gitMergeRefs(slaveRepository *Repository, refToMerge, refToMergeInto string
 		checkoutBranch = "FETCH_HEAD"
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "fetch", "origin", refToMerge)); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "fetch", "origin", refToMerge)); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "checkout", "FETCH_HEAD")); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "checkout", "FETCH_HEAD")); err != nil {
 		return
 	}
 
-	refSha, err := gitGetHeadSha(slaveRepository)
+	refSha, err := repository.slave.getHeadSha()
 	if err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "branch", "-f", refToMergeInto, checkoutBranch)); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "branch", "-f", refToMergeInto, checkoutBranch)); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "checkout", refToMergeInto)); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "checkout", refToMergeInto)); err != nil {
 		return
 	}
 
-	if originalHead, err = gitGetHeadSha(slaveRepository); err != nil {
+	if originalHead, err = repository.slave.getHeadSha(); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "merge", "FETCH_HEAD", "-m", fmt.Sprintf("Merging in %s", refSha))); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "merge", "FETCH_HEAD", "-m", fmt.Sprintf("Merging in %s", refSha))); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "push", fmt.Sprintf("HEAD:%s", refToMergeInto))); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "push", fmt.Sprintf("HEAD:%s", refToMergeInto))); err != nil {
 		return
 	}
 
 	return
 }
 
-func gitGetHeadSha(repository *Repository) (headSha string, err error) {
-	showCommand := repository.Command(nil, "show", "HEAD")
+func (repository *SubRepository) getHeadSha() (headSha string, err error) {
+	showCommand := Command(repository, nil, "show", "HEAD")
 	if err = RunCommand(showCommand); err != nil {
 		return
 	}
@@ -204,105 +229,99 @@ func gitGetHeadSha(repository *Repository) (headSha string, err error) {
 	return
 }
 
-func gitResetRepositoryHead(repository *Repository, refToReset, originalHead string) error {
-	return RunCommand(repository.Command(nil, "push", "origin", fmt.Sprintf("%s:%s", originalHead, refToReset), "--force"))
+func (repository *SubRepository) resetRepositoryHead(refToReset, originalHead string) error {
+	return RunCommand(Command(repository, nil, "push", "origin", fmt.Sprintf("%s:%s", originalHead, refToReset), "--force"))
 }
 
-func gitUpdateBranchFromForwardUrl(repository *Repository, remoteUri, refToUpdate string) (headSha string, err error) {
+func (repository *SubRepository) updateBranchFromForwardUrl(remoteUri, refToUpdate string) (headSha string, err error) {
 	remoteBranch := fmt.Sprintf("origin/%s", refToUpdate)
 
-	if err = gitFetchWithPrivateKey(repository, remoteUri, refToUpdate); err != nil {
+	if err = repository.fetchWithPrivateKey(remoteUri, refToUpdate); err != nil {
 		return
 	}
 
-	if err = RunCommand(repository.Command(nil, "checkout", "FETCH_HEAD")); err != nil {
+	if err = RunCommand(Command(repository, nil, "checkout", "FETCH_HEAD")); err != nil {
 		return
 	}
 
-	if headSha, err = gitGetHeadSha(repository); err != nil {
+	if headSha, err = repository.getHeadSha(); err != nil {
 		return
 	}
 
-	if err = RunCommand(repository.Command(nil, "branch", "-f", refToUpdate, remoteBranch)); err != nil {
+	if err = RunCommand(Command(repository, nil, "branch", "-f", refToUpdate, remoteBranch)); err != nil {
 		return
 	}
 
-	if err = RunCommand(repository.Command(nil, "checkout", refToUpdate)); err != nil {
+	if err = RunCommand(Command(repository, nil, "checkout", refToUpdate)); err != nil {
 		return
 	}
 
 	return
 }
 
-func gitUpdateFromForwardUrl(slaveRepository *Repository, remoteUri, refToMergeInto, originalHead string) (err error) {
+func (repository *GitRepository) updateFromForwardUrl(remoteUri, refToMergeInto, originalHead string) (err error) {
 	defer func() {
 		if err != nil {
-			gitResetRepositoryHead(slaveRepository, refToMergeInto, originalHead)
+			repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
 		} else {
-			RunCommand(slaveRepository.Command(nil, "reset", "--hard"))
+			RunCommand(Command(repository.slave, nil, "reset", "--hard"))
 		}
 	}()
 
-	refSha, err := gitUpdateBranchFromForwardUrl(slaveRepository, remoteUri, refToMergeInto)
+	refSha, err := repository.slave.updateBranchFromForwardUrl(remoteUri, refToMergeInto)
 	if err != nil {
 		return
 	}
 
 	remoteBranch := fmt.Sprintf("origin/%s", refToMergeInto)
 
-	if err = RunCommand(slaveRepository.Command(nil, "checkout", remoteBranch)); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "checkout", remoteBranch)); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "branch", "-f", refToMergeInto, remoteBranch)); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "branch", "-f", refToMergeInto, remoteBranch)); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "checkout", refToMergeInto)); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "checkout", refToMergeInto)); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "merge", "FETCH_HEAD", "-m", fmt.Sprintf("Merging in %s", refSha))); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "merge", "FETCH_HEAD", "-m", fmt.Sprintf("Merging in %s", refSha))); err != nil {
 		return
 	}
 
-	if err = RunCommand(slaveRepository.Command(nil, "push", "origin", fmt.Sprintf("HEAD:%s", refToMergeInto))); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "push", "origin", fmt.Sprintf("HEAD:%s", refToMergeInto))); err != nil {
 		return
 	}
 
 	return
 }
 
-func gitPushMergeRetry(bareRepository, slaveRepository *Repository, remoteUri, refToMergeInto, originalHead string) (err error) {
+func (repository *GitRepository) pushMergeRetry(remoteUri, refToMergeInto, originalHead string) (err error) {
 	i := 0
 
 	for {
-		err = gitPushWithPrivateKey(bareRepository, remoteUri, fmt.Sprintf("%s:%s", refToMergeInto, refToMergeInto))
+		err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", refToMergeInto, refToMergeInto))
 
 		//TODO(akostov) More precise error catching
 		if err != nil && i < pushMergeRetries {
 			i++
 			time.Sleep(retryTimeout)
-			gitUpdateFromForwardUrl(slaveRepository, remoteUri, refToMergeInto, originalHead)
+			repository.updateFromForwardUrl(remoteUri, refToMergeInto, originalHead)
 		} else if err != nil {
-			gitResetRepositoryHead(slaveRepository, refToMergeInto, originalHead)
+			repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
 		}
 	}
 	return
 }
 
-func gitGetCommitAttributes(repository *resources.Repository, ref string) (message, username, email string, err error) {
-	path, err := checkRepositoryExists(repository)
-	if err != nil {
+func (repository *GitRepository) GetCommitAttributes(ref string) (message, username, email string, err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
 
-	storedRepository, err := Open(repository.VcsType, path)
-	if err != nil {
-		return
-	}
-
-	command := storedRepository.Command(nil, "show", ref)
+	command := Command(repository.bare, nil, "show", ref)
 	if err = RunCommand(command); err != nil {
 		err = NoSuchCommitInRepositoryError{fmt.Sprintf(fmt.Sprintf("The repository %v does not contain commit %s", repository, ref))}
 		return
@@ -355,24 +374,13 @@ func gitGetCommitAttributes(repository *resources.Repository, ref string) (messa
 	return
 }
 
-func gitGetYamlFile(repository *resources.Repository, ref string) (yamlFile string, err error) {
-	path, err := checkRepositoryExists(repository)
-	if err != nil {
-		return
-	}
-
-	storedRepository, err := Open(repository.VcsType, path)
-	if err != nil {
-		return
-	}
-
-	//TODO(akostob + bbland) Discuss whether we should just do it here or have it be explicit.
-	if err = gitStorePending(storedRepository, ref, repository.RemoteUri); err != nil {
+func (repository *GitRepository) GetYamlFile(ref string) (yamlFile string, err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
 
 	// TODO(akostov) discuss getting rid of .koality.yml file
-	command := storedRepository.Command(nil, "show", fmt.Sprintf("%s:koality.yml", ref))
+	command := Command(repository.bare, nil, "show", fmt.Sprintf("%s:koality.yml", ref))
 	if err = RunCommand(command); err != nil {
 		return
 	}
