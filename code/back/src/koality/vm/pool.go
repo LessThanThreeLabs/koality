@@ -8,6 +8,7 @@ import (
 // TODO: use debug-level logging everywhere
 
 type virtualMachinePool struct {
+	id                     uint64
 	virtualMachineLauncher VirtualMachineLauncher
 	minReady               uint64
 	maxSize                uint64
@@ -19,7 +20,7 @@ type virtualMachinePool struct {
 	locker                 sync.Locker
 }
 
-func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize uint64) *virtualMachinePool {
+func NewPool(id uint64, virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize uint64) *virtualMachinePool {
 	if minReady > maxSize {
 		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, maxSize))
 	}
@@ -27,6 +28,7 @@ func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize ui
 		panic("maxSize must be positive: (was 0)")
 	}
 	pool := virtualMachinePool{
+		id: id,
 		virtualMachineLauncher: virtualMachineLauncher,
 		minReady:               minReady,
 		maxSize:                maxSize,
@@ -37,6 +39,10 @@ func NewPool(virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize ui
 	go pool.ensureReadyInstances()
 	go pool.transferReadyToWaiting()
 	return &pool
+}
+
+func (pool *virtualMachinePool) Id() uint64 {
+	return pool.id
 }
 
 func (pool *virtualMachinePool) transferReadyToWaiting() {

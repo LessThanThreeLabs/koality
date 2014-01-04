@@ -1,22 +1,21 @@
 package ec2broker
 
 import (
+	"github.com/crowdmob/goamz/aws"
 	"github.com/crowdmob/goamz/ec2"
 	"net"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
 )
 
 type Ec2Broker struct {
-	ec2               *ec2.EC2
-	reservationsCache []ec2.Reservation
-	lastRequestTime   time.Time
-	cacheMutex        *sync.Mutex
-	cacheExpiration   time.Duration
-	instanceInfo      *InstanceInfo
+	locker       sync.Locker
+	caches       map[aws.Auth]Ec2Cache
+	instanceInfo *InstanceInfo
 }
 
 type InstanceInfo struct {
@@ -25,48 +24,62 @@ type InstanceInfo struct {
 	SecurityGroups []ec2.SecurityGroup
 }
 
-func New(ec2 *ec2.EC2) *Ec2Broker {
-	var mutex sync.Mutex
+func New() *Ec2Broker {
 	return &Ec2Broker{
-		ec2:             ec2,
-		cacheMutex:      &mutex,
-		cacheExpiration: time.Duration(5) * time.Second,
+		locker: new(sync.Mutex),
+		caches: make(map[aws.Auth]Ec2Cache),
 	}
 }
 
-// Not synchronized
-func (broker *Ec2Broker) updateReservationsCache() {
-	instancesResp, err := broker.ec2.Instances(nil, nil)
-	if err != nil {
-		panic(err)
+func (broker *Ec2Broker) Ec2Cache(auth aws.Auth) *Ec2Cache {
+	broker.locker.Lock()
+	defer broker.locker.Unlock()
+
+	cache, ok := broker.caches[auth]
+	if ok {
+		return &cache
 	}
-	broker.reservationsCache = instancesResp.Reservations
-	broker.lastRequestTime = time.Now()
-}
 
-func (broker *Ec2Broker) getLatestReservationsCache() []ec2.Reservation {
-	broker.cacheMutex.Lock()
-	cacheIsStale := time.Now().After(broker.lastRequestTime.Add(broker.cacheExpiration))
-	if cacheIsStale {
-		broker.updateReservationsCache()
+	region := aws.USWest2 // TODO (bbland): change to USEast
+	availabilityZoneBytes, err := exec.Command("ec2metadata", "--availability-zone").Output()
+	if err == nil {
+		regionRegexp, err := regexp.Compile("(us|sa|eu|ap)-(north|south)?(east|west)?-[0-9]+")
+		if err != nil {
+			panic(err) // THIS SHOULDN'T HAPPEN
+		}
+		regionBytes := regionRegexp.Find(availabilityZoneBytes)
+		foundRegion, ok := aws.Regions[string(regionBytes)]
+		if ok {
+			region = foundRegion
+		}
 	}
-	broker.cacheMutex.Unlock()
-	return broker.reservationsCache
-}
-
-func (broker *Ec2Broker) Reservations() []ec2.Reservation {
-	return broker.getLatestReservationsCache()
-}
-
-func (broker *Ec2Broker) Ec2() *ec2.EC2 {
-	return broker.ec2
+	ec2Conn := ec2.New(auth, region)
+	// TODO (bbland): validate ec2 connection
+	cache = Ec2Cache{
+		EC2:        ec2Conn,
+		locker:     new(sync.Mutex),
+		expiration: 5 * time.Second,
+	}
+	broker.caches[auth] = cache
+	return &cache
 }
 
 func (broker *Ec2Broker) InstanceInfo() *InstanceInfo {
 	if broker.instanceInfo != nil {
 		return broker.instanceInfo
 	}
-	reservations := broker.Reservations()
+	if len(broker.caches) == 0 {
+		panic("No aws credentials provided")
+	}
+
+	// Get an arbitrary ec2 cache
+	var cache *Ec2Cache
+	for _, ec2Cache := range broker.caches {
+		cache = &ec2Cache
+		break
+	}
+
+	reservations := cache.Reservations()
 
 	var name string
 	var securityGroups []ec2.SecurityGroup

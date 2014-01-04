@@ -12,13 +12,147 @@ import (
 	"koality/verification/config/section"
 	"koality/verification/stagerunner"
 	"koality/vm"
+	"koality/vm/ec2/ec2broker"
+	"koality/vm/ec2/ec2vm"
 	"koality/vm/vcs"
+	"sync"
 	"time"
 )
 
 type VerificationRunner struct {
-	ResourcesConnection *resources.Connection
-	VirtualMachinePools map[uint64]vm.VirtualMachinePool
+	resourcesConnection                  *resources.Connection
+	virtualMachinePoolMap                map[uint64]vm.VirtualMachinePool
+	virtualMachinePoolMapLocker          sync.Locker
+	ec2Broker                            *ec2broker.Ec2Broker
+	verificationCreatedSubscriptionId    resources.SubscriptionId
+	ec2PoolCreatedSubscriptionId         resources.SubscriptionId
+	ec2PoolDeletedSubscriptionId         resources.SubscriptionId
+	ec2PoolSettingsUpdatedSubscriptionId resources.SubscriptionId
+}
+
+func New(resourcesConnection *resources.Connection, virtualMachinePools []vm.VirtualMachinePool, ec2Broker *ec2broker.Ec2Broker) *VerificationRunner {
+	virtualMachinePoolMap := make(map[uint64]vm.VirtualMachinePool, len(virtualMachinePools))
+	for _, virtualMachinePool := range virtualMachinePools {
+		virtualMachinePoolMap[virtualMachinePool.Id()] = virtualMachinePool
+	}
+
+	return &VerificationRunner{
+		resourcesConnection:         resourcesConnection,
+		virtualMachinePoolMap:       virtualMachinePoolMap,
+		virtualMachinePoolMapLocker: new(sync.Mutex),
+		ec2Broker:                   ec2Broker,
+	}
+}
+
+func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
+	onVerificationCreated := func(verification *resources.Verification) {
+		verificationRunner.RunVerification(verification)
+	}
+	onEc2PoolCreated := func(ec2Pool *resources.Ec2Pool) {
+		verificationRunner.virtualMachinePoolMapLocker.Lock()
+		ec2VirtualMachinePool := ec2vm.NewPool(ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool))
+		verificationRunner.virtualMachinePoolMap[ec2Pool.Id] = ec2VirtualMachinePool
+		verificationRunner.virtualMachinePoolMapLocker.Unlock()
+	}
+	onEc2PoolDeleted := func(ec2PoolId uint64) {
+		verificationRunner.virtualMachinePoolMapLocker.Lock()
+		delete(verificationRunner.virtualMachinePoolMap, ec2PoolId)
+		verificationRunner.virtualMachinePoolMapLocker.Unlock()
+	}
+	onEc2PoolSettingsUpdated := func(ec2PoolId uint64, accessKey, secretKey, username, baseAmiId, securityGroupId,
+		vpcSubnetId, instanceType string, numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) {
+		verificationRunner.virtualMachinePoolMapLocker.Lock()
+		vmPool, ok := verificationRunner.virtualMachinePoolMap[ec2PoolId]
+		verificationRunner.virtualMachinePoolMapLocker.Unlock()
+		if !ok {
+			panic(fmt.Sprintf("Could not find pool with id: %d", ec2PoolId))
+		}
+
+		ec2VmPool, ok := vmPool.(ec2vm.Ec2VirtualMachinePool)
+		if !ok {
+			panic(fmt.Sprintf("Pool with id: %d is not an EC2 pool", ec2PoolId))
+		}
+
+		ec2Pool := ec2VmPool.Ec2VirtualMachineLauncher.Ec2Pool
+
+		ec2VmPool.UpdateSettings(resources.Ec2Pool{ec2PoolId, ec2Pool.Name, accessKey, secretKey, username, baseAmiId,
+			securityGroupId, vpcSubnetId, instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData, ec2Pool.Created})
+	}
+	var err error
+
+	verificationRunner.verificationCreatedSubscriptionId, err = verificationRunner.resourcesConnection.Verifications.Subscription.SubscribeToCreatedEvents(onVerificationCreated)
+	if err != nil {
+		return err
+	}
+
+	verificationRunner.ec2PoolCreatedSubscriptionId, err = verificationRunner.resourcesConnection.Pools.Subscription.SubscribeToEc2CreatedEvents(onEc2PoolCreated)
+	if err != nil {
+		verificationRunner.unsubscribeFromEvents(true)
+		return err
+	}
+
+	verificationRunner.ec2PoolDeletedSubscriptionId, err = verificationRunner.resourcesConnection.Pools.Subscription.SubscribeToEc2DeletedEvents(onEc2PoolDeleted)
+	if err != nil {
+		verificationRunner.unsubscribeFromEvents(true)
+		return err
+	}
+
+	verificationRunner.ec2PoolSettingsUpdatedSubscriptionId, err = verificationRunner.resourcesConnection.Pools.Subscription.SubscribeToEc2SettingsUpdatedEvents(onEc2PoolSettingsUpdated)
+	if err != nil {
+		verificationRunner.unsubscribeFromEvents(true)
+		return err
+	}
+	return nil
+}
+
+func (verificationRunner *VerificationRunner) UnsubscribeFromEvents() error {
+	return verificationRunner.unsubscribeFromEvents(false)
+}
+
+func (verificationRunner *VerificationRunner) unsubscribeFromEvents(allowPartial bool) error {
+	var err error
+
+	if verificationRunner.verificationCreatedSubscriptionId == 0 {
+		if !allowPartial {
+			return fmt.Errorf("Verification created events not subscribed to")
+		}
+	} else {
+		unsubscribeError := verificationRunner.resourcesConnection.Verifications.Subscription.UnsubscribeFromCreatedEvents(verificationRunner.verificationCreatedSubscriptionId)
+		if unsubscribeError != nil {
+			err = unsubscribeError
+		}
+	}
+	if verificationRunner.ec2PoolCreatedSubscriptionId == 0 {
+		if !allowPartial {
+			return fmt.Errorf("Ec2 pool created events not subscribed to")
+		}
+	} else {
+		unsubscribeError := verificationRunner.resourcesConnection.Pools.Subscription.UnsubscribeFromEc2CreatedEvents(verificationRunner.ec2PoolCreatedSubscriptionId)
+		if unsubscribeError != nil {
+			err = unsubscribeError
+		}
+	}
+	if verificationRunner.ec2PoolDeletedSubscriptionId == 0 {
+		if !allowPartial {
+			return fmt.Errorf("Ec2 pool deleted events not subscribed to")
+		}
+	} else {
+		unsubscribeError := verificationRunner.resourcesConnection.Pools.Subscription.UnsubscribeFromEc2DeletedEvents(verificationRunner.ec2PoolDeletedSubscriptionId)
+		if unsubscribeError != nil {
+			err = unsubscribeError
+		}
+	}
+	if verificationRunner.ec2PoolSettingsUpdatedSubscriptionId == 0 {
+		if !allowPartial {
+			return fmt.Errorf("Ec2 pool settings updated events not subscribed to")
+		}
+	} else {
+		unsubscribeError := verificationRunner.resourcesConnection.Pools.Subscription.UnsubscribeFromEc2SettingsUpdatedEvents(verificationRunner.ec2PoolSettingsUpdatedSubscriptionId)
+		if unsubscribeError != nil {
+			err = unsubscribeError
+		}
+	}
+	return err
 }
 
 func (verificationRunner *VerificationRunner) RunVerification(currentVerification *resources.Verification) (bool, error) {
@@ -31,7 +165,9 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		return false, err
 	}
 
-	virtualMachinePool, ok := verificationRunner.VirtualMachinePools[verificationConfig.Params.PoolId]
+	verificationRunner.virtualMachinePoolMapLocker.Lock()
+	virtualMachinePool, ok := verificationRunner.virtualMachinePoolMap[verificationConfig.Params.PoolId]
+	verificationRunner.virtualMachinePoolMapLocker.Unlock()
 	if !ok {
 		verificationRunner.failVerification(currentVerification)
 		return false, fmt.Errorf("No virtual machine pool found for repository: %d", currentVerification.RepositoryId)
@@ -54,7 +190,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		defer virtualMachinePool.Free()
 		defer virtualMachine.Terminate()
 
-		stageRunner := stagerunner.New(verificationRunner.ResourcesConnection, virtualMachine, currentVerification)
+		stageRunner := stagerunner.New(verificationRunner.resourcesConnection, virtualMachine, currentVerification)
 		defer close(stageRunner.ResultsChan)
 
 		newStageRunnersChan <- stageRunner
@@ -116,31 +252,31 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 func (verificationRunner *VerificationRunner) failVerification(verification *resources.Verification) error {
 	(*verification).Status = "failed"
 	fmt.Printf("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := verificationRunner.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
+	err := verificationRunner.resourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
 	if err != nil {
 		return err
 	}
 
-	err = verificationRunner.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	err = verificationRunner.resourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
 	return err
 }
 
 func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification) error {
 	(*verification).Status = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := verificationRunner.ResourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
+	err := verificationRunner.resourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
 	if err != nil {
 		return err
 	}
 
-	err = verificationRunner.ResourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	err = verificationRunner.resourcesConnection.Verifications.Update.SetEndTime(verification.Id, time.Now())
 	return err
 }
 
 func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
 	var emptyConfig config.VerificationConfig
 
-	repository, err := verificationRunner.ResourcesConnection.Repositories.Read.Get(currentVerification.RepositoryId)
+	repository, err := verificationRunner.resourcesConnection.Repositories.Read.Get(currentVerification.RepositoryId)
 	if err != nil {
 		return emptyConfig, err
 	}
@@ -173,7 +309,7 @@ func (verificationRunner *VerificationRunner) createStages(currentVerification *
 		factoryCommands := section.FactoryCommands(true)
 
 		for command, err := factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
-			_, err := verificationRunner.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
+			_, err := verificationRunner.resourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
 			if err != nil {
 				return err
 			}
@@ -185,7 +321,7 @@ func (verificationRunner *VerificationRunner) createStages(currentVerification *
 
 		commands := section.Commands(true)
 		for command, err := commands.Next(); err == nil; command, err = commands.Next() {
-			_, err := verificationRunner.ResourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
+			_, err := verificationRunner.resourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
 			if err != nil {
 				return err
 			}
@@ -229,7 +365,7 @@ func (verificationRunner *VerificationRunner) combineResults(currentVerification
 				}
 				if !isStarted {
 					isStarted = true
-					verificationRunner.ResourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
+					verificationRunner.resourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
 				}
 				stageRunners = append(stageRunners, stageRunner)
 				go handleNewStageRunner(stageRunner)

@@ -15,10 +15,10 @@ type Ec2VirtualMachine struct {
 	fileCopier         shell.FileCopier
 	patcher            vm.Patcher
 	instance           *ec2.Instance
-	ec2Broker          *ec2broker.Ec2Broker
+	ec2Cache           *ec2broker.Ec2Cache
 }
 
-func New(instance *ec2.Instance, broker *ec2broker.Ec2Broker, username string) (*Ec2VirtualMachine, error) {
+func New(instance *ec2.Instance, cache *ec2broker.Ec2Cache, username string) (*Ec2VirtualMachine, error) {
 	sshConfig := vm.SshConfig{
 		Username: username,
 		Hostname: instance.IPAddress,
@@ -45,7 +45,7 @@ func New(instance *ec2.Instance, broker *ec2broker.Ec2Broker, username string) (
 		fileCopier:         fileCopier,
 		patcher:            patcher,
 		instance:           instance,
-		ec2Broker:          broker,
+		ec2Cache:           cache,
 	}
 	return &ec2Vm, nil
 }
@@ -63,7 +63,7 @@ func (ec2Vm *Ec2VirtualMachine) FileCopy(sourceFilePath, destFilePath string) (s
 }
 
 func (ec2Vm *Ec2VirtualMachine) Terminate() error {
-	terminateResp, err := ec2Vm.ec2Broker.Ec2().TerminateInstances([]string{ec2Vm.instance.InstanceId})
+	terminateResp, err := ec2Vm.ec2Cache.EC2.TerminateInstances([]string{ec2Vm.instance.InstanceId})
 	if err != nil {
 		return err
 	}

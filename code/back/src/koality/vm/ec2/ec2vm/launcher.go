@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/crowdmob/goamz/aws"
 	"github.com/crowdmob/goamz/ec2"
 	"io"
 	"io/ioutil"
@@ -25,8 +26,17 @@ type Ec2VirtualMachineLauncher struct {
 	Ec2Pool   *resources.Ec2Pool
 }
 
-func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool resources.Ec2Pool) *Ec2VirtualMachineLauncher {
-	return &Ec2VirtualMachineLauncher{ec2Broker, &ec2Pool}
+func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool) *Ec2VirtualMachineLauncher {
+	return &Ec2VirtualMachineLauncher{ec2Broker, ec2Pool}
+}
+
+func (launcher *Ec2VirtualMachineLauncher) ec2Cache() *ec2broker.Ec2Cache {
+	auth, err := aws.GetAuth(launcher.Ec2Pool.AccessKey, launcher.Ec2Pool.SecretKey, "", time.Time{})
+	if err != nil {
+		panic("Aws credentials were null")
+	}
+
+	return launcher.ec2Broker.Ec2Cache(auth)
 }
 
 func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMachine, error) {
@@ -47,7 +57,7 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 		SecurityGroups: securityGroups,
 		UserData:       launcher.getUserData(username),
 	}
-	runResponse, err := launcher.ec2Broker.Ec2().RunInstances(&runOptions)
+	runResponse, err := launcher.ec2Cache().EC2.RunInstances(&runOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -60,15 +70,15 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 		for i := 1; i < len(runResponse.Instances); i++ {
 			extraInstanceIds[i-1] = runResponse.Instances[i].InstanceId
 		}
-		_, err := launcher.ec2Broker.Ec2().TerminateInstances(extraInstanceIds)
+		_, err := launcher.ec2Cache().EC2.TerminateInstances(extraInstanceIds)
 		if err != nil {
-			launcher.ec2Broker.Ec2().TerminateInstances([]string{runResponse.Instances[0].InstanceId})
+			launcher.ec2Cache().EC2.TerminateInstances([]string{runResponse.Instances[0].InstanceId})
 			return nil, err
 		}
 	}
 	instance := &runResponse.Instances[0]
 	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker (%s)", launcher.ec2Broker.InstanceInfo().Name)}
-	_, err = launcher.ec2Broker.Ec2().CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
+	_, err = launcher.ec2Cache().EC2.CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
 	err = launcher.waitForIpAddress(instance, 2*time.Minute)
 	if err != nil {
 		return nil, err
@@ -84,7 +94,7 @@ func (launcher *Ec2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instan
 	for {
 		select {
 		case <-time.After(timeout):
-			_, err := launcher.ec2Broker.Ec2().TerminateInstances([]string{instance.InstanceId})
+			_, err := launcher.ec2Cache().EC2.TerminateInstances([]string{instance.InstanceId})
 			if err != nil {
 				return err
 			}
@@ -94,7 +104,7 @@ func (launcher *Ec2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instan
 				return nil
 			} else {
 				time.Sleep(5 * time.Second)
-				for _, reservation := range launcher.ec2Broker.Reservations() {
+				for _, reservation := range launcher.ec2Cache().Reservations() {
 					for _, inst := range reservation.Instances {
 						if inst.InstanceId == instance.InstanceId {
 							*instance = inst
@@ -111,13 +121,13 @@ func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, us
 	for {
 		select {
 		case <-time.After(timeout):
-			_, err := launcher.ec2Broker.Ec2().TerminateInstances([]string{instance.InstanceId})
+			_, err := launcher.ec2Cache().EC2.TerminateInstances([]string{instance.InstanceId})
 			if err != nil {
 				return new(Ec2VirtualMachine), err
 			}
 			return nil, fmt.Errorf("Failed to ssh into the instance after %s", timeout.String())
 		default:
-			ec2Vm, err := New(instance, launcher.ec2Broker, username)
+			ec2Vm, err := New(instance, launcher.ec2Cache(), username)
 			if err != nil {
 				time.Sleep(3 * time.Second)
 				continue
@@ -170,7 +180,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSnapshotVersion(snapshot ec2.Image
 
 func (launcher *Ec2VirtualMachineLauncher) getBaseImage() (ec2.Image, error) {
 	if launcher.Ec2Pool.BaseAmiId != "" {
-		imagesResponse, err := launcher.ec2Broker.Ec2().Images([]string{launcher.Ec2Pool.BaseAmiId}, nil)
+		imagesResponse, err := launcher.ec2Cache().EC2.Images([]string{launcher.Ec2Pool.BaseAmiId}, nil)
 		if err != nil {
 			return ec2.Image{}, err
 		}
@@ -183,7 +193,7 @@ func (launcher *Ec2VirtualMachineLauncher) getBaseImage() (ec2.Image, error) {
 	imageFilter.Add("owner-id", "600991114254") // must be changed if our ec2 info changes
 	imageFilter.Add("name", "koality_verification_precise_0.4")
 	imageFilter.Add("state", "available")
-	imagesResponse, err := launcher.ec2Broker.Ec2().Images(nil, imageFilter)
+	imagesResponse, err := launcher.ec2Cache().EC2.Images(nil, imageFilter)
 	if err != nil {
 		return ec2.Image{}, err
 	}
@@ -194,7 +204,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSnapshotsForImage(baseImage ec2.Im
 	imageFilter := ec2.NewFilter()
 	imageFilter.Add("name", fmt.Sprintf("koality-snapshot-(%s/%s)-v*", launcher.Ec2Pool.Name, baseImage.Name))
 	imageFilter.Add("state", "available")
-	imagesResponse, err := launcher.ec2Broker.Ec2().Images(nil, imageFilter)
+	imagesResponse, err := launcher.ec2Cache().EC2.Images(nil, imageFilter)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +227,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		}
 	}
 
-	securityGroupsResp, err := launcher.ec2Broker.Ec2().SecurityGroups([]ec2.SecurityGroup{securityGroup}, nil)
+	securityGroupsResp, err := launcher.ec2Cache().EC2.SecurityGroups([]ec2.SecurityGroup{securityGroup}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +236,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		securityGroup = ec2.SecurityGroup{
 			Name: "koality_verification",
 		}
-		_, err := launcher.ec2Broker.Ec2().CreateSecurityGroup("koality_verification", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
+		_, err := launcher.ec2Cache().EC2.CreateSecurityGroup("koality_verification", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
 		if err != nil {
 			return nil, err
 		}
@@ -263,7 +273,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		ToPort:    22,
 		SourceIPs: []string{ipNet.String()},
 	}
-	_, err = launcher.ec2Broker.Ec2().AuthorizeSecurityGroup(securityGroup, []ec2.IPPerm{sshPerm})
+	_, err = launcher.ec2Cache().EC2.AuthorizeSecurityGroup(securityGroup, []ec2.IPPerm{sshPerm})
 	if err != nil {
 		return nil, err
 	}

@@ -17,6 +17,7 @@ type VirtualMachineLauncher interface {
 }
 
 type VirtualMachinePool interface {
+	Id() uint64
 	Get() VirtualMachine
 	GetN(uint64) <-chan VirtualMachine
 	Free()
