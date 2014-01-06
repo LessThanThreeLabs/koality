@@ -89,9 +89,10 @@ func (repository *GitRepository) StorePending(ref, remoteUri string, args ...str
 }
 
 func (repository *GitRepository) CreateRepository() (err error) {
-	if err = checkRepositoryExists(repository.bare.path); err != nil {
-		return
-	}
+	// Should this be here at all?
+	// if err = checkRepositoryExists(repository.bare.path); err != nil {
+	// 	return
+	// }
 
 	if _, err = os.Stat(repository.bare.path); !os.IsNotExist(err) {
 		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository at %s already exists in the repository store.", repository.bare.path)}

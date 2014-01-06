@@ -27,6 +27,8 @@ type PrePushRepository interface {
 
 func openPostPushRepository(repository *resources.Repository) (PostPushRepository, error) {
 	switch repository.VcsType {
+	case "git":
+		return repositorystore.OpenGitRepository(repository), nil
 	case "hg":
 		return repositorystore.OpenHgRepository(repository), nil
 	default:
@@ -46,6 +48,8 @@ func openPrePushRepository(repository *resources.Repository) (PrePushRepository,
 
 func openStoredRepository(repository *resources.Repository) (StoredRepository, error) {
 	switch repository.VcsType {
+	case "git":
+		return repositorystore.OpenGitRepository(repository), nil
 	case "hg":
 		return repositorystore.OpenHgRepository(repository), nil
 	default:
