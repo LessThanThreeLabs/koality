@@ -52,3 +52,6 @@
 [submodule "code/back/src/github.com/gorilla/sessions"]
 	path = code/back/src/github.com/gorilla/sessions
 	url = git@github.com:gorilla/sessions.git
+[submodule "code/back/src/github.com/gorilla/securecookie"]
+	path = code/back/src/github.com/gorilla/securecookie
+	url = git@github.com:gorilla/securecookie.git
