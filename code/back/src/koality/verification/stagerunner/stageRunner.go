@@ -3,6 +3,7 @@ package stagerunner
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
+	"fmt"
 	"github.com/dchest/goyaml"
 	"io"
 	"koality/resources"
@@ -44,6 +45,9 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 		if !shouldContinue {
 			break
 		}
+	}
+	if len(finalSections) == 0 {
+		return nil
 	}
 	// TODO (bbland): do something smarter than just sleep and poll
 	for stageRunner.verification.Status == "running" {
@@ -112,6 +116,9 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 				stageId = stage.Id
 				break
 			}
+		}
+		if stageId == 0 {
+			return false, fmt.Errorf("Unable to find a stage to match %#v", sectionToRun)
 		}
 
 		stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
@@ -230,6 +237,9 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 				stageId = stage.Id
 				break
 			}
+		}
+		if stageId == 0 {
+			return false, fmt.Errorf("Unable to find a stage to match %#v", sectionToRun)
 		}
 
 		stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
