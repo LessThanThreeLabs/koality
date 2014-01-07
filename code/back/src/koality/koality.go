@@ -16,6 +16,8 @@ func main() {
 		panic(err)
 	}
 
+	// TODO: initialize more components here
+
 	fmt.Println("Koality successfully started!")
 
 	// This will block
