@@ -15,32 +15,32 @@ const (
 	retryTimeout     = 1000000000 // In nanoseconds
 )
 
-type SubRepository struct {
+type GitSubRepository struct {
 	vcsBaseCommand string
 	path           string
 }
 
-func (repository *SubRepository) getVcsBaseCommand() string {
+func (repository *GitSubRepository) getVcsBaseCommand() string {
 	return repository.vcsBaseCommand
 }
 
-func (repository *SubRepository) getPath() string {
+func (repository *GitSubRepository) getPath() string {
 	return repository.path
 }
 
 type GitRepository struct {
-	bare  *SubRepository
-	slave *SubRepository
+	bare  *GitSubRepository
+	slave *GitSubRepository
 
 	remoteUri string
 }
 
 func OpenGitRepository(repository *resources.Repository) *GitRepository {
 	path := pathgenerator.ToPath(repository)
-	return &GitRepository{&SubRepository{"git", path}, &SubRepository{"git", path + ".slave"}, repository.RemoteUri}
+	return &GitRepository{&GitSubRepository{"git", path}, &GitSubRepository{"git", path + ".slave"}, repository.RemoteUri}
 }
 
-func (repository *SubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
+func (repository *GitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
 	env := []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
 		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
@@ -58,7 +58,7 @@ func (repository *SubRepository) fetchWithPrivateKey(remoteUri string, args ...s
 	return
 }
 
-func (repository *SubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
+func (repository *GitSubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
 	env := []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
 		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
@@ -89,10 +89,9 @@ func (repository *GitRepository) StorePending(ref, remoteUri string, args ...str
 }
 
 func (repository *GitRepository) CreateRepository() (err error) {
-	// Should this be here at all?
-	// if err = checkRepositoryExists(repository.bare.path); err != nil {
-	// 	return
-	// }
+	if err = checkRepositoryExists(repository.bare.path); err == nil {
+		return
+	}
 
 	if _, err = os.Stat(repository.bare.path); !os.IsNotExist(err) {
 		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository at %s already exists in the repository store.", repository.bare.path)}
@@ -208,7 +207,7 @@ func (repository *GitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 	return
 }
 
-func (repository *SubRepository) getHeadSha() (headSha string, err error) {
+func (repository *GitSubRepository) getHeadSha() (headSha string, err error) {
 	showCommand := Command(repository, nil, "show", "HEAD")
 	if err = RunCommand(showCommand); err != nil {
 		return
@@ -230,11 +229,11 @@ func (repository *SubRepository) getHeadSha() (headSha string, err error) {
 	return
 }
 
-func (repository *SubRepository) resetRepositoryHead(refToReset, originalHead string) error {
+func (repository *GitSubRepository) resetRepositoryHead(refToReset, originalHead string) error {
 	return RunCommand(Command(repository, nil, "push", "origin", fmt.Sprintf("%s:%s", originalHead, refToReset), "--force"))
 }
 
-func (repository *SubRepository) updateBranchFromForwardUrl(remoteUri, refToUpdate string) (headSha string, err error) {
+func (repository *GitSubRepository) updateBranchFromForwardUrl(remoteUri, refToUpdate string) (headSha string, err error) {
 	remoteBranch := fmt.Sprintf("origin/%s", refToUpdate)
 
 	if err = repository.fetchWithPrivateKey(remoteUri, refToUpdate); err != nil {

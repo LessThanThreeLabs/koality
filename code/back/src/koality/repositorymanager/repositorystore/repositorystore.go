@@ -14,7 +14,7 @@ const (
 
 func checkRepositoryExists(path string) (err error) {
 	if _, err = os.Stat(path); os.IsNotExist(err) {
-		return NoSuchRepositoryInStoreError{fmt.Sprintf("The repository at %s could not be found in the repository store.", path)}
+		return NoSuchRepositoryInStoreError{fmt.Sprintf("There is no repository at %s in the repository store.", path)}
 	}
 
 	return
