@@ -1,28 +1,27 @@
-package localmachine
+package vm_test
 
 import (
-	// "fmt"
-	// "koality/shell"
 	"koality/vm"
+	"koality/vm/localmachine"
 	"testing"
 	"time"
 )
 
-func TestPoolSizeAssertions(testing *testing.T) {
+func TestPoolSizeAssertions(test *testing.T) {
 	poolSizeAllowed := func(minReady, maxSize uint64) (allowed bool) {
 		defer func() {
 			allowed = recover() == nil
 		}()
-		vm.NewPool(NewLauncher(), minReady, maxSize)
+		vm.NewPool(0, localmachine.NewLauncher(), minReady, maxSize)
 		return
 	}
 
 	assertPoolSizeAllowed := func(minReady, maxSize uint64, shouldBeAllowed bool) {
 		if poolSizeAllowed(minReady, maxSize) != shouldBeAllowed {
 			if shouldBeAllowed {
-				testing.Errorf("Pool size not allowed, should be allowed, size params: (%d, %d)", minReady, maxSize)
+				test.Errorf("Pool size not allowed, should be allowed, size params: (%d, %d)", minReady, maxSize)
 			} else {
-				testing.Errorf("Pool size allowed, should not be allowed, size params: (%d, %d)", minReady, maxSize)
+				test.Errorf("Pool size allowed, should not be allowed, size params: (%d, %d)", minReady, maxSize)
 			}
 		}
 	}
@@ -39,9 +38,9 @@ func TestPoolSizeAssertions(testing *testing.T) {
 
 }
 
-func TestPoolReachesCap(testing *testing.T) {
+func TestPoolReachesCap(test *testing.T) {
 	testPoolReachesCap := func(poolSize uint64) {
-		pool := vm.NewPool(NewLauncher(), 0, poolSize)
+		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(poolSize)
@@ -49,10 +48,10 @@ func TestPoolReachesCap(testing *testing.T) {
 		for x := uint64(0); x < poolSize; x++ {
 			select {
 			case <-timeout:
-				testing.Error("Timed out!")
+				test.Error("Timed out!")
 			case machine := <-vmChan:
 				if machine == nil {
-					testing.Error("Received nil from the pool")
+					test.Error("Received nil from the pool")
 				} else {
 					machine.Terminate()
 				}
@@ -65,9 +64,9 @@ func TestPoolReachesCap(testing *testing.T) {
 	testPoolReachesCap(77)
 }
 
-func TestPoolEnforcesCap(testing *testing.T) {
+func TestPoolEnforcesCap(test *testing.T) {
 	testPoolEnforcesCap := func(poolSize uint64) {
-		pool := vm.NewPool(NewLauncher(), 0, poolSize)
+		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(poolSize + 1)
@@ -76,18 +75,18 @@ func TestPoolEnforcesCap(testing *testing.T) {
 			select {
 			case <-timeout:
 				if x != poolSize {
-					testing.Error("Timed out unexpectedly!")
+					test.Error("Timed out unexpectedly!")
 					// } else {
-					// 	testing.Log("Timed out as expected")
+					// 	test.Log("Timed out as expected")
 				}
 			case machine, ok := <-vmChan:
 				if machine != nil {
 					defer machine.Terminate()
 				}
 				if x == poolSize && ok {
-					testing.Error("Got a machine when expected nil")
+					test.Error("Got a machine when expected nil")
 				} else if x != poolSize && !ok {
-					testing.Error("Got nil when expected a machine")
+					test.Error("Got nil when expected a machine")
 				}
 
 			}
@@ -99,9 +98,9 @@ func TestPoolEnforcesCap(testing *testing.T) {
 	testPoolEnforcesCap(77)
 }
 
-func TestPoolMaxSizeIncrease(testing *testing.T) {
+func TestPoolMaxSizeIncrease(test *testing.T) {
 	testPoolMaxSizeIncrease := func(startingPoolSize, endingPoolSize uint64) {
-		pool := vm.NewPool(NewLauncher(), 0, startingPoolSize)
+		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(startingPoolSize)
@@ -109,10 +108,10 @@ func TestPoolMaxSizeIncrease(testing *testing.T) {
 		for x := uint64(0); x < startingPoolSize; x++ {
 			select {
 			case <-timeout:
-				testing.Error("Timed out!")
+				test.Error("Timed out!")
 			case machine := <-vmChan:
 				if machine == nil {
-					testing.Error("Received nil from the pool")
+					test.Error("Received nil from the pool")
 				} else {
 					machine.Terminate()
 				}
@@ -128,16 +127,16 @@ func TestPoolMaxSizeIncrease(testing *testing.T) {
 			select {
 			case <-timeout:
 				if x != endingPoolSize {
-					testing.Error("Timed out unexpectedly!")
+					test.Error("Timed out unexpectedly!")
 				}
 			case machine, ok := <-vmChan:
 				if machine != nil {
 					defer machine.Terminate()
 				}
 				if x == endingPoolSize && ok {
-					testing.Error("Got a machine when expected nil")
+					test.Error("Got a machine when expected nil")
 				} else if x != endingPoolSize && !ok {
-					testing.Error("Got nil when expected a machine")
+					test.Error("Got nil when expected a machine")
 				}
 			}
 		}
@@ -152,9 +151,9 @@ func TestPoolMaxSizeIncrease(testing *testing.T) {
 	testPoolMaxSizeIncrease(77, 100)
 }
 
-func TestPoolMaxSizeDecrease(testing *testing.T) {
+func TestPoolMaxSizeDecrease(test *testing.T) {
 	testPoolMaxSizeDecrease := func(startingPoolSize, endingPoolSize, amountToRequest uint64) {
-		pool := vm.NewPool(NewLauncher(), 0, startingPoolSize)
+		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(amountToRequest)
@@ -162,10 +161,10 @@ func TestPoolMaxSizeDecrease(testing *testing.T) {
 		for x := uint64(0); x < amountToRequest; x++ {
 			select {
 			case <-timeout:
-				testing.Error("Timed out!")
+				test.Error("Timed out!")
 			case machine := <-vmChan:
 				if machine == nil {
-					testing.Error("Received nil from the pool")
+					test.Error("Received nil from the pool")
 				} else {
 					machine.Terminate()
 				}
@@ -182,16 +181,16 @@ func TestPoolMaxSizeDecrease(testing *testing.T) {
 				select {
 				case <-timeout:
 					if x != endingPoolSize {
-						testing.Error("Timed out unexpectedly!")
+						test.Error("Timed out unexpectedly!")
 					}
 				case machine, ok := <-vmChan:
 					if machine != nil {
 						defer machine.Terminate()
 					}
 					if x == endingPoolSize && ok {
-						testing.Error("Got a machine when expected nil")
+						test.Error("Got a machine when expected nil")
 					} else if x != startingPoolSize && !ok {
-						testing.Error("Got nil when expected a machine")
+						test.Error("Got nil when expected a machine")
 					}
 				}
 			}
@@ -203,7 +202,7 @@ func TestPoolMaxSizeDecrease(testing *testing.T) {
 			case <-timeout:
 				break
 			case <-vmChan:
-				testing.Error("Got a machine when expected nil")
+				test.Error("Got a machine when expected nil")
 			}
 		}
 	}
@@ -211,10 +210,10 @@ func TestPoolMaxSizeDecrease(testing *testing.T) {
 	testPoolMaxSizeDecrease(3, 1, 2)
 }
 
-func TestPoolMinReadyIncrease(testing *testing.T) {
-	testing.Log("This is very important to add")
+func TestPoolMinReadyIncrease(test *testing.T) {
+	test.Log("This is very important to add")
 }
 
-func TestPoolMinReadyDecrease(testing *testing.T) {
-	testing.Log("This is very important to add")
+func TestPoolMinReadyDecrease(test *testing.T) {
+	test.Log("This is very important to add")
 }
