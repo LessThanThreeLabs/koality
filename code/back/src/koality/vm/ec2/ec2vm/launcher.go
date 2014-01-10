@@ -6,15 +6,13 @@ import (
 	"fmt"
 	"github.com/crowdmob/goamz/aws"
 	"github.com/crowdmob/goamz/ec2"
-	"io"
 	"io/ioutil"
 	"koality/resources"
 	"koality/shell"
 	"koality/vm"
+	"koality/vm/cloudinit"
 	"koality/vm/ec2/ec2broker"
-	"mime/multipart"
 	"net"
-	"net/textproto"
 	"os/user"
 	"strconv"
 	"strings"
@@ -51,12 +49,17 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 		return nil, err
 	}
 
+	userData, err := launcher.getUserData(username)
+	if err != nil {
+		return nil, err
+	}
+
 	runOptions := ec2.RunInstancesOptions{
 		ImageId:             activeImage.Id,
 		InstanceType:        launcher.Ec2Pool.InstanceType,
 		SecurityGroups:      securityGroups,
 		SubnetId:            launcher.Ec2Pool.VpcSubnetId,
-		UserData:            launcher.getUserData(username),
+		UserData:            userData,
 		BlockDeviceMappings: launcher.getBlockDeviceMappings(activeImage),
 	}
 	runResponse, err := launcher.ec2Cache().EC2.RunInstances(&runOptions)
@@ -280,7 +283,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 }
 
 func (launcher *Ec2VirtualMachineLauncher) getBlockDeviceMappings(image ec2.Image) []ec2.BlockDeviceMapping {
-	rootDriveSize := launcher.Ec2Pool.RootDriveSize
+	rootDriveSize := int64(launcher.Ec2Pool.RootDriveSize)
 
 	blockDeviceMappings := make([]ec2.BlockDeviceMapping, 0, len(image.BlockDevices))
 	for _, blockDeviceMapping := range image.BlockDevices {
@@ -302,38 +305,47 @@ func (launcher *Ec2VirtualMachineLauncher) getBlockDeviceMappings(image ec2.Imag
 	return blockDeviceMappings
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getUserData(username string) []byte {
+func (launcher *Ec2VirtualMachineLauncher) getUserData(username string) ([]byte, error) {
 	buffer := new(bytes.Buffer)
-	multipartWriter := multipart.NewWriter(buffer)
-	buffer.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\nMIME-Version: 1.0\n\n", multipartWriter.Boundary()))
+	mimeMultipartWriter := cloudinit.NewMimeMultipartWriter(buffer)
 
-	err := writeCloudInitMimePart(multipartWriter, launcher.getDefaultUserData(username), "koality-default-data")
+	defaultUserData, err := launcher.getDefaultUserData(username)
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	err = mimeMultipartWriter.WriteMimePart("koality-default-data", defaultUserData)
+	if err != nil {
+		return nil, err
 	}
 
 	customUserData := strings.TrimSpace(launcher.Ec2Pool.UserData)
 	if customUserData != "" {
-		err := writeCloudInitMimePart(multipartWriter, customUserData, "koality-custom-data")
+		err = mimeMultipartWriter.WriteMimePart("koality-custom-data", customUserData)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 
-	multipartWriter.Close()
+	err = mimeMultipartWriter.Close()
+	if err != nil {
+		return nil, err
+	}
 
-	return buffer.Bytes()
+	return buffer.Bytes(), nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) string {
+func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
+
 	keyBytes, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa.pub", currentUser.HomeDir))
 	if err != nil {
-		panic(err)
+		return "", err
 	}
+
 	publicKey := string(keyBytes)
 
 	configureUserCommand := shell.Chain(
@@ -349,35 +361,5 @@ func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) s
 		shell.Redirect(shell.Commandf("echo 'Defaults !requiretty\n%s ALL=(ALL) NOPASSWD: ALL'", username), shell.Commandf("/etc/sudoers.d/koality-%s", username), false),
 		shell.Commandf("chmod 0440 /etc/sudoers.d/koality-%s", username),
 	)
-	return fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand)
-}
-
-func writeCloudInitMimePart(multipartWriter *multipart.Writer, contents, name string) error {
-	mimeHeader := make(textproto.MIMEHeader)
-	mimeHeader.Set("Content-Type", cloudInitMimeType(contents))
-	mimeHeader.Set("Content-Disposition", fmt.Sprintf("form-data; name=\"%s\"", name))
-	partWriter, err := multipartWriter.CreatePart(mimeHeader)
-	if err != nil {
-		return err
-	}
-	io.WriteString(partWriter, contents)
-	return nil
-}
-
-func cloudInitMimeType(contents string) string {
-	startsWithMapping := map[string]string{
-		"#include":              "text/x-include-url",
-		"#!":                    "text/x-shellscript",
-		"#cloud-boothook":       "text/cloud-boothook",
-		"#cloud-config":         "text/cloud-config",
-		"#cloud-config-archive": "text/cloud-config-archive",
-		"#upstart-job":          "text/upstart-job",
-		"#part-handler":         "text/part-handler",
-	}
-	for prefix, contentType := range startsWithMapping {
-		if strings.HasPrefix(contents, prefix) {
-			return contentType
-		}
-	}
-	return "text/plain"
+	return fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand), nil
 }

@@ -18,7 +18,7 @@ type VirtualMachineLauncher interface {
 
 type VirtualMachinePool interface {
 	Id() uint64
-	Get(uint64) <-chan VirtualMachine
+	Get(uint64) (<-chan VirtualMachine, <-chan error)
 	Free()
 	MaxSize() uint64
 	SetMaxSize(uint64) error

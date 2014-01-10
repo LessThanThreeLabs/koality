@@ -188,16 +188,18 @@ func (pool *virtualMachinePool) MinReady() uint64 {
 	return pool.minReady
 }
 
-func (pool *virtualMachinePool) SetMinReady(minReady uint64) {
+func (pool *virtualMachinePool) SetMinReady(minReady uint64) error {
 	pool.locker.Lock()
 	defer pool.locker.Unlock()
 
 	if minReady > pool.maxSize {
-		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, pool.maxSize))
+		return fmt.Errorf("minReady should not be larger than maxSize: (%d > %d)", minReady, pool.maxSize)
 	}
 
 	pool.minReady = minReady
 	go pool.ensureReadyInstances()
+
+	return nil
 }
 
 func (pool *virtualMachinePool) newReadyInstance() error {
