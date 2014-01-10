@@ -22,10 +22,10 @@ func TestErrorFree(test *testing.T) {
 	}
 
 	if parsedConfig.Sections == nil || len(parsedConfig.Sections) != 6 {
-		test.Errorf("There shouls be six sections in the example config file, but there are only %i.", len(parsedConfig.Sections))
+		test.Errorf("There should be six sections in the example config file, but there are only %d.", len(parsedConfig.Sections))
 	}
 
 	if parsedConfig.FinalSections == nil || len(parsedConfig.FinalSections) != 2 {
-		test.Errorf("There shouls be two final sections in the example config file, but there are only %i.", len(parsedConfig.FinalSections))
+		test.Errorf("There should be two final sections in the example config file, but there are only %d.", len(parsedConfig.FinalSections))
 	}
 }
