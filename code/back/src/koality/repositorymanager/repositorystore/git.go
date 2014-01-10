@@ -16,12 +16,11 @@ const (
 )
 
 type GitSubRepository struct {
-	vcsBaseCommand string
-	path           string
+	path string
 }
 
 func (repository *GitSubRepository) getVcsBaseCommand() string {
-	return repository.vcsBaseCommand
+	return "git"
 }
 
 func (repository *GitSubRepository) getPath() string {
@@ -37,7 +36,7 @@ type GitRepository struct {
 
 func OpenGitRepository(repository *resources.Repository) *GitRepository {
 	path := pathgenerator.ToPath(repository)
-	return &GitRepository{&GitSubRepository{"git", path}, &GitSubRepository{"git", path + ".slave"}, repository.RemoteUri}
+	return &GitRepository{&GitSubRepository{path}, &GitSubRepository{path + ".slave"}, repository.RemoteUri}
 }
 
 func (repository *GitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
@@ -200,7 +199,7 @@ func (repository *GitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 		return
 	}
 
-	if err = RunCommand(Command(repository.slave, nil, "push", fmt.Sprintf("HEAD:%s", refToMergeInto))); err != nil {
+	if err = RunCommand(Command(repository.slave, nil, "push", "origin", fmt.Sprintf("HEAD:%s", refToMergeInto))); err != nil {
 		return
 	}
 
@@ -302,15 +301,17 @@ func (repository *GitRepository) pushMergeRetry(remoteUri, refToMergeInto, origi
 	i := 0
 
 	for {
+		i += 1
 		err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", refToMergeInto, refToMergeInto))
 
 		//TODO(akostov) More precise error catching
 		if err != nil && i < pushMergeRetries {
-			i++
 			time.Sleep(retryTimeout)
 			repository.updateFromForwardUrl(remoteUri, refToMergeInto, originalHead)
 		} else if err != nil {
 			repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
+		} else {
+			break
 		}
 	}
 	return

@@ -6,26 +6,7 @@ import (
 	"koality/resources"
 )
 
-type StoredRepository interface {
-	CreateRepository() error
-
-	DeleteRepository() error
-}
-
-type PostPushRepository interface {
-	GetYamlFile(ref string) (string, error)
-
-	GetCommitAttributes(ref string) (string, string, string, error)
-}
-
-type PrePushRepository interface {
-	StoredRepository
-	PostPushRepository
-
-	StorePending(string, string, ...string) error
-}
-
-func openPostPushRepository(repository *resources.Repository) (PostPushRepository, error) {
+func openPostPushRepository(repository *resources.Repository) (repositorystore.PostPushRepository, error) {
 	switch repository.VcsType {
 	case "git":
 		return repositorystore.OpenGitRepository(repository), nil
@@ -37,7 +18,7 @@ func openPostPushRepository(repository *resources.Repository) (PostPushRepositor
 
 }
 
-func openPrePushRepository(repository *resources.Repository) (PrePushRepository, error) {
+func openPrePushRepository(repository *resources.Repository) (repositorystore.PrePushRepository, error) {
 	switch repository.VcsType {
 	case "git":
 		return repositorystore.OpenGitRepository(repository), nil
@@ -46,7 +27,7 @@ func openPrePushRepository(repository *resources.Repository) (PrePushRepository,
 	}
 }
 
-func openStoredRepository(repository *resources.Repository) (StoredRepository, error) {
+func openStoredRepository(repository *resources.Repository) (repositorystore.StoredRepository, error) {
 	switch repository.VcsType {
 	case "git":
 		return repositorystore.OpenGitRepository(repository), nil
@@ -73,4 +54,40 @@ func GetCommitAttributes(repository *resources.Repository, ref string) (message,
 	}
 
 	return openedRepository.GetCommitAttributes(ref)
+}
+
+func CreateRepository(repository *resources.Repository) (err error) {
+	openedRepository, err := openStoredRepository(repository)
+	if err != nil {
+		return
+	}
+
+	return openedRepository.CreateRepository()
+}
+
+func DeleteRepository(repository *resources.Repository) (err error) {
+	openedRepository, err := openStoredRepository(repository)
+	if err != nil {
+		return
+	}
+
+	return openedRepository.DeleteRepository()
+}
+
+func StorePending(repository *resources.Repository, ref string, args ...string) (err error) {
+	openedRepository, err := openPrePushRepository(repository)
+	if err != nil {
+		return
+	}
+
+	return openedRepository.StorePending(ref, repository.RemoteUri, args...)
+}
+
+func MergeChangeset(repository *resources.Repository, headRef, baseRef, refToMergeInto string) (err error) {
+	openedRepository, err := openPrePushRepository(repository)
+	if err != nil {
+		return
+	}
+
+	return openedRepository.MergeChangeset(headRef, baseRef, refToMergeInto)
 }

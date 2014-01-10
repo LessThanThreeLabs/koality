@@ -5,6 +5,25 @@ import (
 	"os"
 )
 
+type PostPushRepository interface {
+	GetYamlFile(ref string) (string, error)
+	GetCommitAttributes(ref string) (string, string, string, error)
+}
+
+type PrePushRepository interface {
+	StoredRepository
+
+	MergeChangeset(string, string, string) error
+	StorePending(string, string, ...string) error
+}
+
+type StoredRepository interface {
+	PostPushRepository
+
+	CreateRepository() error
+	DeleteRepository() error
+}
+
 const (
 	//TODO(akostov or bbland) hook these up.
 	defaultTimeout        = 120
