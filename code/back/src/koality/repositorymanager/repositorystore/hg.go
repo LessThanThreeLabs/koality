@@ -1,7 +1,6 @@
 package repositorystore
 
 import (
-	"bufio"
 	"fmt"
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
@@ -71,9 +70,7 @@ func (repository *HgRepository) GetCommitAttributes(ref string) (message, userna
 		return
 	}
 
-	commitDataReader := bufio.NewReader(strings.NewReader(command.Stdout.String()))
-
-	shaLine, err := commitDataReader.ReadString('\n')
+	shaLine, err := command.Stdout.ReadString('\n')
 	if err != nil {
 		return
 	}
@@ -83,14 +80,14 @@ func (repository *HgRepository) GetCommitAttributes(ref string) (message, userna
 		return
 	}
 
-	tagLine, err := commitDataReader.ReadString('\n')
+	tagLine, err := command.Stdout.ReadString('\n')
 
 	if !strings.HasPrefix(tagLine, "tag: ") {
 		err = fmt.Errorf("hg log -r %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
 
-	authorLine, err := commitDataReader.ReadString('\n')
+	authorLine, err := command.Stdout.ReadString('\n')
 
 	if !strings.HasPrefix(authorLine, "user: ") {
 		err = fmt.Errorf("hg log -r %s output data for repository at %v was not formatted as expected.", ref, repository)
@@ -104,14 +101,14 @@ func (repository *HgRepository) GetCommitAttributes(ref string) (message, userna
 	username = strings.TrimSpace(authorSplit[0])
 	email = strings.Trim(strings.TrimSpace(authorSplit[1]), ">")
 
-	dateLine, err := commitDataReader.ReadString('\n')
+	dateLine, err := command.Stdout.ReadString('\n')
 
 	if !strings.HasPrefix(dateLine, "date:") {
 		err = fmt.Errorf("hg log -r %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
 
-	messageLine, err := commitDataReader.ReadString('\n')
+	messageLine, err := command.Stdout.ReadString('\n')
 
 	if !strings.HasPrefix(messageLine, "summary:") {
 		err = fmt.Errorf("hg log -r %s output data for repository at %v was not formatted as expected.", ref, repository)

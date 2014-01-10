@@ -1,7 +1,6 @@
 package repositorystore
 
 import (
-	"bufio"
 	"fmt"
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
@@ -212,9 +211,7 @@ func (repository *GitSubRepository) getHeadSha() (headSha string, err error) {
 		return
 	}
 
-	//TODO(akostov) This line sucks. Does anyone know of a better way to get a bufio.Reader from a string?
-	headDataReader := bufio.NewReader(strings.NewReader(showCommand.Stdout.String()))
-	shaLine, err := headDataReader.ReadString('\n')
+	shaLine, err := showCommand.Stdout.ReadString('\n')
 	if err != nil {
 		return
 	}
@@ -328,9 +325,7 @@ func (repository *GitRepository) GetCommitAttributes(ref string) (message, usern
 		return
 	}
 
-	commitDataReader := bufio.NewReader(strings.NewReader(command.Stdout.String()))
-
-	shaLine, err := commitDataReader.ReadString('\n')
+	shaLine, err := command.Stdout.ReadString('\n')
 	if err != nil {
 		return
 	}
@@ -340,7 +335,7 @@ func (repository *GitRepository) GetCommitAttributes(ref string) (message, usern
 		return
 	}
 
-	authorLine, err := commitDataReader.ReadString('\n')
+	authorLine, err := command.Stdout.ReadString('\n')
 
 	if !strings.HasPrefix(authorLine, "Author") {
 		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
@@ -354,21 +349,21 @@ func (repository *GitRepository) GetCommitAttributes(ref string) (message, usern
 	username = strings.TrimSpace(authorSplit[0])
 	email = strings.Trim(strings.TrimSpace(authorSplit[1]), ">")
 
-	dateLine, err := commitDataReader.ReadString('\n')
+	dateLine, err := command.Stdout.ReadString('\n')
 
 	if !strings.HasPrefix(dateLine, "Date:") {
 		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
 
-	blankLine, err := commitDataReader.ReadString('\n')
+	blankLine, err := command.Stdout.ReadString('\n')
 
 	if blankLine != "\n" {
 		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
 		return
 	}
 
-	messageLine, err := commitDataReader.ReadString('\n')
+	messageLine, err := command.Stdout.ReadString('\n')
 
 	message = strings.TrimSpace(messageLine)
 
