@@ -34,9 +34,9 @@ func New(resourcesConnection *resources.Connection, virtualMachine vm.VirtualMac
 	}
 }
 
-func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Section) error {
+func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Section, environment map[string]string) error {
 	for sectionNumber, section := range sections {
-		shouldContinue, err := stageRunner.runSection(uint64(sectionNumber), section)
+		shouldContinue, err := stageRunner.runSection(uint64(sectionNumber), section, environment)
 		if err != nil {
 			return err
 		}
@@ -54,9 +54,9 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 	if stageRunner.verification.Status == "cancelled" {
 		return nil
 	}
-	// TODO (bbland): inject a KOALITY_STATUS environment variable somehow
+	environment["KOALITY_STATUS"] = stageRunner.verification.Status
 	for finalSectionNumber, finalSection := range finalSections {
-		shouldContinue, err := stageRunner.runSection(uint64(finalSectionNumber+len(sections)), finalSection)
+		shouldContinue, err := stageRunner.runSection(uint64(finalSectionNumber+len(sections)), finalSection, environment)
 		if err != nil {
 			return err
 		}
@@ -67,15 +67,15 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 	return nil
 }
 
-func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section.Section) (bool, error) {
-	factorySuccess, err := stageRunner.runFactoryCommands(sectionNumber, section)
+func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section.Section, environment map[string]string) (bool, error) {
+	factorySuccess, err := stageRunner.runFactoryCommands(sectionNumber, section, environment)
 	if err != nil {
 		return false, err
 	}
 	if !factorySuccess && !section.ContinueOnFailure() {
 		return false, nil
 	}
-	commandsSuccess, err := stageRunner.runCommands(!factorySuccess, sectionNumber, section)
+	commandsSuccess, err := stageRunner.runCommands(!factorySuccess, sectionNumber, section, environment)
 
 	if err != nil {
 		return false, err
@@ -90,7 +90,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	return commandsSuccess || section.ContinueOnFailure(), nil
 }
 
-func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, sectionToRun section.Section) (bool, error) {
+func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, sectionToRun section.Section, environment map[string]string) (bool, error) {
 	var err error
 	var command verification.Command
 	sectionFailed := false
@@ -135,7 +135,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			return false, err
 		}
 
-		returnCode, runErr := stageRunner.runCommand(command, nil, io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stdout), io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stderr))
+		returnCode, runErr := stageRunner.runCommand(command, nil, io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stdout), io.MultiWriter(syncOutputBuffer, syncConsoleWriter, os.Stderr), environment)
 		factoryCommands.Done()
 		closeErr := consoleWriter.Close()
 
@@ -212,7 +212,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 	return !sectionFailed, nil
 }
 
-func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectionNumber uint64, sectionToRun section.Section) (bool, error) {
+func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectionNumber uint64, sectionToRun section.Section, environment map[string]string) (bool, error) {
 	var err error
 	var command verification.Command
 	sectionFailed := false
@@ -253,7 +253,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			return false, err
 		}
 
-		returnCode, runErr := stageRunner.runCommand(command, nil, io.MultiWriter(syncConsoleWriter, os.Stdout), io.MultiWriter(syncConsoleWriter, os.Stderr))
+		returnCode, runErr := stageRunner.runCommand(command, nil, io.MultiWriter(syncConsoleWriter, os.Stdout), io.MultiWriter(syncConsoleWriter, os.Stderr), environment)
 		commands.Done()
 		closeErr := consoleWriter.Close()
 
@@ -293,9 +293,9 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 	return !sectionFailed, nil
 }
 
-func (stageRunner *StageRunner) runCommand(command verification.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (int, error) {
+func (stageRunner *StageRunner) runCommand(command verification.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (int, error) {
 	shellCommand := command.ShellCommand()
-	executable, err := stageRunner.virtualMachine.MakeExecutable(shellCommand, stdin, stdout, stderr, nil)
+	executable, err := stageRunner.virtualMachine.MakeExecutable(shellCommand, stdin, stdout, stderr, environment)
 	if err != nil {
 		return 255, err
 	}

@@ -195,7 +195,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 
 		newStageRunnersChan <- stageRunner
 
-		err := stageRunner.RunStages(verificationConfig.Sections, verificationConfig.FinalSections)
+		err := stageRunner.RunStages(verificationConfig.Sections, verificationConfig.FinalSections, verificationConfig.Params.Environment)
 		if err != nil {
 			panic(err)
 		}

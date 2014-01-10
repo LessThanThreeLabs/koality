@@ -2,6 +2,7 @@ package shell
 
 import (
 	"io"
+	"os"
 	"os/exec"
 )
 
@@ -38,7 +39,7 @@ func (executableMaker *ShellExecutableMaker) MakeExecutable(command Command, std
 		env[index] = key + "=" + value
 		index++
 	}
-	cmd.Env = env
+	cmd.Env = append(os.Environ(), env...)
 
 	return ShellExecutable{cmd}, nil
 }

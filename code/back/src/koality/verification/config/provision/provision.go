@@ -258,7 +258,7 @@ func parsePython(version string) (languageCommand, versionCommand shell.Command)
 					shell.Silent("which virtualenv"),
 					shell.And(
 						installEasyInstallCommand,
-						shell.Advertised("easy_install virtualenv"),
+						shell.Advertised("easy_install virtualenv==1.10.1"),
 					),
 				),
 				shell.Commandf("mkdir -p %s", virtualEnvsPath),
