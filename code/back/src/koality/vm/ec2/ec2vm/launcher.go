@@ -61,6 +61,7 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 	if err != nil {
 		return nil, err
 	}
+
 	if len(runResponse.Instances) == 0 {
 		return nil, errors.New("No instances launched")
 	}
@@ -209,10 +210,6 @@ func (launcher *Ec2VirtualMachineLauncher) getSnapshotsForImage(baseImage ec2.Im
 		return nil, err
 	}
 	return imagesResponse.Images, nil
-}
-
-func (launcher *Ec2VirtualMachineLauncher) getInstanceType() string {
-	return "m1.small"
 }
 
 func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGroup, error) {

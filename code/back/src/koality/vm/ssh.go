@@ -67,14 +67,14 @@ func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Comma
 	session.Stdout = stdout
 	session.Stderr = stderr
 
+	envCommands := make([]shell.Command, 0, len(environment))
 	for key, value := range environment {
-		err = session.Setenv(key, value)
-		if err != nil {
-			return nil, err
-		}
+		envCommands = append(envCommands, shell.Commandf("export %s=%s", key, shell.Quote(value)))
 	}
 
-	return &sshExecutable{command, session}, nil
+	commandWithEnv := shell.Chain(append(envCommands, command)...)
+
+	return &sshExecutable{commandWithEnv, session}, nil
 }
 
 func (sshExecutableMaker *SshExecutableMaker) Close() error {
