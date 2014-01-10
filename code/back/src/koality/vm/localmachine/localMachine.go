@@ -21,7 +21,7 @@ func New() *LocalMachine {
 	if err != nil {
 		panic(err)
 	}
-	executableMaker := shell.NewShellExecutableMaker()
+	executableMaker := shell.ShellExecutableMaker
 	copier := &localCopier{executableMaker}
 
 	localMachine := LocalMachine{

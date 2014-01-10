@@ -12,7 +12,7 @@ func TestPoolSizeAssertions(test *testing.T) {
 		defer func() {
 			allowed = recover() == nil
 		}()
-		vm.NewPool(0, localmachine.NewLauncher(), minReady, maxSize)
+		vm.NewPool(0, localmachine.Launcher, minReady, maxSize)
 		return
 	}
 
@@ -40,7 +40,7 @@ func TestPoolSizeAssertions(test *testing.T) {
 
 func TestPoolReachesCap(test *testing.T) {
 	testPoolReachesCap := func(poolSize uint64) {
-		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, poolSize)
+		pool := vm.NewPool(0, localmachine.Launcher, 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(poolSize)
@@ -66,7 +66,7 @@ func TestPoolReachesCap(test *testing.T) {
 
 func TestPoolEnforcesCap(test *testing.T) {
 	testPoolEnforcesCap := func(poolSize uint64) {
-		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, poolSize)
+		pool := vm.NewPool(0, localmachine.Launcher, 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(poolSize + 1)
@@ -100,7 +100,7 @@ func TestPoolEnforcesCap(test *testing.T) {
 
 func TestPoolMaxSizeIncrease(test *testing.T) {
 	testPoolMaxSizeIncrease := func(startingPoolSize, endingPoolSize uint64) {
-		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, startingPoolSize)
+		pool := vm.NewPool(0, localmachine.Launcher, 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(startingPoolSize)
@@ -153,7 +153,7 @@ func TestPoolMaxSizeIncrease(test *testing.T) {
 
 func TestPoolMaxSizeDecrease(test *testing.T) {
 	testPoolMaxSizeDecrease := func(startingPoolSize, endingPoolSize, amountToRequest uint64) {
-		pool := vm.NewPool(0, localmachine.NewLauncher(), 0, startingPoolSize)
+		pool := vm.NewPool(0, localmachine.Launcher, 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
 		vmChan := pool.GetN(amountToRequest)
@@ -211,9 +211,9 @@ func TestPoolMaxSizeDecrease(test *testing.T) {
 }
 
 func TestPoolMinReadyIncrease(test *testing.T) {
-	test.Log("This is very important to add")
+	test.Skip("This is very important to add")
 }
 
 func TestPoolMinReadyDecrease(test *testing.T) {
-	test.Log("This is very important to add")
+	test.Skip("This is very important to add")
 }

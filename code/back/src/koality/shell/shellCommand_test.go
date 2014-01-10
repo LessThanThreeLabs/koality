@@ -501,7 +501,7 @@ func TestLoginCommand(test *testing.T) {
 }
 
 func TestSudoCommand(test *testing.T) {
-	// Do nothing :(
+	test.Skip("Not really sure how to safely test this...")
 }
 
 func executeAndAssert(test *testing.T, command shell.Command, expectSuccess bool) {

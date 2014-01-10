@@ -16,28 +16,22 @@ type ExecutableMaker interface {
 	MakeExecutable(command Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (Executable, error)
 }
 
-type ShellExecutableMaker struct{} // Empty struct?
+type shellExecutableMaker struct{} // Empty struct constant?
+var ShellExecutableMaker = shellExecutableMaker{}
 
 type ShellExecutable struct {
 	*exec.Cmd
 }
 
-func NewShellExecutableMaker() *ShellExecutableMaker {
-	return &ShellExecutableMaker{}
-}
-
-func (executableMaker *ShellExecutableMaker) MakeExecutable(command Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (Executable, error) {
+func (executableMaker shellExecutableMaker) MakeExecutable(command Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (Executable, error) {
 	cmd := exec.Command("bash", "-c", string(command))
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
-	env := make([]string, len(environment))
-	index := 0
-
+	env := make([]string, 0, len(environment))
 	for key, value := range environment {
-		env[index] = key + "=" + value
-		index++
+		env = append(env, key+"="+value)
 	}
 	cmd.Env = append(os.Environ(), env...)
 

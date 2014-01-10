@@ -4,12 +4,10 @@ import (
 	"koality/vm"
 )
 
-type LocalMachineLauncher struct{}
+type localMachineLauncher struct{}
 
-func NewLauncher() *LocalMachineLauncher {
-	return new(LocalMachineLauncher)
-}
+var Launcher = localMachineLauncher{}
 
-func (launcher *LocalMachineLauncher) LaunchVirtualMachine() (vm.VirtualMachine, error) {
+func (launcher localMachineLauncher) LaunchVirtualMachine() (vm.VirtualMachine, error) {
 	return New(), nil
 }
