@@ -45,23 +45,23 @@ func TestSimplePassingVerification(test *testing.T) {
 
 	cmd := exec.Command("git", "add", "koality.yml")
 	cmd.Dir = repoPath
-	err = cmd.Run()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		test.Fatal(err)
+		test.Fatal(err, string(output))
 	}
 
-	cmd = exec.Command("git", "commit", "koality.yml", "-m", "First commit")
+	cmd = exec.Command("git", "commit", "koality.yml", "-m", "First commit", "--author", "Test User <test@us.er>")
 	cmd.Dir = repoPath
-	err = cmd.Run()
+	output, err = cmd.CombinedOutput()
 	if err != nil {
-		test.Fatal(err)
+		test.Fatal(err, string(output))
 	}
 
 	cmd = exec.Command("git", "rev-parse", "HEAD")
 	cmd.Dir = repoPath
 	shaBytes, err := cmd.Output()
 	if err != nil {
-		test.Fatal(err)
+		test.Fatal(err, shaBytes)
 	}
 
 	sha := strings.TrimSpace(string(shaBytes))

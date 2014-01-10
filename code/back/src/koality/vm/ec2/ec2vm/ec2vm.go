@@ -50,8 +50,8 @@ func New(instance *ec2.Instance, cache *ec2broker.Ec2Cache, username string) (*E
 	return &ec2Vm, nil
 }
 
-func (ec2Vm *Ec2VirtualMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) (shell.Executable, error) {
-	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdin, stdout, stderr)
+func (ec2Vm *Ec2VirtualMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {
+	return ec2Vm.sshExecutableMaker.MakeExecutable(command, stdin, stdout, stderr, environment)
 }
 
 func (ec2Vm *Ec2VirtualMachine) Patch(patchConfig *vm.PatchConfig) (shell.Executable, error) {
