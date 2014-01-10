@@ -45,6 +45,10 @@ func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io
 		shell.Commandf("cd %s", localMachine.rootDir),
 		command,
 	)
+	if environment == nil {
+		environment = make(map[string]string)
+	}
+	environment["HOME"] = localMachine.rootDir
 	return localMachine.executableMaker.MakeExecutable(fullCommand, stdin, stdout, stderr, environment)
 }
 

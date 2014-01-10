@@ -93,7 +93,7 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionComman
 		"jvm":    parseJvm,
 	}
 
-	profile := filepath.Join("~", ".bash_profile")
+	profile := filepath.Join(baseDirectory, ".bash_profile")
 	sourceCommand := fmt.Sprintf("source %s", rcPath())
 
 	languageSteps := []shell.Command{
@@ -362,7 +362,7 @@ func parseNodejs(version string) (languageCommand, versionCommand shell.Command)
 						shell.Command("sh"),
 					),
 				),
-				shell.Advertised(shell.Append(shell.Command("grep nvm ~/.bash_profile"), shell.Command(rcPath()), true)),
+				shell.Advertised(shell.Append(shell.Commandf("grep nvm %s", filepath.Join(baseDirectory, ".bash_profile")), shell.Command(rcPath()), true)),
 			),
 		),
 		shell.Commandf("source %s", nvmPath),

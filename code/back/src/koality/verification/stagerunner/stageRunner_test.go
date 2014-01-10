@@ -60,7 +60,7 @@ func TestSimplePassingStages(test *testing.T) {
 		doneChan <- err
 	}(doneChan)
 
-	err = stageRunner.RunStages([]section.Section{testSection}, nil)
+	err = stageRunner.RunStages([]section.Section{testSection}, nil, nil)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestSimpleFailingStages(test *testing.T) {
 		doneChan <- err
 	}(doneChan)
 
-	err = stageRunner.RunStages([]section.Section{testSection}, nil)
+	err = stageRunner.RunStages([]section.Section{testSection}, nil, nil)
 	if err != nil {
 		test.Fatal(err)
 	}
