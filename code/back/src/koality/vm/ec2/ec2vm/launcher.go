@@ -52,10 +52,12 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 	}
 
 	runOptions := ec2.RunInstancesOptions{
-		ImageId:        activeImage.Id,
-		InstanceType:   launcher.Ec2Pool.InstanceType,
-		SecurityGroups: securityGroups,
-		UserData:       launcher.getUserData(username),
+		ImageId:             activeImage.Id,
+		InstanceType:        launcher.Ec2Pool.InstanceType,
+		SecurityGroups:      securityGroups,
+		SubnetId:            launcher.Ec2Pool.VpcSubnetId,
+		UserData:            launcher.getUserData(username),
+		BlockDeviceMappings: launcher.getBlockDeviceMappings(activeImage),
 	}
 	runResponse, err := launcher.ec2Cache().EC2.RunInstances(&runOptions)
 	if err != nil {
@@ -145,7 +147,6 @@ func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, us
 	}
 }
 
-// TODO (bbland): make all this stuff dynamic
 func (launcher *Ec2VirtualMachineLauncher) getActiveImage() (ec2.Image, error) {
 	baseImage, err := launcher.getBaseImage()
 	if err != nil {
@@ -278,6 +279,29 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 	return []ec2.SecurityGroup{securityGroup}, nil
 }
 
+func (launcher *Ec2VirtualMachineLauncher) getBlockDeviceMappings(image ec2.Image) []ec2.BlockDeviceMapping {
+	rootDriveSize := launcher.Ec2Pool.RootDriveSize
+
+	blockDeviceMappings := make([]ec2.BlockDeviceMapping, 0, len(image.BlockDevices))
+	for _, blockDeviceMapping := range image.BlockDevices {
+		if blockDeviceMapping.DeviceName == image.RootDeviceName && rootDriveSize > blockDeviceMapping.VolumeSize {
+			rootDriveMapping := ec2.BlockDeviceMapping{
+				DeviceName:          blockDeviceMapping.DeviceName,
+				VirtualName:         blockDeviceMapping.VirtualName,
+				SnapshotId:          blockDeviceMapping.SnapshotId,
+				VolumeType:          blockDeviceMapping.VolumeType,
+				VolumeSize:          rootDriveSize,
+				DeleteOnTermination: blockDeviceMapping.DeleteOnTermination,
+				IOPS:                blockDeviceMapping.IOPS,
+			}
+			blockDeviceMappings = append(blockDeviceMappings, rootDriveMapping)
+		} else {
+			blockDeviceMappings = append(blockDeviceMappings, blockDeviceMapping)
+		}
+	}
+	return blockDeviceMappings
+}
+
 func (launcher *Ec2VirtualMachineLauncher) getUserData(username string) []byte {
 	buffer := new(bytes.Buffer)
 	multipartWriter := multipart.NewWriter(buffer)
@@ -288,7 +312,7 @@ func (launcher *Ec2VirtualMachineLauncher) getUserData(username string) []byte {
 		panic(err)
 	}
 
-	customUserData := launcher.Ec2Pool.UserData
+	customUserData := strings.TrimSpace(launcher.Ec2Pool.UserData)
 	if customUserData != "" {
 		err := writeCloudInitMimePart(multipartWriter, customUserData, "koality-custom-data")
 		if err != nil {

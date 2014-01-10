@@ -89,7 +89,7 @@ func TestSimplePassingVerification(test *testing.T) {
 	}
 	defer os.RemoveAll(path.Dir(pathgenerator.ToPath(repository)))
 
-	vmPool := vm.NewPool(0, localmachine.NewLauncher(), 0, 3)
+	vmPool := vm.NewPool(0, localmachine.Launcher, 0, 3)
 
 	verificationRunner := New(resourcesConnection, []vm.VirtualMachinePool{vmPool}, nil)
 
