@@ -224,7 +224,7 @@ func (repository *GitSubRepository) getHeadSha() (headSha string, err error) {
 		return
 	}
 
-	headSha = strings.Trim(strings.TrimPrefix(shaLine, "commit "), "\n")
+	headSha = strings.TrimSpace(strings.TrimPrefix(shaLine, "commit "))
 	return
 }
 
@@ -298,14 +298,14 @@ func (repository *GitRepository) updateFromForwardUrl(remoteUri, refToMergeInto,
 }
 
 func (repository *GitRepository) pushMergeRetry(remoteUri, refToMergeInto, originalHead string) (err error) {
-	i := 0
+	pushAttempts := 0
 
 	for {
-		i += 1
+		pushAttempts += 1
 		err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", refToMergeInto, refToMergeInto))
 
 		//TODO(akostov) More precise error catching
-		if err != nil && i < pushMergeRetries {
+		if err != nil && pushAttempts < pushMergeRetries {
 			time.Sleep(retryTimeout)
 			repository.updateFromForwardUrl(remoteUri, refToMergeInto, originalHead)
 		} else if err != nil {
@@ -347,12 +347,12 @@ func (repository *GitRepository) GetCommitAttributes(ref string) (message, usern
 		return
 	}
 
-	author := strings.Trim(strings.TrimPrefix(authorLine, "Author: "), "\n")
+	author := strings.TrimSpace(strings.TrimPrefix(authorLine, "Author: "))
 
 	authorSplit := strings.Split(author, " <")
 
-	username = strings.Trim(authorSplit[0], " ")
-	email = strings.Trim(authorSplit[1], "> \n")
+	username = strings.TrimSpace(authorSplit[0])
+	email = strings.Trim(strings.TrimSpace(authorSplit[1]), ">")
 
 	dateLine, err := commitDataReader.ReadString('\n')
 
@@ -370,7 +370,7 @@ func (repository *GitRepository) GetCommitAttributes(ref string) (message, usern
 
 	messageLine, err := commitDataReader.ReadString('\n')
 
-	message = strings.Trim(messageLine, " \n")
+	message = strings.TrimSpace(messageLine)
 
 	return
 }

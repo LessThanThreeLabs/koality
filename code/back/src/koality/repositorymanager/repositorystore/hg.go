@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
+	"koality/shell"
 	"os"
 	"strings"
 )
@@ -28,7 +29,7 @@ func (repository *HgRepository) getPath() string {
 
 func (repository *HgRepository) fetchWithPrivateKey(args ...string) (err error) {
 	//TODO(akostov) GIT_PRIVATE_KEY_PATH = change script much
-	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", fmt.Sprintf("\"GIT_PRIVATE_KEY_PATH=%s %s -o ConnectTimeout=%s\"", defaultPrivateKeyPath, defaultSshScript, defaultTimeout), repository.remoteUri}, args...)...)); err != nil {
+	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", shell.Quote(fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s %s -o ConnectTimeout=%s", defaultPrivateKeyPath, defaultSshScript, defaultTimeout)), repository.remoteUri}, args...)...)); err != nil {
 		return err
 	}
 
@@ -98,10 +99,10 @@ func (repository *HgRepository) GetCommitAttributes(ref string) (message, userna
 
 	author := strings.TrimPrefix(authorLine, "user: ")
 
-	authorSplit := strings.Split(strings.Trim(author, " "), " <")
+	authorSplit := strings.Split(strings.TrimSpace(author), " <")
 
-	username = strings.Trim(authorSplit[0], " ")
-	email = strings.Trim(authorSplit[1], "> \n")
+	username = strings.TrimSpace(authorSplit[0])
+	email = strings.Trim(strings.TrimSpace(authorSplit[1]), ">")
 
 	dateLine, err := commitDataReader.ReadString('\n')
 
@@ -117,7 +118,7 @@ func (repository *HgRepository) GetCommitAttributes(ref string) (message, userna
 		return
 	}
 
-	message = strings.Trim(strings.TrimPrefix(messageLine, "summary:"), " \n")
+	message = strings.TrimSpace(strings.TrimPrefix(messageLine, "summary:"))
 
 	return
 }

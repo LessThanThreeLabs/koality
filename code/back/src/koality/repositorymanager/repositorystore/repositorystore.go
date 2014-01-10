@@ -13,8 +13,8 @@ type PostPushRepository interface {
 type PrePushRepository interface {
 	StoredRepository
 
-	MergeChangeset(string, string, string) error
-	StorePending(string, string, ...string) error
+	MergeChangeset(headRef, baseRef, refToMergeInto string) error
+	StorePending(ref, remoteUri string, args ...string) error
 }
 
 type StoredRepository interface {
