@@ -18,11 +18,10 @@ type VirtualMachineLauncher interface {
 
 type VirtualMachinePool interface {
 	Id() uint64
-	Get() VirtualMachine
-	GetN(uint64) <-chan VirtualMachine
+	Get(uint64) <-chan VirtualMachine
 	Free()
 	MaxSize() uint64
-	SetMaxSize(uint64)
+	SetMaxSize(uint64) error
 	MinReady() uint64
-	SetMinReady(uint64)
+	SetMinReady(uint64) error
 }

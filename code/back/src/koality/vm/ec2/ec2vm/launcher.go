@@ -84,7 +84,7 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 	if err != nil {
 		return nil, err
 	}
-	ec2Vm, err := launcher.waitForSsh(instance, username, 3*time.Minute)
+	ec2Vm, err := launcher.waitForSsh(instance, username, 5*time.Minute)
 	if err != nil {
 		return nil, err
 	}

@@ -181,7 +181,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 
 	numNodes := verificationConfig.Params.Nodes
 	if numNodes == 0 {
-		numNodes = 1 // TEMPORARY
+		numNodes = 1 // TODO (bbland): Do a better job guessing the number of nodes when unspecified
 	}
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
@@ -201,12 +201,17 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		}
 	}
 
-	newMachinesChan := virtualMachinePool.GetN(numNodes)
+	newMachinesChan, errorChan := virtualMachinePool.Get(numNodes)
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
 			go runStages(newMachine)
 		}
 	}(newMachinesChan)
+
+	// TODO (bbland): do something with the errorChan
+	go func(errorChan <-chan error) {
+		<-errorChan
+	}(errorChan)
 
 	resultsChan := verificationRunner.combineResults(currentVerification, newStageRunnersChan)
 	receivedResult := make(map[string]bool)
