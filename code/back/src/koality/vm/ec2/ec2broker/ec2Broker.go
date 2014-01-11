@@ -31,13 +31,13 @@ func New() *Ec2Broker {
 	}
 }
 
-func (broker *Ec2Broker) Ec2Cache(auth aws.Auth) *Ec2Cache {
+func (broker *Ec2Broker) Ec2Cache(auth aws.Auth) (*Ec2Cache, error) {
 	broker.locker.Lock()
 	defer broker.locker.Unlock()
 
 	cache, ok := broker.caches[auth]
 	if ok {
-		return &cache
+		return &cache, nil
 	}
 
 	region := aws.USWest2 // TODO (bbland): change to USEast
@@ -45,8 +45,9 @@ func (broker *Ec2Broker) Ec2Cache(auth aws.Auth) *Ec2Cache {
 	if err == nil {
 		regionRegexp, err := regexp.Compile("(us|sa|eu|ap)-(north|south)?(east|west)?-[0-9]+")
 		if err != nil {
-			panic(err) // THIS SHOULDN'T HAPPEN
+			return nil, err // THIS SHOULDN'T HAPPEN
 		}
+
 		regionBytes := regionRegexp.Find(availabilityZoneBytes)
 		foundRegion, ok := aws.Regions[string(regionBytes)]
 		if ok {
@@ -54,14 +55,20 @@ func (broker *Ec2Broker) Ec2Cache(auth aws.Auth) *Ec2Cache {
 		}
 	}
 	ec2Conn := ec2.New(auth, region)
-	// TODO (bbland): validate ec2 connection
+
+	// Validate the connection auth
+	_, err = ec2Conn.Instances(nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	cache = Ec2Cache{
 		EC2:        ec2Conn,
 		locker:     new(sync.Mutex),
 		expiration: 5 * time.Second,
 	}
 	broker.caches[auth] = cache
-	return &cache
+	return &cache, nil
 }
 
 func (broker *Ec2Broker) InstanceInfo() *InstanceInfo {

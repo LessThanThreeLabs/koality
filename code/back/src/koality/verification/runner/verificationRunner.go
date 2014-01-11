@@ -50,7 +50,12 @@ func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
 	}
 	onEc2PoolCreated := func(ec2Pool *resources.Ec2Pool) {
 		verificationRunner.virtualMachinePoolMapLocker.Lock()
-		ec2VirtualMachinePool := ec2vm.NewPool(ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool))
+		ec2Launcher, err := ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool)
+		if err != nil {
+			panic(err) // TODO (bbland): not panic? collect errors?
+		}
+
+		ec2VirtualMachinePool := ec2vm.NewPool(ec2Launcher)
 		verificationRunner.virtualMachinePoolMap[ec2Pool.Id] = ec2VirtualMachinePool
 		verificationRunner.virtualMachinePoolMapLocker.Unlock()
 	}
