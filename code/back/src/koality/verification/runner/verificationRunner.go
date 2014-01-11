@@ -159,7 +159,13 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	if currentVerification == nil {
 		panic("Cannot run a nil verification")
 	}
-	verificationConfig, err := verificationRunner.getVerificationConfig(currentVerification)
+	repository, err := verificationRunner.resourcesConnection.Repositories.Read.Get(currentVerification.RepositoryId)
+	if err != nil {
+		verificationRunner.failVerification(currentVerification)
+		return false, err
+	}
+
+	verificationConfig, err := verificationRunner.getVerificationConfig(currentVerification, repository)
 	if err != nil {
 		verificationRunner.failVerification(currentVerification)
 		return false, err
@@ -221,7 +227,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		if !hasMoreResults {
 			verificationPassed := currentVerification.Status != "cancelled" && currentVerification.Status != "failed"
 			if verificationPassed {
-				err := verificationRunner.passVerification(currentVerification)
+				err := verificationRunner.passVerification(currentVerification, repository)
 				if err != nil {
 					return false, err
 				}
@@ -266,10 +272,21 @@ func (verificationRunner *VerificationRunner) failVerification(verification *res
 	return err
 }
 
-func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification) error {
+func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification, repository *resources.Repository) error {
 	(*verification).Status = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := verificationRunner.resourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
+
+	err := repositorymanager.MergeChangeset(repository, pathgenerator.GitHiddenRef(verification.Changeset.HeadSha), verification.Changeset.BaseSha, verification.MergeTarget)
+	if err == nil {
+		(*verification).MergeStatus = "passed"
+		verificationRunner.resourcesConnection.Verifications.Update.SetMergeStatus(verification.Id, "passed")
+	} else {
+		fmt.Println(err)
+		(*verification).MergeStatus = "failed"
+		verificationRunner.resourcesConnection.Verifications.Update.SetMergeStatus(verification.Id, "failed")
+	}
+
+	err = verificationRunner.resourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
 	if err != nil {
 		return err
 	}
@@ -278,13 +295,8 @@ func (verificationRunner *VerificationRunner) passVerification(verification *res
 	return err
 }
 
-func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerification *resources.Verification) (config.VerificationConfig, error) {
+func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerification *resources.Verification, repository *resources.Repository) (config.VerificationConfig, error) {
 	var emptyConfig config.VerificationConfig
-
-	repository, err := verificationRunner.resourcesConnection.Repositories.Read.Get(currentVerification.RepositoryId)
-	if err != nil {
-		return emptyConfig, err
-	}
 
 	configYaml, err := repositorymanager.GetYamlFile(repository, currentVerification.Changeset.HeadSha)
 	if err != nil {

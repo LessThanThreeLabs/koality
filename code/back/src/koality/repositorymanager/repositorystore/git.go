@@ -103,7 +103,7 @@ func (repository *GitRepository) CreateRepository() (err error) {
 		return err
 	}
 
-	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/heads/*:refs/heads/*"); err != nil {
+	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/*:refs/*"); err != nil {
 		return
 	}
 
