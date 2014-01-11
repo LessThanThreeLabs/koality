@@ -90,8 +90,8 @@ func createRepositories(connection *resources.Connection) error {
 
 	for index := 0; index < numRepositories; index++ {
 		go func(index int) {
-			repositoryName := fmt.Sprintf("Repository %d", index)
-			repositoryLocalUri := fmt.Sprintf("git@test-data.koalitycode.com:koality-%d.git", index)
+			repositoryName := fmt.Sprintf("Repository-%d", index)
+			repositoryLocalUri := fmt.Sprintf("git/test-data.koalitycode.com/koality-%d.git", index)
 			repositoryRemoteUri := fmt.Sprintf("git@github.com:KoalityCode/koality-%d.git", index)
 			repository, err := connection.Repositories.Create.Create(repositoryName, "git", repositoryLocalUri, repositoryRemoteUri)
 			if err != nil {

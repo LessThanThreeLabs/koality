@@ -219,9 +219,9 @@ func TestCreateGitHubRepository(test *testing.T) {
 	}
 
 	name := "repository-name"
-	vcsType := "hg"
-	localUri := "hg@local.uri.com/name"
-	remoteUri := "hg/remote_uri/name"
+	vcsType := "git"
+	localUri := "git/local.uri.com/name"
+	remoteUri := "git@remote_uri:name"
 	gitHubOwner := "jordanpotter"
 	gitHubName := "repository-github-name"
 	repository, err := connection.Repositories.Create.CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName)
