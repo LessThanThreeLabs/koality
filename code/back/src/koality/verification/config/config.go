@@ -11,6 +11,7 @@ import (
 	"koality/verification/config/provision"
 	"koality/verification/config/remotecommand"
 	"koality/verification/config/section"
+	"strconv"
 	"strings"
 )
 
@@ -213,12 +214,12 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 				}
 			// TODO: handle pool id/name (defaults to 0 which is ok for now)
 			case "nodes":
-				option, ok := option.(uint64)
-				if !ok || option < 0 {
+				intVal, err := strconv.Atoi(fmt.Sprint(option))
+				if err != nil || intVal < 0 {
 					err = BadConfigurationError{"The number of nodes must be a positive integer."}
 				}
 
-				params.Nodes = uint64(option)
+				params.Nodes = uint64(intVal)
 			case "snapshot until":
 				snapshot, ok := option.(string)
 				if !ok {

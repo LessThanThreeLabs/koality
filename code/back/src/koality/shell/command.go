@@ -44,12 +44,14 @@ func IfElse(condition, thenCommand, elseCommand Command) Command {
 }
 
 func join(commands []Command, joiner string, grouped bool) Command {
-	commandStrings := make([]string, len(commands))
-	for index, command := range commands {
-		if grouped {
-			commandStrings[index] = string(Group(command))
-		} else {
-			commandStrings[index] = string(command)
+	commandStrings := make([]string, 0, len(commands))
+	for _, command := range commands {
+		if strings.TrimSpace(string(command)) != "" {
+			if grouped {
+				commandStrings = append(commandStrings, string(Group(command)))
+			} else {
+				commandStrings = append(commandStrings, string(command))
+			}
 		}
 	}
 	return Command(strings.Join(commandStrings, joiner))

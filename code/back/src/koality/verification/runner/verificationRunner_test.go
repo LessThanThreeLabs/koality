@@ -33,7 +33,29 @@ func TestSimplePassingVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	ymlBytes, err := goyaml.Marshal(map[string]interface{}{"parameters": map[string]interface{}{"languages": map[string]interface{}{"python": 2.7}}})
+	ymlBytes, err := goyaml.Marshal(
+		map[string]interface{}{
+			"parameters": map[string]interface{}{
+				"nodes": 8,
+				"languages": map[string]interface{}{
+					"python": 2.7,
+				},
+			},
+			"sections": []interface{}{
+				map[string]interface{}{
+					"a section": map[string]interface{}{
+						"run on":  "split",
+						"fail on": "first",
+						"scripts": []interface{}{
+							"pwd",
+							"pwd",
+							"pwd",
+						},
+					},
+				},
+			},
+		},
+	)
 	if err != nil {
 		test.Fatal(err)
 	}
