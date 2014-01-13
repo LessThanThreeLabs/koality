@@ -12,7 +12,7 @@ func ToPath(repo *resources.Repository) string {
 }
 
 func GitHiddenRef(commitId string) string {
-	return fmt.Sprintf("refs/pending/%s", commitId)
+	return fmt.Sprintf("refs/koality/%s", commitId)
 }
 
 func GetRepoID(absPath string) (int64, error) {

@@ -106,7 +106,7 @@ func TestGitStorePending(testing *testing.T) {
 		testing.Fatal(err)
 	}
 
-	if err := RunCommand(Command(gitRemoteRepository, nil, "show", fmt.Sprintf("refs/pending/%s", headSha))); err != nil {
+	if err := RunCommand(Command(gitRemoteRepository, nil, "show", fmt.Sprintf("refs/koality/%s", headSha))); err != nil {
 		testing.Fatal(err)
 	}
 }

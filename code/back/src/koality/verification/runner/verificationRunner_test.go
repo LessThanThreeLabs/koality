@@ -3,8 +3,8 @@ package runner
 import (
 	"github.com/dchest/goyaml"
 	"io/ioutil"
+	"koality/repositorymanager"
 	"koality/repositorymanager/pathgenerator"
-	"koality/repositorymanager/repositorystore"
 	"koality/resources/database"
 	"koality/vm"
 	"koality/vm/localmachine"
@@ -88,12 +88,12 @@ func TestSimplePassingVerification(test *testing.T) {
 
 	sha := strings.TrimSpace(string(shaBytes))
 
-	err = os.Mkdir(path.Join(repoPath, ".git", "refs", "pending"), 0777)
+	err = os.Mkdir(path.Join(repoPath, ".git", "refs", "koality"), 0777)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(path.Join(repoPath, ".git", "refs", "pending", sha), shaBytes, 0664)
+	err = ioutil.WriteFile(path.Join(repoPath, ".git", pathgenerator.GitHiddenRef(sha)), shaBytes, 0664)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -103,9 +103,7 @@ func TestSimplePassingVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	gitRepository := repositorystore.OpenGitRepository(repository)
-
-	err = gitRepository.CreateRepository()
+	err = repositorymanager.CreateRepository(repository)
 	if err != nil {
 		test.Fatal(err)
 	}

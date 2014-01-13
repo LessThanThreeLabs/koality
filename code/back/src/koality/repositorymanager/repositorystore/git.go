@@ -79,7 +79,7 @@ func (repository *GitRepository) StorePending(ref, remoteUri string, args ...str
 		return NoSuchCommitInRepositoryError{fmt.Sprintf("The repository at %s does not contain commit %s", repository.bare.path, ref)}
 	}
 
-	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:refs/pending/%s", ref, ref)); err != nil {
+	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:refs/koality/%s", ref, ref)); err != nil {
 		return
 	}
 
