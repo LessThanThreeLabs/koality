@@ -6,6 +6,7 @@ import (
 	"koality/repositorymanager"
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources/database"
+	"koality/util/log"
 	"koality/vm"
 	"koality/vm/localmachine"
 	"os"
@@ -16,6 +17,7 @@ import (
 )
 
 func TestSimplePassingVerification(test *testing.T) {
+	log.Init()
 	database.PopulateDatabase()
 
 	resourcesConnection, err := database.New()

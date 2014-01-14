@@ -6,6 +6,7 @@ import (
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
 	"koality/shell"
+	"koality/util/log"
 	"koality/verification"
 	"koality/verification/config"
 	"koality/verification/config/commandgroup"
@@ -15,6 +16,7 @@ import (
 	"koality/vm/ec2/ec2broker"
 	"koality/vm/ec2/ec2vm"
 	"koality/vm/vcs"
+	"runtime"
 	"sync"
 	"time"
 )
@@ -52,7 +54,9 @@ func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
 		verificationRunner.virtualMachinePoolMapLocker.Lock()
 		ec2Launcher, err := ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool)
 		if err != nil {
-			panic(err) // TODO (bbland): not panic? collect errors?
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Failed to construct new ec2 launcher with pool parameters: %v\n%s", ec2Pool, stacktrace)
 		}
 
 		ec2VirtualMachinePool := ec2vm.NewPool(ec2Launcher)
@@ -70,12 +74,16 @@ func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
 		vmPool, ok := verificationRunner.virtualMachinePoolMap[ec2PoolId]
 		verificationRunner.virtualMachinePoolMapLocker.Unlock()
 		if !ok {
-			panic(fmt.Sprintf("Could not find pool with id: %d", ec2PoolId))
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Tried to update nonexistent pool with id: %d", ec2PoolId, stacktrace)
 		}
 
 		ec2VmPool, ok := vmPool.(ec2vm.Ec2VirtualMachinePool)
 		if !ok {
-			panic(fmt.Sprintf("Pool with id: %d is not an EC2 pool", ec2PoolId))
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Pool with id: %d is not an EC2 pool", ec2PoolId, stacktrace)
 		}
 
 		ec2Pool := ec2VmPool.Ec2VirtualMachineLauncher.Ec2Pool
@@ -162,8 +170,9 @@ func (verificationRunner *VerificationRunner) unsubscribeFromEvents(allowPartial
 
 func (verificationRunner *VerificationRunner) RunVerification(currentVerification *resources.Verification) (bool, error) {
 	if currentVerification == nil {
-		panic("Cannot run a nil verification")
+		return false, fmt.Errorf("Cannot run a nil verification")
 	}
+	log.Info("Running verification: %v", currentVerification)
 	repository, err := verificationRunner.resourcesConnection.Repositories.Read.Get(currentVerification.RepositoryId)
 	if err != nil {
 		verificationRunner.failVerification(currentVerification)
@@ -194,6 +203,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	if numNodes == 0 {
 		numNodes = 1 // TODO (bbland): Do a better job guessing the number of nodes when unspecified
 	}
+	log.Debugf("Using %d nodes for verification: %v", numNodes, currentVerification)
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
 
@@ -208,7 +218,9 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 
 		err := stageRunner.RunStages(verificationConfig.Sections, verificationConfig.FinalSections, verificationConfig.Params.Environment)
 		if err != nil {
-			panic(err)
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Failed to run stages for verification: %v\nConfig: %v\n%s", currentVerification, verificationConfig, stacktrace)
 		}
 	}
 
@@ -278,7 +290,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 
 func (verificationRunner *VerificationRunner) failVerification(verification *resources.Verification) error {
 	(*verification).Status = "failed"
-	fmt.Printf("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
+	log.Infof("verification %d %sFAILED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
 	err := verificationRunner.resourcesConnection.Verifications.Update.SetStatus(verification.Id, "failed")
 	if err != nil {
 		return err
@@ -289,14 +301,12 @@ func (verificationRunner *VerificationRunner) failVerification(verification *res
 }
 
 func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification, repository *resources.Repository) error {
-	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-
+	log.Infof("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
 	err := repositorymanager.MergeChangeset(repository, pathgenerator.GitHiddenRef(verification.Changeset.HeadSha), verification.Changeset.BaseSha, verification.MergeTarget)
 	if err == nil {
 		(*verification).MergeStatus = "passed"
 		verificationRunner.resourcesConnection.Verifications.Update.SetMergeStatus(verification.Id, "passed")
 	} else {
-		fmt.Println(err)
 		(*verification).MergeStatus = "failed"
 		verificationRunner.resourcesConnection.Verifications.Update.SetMergeStatus(verification.Id, "failed")
 	}
@@ -316,7 +326,6 @@ func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerif
 
 	configYaml, err := repositorymanager.GetYamlFile(repository, currentVerification.Changeset.HeadSha)
 	if err != nil {
-		panic(err)
 		return emptyConfig, err
 	}
 
@@ -439,8 +448,8 @@ func (verificationRunner *VerificationRunner) combineResults(currentVerification
 		drainRemaining()
 		// Drain any extra possible results that we don't care about
 		for _, stageRunner := range stageRunners {
-			for _ = range stageRunner.ResultsChan {
-				fmt.Println("Got an extra result")
+			for extraResult := range stageRunner.ResultsChan {
+				log.Debug("Got an extra result: %v", extraResult)
 			}
 		}
 	}(newStageRunnersChan)

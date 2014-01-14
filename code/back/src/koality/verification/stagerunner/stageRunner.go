@@ -79,11 +79,12 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	if !factorySuccess && !section.ContinueOnFailure() {
 		return false, nil
 	}
-	commandsSuccess, err := stageRunner.runCommands(!factorySuccess, sectionNumber, section, environment)
 
+	commandsSuccess, err := stageRunner.runCommands(!factorySuccess, sectionNumber, section, environment)
 	if err != nil {
 		return false, err
 	}
+
 	if factorySuccess && commandsSuccess {
 		stageRunner.ResultsChan <- verification.SectionResult{
 			Section:       section.Name(),
