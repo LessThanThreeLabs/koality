@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="SendgridController#parsed_reply reply via email when async is disabled behaves like an implementation that posts to threads" tests="2" time="4.449882802" failures="0" errors="0" skipped="0">
+<testcase name="SendgridController#parsed_reply reply via email when async is disabled behaves like an implementation that posts to threads posts given an inbound thread reply email" time="2.28799277">
+</testcase>
+<testcase name="SendgridController#parsed_reply reply via email when async is disabled behaves like an implementation that posts to threads handles emails that are encoded with something other than utf-8" time="2.16138644">
+</testcase>
+<system-out>
+</system-out>
+<system-err>
+</system-err>
+</testsuite>

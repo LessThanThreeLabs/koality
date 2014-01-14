@@ -8,7 +8,9 @@ import (
 )
 
 func TestCreateInvalidStage(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -42,7 +44,9 @@ func TestCreateInvalidStage(test *testing.T) {
 }
 
 func TestCreateStage(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -212,7 +216,9 @@ func TestCreateStage(test *testing.T) {
 }
 
 func TestStageReturnCode(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -291,7 +297,9 @@ func TestStageReturnCode(test *testing.T) {
 }
 
 func TestStageTimes(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -415,7 +423,9 @@ func TestStageTimes(test *testing.T) {
 }
 
 func TestConsoleLines(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -537,7 +547,9 @@ func TestConsoleLines(test *testing.T) {
 }
 
 func TestXunit(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -583,8 +595,8 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	firstXunitResult := resources.XunitResult{"first", "some/path/1.xml", "", "", "", "", time.Now(), 1.137}
-	secondXunitResult := resources.XunitResult{"second", "some/path/2.xml", "", "", "", "", time.Now(), 1.137}
+	firstXunitResult := resources.XunitResult{"first", "some/path/1.xml", "", "", "", "", 1.137}
+	secondXunitResult := resources.XunitResult{"second", "some/path/2.xml", "", "", "", "", 1.137}
 	xunitResults := []resources.XunitResult{firstXunitResult, secondXunitResult}
 	err = connection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
 	if err != nil {
@@ -639,7 +651,9 @@ func TestXunit(test *testing.T) {
 }
 
 func TestExport(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {

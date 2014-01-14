@@ -7,6 +7,7 @@ import (
 	"koality/shell"
 	"koality/vm"
 	"os"
+	"path/filepath"
 )
 
 type LocalMachine struct {
@@ -69,6 +70,7 @@ type localCopier struct {
 }
 
 func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
-	command := shell.Advertised(shell.Commandf("cp %s %s", sourceFilePath, destFilePath))
+	command := shell.Advertised(shell.And(shell.Commandf("mkdir -p %s", filepath.Dir(destFilePath)),
+		shell.Commandf("cp %s %s", sourceFilePath, destFilePath)))
 	return copier.executableMaker.MakeExecutable(command, nil, nil, nil, nil)
 }

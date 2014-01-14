@@ -3,10 +3,12 @@ package stagerunner
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
+	"encoding/json"
 	"fmt"
 	"github.com/dchest/goyaml"
 	"io"
 	"koality/resources"
+	"koality/shell"
 	"koality/verification"
 	"koality/verification/config"
 	"koality/verification/config/commandgroup"
@@ -14,6 +16,7 @@ import (
 	"koality/vm"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -94,6 +97,32 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 		}
 	}
 	return commandsSuccess || section.ContinueOnFailure(), nil
+}
+
+func (stageRunner *StageRunner) getXunitResults(command verification.Command, environment map[string]string) ([]resources.XunitResult, error) {
+	execName := "getXunitResults"
+	directories := command.XunitPaths()
+	if len(directories) == 0 {
+		return nil, nil
+	}
+	copyExec, err := stageRunner.virtualMachine.FileCopy("$HOME/code/back/src/koality/util/"+execName, execName)
+	if err != nil {
+		return nil, err
+	}
+	if err = copyExec.Run(); err != nil {
+		return nil, err
+	}
+	cmd := shell.Commandf("./%s %s %s", execName, shell.Quote("*.xml"), strings.Join(directories, " "))
+	w := new(bytes.Buffer)
+	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, w, os.Stderr, environment)
+	if err = runExec.Run(); err != nil {
+		return nil, err
+	}
+	var res []resources.XunitResult
+	if err = json.Unmarshal(w.Bytes(), &res); err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
 func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, sectionToRun section.Section, environment map[string]string) (bool, error) {
@@ -277,6 +306,14 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 
 		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, returnCode)
+		xunitResults, xunitError := stageRunner.getXunitResults(command, environment)
+		if xunitError != nil {
+			return false, xunitError
+		}
+		xunitError = stageRunner.resourcesConnection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
+		if xunitError != nil {
+			return false, xunitError
+		}
 
 		if closeErr != nil {
 			return false, closeErr

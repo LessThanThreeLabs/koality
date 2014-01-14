@@ -187,7 +187,7 @@ func (readHandler *ReadHandler) scanXunitResult(scannable *sql.Rows) (*resources
 	xunitResult := new(resources.XunitResult)
 
 	var sysout, syserr, failureText, errorText sql.NullString
-	err := scannable.Scan(&xunitResult.Name, &xunitResult.Path, &sysout, &syserr, &failureText, &errorText, &xunitResult.Started, &xunitResult.Seconds)
+	err := scannable.Scan(&xunitResult.Name, &xunitResult.Path, &sysout, &syserr, &failureText, &errorText, &xunitResult.Seconds)
 	if err != nil {
 		return nil, err
 	}
@@ -213,24 +213,24 @@ func (readHandler *ReadHandler) GetAllXunitResults(stageRunId uint64) ([]resourc
 		return nil, err
 	}
 
-	query := "SELECT name, path, sysout, syserr, failure_text, error_text, started, seconds FROM xunit_results WHERE run_id=$1"
+	query := "SELECT name, path, sysout, syserr, failure_text, error_text, seconds FROM xunit_results WHERE run_id=$1"
 	rows, err := readHandler.database.Query(query, stageRunId)
 	if err != nil {
 		return nil, err
 	}
 
-	xunitResuts := make([]resources.XunitResult, 0, 100)
+	xunitResults := make([]resources.XunitResult, 0, 100)
 	for rows.Next() {
 		xunitResult, err := readHandler.scanXunitResult(rows)
 		if err != nil {
 			return nil, err
 		}
-		xunitResuts = append(xunitResuts, *xunitResult)
+		xunitResults = append(xunitResults, *xunitResult)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return xunitResuts, nil
+	return xunitResults, nil
 }
 
 func (readHandler *ReadHandler) GetExports(stageRunId uint64) ([]resources.Export, error) {

@@ -30,8 +30,8 @@ func (remoteCommand RemoteCommand) ShellCommand() shell.Command {
 	return remoteCommand.toScript()
 }
 
-func (remoteCommand RemoteCommand) GetXunitCommand() shell.Command {
-	return shell.Command("TODO")
+func (remoteCommand RemoteCommand) XunitPaths() []string {
+	return remoteCommand.xunit
 }
 
 func advertiseCommands(remoteCommand *RemoteCommand) shell.Command {

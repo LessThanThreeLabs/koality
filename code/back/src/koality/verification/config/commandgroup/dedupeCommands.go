@@ -39,3 +39,7 @@ func (command dedupedCommand) Name() string {
 func (command dedupedCommand) ShellCommand() shell.Command {
 	return command.command.ShellCommand()
 }
+
+func (command dedupedCommand) XunitPaths() []string {
+	return command.command.XunitPaths()
+}

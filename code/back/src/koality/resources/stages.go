@@ -22,14 +22,13 @@ type StageRun struct {
 }
 
 type XunitResult struct {
-	Name        string
-	Path        string
-	Sysout      string
-	Syserr      string
-	FailureText string
-	ErrorText   string
-	Started     time.Time
-	Seconds     float64
+	Name        string  `json:"name"`
+	Path        string  `json:"path"`
+	Sysout      string  `json:"sysout"`
+	Syserr      string  `json:"syserr"`
+	FailureText string  `json:"failure"`
+	ErrorText   string  `json:"error"`
+	Seconds     float64 `json:"time"`
 }
 
 type Export struct {

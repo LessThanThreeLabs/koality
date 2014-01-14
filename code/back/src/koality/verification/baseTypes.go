@@ -7,6 +7,7 @@ import (
 type Command interface {
 	Name() string
 	ShellCommand() shell.Command
+	XunitPaths() []string
 }
 
 type SectionResult struct {
@@ -33,4 +34,8 @@ func (shellCommand ShellCommand) Name() string {
 
 func (shellCommand ShellCommand) ShellCommand() shell.Command {
 	return shellCommand.command
+}
+
+func (shellCommand ShellCommand) XunitPaths() []string {
+	return nil
 }

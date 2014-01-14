@@ -144,6 +144,9 @@ func (updateHandler *UpdateHandler) RemoveAllConsoleLines(stageRunId uint64) err
 }
 
 func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResults []resources.XunitResult) error {
+	if len(xunitResults) == 0 {
+		return nil
+	}
 	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return err
 	}
@@ -151,28 +154,27 @@ func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResu
 	getValuesString := func() string {
 		valuesStringArray := make([]string, len(xunitResults))
 		for index := 0; index < len(xunitResults); index++ {
-			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-				stageRunId, index*8+1, index*8+2, index*8+3, index*8+4, index*8+5, index*8+6, index*8+7, index*8+8)
+			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+				stageRunId, index*7+1, index*7+2, index*7+3, index*7+4, index*7+5, index*7+6, index*7+7)
 		}
 		return strings.Join(valuesStringArray, ", ")
 	}
 
 	xunitResultsToArray := func() []interface{} {
-		xunitResultsArray := make([]interface{}, len(xunitResults)*8)
+		xunitResultsArray := make([]interface{}, len(xunitResults)*7)
 		for index, xunitResult := range xunitResults {
-			xunitResultsArray[index*8] = xunitResult.Name
-			xunitResultsArray[index*8+1] = xunitResult.Path
-			xunitResultsArray[index*8+2] = xunitResult.Sysout
-			xunitResultsArray[index*8+3] = xunitResult.Syserr
-			xunitResultsArray[index*8+4] = xunitResult.FailureText
-			xunitResultsArray[index*8+5] = xunitResult.ErrorText
-			xunitResultsArray[index*8+6] = xunitResult.Started
-			xunitResultsArray[index*8+7] = xunitResult.Seconds
+			xunitResultsArray[index*7] = xunitResult.Name
+			xunitResultsArray[index*7+1] = xunitResult.Path
+			xunitResultsArray[index*7+2] = xunitResult.Sysout
+			xunitResultsArray[index*7+3] = xunitResult.Syserr
+			xunitResultsArray[index*7+4] = xunitResult.FailureText
+			xunitResultsArray[index*7+5] = xunitResult.ErrorText
+			xunitResultsArray[index*7+6] = xunitResult.Seconds
 		}
 		return xunitResultsArray
 	}
 
-	query := "INSERT INTO xunit_results (run_id, name, path, sysout, syserr, failure_text, error_text, started, seconds) VALUES " + getValuesString()
+	query := "INSERT INTO xunit_results (run_id, name, path, sysout, syserr, failure_text, error_text, seconds) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, xunitResultsToArray()...)
 	if err != nil {
 		return err

@@ -152,8 +152,7 @@ CREATE TABLE IF NOT EXISTS xunit_results (
 	syserr 				text,
 	failure_text 		text,
 	error_text 			text,
-	started 			timestamp NOT NULL,
-	seconds				real NOT NULL
+	seconds				double precision NOT NULL
 );
 
 -- DO
