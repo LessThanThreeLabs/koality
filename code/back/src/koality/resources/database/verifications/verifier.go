@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	allowedStatuses      []string = []string{"received", "queued", "running", "passed", "failed", "cancelled"}
+	allowedStatuses      []string = []string{"queued", "running", "passed", "failed", "cancelled"}
 	allowedMergeStatuses []string = []string{"running", "passed", "failed"}
 )
 

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	initialVerificationStatus = "received"
+	initialVerificationStatus = "queued"
 )
 
 type CreateHandler struct {
