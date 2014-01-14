@@ -76,6 +76,6 @@ func (updateHandler *UpdateHandler) ClearGitHubHook(repositoryId uint64) error {
 		return err
 	}
 
-	updateHandler.subscriptionHandler.FireGitHubHookUpdatedEvent(repositoryId, 0, "", []string{})
+	updateHandler.subscriptionHandler.FireGitHubHookUpdatedEvent(repositoryId, 0, "", nil)
 	return nil
 }
