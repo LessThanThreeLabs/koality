@@ -1,4 +1,4 @@
-package repositorystore
+package repositorymanager
 
 import (
 	"fmt"
@@ -6,22 +6,22 @@ import (
 )
 
 type PostPushRepository interface {
-	GetYamlFile(ref string) (string, error)
-	GetCommitAttributes(ref string) (string, string, string, error)
+	getYamlFile(ref string) (string, error)
+	getCommitAttributes(ref string) (string, string, string, error)
 }
 
 type PrePushRepository interface {
 	StoredRepository
 
-	MergeChangeset(headRef, baseRef, refToMergeInto string) error
-	StorePending(ref, remoteUri string, args ...string) error
+	mergeChangeset(headRef, baseRef, refToMergeInto string) error
+	storePending(ref, remoteUri string, args ...string) error
 }
 
 type StoredRepository interface {
 	PostPushRepository
 
-	CreateRepository() error
-	DeleteRepository() error
+	createRepository() error
+	deleteRepository() error
 }
 
 const (

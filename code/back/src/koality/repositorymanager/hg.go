@@ -1,4 +1,4 @@
-package repositorystore
+package repositorymanager
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type HgRepository struct {
 	remoteUri string
 }
 
-func OpenHgRepository(repository *resources.Repository) *HgRepository {
+func openHgRepository(repository *resources.Repository) *HgRepository {
 	return &HgRepository{pathgenerator.ToPath(repository), repository.RemoteUri}
 }
 
@@ -35,7 +35,7 @@ func (repository *HgRepository) fetchWithPrivateKey(args ...string) (err error) 
 	return
 }
 
-func (repository *HgRepository) CreateRepository() (err error) {
+func (repository *HgRepository) createRepository() (err error) {
 	if _, err = os.Stat(repository.path); !os.IsNotExist(err) {
 		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository at %s already exists in the repository store.", repository.path)}
 	}
@@ -55,7 +55,7 @@ func (repository *HgRepository) CreateRepository() (err error) {
 	return
 }
 
-func (repository *HgRepository) DeleteRepository() (err error) {
+func (repository *HgRepository) deleteRepository() (err error) {
 	if err = checkRepositoryExists(repository.path); err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (repository *HgRepository) DeleteRepository() (err error) {
 	return os.RemoveAll(repository.path)
 }
 
-func (repository *HgRepository) GetCommitAttributes(ref string) (message, username, email string, err error) {
+func (repository *HgRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
 	command := Command(repository, nil, "log", "-r", ref)
 	if err = RunCommand(command); err != nil {
 		err = NoSuchCommitInRepositoryError{fmt.Sprintf(fmt.Sprintf("The repository %v does not contain commit %s", repository, ref))}
@@ -120,7 +120,7 @@ func (repository *HgRepository) GetCommitAttributes(ref string) (message, userna
 	return
 }
 
-func (repository *HgRepository) GetYamlFile(ref string) (yamlFile string, err error) {
+func (repository *HgRepository) getYamlFile(ref string) (yamlFile string, err error) {
 	command := Command(repository, nil, "cat", "-r", ref, "koality.yml")
 	if err = RunCommand(command); err != nil {
 		return

@@ -1,4 +1,4 @@
-package repositorystore
+package repositorymanager
 
 import (
 	"bytes"

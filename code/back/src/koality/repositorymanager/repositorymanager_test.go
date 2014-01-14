@@ -1,4 +1,4 @@
-package repositorystore
+package repositorymanager
 
 import (
 	"fmt"
@@ -14,13 +14,15 @@ var buf []byte
 var remoteRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", "remote")
 
 var (
-	gitRepository       = OpenGitRepository(&resources.Repository{0, "gitRepository", "", "git", "", remoteRepositoryPath, nil, nil})
-	gitRemoteRepository = &GitSubRepository{remoteRepositoryPath}
+	gitRepositoryResource = &resources.Repository{0, "gitRepository", "", "git", "", remoteRepositoryPath, nil, nil}
+	gitRepository         = openGitRepository(gitRepositoryResource)
+	gitRemoteRepository   = &GitSubRepository{remoteRepositoryPath}
 )
 
 var (
-	hgRepository       = OpenHgRepository(&resources.Repository{1, "hgRepository", "", "hg", "", remoteRepositoryPath, nil, nil})
-	hgRemoteRepository = &HgRepository{remoteRepositoryPath, ""}
+	hgRepositoryResource = &resources.Repository{1, "hgRepository", "", "hg", "", remoteRepositoryPath, nil, nil}
+	hgRepository         = openHgRepository(hgRepositoryResource)
+	hgRemoteRepository   = &HgRepository{remoteRepositoryPath, ""}
 )
 
 func getTopRef(remoteRepository Repository) (ref string) {
@@ -51,13 +53,13 @@ func repositoryTestSetup(repository StoredRepository, remoteRepository Repositor
 		RunCommand(Command(remoteRepository, nil, "commit", "-m", "Add koality.yml file", "-u", "chicken chickenson <cchickenson@chicken.com>"))
 	}
 
-	if err := repository.CreateRepository(); err != nil {
+	if err := repository.createRepository(); err != nil {
 		testing.Fatal(err)
 	}
 }
 
 func repositoryTestTeardown(repository StoredRepository, testing *testing.T) {
-	if err := repository.DeleteRepository(); err != nil {
+	if err := repository.deleteRepository(); err != nil {
 		testing.Fatal(err)
 	}
 
@@ -75,7 +77,7 @@ func testCreateGetYamlDelete(repository StoredRepository, remoteRepository Repos
 
 	repositoryTestSetup(repository, remoteRepository, testing)
 
-	yamlFile, err := repository.GetYamlFile(getTopRef(remoteRepository))
+	yamlFile, err := repository.getYamlFile(getTopRef(remoteRepository))
 	if err != nil {
 		testing.Fatal("Upon creation, repository did not clone properly, giving err=", err)
 	} else if yamlFile != "example yaml file contents" {
@@ -87,7 +89,7 @@ func testGetCommitAttributes(repository StoredRepository, remoteRepository Repos
 	defer repositoryTestTeardown(repository, testing)
 	repositoryTestSetup(repository, remoteRepository, testing)
 
-	message, username, email, err := repository.GetCommitAttributes(getTopRef(remoteRepository))
+	message, username, email, err := repository.getCommitAttributes(getTopRef(remoteRepository))
 
 	if err != nil {
 		testing.Fatal(err)
@@ -102,7 +104,7 @@ func TestGitStorePending(testing *testing.T) {
 
 	headSha, _ := gitRemoteRepository.getHeadSha()
 
-	if err := gitRepository.StorePending(headSha, remoteRepositoryPath); err != nil {
+	if err := gitRepository.storePending(headSha, remoteRepositoryPath); err != nil {
 		testing.Fatal(err)
 	}
 
@@ -136,11 +138,11 @@ func TestGitMergePass(testing *testing.T) {
 		fmt.Println(err)
 	}
 
-	if err := gitRepository.MergeChangeset(fmt.Sprintf("refs/for/%s", headSha), fmt.Sprintf("refs/for/%s", headSha), oldHeadSha); err != nil {
+	if err := MergeChangeset(gitRepositoryResource, fmt.Sprintf("refs/for/%s", headSha), fmt.Sprintf("refs/for/%s", headSha), oldHeadSha); err != nil {
 		testing.Fatal(err)
 	}
 
-	if _, _, _, err := gitRepository.GetCommitAttributes(headSha); err != nil {
+	if _, _, _, err := gitRepository.getCommitAttributes(headSha); err != nil {
 		testing.Fatal("Merging did not result in the new commit being present in the main repository.")
 	}
 }

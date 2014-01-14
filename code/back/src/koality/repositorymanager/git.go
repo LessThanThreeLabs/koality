@@ -1,4 +1,4 @@
-package repositorystore
+package repositorymanager
 
 import (
 	"fmt"
@@ -33,7 +33,7 @@ type GitRepository struct {
 	remoteUri string
 }
 
-func OpenGitRepository(repository *resources.Repository) *GitRepository {
+func openGitRepository(repository *resources.Repository) *GitRepository {
 	path := pathgenerator.ToPath(repository)
 	return &GitRepository{&GitSubRepository{path}, &GitSubRepository{path + ".slave"}, repository.RemoteUri}
 }
@@ -70,7 +70,7 @@ func (repository *GitSubRepository) pushWithPrivateKey(remoteUri string, args ..
 	return
 }
 
-func (repository *GitRepository) StorePending(ref, remoteUri string, args ...string) (err error) {
+func (repository *GitRepository) storePending(ref, remoteUri string, args ...string) (err error) {
 	if err = repository.bare.fetchWithPrivateKey(remoteUri, "+refs/*:refs/*"); err != nil {
 		return
 	}
@@ -86,7 +86,7 @@ func (repository *GitRepository) StorePending(ref, remoteUri string, args ...str
 	return
 }
 
-func (repository *GitRepository) CreateRepository() (err error) {
+func (repository *GitRepository) createRepository() (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err == nil {
 		return
 	}
@@ -114,7 +114,7 @@ func (repository *GitRepository) CreateRepository() (err error) {
 	return
 }
 
-func (repository *GitRepository) DeleteRepository() (err error) {
+func (repository *GitRepository) deleteRepository() (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (repository *GitRepository) DeleteRepository() (err error) {
 	return os.RemoveAll(repository.bare.path)
 }
 
-func (repository *GitRepository) MergeChangeset(headRef, baseRef, refToMergeInto string) (err error) {
+func (repository *GitRepository) mergeChangeset(headRef, baseRef, refToMergeInto string) (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
@@ -314,7 +314,7 @@ func (repository *GitRepository) pushMergeRetry(remoteUri, refToMergeInto, origi
 	return
 }
 
-func (repository *GitRepository) GetCommitAttributes(ref string) (message, username, email string, err error) {
+func (repository *GitRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
@@ -370,7 +370,7 @@ func (repository *GitRepository) GetCommitAttributes(ref string) (message, usern
 	return
 }
 
-func (repository *GitRepository) GetYamlFile(ref string) (yamlFile string, err error) {
+func (repository *GitRepository) getYamlFile(ref string) (yamlFile string, err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
