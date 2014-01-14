@@ -8,7 +8,7 @@ import (
 
 var Logger *log.Logger
 
-func Init() {
+func init() {
 	Logger = log.New()
 
 	formatter := log.StdFormatter{"[root]", log.Lmicroseconds | log.Lshortfile, false}
