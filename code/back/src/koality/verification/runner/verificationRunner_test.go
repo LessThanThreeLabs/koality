@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-func TestSimplePassingVerification(test *testing.T) {
+func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	database.PopulateDatabase()
 
 	resourcesConnection, err := database.New()
@@ -29,46 +29,6 @@ func TestSimplePassingVerification(test *testing.T) {
 	repoPath := path.Join(tmpDir, "testRepo")
 
 	err = exec.Command("git", "init", repoPath).Run()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	ymlBytes, err := goyaml.Marshal(
-		map[string]interface{}{
-			"parameters": map[string]interface{}{
-				"nodes": 8,
-				"languages": map[string]interface{}{
-					"python": 2.7,
-				},
-			},
-			"sections": []interface{}{
-				map[string]interface{}{
-					"a section": map[string]interface{}{
-						"run on":  "split",
-						"fail on": "first",
-						"scripts": []interface{}{
-							"pwd",
-							"pwd",
-							"pwd",
-						},
-					},
-				},
-			},
-			"final": []interface{}{
-				map[string]interface{}{
-					"a final section": map[string]interface{}{
-						"run on":  "single",
-						"fail on": "first",
-						"scripts": []interface{}{
-							"echo $KOALITY_STATUS",
-							"printenv",
-							"false",
-						},
-					},
-				},
-			},
-		},
-	)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -137,7 +97,78 @@ func TestSimplePassingVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if !success {
-		test.Fatal("Verification failed")
+	if !success && expectSuccess {
+		test.Fatal("Verification failed, expected success")
+	} else if success && !expectSuccess {
+		test.Fatal("Verification passed, expected failure")
 	}
+}
+
+func TestSimplePassingVerification(test *testing.T) {
+	ymlBytes, err := goyaml.Marshal(
+		map[string]interface{}{
+			"parameters": map[string]interface{}{
+				"nodes": 8,
+			},
+			"sections": []interface{}{
+				map[string]interface{}{
+					"a passing section": map[string]interface{}{
+						"run on":  "split",
+						"fail on": "any",
+						"scripts": []interface{}{
+							"pwd",
+							"pwd",
+							"pwd",
+						},
+					},
+				},
+			},
+			"final": []interface{}{
+				map[string]interface{}{
+					"a final section": map[string]interface{}{
+						"run on":  "single",
+						"fail on": "any",
+						"scripts": []interface{}{
+							"echo $KOALITY_STATUS",
+							"printenv",
+							"false",
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	testVerification(test, ymlBytes, true)
+}
+
+func TestSimpleFailingVerification(test *testing.T) {
+	ymlBytes, err := goyaml.Marshal(
+		map[string]interface{}{
+			"parameters": map[string]interface{}{
+				"nodes": 8,
+			},
+			"sections": []interface{}{
+				map[string]interface{}{
+					"a failing section": map[string]interface{}{
+						"run on":  "split",
+						"fail on": "any",
+						"scripts": []interface{}{
+							"pwd",
+							"false",
+							"pwd",
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	testVerification(test, ymlBytes, false)
 }
