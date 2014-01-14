@@ -21,7 +21,7 @@ const (
 
 type section struct {
 	name              string
-	final             bool
+	isFinal           bool
 	runOn             string
 	failOn            string
 	continueOnFailure bool
@@ -32,7 +32,7 @@ type section struct {
 
 type Section interface {
 	Name() string
-	Final() bool
+	IsFinal() bool
 	FailOn() string
 	ContinueOnFailure() bool
 	FactoryCommands(readOnlyCopy bool) commandgroup.CommandGroup
@@ -41,22 +41,22 @@ type Section interface {
 	Exports() []string
 }
 
-func New(name string, final bool, runOn, failOn string, continueOnFailure bool, factoryCommands commandgroup.CommandGroup, commands commandgroup.AppendableCommandGroup, exportPaths []string) *section {
+func New(name string, isFinal bool, runOn, failOn string, continueOnFailure bool, factoryCommands commandgroup.CommandGroup, commands commandgroup.AppendableCommandGroup, exportPaths []string) *section {
 	if runOn != RunOnAll && runOn != RunOnSplit && runOn != RunOnSingle {
 		panic(fmt.Sprintf("Invalid runOn argument: %q", runOn))
 	}
 	if failOn != FailOnNever && failOn != FailOnAny && failOn != FailOnFirst {
 		panic(fmt.Sprintf("Invalid failOn argument: %q", failOn))
 	}
-	return &section{name, final, runOn, failOn, continueOnFailure, factoryCommands, commands, exportPaths}
+	return &section{name, isFinal, runOn, failOn, continueOnFailure, factoryCommands, commands, exportPaths}
 }
 
 func (section *section) Name() string {
 	return section.name
 }
 
-func (section *section) Final() bool {
-	return section.final
+func (section *section) IsFinal() bool {
+	return section.isFinal
 }
 
 func (section *section) FailOn() string {

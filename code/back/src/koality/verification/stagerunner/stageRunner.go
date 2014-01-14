@@ -88,7 +88,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	if factorySuccess && commandsSuccess {
 		stageRunner.ResultsChan <- verification.SectionResult{
 			Section:       section.Name(),
-			Final:         section.Final(),
+			Final:         section.IsFinal(),
 			FailSectionOn: section.FailOn(),
 			Passed:        true,
 		}
@@ -150,7 +150,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			sectionFailed = true
 			stageRunner.ResultsChan <- verification.SectionResult{
 				Section:       sectionToRun.Name(),
-				Final:         sectionToRun.Final(),
+				Final:         sectionToRun.IsFinal(),
 				FailSectionOn: sectionToRun.FailOn(),
 				Passed:        false,
 			}
@@ -269,7 +269,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			sectionFailed = true
 			stageRunner.ResultsChan <- verification.SectionResult{
 				Section:       sectionToRun.Name(),
-				Final:         sectionToRun.Final(),
+				Final:         sectionToRun.IsFinal(),
 				FailSectionOn: sectionToRun.FailOn(),
 				Passed:        false,
 			}
