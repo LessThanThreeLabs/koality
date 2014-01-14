@@ -1,3 +1,8 @@
+------------------ WARNING: --------------------
+-- IF YOU MAKE ANY CHANGES TO THIS FILE
+-- BE SURE TO DELETE ~/postgres/backup.tar
+------------------------------------------------
+
 DO
 $create_user_id_seq$
 BEGIN
