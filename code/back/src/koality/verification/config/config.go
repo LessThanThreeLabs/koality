@@ -157,6 +157,7 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 			provisionShellCommand := verification.NewShellCommand("provision", provisionCommand)
 			provisionSection := section.New(
 				"provision",
+				false,
 				section.RunOnAll,
 				section.FailOnFirst,
 				false,
@@ -167,14 +168,14 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 			provisionShellCommand = provisionShellCommand
 			verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
 		case "sections":
-			sections, err := parseSections(config)
+			sections, err := parseSections(config, false)
 			if err != nil {
 				return verificationConfig, err
 			}
 
 			verificationConfig.Sections = append(verificationConfig.Sections, sections...)
 		case "final":
-			finalSections, err := parseSections(config)
+			finalSections, err := parseSections(config, true)
 			if err != nil {
 				return verificationConfig, err
 			}
@@ -273,7 +274,7 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 	return
 }
 
-func parseSections(config interface{}) (sections []section.Section, err error) {
+func parseSections(config interface{}, final bool) (sections []section.Section, err error) {
 	parsedSections, ok := config.([]interface{})
 	if !ok {
 		err = BadConfigurationError{"Sections should contain a list of sections"}
@@ -281,7 +282,7 @@ func parseSections(config interface{}) (sections []section.Section, err error) {
 	}
 
 	for _, section := range parsedSections {
-		section, err := parseSection(section)
+		section, err := parseSection(section, final)
 		if err != nil {
 			return sections, err
 		}
@@ -291,7 +292,7 @@ func parseSections(config interface{}) (sections []section.Section, err error) {
 	return
 }
 
-func parseSection(config interface{}) (newSection section.Section, err error) {
+func parseSection(config interface{}, final bool) (newSection section.Section, err error) {
 	var (
 		name, runOn, failOn string
 		continueOnFailure   bool
@@ -388,7 +389,7 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 		case "continue on failure":
 			continueOnFailure, err = parseBool(content)
 			if err != nil {
-				err = BadConfigurationError{"The recursiveClone parameter can be only true or false."}
+				err = BadConfigurationError{"The continue on failure parameter can be only true or false."}
 				return
 			}
 		default:
@@ -409,7 +410,7 @@ func parseSection(config interface{}) (newSection section.Section, err error) {
 		return newSection, err
 	}
 
-	return section.New(name, runOn, failOn, continueOnFailure, factoryCommands, regularCommands, exportPaths), nil
+	return section.New(name, final, runOn, failOn, continueOnFailure, factoryCommands, regularCommands, exportPaths), nil
 }
 
 type BadConfigurationError struct {

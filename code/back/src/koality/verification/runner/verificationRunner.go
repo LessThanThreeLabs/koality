@@ -215,7 +215,11 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	newMachinesChan, errorChan := virtualMachinePool.Get(numNodes)
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
-			go runStages(newMachine)
+			if currentVerification.Status != "passed" && currentVerification.Status != "failed" && currentVerification.Status != "cancelled" {
+				go runStages(newMachine)
+			} else {
+				virtualMachinePool.Return(newMachine)
+			}
 		}
 	}(newMachinesChan)
 
@@ -230,38 +234,45 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 	for {
 		result, hasMoreResults := <-resultsChan
 		if !hasMoreResults {
-			verificationPassed := currentVerification.Status != "cancelled" && currentVerification.Status != "failed"
-			if verificationPassed {
+			if currentVerification.Status == "running" {
 				err := verificationRunner.passVerification(currentVerification, repository)
 				if err != nil {
 					return false, err
 				}
 			}
-			return verificationPassed, nil
+			return currentVerification.Status == "passed", nil
 		}
-		if result.Passed == false {
-			switch result.FailSectionOn {
-			case section.FailOnNever:
-				// Do nothing
-			case section.FailOnAny:
-				if currentVerification.Status != "cancelled" && currentVerification.Status != "failed" {
-					err := verificationRunner.failVerification(currentVerification)
-					if err != nil {
-						return false, err
-					}
-				}
-			case section.FailOnFirst:
-				if !receivedResult[result.Section] {
+		if !result.Final {
+			if !result.Passed {
+				switch result.FailSectionOn {
+				case section.FailOnNever:
+					// Do nothing
+				case section.FailOnAny:
 					if currentVerification.Status != "cancelled" && currentVerification.Status != "failed" {
 						err := verificationRunner.failVerification(currentVerification)
 						if err != nil {
 							return false, err
 						}
 					}
+				case section.FailOnFirst:
+					if !receivedResult[result.Section] {
+						if currentVerification.Status != "cancelled" && currentVerification.Status != "failed" {
+							err := verificationRunner.failVerification(currentVerification)
+							if err != nil {
+								return false, err
+							}
+						}
+					}
+				}
+			}
+			receivedResult[result.Section] = true
+			if len(receivedResult) == len(verificationConfig.Sections) && currentVerification.Status == "running" {
+				err := verificationRunner.passVerification(currentVerification, repository)
+				if err != nil {
+					return false, err
 				}
 			}
 		}
-		receivedResult[result.Section] = true
 	}
 }
 
@@ -278,7 +289,6 @@ func (verificationRunner *VerificationRunner) failVerification(verification *res
 }
 
 func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification, repository *resources.Repository) error {
-	(*verification).Status = "passed"
 	fmt.Printf("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
 
 	err := repositorymanager.MergeChangeset(repository, pathgenerator.GitHiddenRef(verification.Changeset.HeadSha), verification.Changeset.BaseSha, verification.MergeTarget)
@@ -291,6 +301,7 @@ func (verificationRunner *VerificationRunner) passVerification(verification *res
 		verificationRunner.resourcesConnection.Verifications.Update.SetMergeStatus(verification.Id, "failed")
 	}
 
+	(*verification).Status = "passed"
 	err = verificationRunner.resourcesConnection.Verifications.Update.SetStatus(verification.Id, "passed")
 	if err != nil {
 		return err
@@ -317,7 +328,7 @@ func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerif
 	// TODO (bbland): add retry logic
 	checkoutCommand := vcs.CheckoutCommand(repository, pathgenerator.GitHiddenRef(currentVerification.Changeset.HeadSha))
 	setupCommands := []verification.Command{verification.NewShellCommand(repository.VcsType, checkoutCommand)}
-	setupSection := section.New("setup", section.RunOnAll, section.FailOnFirst, false, nil, commandgroup.New(setupCommands), nil)
+	setupSection := section.New("setup", false, section.RunOnAll, section.FailOnFirst, false, nil, commandgroup.New(setupCommands), nil)
 	verificationConfig.Sections = append([]section.Section{setupSection}, verificationConfig.Sections...)
 	return verificationConfig, nil
 }
@@ -388,6 +399,8 @@ func (verificationRunner *VerificationRunner) combineResults(currentVerification
 				if !isStarted {
 					isStarted = true
 					verificationRunner.resourcesConnection.Verifications.Update.SetStartTime(currentVerification.Id, time.Now())
+					verificationRunner.resourcesConnection.Verifications.Update.SetStatus(currentVerification.Id, "running")
+					currentVerification.Status = "running"
 				}
 				stageRunners = append(stageRunners, stageRunner)
 				go handleNewStageRunner(stageRunner)

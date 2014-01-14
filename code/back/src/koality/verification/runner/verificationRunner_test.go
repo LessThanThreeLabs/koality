@@ -54,6 +54,19 @@ func TestSimplePassingVerification(test *testing.T) {
 					},
 				},
 			},
+			"final": []interface{}{
+				map[string]interface{}{
+					"a final section": map[string]interface{}{
+						"run on":  "single",
+						"fail on": "first",
+						"scripts": []interface{}{
+							"echo $KOALITY_STATUS",
+							"printenv",
+							"false",
+						},
+					},
+				},
+			},
 		},
 	)
 	if err != nil {

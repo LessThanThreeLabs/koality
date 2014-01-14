@@ -145,6 +145,16 @@ func (pool *virtualMachinePool) Free() {
 	go pool.ensureReadyInstances()
 }
 
+func (pool *virtualMachinePool) Return(virtualMachine VirtualMachine) {
+	pool.locker.Lock()
+	defer pool.locker.Unlock()
+
+	pool.readyCount++
+	pool.allocatedCount--
+
+	pool.readyChannel <- virtualMachine
+}
+
 func (pool *virtualMachinePool) MaxSize() uint64 {
 	return pool.maxSize
 }

@@ -54,7 +54,11 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 	if stageRunner.verification.Status == "cancelled" {
 		return nil
 	}
+	if environment == nil {
+		environment = make(map[string]string)
+	}
 	environment["KOALITY_STATUS"] = stageRunner.verification.Status
+	environment["KOALITY_MERGE_STATUS"] = stageRunner.verification.MergeStatus
 	for finalSectionNumber, finalSection := range finalSections {
 		shouldContinue, err := stageRunner.runSection(uint64(finalSectionNumber+len(sections)), finalSection, environment)
 		if err != nil {
@@ -83,6 +87,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	if factorySuccess && commandsSuccess {
 		stageRunner.ResultsChan <- verification.SectionResult{
 			Section:       section.Name(),
+			Final:         section.Final(),
 			FailSectionOn: section.FailOn(),
 			Passed:        true,
 		}
@@ -144,6 +149,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			sectionFailed = true
 			stageRunner.ResultsChan <- verification.SectionResult{
 				Section:       sectionToRun.Name(),
+				Final:         sectionToRun.Final(),
 				FailSectionOn: sectionToRun.FailOn(),
 				Passed:        false,
 			}
@@ -262,6 +268,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			sectionFailed = true
 			stageRunner.ResultsChan <- verification.SectionResult{
 				Section:       sectionToRun.Name(),
+				Final:         sectionToRun.Final(),
 				FailSectionOn: sectionToRun.FailOn(),
 				Passed:        false,
 			}

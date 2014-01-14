@@ -11,6 +11,7 @@ type Command interface {
 
 type SectionResult struct {
 	Section       string
+	Final         bool
 	FailSectionOn string
 	Passed        bool
 }

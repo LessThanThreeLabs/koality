@@ -45,7 +45,7 @@ func TestSimplePassingStages(test *testing.T) {
 
 	commandGroup := commandgroup.New(commands)
 
-	testSection := section.New("test", section.RunOnAll, section.FailOnAny, false, nil, commandGroup, nil)
+	testSection := section.New("test", false, section.RunOnAll, section.FailOnAny, false, nil, commandGroup, nil)
 
 	doneChan := make(chan error)
 
@@ -102,7 +102,7 @@ func TestSimpleFailingStages(test *testing.T) {
 
 	commandGroup := commandgroup.New(commands)
 
-	testSection := section.New("test", section.RunOnAll, section.FailOnAny, false, nil, commandGroup, nil)
+	testSection := section.New("test", false, section.RunOnAll, section.FailOnAny, false, nil, commandGroup, nil)
 
 	doneChan := make(chan error)
 

@@ -20,6 +20,7 @@ type VirtualMachinePool interface {
 	Id() uint64
 	Get(uint64) (<-chan VirtualMachine, <-chan error)
 	Free()
+	Return(VirtualMachine)
 	MaxSize() uint64
 	SetMaxSize(uint64) error
 	MinReady() uint64
