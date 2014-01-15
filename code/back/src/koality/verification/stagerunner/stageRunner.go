@@ -16,6 +16,8 @@ import (
 	"koality/vm"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -105,23 +107,33 @@ func (stageRunner *StageRunner) getXunitResults(command verification.Command, en
 	if len(directories) == 0 {
 		return nil, nil
 	}
-	copyExec, err := stageRunner.virtualMachine.FileCopy("$HOME/code/back/src/koality/util/"+execName, execName)
+	usr, err := user.Current()
 	if err != nil {
 		return nil, err
 	}
+
+	localPath := path.Join(usr.HomeDir, "code", "back", "src", "koality", "util", execName)
+	copyExec, err := stageRunner.virtualMachine.FileCopy(localPath, execName)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = copyExec.Run(); err != nil {
 		return nil, err
 	}
+
 	cmd := shell.Commandf("./%s %s %s", execName, shell.Quote("*.xml"), strings.Join(directories, " "))
 	w := new(bytes.Buffer)
 	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, w, os.Stderr, environment)
 	if err = runExec.Run(); err != nil {
 		return nil, err
 	}
+
 	var res []resources.XunitResult
 	if err = json.Unmarshal(w.Bytes(), &res); err != nil {
 		return nil, err
 	}
+
 	return res, nil
 }
 
@@ -310,9 +322,12 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		if xunitError != nil {
 			return false, xunitError
 		}
-		xunitError = stageRunner.resourcesConnection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
-		if xunitError != nil {
-			return false, xunitError
+
+		if len(xunitResults) > 0 {
+			xunitError = stageRunner.resourcesConnection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
+			if xunitError != nil {
+				return false, xunitError
+			}
 		}
 
 		if closeErr != nil {

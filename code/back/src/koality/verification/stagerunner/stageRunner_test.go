@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+        "path"
 	"koality/resources"
 	"koality/resources/database"
 	"koality/shell"
@@ -15,6 +16,7 @@ import (
 	"koality/vm/localmachine"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"testing"
 )
@@ -100,6 +102,7 @@ func TestXunitParser(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+
 	if err = copyExec.Run(); err != nil {
 		test.Fatal(err)
 	}
@@ -109,6 +112,7 @@ func TestXunitParser(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+
 	compileCmd := exec.Command("go", "build", "-o",
 		"/home/koality/code/back/src/koality/util/getXunitResults",
 		"/home/koality/code/back/src/koality/util/getXunitResults.go")
@@ -149,26 +153,37 @@ func TestXunitParser(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+
 	stage, err := resourcesConnection.Stages.Read.GetBySectionNumberAndName(currentVerification.Id, 0, "command name!!")
 	if err != nil {
 		test.Fatal(err)
 	}
+
 	stageRuns, err := resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
+
 	if len(stageRuns) != 1 {
 		test.Fatal("expected there to be exactly one stage run")
 	}
+
 	xunitResults, err := resourcesConnection.Stages.Read.GetAllXunitResults(stageRuns[0].Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	expectedXunitBytes, err := xunit.GetXunitResults("*.xml", []string{"/home/koality/code/back/src/koality/util"}, ioutil.Discard, os.Stderr)
+	usr, err := user.Current()
 	if err != nil {
 		test.Fatal(err)
 	}
+
+	xunitPath := path.Join(usr.HomeDir, "code", "back", "src", "koality", "util")
+	expectedXunitBytes, err := xunit.GetXunitResults("*.xml", []string{xunitPath}, ioutil.Discard, os.Stderr)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	var expectedXunitResults []resources.XunitResult
 	if err = json.Unmarshal(expectedXunitBytes, &expectedXunitResults); err != nil {
 		test.Fatal(err)
