@@ -94,6 +94,7 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 	}
 	ec2Vm, err := launcher.waitForSsh(instance, username, 5*time.Minute)
 	if err != nil {
+		launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
 		return nil, err
 	}
 	return ec2Vm, nil
