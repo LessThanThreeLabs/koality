@@ -6,6 +6,7 @@ import (
 	"koality/repositorymanager"
 	"koality/repositorymanager/pathgenerator"
 	"koality/resources/database"
+	"koality/shell"
 	"koality/vm"
 	"koality/vm/localmachine"
 	"os"
@@ -109,6 +110,9 @@ func TestSimplePassingVerification(test *testing.T) {
 		map[string]interface{}{
 			"parameters": map[string]interface{}{
 				"nodes": 8,
+				"environment": map[string]string{
+					"THISISALARGEENVIRONMENTVARIABLE": "WITHALARGEVALUETOO",
+				},
 			},
 			"sections": []interface{}{
 				map[string]interface{}{
@@ -171,4 +175,35 @@ func TestSimpleFailingVerification(test *testing.T) {
 	}
 
 	testVerification(test, ymlBytes, false)
+}
+
+func TestEnvironment(test *testing.T) {
+	const environmentVariableName = "ThisIsAnEnvironmentVariableName"
+	const environmentVariableValue = "This is the environemnt variable value."
+	ymlBytes, err := goyaml.Marshal(
+		map[string]interface{}{
+			"parameters": map[string]interface{}{
+				"nodes": 1,
+				"environment": map[string]string{
+					environmentVariableName: environmentVariableValue,
+				},
+			},
+			"sections": []interface{}{
+				map[string]interface{}{
+					"a passing section": map[string]interface{}{
+						"run on":  "split",
+						"fail on": "any",
+						"scripts": []interface{}{
+							shell.Test(shell.Commandf("\"$%s\" == %s", environmentVariableName, shell.Quote(environmentVariableValue))),
+						},
+					},
+				},
+			},
+		},
+	)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	testVerification(test, ymlBytes, true)
 }

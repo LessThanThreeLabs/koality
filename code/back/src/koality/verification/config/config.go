@@ -243,7 +243,7 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 						err = BadConfigurationError{"The keys of the environment map should be strings."}
 					}
 
-					params.Environment[name] = fmt.Sprintf("%#v", value)
+					params.Environment[name] = fmt.Sprintf("%v", value)
 				}
 
 			case "recursiveClone":
