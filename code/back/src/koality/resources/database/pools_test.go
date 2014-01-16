@@ -57,13 +57,13 @@ func TestCreateInvalidEc2Pool(test *testing.T) {
 		test.Fatal("Expected error after providing invalid base ami id")
 	}
 
-	_, err = connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, "", vpcSubnetId,
+	_, err = connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, "asdf", vpcSubnetId,
 		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid security group id")
 	}
 
-	_, err = connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, "",
+	_, err = connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, "asdf",
 		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid vpc subnet id")
