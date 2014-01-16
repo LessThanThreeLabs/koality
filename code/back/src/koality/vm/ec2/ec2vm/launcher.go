@@ -14,6 +14,7 @@ import (
 	"koality/vm/ec2/ec2broker"
 	"net"
 	"os/user"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -343,25 +344,61 @@ func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) (
 		return "", err
 	}
 
-	keyBytes, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa.pub", currentUser.HomeDir))
+	privateKeyBytes, err := ioutil.ReadFile(path.Join(currentUser.HomeDir, ".ssh", "id_rsa"))
 	if err != nil {
 		return "", err
 	}
 
-	publicKey := string(keyBytes)
+	configureUserCommand := func(username string) shell.Command {
+		homeDir := "~" + username
+		sshDir := path.Join(homeDir, ".ssh")
+		privateKeyPath := path.Join(sshDir, "id_rsa")
+		publicKeyPath := path.Join(sshDir, "id_rsa.pub")
+		authorizedKeysPath := path.Join(sshDir, "authorized_keys")
+		sshConfigPath := path.Join(sshDir, "config")
+		sshConfigContents := "Host *\n  StrictHostKeyChecking no"
 
-	configureUserCommand := shell.Chain(
-		shell.Commandf("useradd --create-home -s /bin/bash %s", username),
-		shell.Commandf("mkdir ~%s/.ssh", username),
-		shell.Append(shell.Commandf("echo %s", shell.Quote(publicKey)), shell.Commandf("~%s/.ssh/authorized_keys", username), false),
-		shell.Commandf("chown -R %s:%s ~%s/.ssh", username, username, username),
+		return shell.Chain(
+			shell.Commandf("mkdir -p %s", sshDir),
+			shell.Redirect(shell.Commandf("echo %s", shell.Quote(string(privateKeyBytes))), shell.Command(privateKeyPath), false),
+			shell.Redirect(shell.Commandf("ssh-keygen -y -f %s -P ''", privateKeyPath), shell.Command(publicKeyPath), false),
+			shell.Append(shell.Commandf("cat %s", publicKeyPath), shell.Command(authorizedKeysPath), false),
+			shell.Or(
+				shell.Commandf("grep %s %s", shell.Quote(sshConfigContents), shell.Command(sshConfigPath)),
+				shell.Append(shell.Commandf("echo %s", shell.Quote(sshConfigContents)), shell.Command(sshConfigPath), false),
+			),
+			shell.Commandf("chown -R %s:%s %s", username, username, username, sshDir),
+		)
+	}
+
+	sudoersFilePath := path.Join("/", "etc", "sudoers")
+	sudoersDirPath := path.Join("/", "etc", "sudoers.d")
+	sudoersUserFilePath := path.Join(sudoersDirPath, fmt.Sprintf("koality-%s", username))
+
+	addUserCommand := shell.Commandf("useradd --create-home -s /bin/bash %s", username)
+
+	configureSudoersCommand := shell.Chain(
 		shell.Or(
-			shell.Command("grep '#includedir /etc/sudoers.d' /etc/sudoers"),
-			shell.Append(shell.Command("echo #includedir /etc/sudoers.d"), shell.Command("/etc/sudoers"), false),
+			shell.Commandf("grep %s %s", shell.Quote(fmt.Sprintf("#includedir %s", sudoersDirPath)), shell.Command(sudoersFilePath)),
+			shell.Append(shell.Commandf("echo %s", shell.Quote(fmt.Sprintf("#includedir %s", sudoersDirPath))), shell.Command(sudoersFilePath), false),
 		),
-		shell.Command("mkdir /etc/sudoers.d"),
-		shell.Redirect(shell.Commandf("echo 'Defaults !requiretty\n%s ALL=(ALL) NOPASSWD: ALL'", username), shell.Commandf("/etc/sudoers.d/koality-%s", username), false),
-		shell.Commandf("chmod 0440 /etc/sudoers.d/koality-%s", username),
+		shell.Commandf("mkdir -p %s", sudoersDirPath),
+		shell.Redirect(shell.Commandf("echo 'Defaults !requiretty\n%s ALL=(ALL) NOPASSWD: ALL'", username), shell.Command(sudoersUserFilePath), false),
+		shell.Commandf("chmod 0440 %s", sudoersUserFilePath),
 	)
-	return fmt.Sprintf("#!/bin/sh\n%s", configureUserCommand), nil
+
+	configureInstanceCommand := shell.Chain(
+		addUserCommand,
+		configureUserCommand(username),
+		configureSudoersCommand,
+	)
+
+	if username != "root" {
+		configureInstanceCommand = shell.Chain(
+			configureInstanceCommand,
+			configureUserCommand("root"),
+		)
+	}
+
+	return fmt.Sprintf("#!/bin/sh\n%s", configureInstanceCommand), nil
 }

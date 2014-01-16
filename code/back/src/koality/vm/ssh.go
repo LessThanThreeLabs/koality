@@ -36,7 +36,7 @@ func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
 		return nil, err
 	}
 
-	privateKey, err := ioutil.ReadFile(fmt.Sprintf("%s/.ssh/id_rsa", currentUser.HomeDir))
+	privateKey, err := ioutil.ReadFile(path.Join(currentUser.HomeDir, ".ssh", "id_rsa"))
 	if err != nil {
 		return nil, err
 	}
