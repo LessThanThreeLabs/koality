@@ -110,9 +110,6 @@ func TestSimplePassingVerification(test *testing.T) {
 		map[string]interface{}{
 			"parameters": map[string]interface{}{
 				"nodes": 8,
-				"environment": map[string]string{
-					"THISISALARGEENVIRONMENTVARIABLE": "WITHALARGEVALUETOO",
-				},
 			},
 			"sections": []interface{}{
 				map[string]interface{}{

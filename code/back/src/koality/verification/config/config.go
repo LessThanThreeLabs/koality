@@ -59,7 +59,7 @@ func ParseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 
 				paramMap, ok := parameters.(map[interface{}]interface{})
 				if !ok {
-					err = BadConfigurationError{fmt.Sprintf("The parameters for script %s should be a map.", name)}
+					err = BadConfigurationError{fmt.Sprintf("The parameters for script %q should be a map.", name)}
 					return
 				}
 
@@ -249,7 +249,7 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 
 					isValid := environmentVariableNameRegexp.MatchString(name)
 					if !isValid {
-						err = BadConfigurationError{fmt.Sprintf("The environment variable %v does not match the regular expression %s", name, environmentVariableNameRegexp.String())}
+						err = BadConfigurationError{fmt.Sprintf("The environment variable %q does not match the regular expression %q", name, environmentVariableNameRegexp.String())}
 						return
 					}
 
@@ -273,7 +273,7 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 
 				params.GitClean = gitClean
 			default:
-				err = BadConfigurationError{fmt.Sprintf("The option %v is not currently supported.", option)}
+				err = BadConfigurationError{fmt.Sprintf("The option %#v is not currently supported.", option)}
 				return
 			}
 		}
