@@ -88,10 +88,16 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 	instance := &runResponse.Instances[0]
 	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker (%s)", launcher.ec2Broker.InstanceInfo().Name)}
 	_, err = launcher.ec2Cache.EC2.CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
+	if err != nil {
+		launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+		return nil, err
+	}
+
 	err = launcher.waitForIpAddress(instance, 2*time.Minute)
 	if err != nil {
 		return nil, err
 	}
+
 	ec2Vm, err := launcher.waitForSsh(instance, username, 5*time.Minute)
 	if err != nil {
 		launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
@@ -222,17 +228,24 @@ func (launcher *Ec2VirtualMachineLauncher) getSnapshotsForImage(baseImage ec2.Im
 
 func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGroup, error) {
 	var securityGroup ec2.SecurityGroup
-	if launcher.Ec2Pool.SecurityGroupId == "koality_verification" {
-		securityGroup = ec2.SecurityGroup{
-			Name: "koality_verification",
-		}
+	var securityGroups []ec2.SecurityGroup
+	defaultSecurityGroup := ec2.SecurityGroup{
+		Name: "koality_verification",
+	}
+	if launcher.Ec2Pool.SecurityGroupId == "" {
+		securityGroup = defaultSecurityGroup
+		securityGroups = []ec2.SecurityGroup{defaultSecurityGroup}
 	} else {
 		securityGroup = ec2.SecurityGroup{
 			Id: launcher.Ec2Pool.SecurityGroupId,
 		}
+		securityGroups = []ec2.SecurityGroup{
+			securityGroup,
+			defaultSecurityGroup,
+		}
 	}
 
-	securityGroupsResp, err := launcher.ec2Cache.EC2.SecurityGroups([]ec2.SecurityGroup{securityGroup}, nil)
+	securityGroupsResp, err := launcher.ec2Cache.EC2.SecurityGroups(securityGroups, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -247,6 +260,14 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		}
 	} else {
 		groupInfo := securityGroupsResp.Groups[0]
+		if len(securityGroupsResp.Groups) == 2 {
+			for _, group := range securityGroupsResp.Groups {
+				if group.Id == securityGroup.Id {
+					groupInfo = group
+					break
+				}
+			}
+		}
 		for _, ipPerm := range groupInfo.IPPerms {
 			if ipPerm.FromPort <= 22 && 22 <= ipPerm.ToPort {
 				for _, sourceGroup := range ipPerm.SourceGroups {
