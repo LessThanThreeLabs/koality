@@ -11,6 +11,7 @@ import (
 	"koality/verification/config/provision"
 	"koality/verification/config/remotecommand"
 	"koality/verification/config/section"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -33,6 +34,8 @@ type Params struct {
 }
 
 const defaultTimeout = 600
+
+var environmentVariableNameRegexp = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
 func ParseRemoteCommands(config interface{}, advertised bool) (commands []verification.Command, err error) {
 	scripts, ok := config.([]interface{})
@@ -241,6 +244,13 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 					name, ok := name.(string)
 					if !ok {
 						err = BadConfigurationError{"The keys of the environment map should be strings."}
+						return
+					}
+
+					isValid := environmentVariableNameRegexp.MatchString(name)
+					if !isValid {
+						err = BadConfigurationError{fmt.Sprintf("The environment variable %v does not match the regular expression %s", name, environmentVariableNameRegexp.String())}
+						return
 					}
 
 					params.Environment[name] = fmt.Sprintf("%v", value)
