@@ -30,7 +30,7 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 	if err = bucket.PutBucket(s3.PublicRead); err != nil {
 		s3Err, ok := err.(*s3.Error)
 		if !(ok && s3Err.Code == "BucketAlreadyOwnedByYou") {
-		// return error unless the error was that the bucket is already owned by us
+			// return error unless the error was that the bucket is already owned by us
 			return nil, err
 		}
 	}
@@ -68,10 +68,15 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 				return nil, err
 			}
 
+                        absPath, err := filepath.Abs(path)
+                        if err != nil {
+                          return nil, err
+                        }
+
 			if fileInfo.Mode().IsRegular() {
-				err = uploadFile(path, fileInfo, nil)
+				err = uploadFile(absPath, fileInfo, nil)
 			} else {
-				err = find.Find(path, "*", uploadFile)
+				err = find.Find(absPath, "*", uploadFile)
 			}
 			if err != nil {
 				return nil, err
