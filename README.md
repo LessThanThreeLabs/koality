@@ -13,7 +13,7 @@
 	* Add a new submodule to the codebase
 * `git submodule update --init --recursive`
 	* This will pull down updates to submodules
-	* Use this if you're missing a library
+	* Use this if you're missing a library or there are upstream changes to a library
 * `git submodule sync`
 	* This will update the remote urls for all your submodules
 	* Use this if updating submodules fails
