@@ -34,9 +34,9 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 			return err
 		}
 
-		s3path := exportPrefix + path
+		s3Path := exportPrefix + path
 		contentType := ""
-		err = bucket.Put(s3path, data, contentType, s3.PublicRead, s3.Options{})
+		err = bucket.Put(s3Path, data, contentType, s3.PublicRead, s3.Options{})
 		if err != nil {
 			return err
 		}
@@ -44,7 +44,7 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 		exports = append(exports, resources.Export{
 			BucketName: bucketName,
 			Path:       path,
-			Key:        s3path,
+			Key:        s3Path,
 		})
 		return nil
 	}
@@ -54,6 +54,7 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 		if err != nil {
 			return nil, err
 		}
+
 		for _, path := range paths {
 			fileInfo, err := os.Stat(path)
 			if err != nil {
