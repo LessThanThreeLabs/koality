@@ -27,6 +27,13 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 	var exports []resources.Export
 	s3Obj := s3.New(auth, region)
 	bucket := s3Obj.Bucket(bucketName)
+	if err = bucket.PutBucket(s3.PublicRead); err != nil {
+		s3Err, ok := err.(*s3.Error)
+		if !(ok && s3Err.Code == "BucketAlreadyOwnedByYou") {
+		// return error unless the error was that the bucket is already owned by us
+			return nil, err
+		}
+	}
 
 	uploadFile := func(path string, fileInfo os.FileInfo, err error) error {
 		data, err := ioutil.ReadFile(path)
