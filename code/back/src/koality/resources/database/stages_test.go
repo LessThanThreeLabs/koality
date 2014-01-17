@@ -707,8 +707,8 @@ func TestExport(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	firstExport := resources.Export{"some/path/1.xml", "https://s3.aws/bucket-name/1.xml"}
-	secondExport := resources.Export{"some/path/2.xml", "https://s3.aws/bucket-name/2.xml"}
+	firstExport := resources.Export{"bucket-name", "some/path/1.xml", "https://s3.aws/bucket-name/1.xml"}
+	secondExport := resources.Export{"bucket-name", "some/path/2.xml", "https://s3.aws/bucket-name/2.xml"}
 	exports := []resources.Export{firstExport, secondExport}
 	err = connection.Stages.Update.AddExports(stageRun.Id, exports)
 	if err != nil {

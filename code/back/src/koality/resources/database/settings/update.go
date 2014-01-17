@@ -81,36 +81,44 @@ func (updateHandler *UpdateHandler) ResetRepositoryKeyPair() (*resources.Reposit
 }
 
 func (updateHandler *UpdateHandler) generateRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
+	generatePrivatePem := func(privateKey *rsa.PrivateKey) (string, error) {
+		privateKeyDer := x509.MarshalPKCS1PrivateKey(privateKey)
+		privateKeyBlock := pem.Block{
+			Type:    "RSA PRIVATE KEY",
+			Headers: nil,
+			Bytes:   privateKeyDer,
+		}
+		return string(pem.EncodeToMemory(&privateKeyBlock)), nil
+	}
+
+	generatePublicPem := func(publicKey *rsa.PublicKey) (string, error) {
+		publicKeyDer, err := x509.MarshalPKIXPublicKey(publicKey)
+		if err != nil {
+			return "", err
+		}
+
+		publicKeyBlock := pem.Block{
+			Type:    "PUBLIC KEY",
+			Headers: nil,
+			Bytes:   publicKeyDer,
+		}
+		return string(pem.EncodeToMemory(&publicKeyBlock)), nil
+	}
+
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2014)
 	if err != nil {
 		return nil, err
 	}
 
-	privateKeyDer := x509.MarshalPKCS1PrivateKey(privateKey)
-	privateKeyBlock := pem.Block{
-		Type:    "RSA PRIVATE KEY",
-		Headers: nil,
-		Bytes:   privateKeyDer,
-	}
-	privateKeyPem := string(pem.EncodeToMemory(&privateKeyBlock))
-
-	publicKey := privateKey.PublicKey
-	publicKeyDer, err := x509.MarshalPKIXPublicKey(&publicKey)
+	privateKeyPem, err := generatePrivatePem(privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// generate public key with "sha-rsa " + encode64(publicKeyDer)
-	//
-	//
-	//
-
-	publicKeyBlock := pem.Block{
-		Type:    "PUBLIC KEY",
-		Headers: nil,
-		Bytes:   publicKeyDer,
+	publicKeyPem, err := generatePublicPem(&privateKey.PublicKey)
+	if err != nil {
+		return nil, err
 	}
-	publicKeyPem := string(pem.EncodeToMemory(&publicKeyBlock))
 
 	repositoryKeyPair := resources.RepositoryKeyPair{
 		PrivateKey: privateKeyPem,
