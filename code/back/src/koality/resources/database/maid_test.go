@@ -21,7 +21,7 @@ func TestMaid(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	numVerificationsToRetain := uint64(10)
+	numVerificationsToRetain := uint32(10)
 	Clean(connection, numVerificationsToRetain)
 	err = checkVerificationsCleaned(connection, numVerificationsToRetain)
 	if err != nil {
@@ -52,7 +52,7 @@ func addVerifications(connection *resources.Connection, numVerificationsToCreate
 	return nil
 }
 
-func checkVerificationsCleaned(connection *resources.Connection, numVerificationsToRetain uint64) error {
+func checkVerificationsCleaned(connection *resources.Connection, numVerificationsToRetain uint32) error {
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		return err

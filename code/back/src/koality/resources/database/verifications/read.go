@@ -61,7 +61,7 @@ func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verificat
 	return readHandler.scanVerification(row)
 }
 
-func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results int) ([]resources.Verification, error) {
+func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uint32) ([]resources.Verification, error) {
 	if err := readHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
 	} else if err := readHandler.verifier.verifyTailResultsNumber(results); err != nil {
@@ -94,33 +94,33 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results int
 	return verifications, nil
 }
 
-func (readHandler *ReadHandler) GetOld(repositoryId uint64, numToRetain uint64) ([]resources.Verification, error) {
-	if err := readHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
-		return nil, err
-	}
+// func (readHandler *ReadHandler) GetOld(repositoryId uint64, numToRetain uint64) ([]resources.Verification, error) {
+// 	if err := readHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
+// 		return nil, err
+// 	}
 
-	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
-		" V.status, V.merge_status, V.created, V.started, V.ended," +
-		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
-		" C.head_email, C.created" +
-		" FROM verifications V JOIN changesets C" +
-		" ON V.changeset_id=C.id WHERE V.repository_id=$1" +
-		" ORDER BY V.id DESC OFFSET $2"
-	rows, err := readHandler.database.Query(query, repositoryId, numToRetain)
-	if err != nil {
-		return nil, err
-	}
+// 	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
+// 		" V.status, V.merge_status, V.created, V.started, V.ended," +
+// 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
+// 		" C.head_email, C.created" +
+// 		" FROM verifications V JOIN changesets C" +
+// 		" ON V.changeset_id=C.id WHERE V.repository_id=$1" +
+// 		" ORDER BY V.id DESC OFFSET $2"
+// 	rows, err := readHandler.database.Query(query, repositoryId, numToRetain)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	verifications := make([]resources.Verification, 0, 10)
-	for rows.Next() {
-		verification, err := readHandler.scanVerification(rows)
-		if err != nil {
-			return nil, err
-		}
-		verifications = append(verifications, *verification)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return verifications, nil
-}
+// 	verifications := make([]resources.Verification, 0, 10)
+// 	for rows.Next() {
+// 		verification, err := readHandler.scanVerification(rows)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		verifications = append(verifications, *verification)
+// 	}
+// 	if err := rows.Err(); err != nil {
+// 		return nil, err
+// 	}
+// 	return verifications, nil
+// }

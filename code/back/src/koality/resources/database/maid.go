@@ -2,6 +2,7 @@ package database
 
 import (
 	"koality/resources"
+	"math"
 	"sync"
 	"time"
 )
@@ -14,7 +15,7 @@ var (
 	cleanTimerSync sync.Once
 )
 
-func Clean(connection *resources.Connection, numVerificationsToRetain uint64) error {
+func Clean(connection *resources.Connection, numVerificationsToRetain uint32) error {
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		return err
@@ -23,7 +24,7 @@ func Clean(connection *resources.Connection, numVerificationsToRetain uint64) er
 	verificationCount := 0
 	errorChannel := make(chan error, 100)
 	for _, repository := range repositories {
-		oldVerifications, err := connection.Verifications.Read.GetOld(repository.Id, numVerificationsToRetain)
+		oldVerifications, err := connection.Verifications.Read.GetTail(repository.Id, numVerificationsToRetain, math.MaxUint32)
 		if err != nil {
 			return err
 		}

@@ -121,8 +121,8 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 	return nil
 }
 
-func (verifier *Verifier) verifyTailResultsNumber(results int) error {
-	if results < minResults {
+func (verifier *Verifier) verifyTailResultsNumber(results uint32) error {
+	if results < uint32(minResults) {
 		return fmt.Errorf("Must request at least %d results", minResults)
 	}
 	return nil
