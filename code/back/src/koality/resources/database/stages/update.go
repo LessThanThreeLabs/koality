@@ -195,6 +195,10 @@ func (updateHandler *UpdateHandler) RemoveAllXunitResults(stageRunId uint64) err
 }
 
 func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []resources.Export) error {
+	if len(exports) == 0 {
+		return nil
+	}
+
 	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return err
 	}
@@ -202,21 +206,22 @@ func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []reso
 	getValuesString := func() string {
 		valuesStringArray := make([]string, len(exports))
 		for index := 0; index < len(exports); index++ {
-			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d)", stageRunId, index*2+1, index*2+2)
+			valuesStringArray[index] = fmt.Sprintf("(%d, $%d, $%d, $%d)", stageRunId, index*3+1, index*3+2, index*3+3)
 		}
 		return strings.Join(valuesStringArray, ", ")
 	}
 
 	exportsToArray := func() []interface{} {
-		exportsArray := make([]interface{}, len(exports)*2)
+		exportsArray := make([]interface{}, len(exports)*3)
 		for index, export := range exports {
-			exportsArray[index*2] = export.Path
-			exportsArray[index*2+1] = export.Uri
+			exportsArray[index*3] = export.BucketName
+			exportsArray[index*3+1] = export.Path
+			exportsArray[index*3+2] = export.Key
 		}
 		return exportsArray
 	}
 
-	query := "INSERT INTO exports (run_id, path, uri) VALUES " + getValuesString()
+	query := "INSERT INTO exports (run_id, bucket, path, key) VALUES " + getValuesString()
 	_, err := updateHandler.database.Exec(query, exportsToArray()...)
 	if err != nil {
 		return err

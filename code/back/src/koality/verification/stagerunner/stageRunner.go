@@ -9,6 +9,7 @@ import (
 	"io"
 	"koality/resources"
 	"koality/shell"
+	"koality/util/export"
 	"koality/verification"
 	"koality/verification/config"
 	"koality/verification/config/commandgroup"
@@ -101,12 +102,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	return commandsSuccess || section.ContinueOnFailure(), nil
 }
 
-func (stageRunner *StageRunner) getXunitResults(command verification.Command, environment map[string]string) ([]resources.XunitResult, error) {
-	execName := "getXunitResults"
-	directories := command.XunitPaths()
-	if len(directories) == 0 {
-		return nil, nil
-	}
+func (stageRunner *StageRunner) copyAndRunExecOnVm(execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return nil, err
@@ -122,15 +118,56 @@ func (stageRunner *StageRunner) getXunitResults(command verification.Command, en
 		return nil, err
 	}
 
-	cmd := shell.Commandf("./%s %s %s", execName, shell.Quote("*.xml"), strings.Join(directories, " "))
-	w := new(bytes.Buffer)
-	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, w, os.Stderr, environment)
+	cmd := shell.Commandf("./%s %s", execName, strings.Join(args, " "))
+	writeBuffer := new(bytes.Buffer)
+	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, writeBuffer, os.Stderr, environment)
 	if err = runExec.Run(); err != nil {
 		return nil, err
 	}
 
+	return writeBuffer, nil
+}
+
+func (stageRunner *StageRunner) exportAndGetResults(stageId uint64, stageRunId uint64, sectionToRun section.Section, environment map[string]string) ([]resources.Export, error) {
+	if len(sectionToRun.Exports()) == 0 {
+		return nil, nil
+	}
+
+	exportPrefix := fmt.Sprintf("repository/%d/verification/%d/stage/%d/stageRun/%d",
+		stageRunner.verification.Changeset.RepositoryId, stageRunner.verification.Id, stageId, stageRunId)
+	args := append([]string{
+		shell.Quote(""), // TODO accessKey
+		shell.Quote(""), // TODO secretKey
+		"koality-whim",  // TODO bucketName,
+		exportPrefix,
+		"us-east-1", // US Standard
+	}, sectionToRun.Exports()...)
+	writeBuffer, err := stageRunner.copyAndRunExecOnVm("exportPaths", args, environment)
+	if err != nil {
+		return nil, err
+	}
+
+	var exportOutput export.ExportOutput
+	if err = json.Unmarshal(writeBuffer.Bytes(), &exportOutput); err != nil {
+		return nil, err
+	}
+
+	return exportOutput.Exports, exportOutput.Error
+}
+
+func (stageRunner *StageRunner) getXunitResults(command verification.Command, environment map[string]string) ([]resources.XunitResult, error) {
+	directories := command.XunitPaths()
+	if len(directories) == 0 {
+		return nil, nil
+	}
+	args := []string{shell.Quote("*.xml"), strings.Join(directories, " ")}
+	writeBuffer, err := stageRunner.copyAndRunExecOnVm("getXunitResults", args, environment)
+	if err != nil {
+		return nil, err
+	}
+
 	var res []resources.XunitResult
-	if err = json.Unmarshal(w.Bytes(), &res); err != nil {
+	if err = json.Unmarshal(writeBuffer.Bytes(), &res); err != nil {
 		return nil, err
 	}
 
@@ -318,16 +355,23 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 
 		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, returnCode)
-		xunitResults, xunitError := stageRunner.getXunitResults(command, environment)
-		if xunitError != nil {
-			return false, xunitError
+		xunitResults, xunitErr := stageRunner.getXunitResults(command, environment)
+		if xunitErr != nil {
+			return false, xunitErr
 		}
 
-		if len(xunitResults) > 0 {
-			xunitError = stageRunner.resourcesConnection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
-			if xunitError != nil {
-				return false, xunitError
-			}
+		xunitErr = stageRunner.resourcesConnection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
+		if xunitErr != nil {
+			return false, xunitErr
+		}
+
+		exports, exportErr := stageRunner.exportAndGetResults(stageId, stageRun.Id, sectionToRun, environment)
+		if exportErr != nil {
+			return false, exportErr
+		}
+		exportErr = stageRunner.resourcesConnection.Stages.Update.AddExports(stageRun.Id, exports)
+		if exportErr != nil {
+			return false, exportErr
 		}
 
 		if closeErr != nil {

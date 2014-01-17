@@ -238,7 +238,7 @@ func (readHandler *ReadHandler) GetExports(stageRunId uint64) ([]resources.Expor
 		return nil, err
 	}
 
-	query := "SELECT path, uri FROM exports WHERE run_id=$1"
+	query := "SELECT bucket, path, key FROM exports WHERE run_id=$1"
 	rows, err := readHandler.database.Query(query, stageRunId)
 	if err != nil {
 		return nil, err
@@ -247,7 +247,7 @@ func (readHandler *ReadHandler) GetExports(stageRunId uint64) ([]resources.Expor
 	exports := make([]resources.Export, 0, 1)
 	for rows.Next() {
 		export := resources.Export{}
-		err := rows.Scan(&export.Path, &export.Uri)
+		err := rows.Scan(&export.BucketName, &export.Path, &export.Key)
 		if err != nil {
 			return nil, err
 		}

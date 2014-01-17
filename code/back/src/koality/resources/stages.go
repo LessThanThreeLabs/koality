@@ -32,8 +32,9 @@ type XunitResult struct {
 }
 
 type Export struct {
-	Path string
-	Uri  string
+	BucketName string
+	Path       string
+	Key        string
 }
 
 type StagesHandler struct {

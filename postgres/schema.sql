@@ -167,11 +167,12 @@ CREATE TABLE IF NOT EXISTS xunit_results (
 CREATE TABLE IF NOT EXISTS exports (
 	id 					serial PRIMARY KEY,
 	run_id				integer NOT NULL references stage_runs(id) ON DELETE CASCADE,
+	bucket				varchar(1024) NOT NULL,
 	path				varchar(1024) NOT NULL,
-	uri 				varchar(1024) NOT NULL,
+	key 				varchar(1024) NOT NULL,
 
 	UNIQUE (run_id, path),
-	UNIQUE (run_id, uri)
+	UNIQUE (run_id, key)
 );
 
 CREATE TABLE IF NOT EXISTS ec2_pools (
