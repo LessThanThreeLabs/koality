@@ -7,7 +7,9 @@ import (
 )
 
 func TestCreateInvalidRepository(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -61,7 +63,9 @@ func TestCreateInvalidRepository(test *testing.T) {
 }
 
 func TestCreateRepository(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -189,7 +193,9 @@ func TestCreateRepository(test *testing.T) {
 }
 
 func TestCreateGitHubRepository(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -315,7 +321,9 @@ func TestCreateGitHubRepository(test *testing.T) {
 }
 
 func TestRepositoryStatus(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -392,7 +400,9 @@ func TestRepositoryStatus(test *testing.T) {
 }
 
 func TestRepositoryHook(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {

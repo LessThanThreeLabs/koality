@@ -7,7 +7,9 @@ import (
 )
 
 func TestCreateInvalidEc2Pool(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -95,7 +97,9 @@ func TestCreateInvalidEc2Pool(test *testing.T) {
 }
 
 func TestCreateEc2Pool(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -322,7 +326,9 @@ func TestCreateEc2Pool(test *testing.T) {
 }
 
 func TestUsersEc2Settings(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {

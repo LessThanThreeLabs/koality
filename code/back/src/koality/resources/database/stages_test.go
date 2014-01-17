@@ -595,8 +595,16 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	firstXunitResult := resources.XunitResult{"first", "some/path/1.xml", "", "", "", "", 1.137}
-	secondXunitResult := resources.XunitResult{"second", "some/path/2.xml", "", "", "", "", 1.137}
+	firstXunitResult := resources.XunitResult{
+		Name:    "first",
+		Path:    "some/path/1.xml",
+		Seconds: 1.137,
+	}
+	secondXunitResult := resources.XunitResult{
+		Name:    "second",
+		Path:    "some/path/2.xml",
+		Seconds: 1.137,
+	}
 	xunitResults := []resources.XunitResult{firstXunitResult, secondXunitResult}
 	err = connection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
 	if err != nil {

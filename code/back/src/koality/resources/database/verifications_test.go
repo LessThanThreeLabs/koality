@@ -7,7 +7,9 @@ import (
 )
 
 func TestCreateInvalidVerification(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -51,7 +53,9 @@ func TestCreateInvalidVerification(test *testing.T) {
 }
 
 func TestCreateVerification(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -194,7 +198,9 @@ func TestCreateVerification(test *testing.T) {
 }
 
 func TestVerificationStatuses(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -312,7 +318,9 @@ func TestVerificationStatuses(test *testing.T) {
 }
 
 func TestVerificationTimes(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -429,7 +437,9 @@ func TestVerificationTimes(test *testing.T) {
 }
 
 func TestGetTail(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {

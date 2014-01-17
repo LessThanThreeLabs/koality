@@ -6,4 +6,5 @@ type Connection struct {
 	Verifications *VerificationsHandler
 	Stages        *StagesHandler
 	Pools         *PoolsHandler
+	Settings      *SettingsHandler
 }

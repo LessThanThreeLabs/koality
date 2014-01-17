@@ -104,6 +104,10 @@ func (updateHandler *UpdateHandler) SetEndTime(stageRunId uint64, endTime time.T
 func (updateHandler *UpdateHandler) AddConsoleLines(stageRunId uint64, consoleLines map[uint64]string) error {
 	// We don't verify that stageRunId exists for performance reasons
 
+	if len(consoleLines) == 0 {
+		return nil
+	}
+
 	getValuesString := func() string {
 		valuesStringArray := make([]string, len(consoleLines))
 		for index := 0; index < len(consoleLines); index++ {
@@ -144,11 +148,12 @@ func (updateHandler *UpdateHandler) RemoveAllConsoleLines(stageRunId uint64) err
 }
 
 func (updateHandler *UpdateHandler) AddXunitResults(stageRunId uint64, xunitResults []resources.XunitResult) error {
-	if len(xunitResults) == 0 {
-		return nil
-	}
 	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return err
+	}
+
+	if len(xunitResults) == 0 {
+		return nil
 	}
 
 	getValuesString := func() string {
@@ -201,6 +206,10 @@ func (updateHandler *UpdateHandler) AddExports(stageRunId uint64, exports []reso
 
 	if err := updateHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return err
+	}
+
+	if len(exports) == 0 {
+		return nil
 	}
 
 	getValuesString := func() string {

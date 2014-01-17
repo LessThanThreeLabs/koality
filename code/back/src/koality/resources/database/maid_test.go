@@ -7,7 +7,9 @@ import (
 )
 
 func TestMaid(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {

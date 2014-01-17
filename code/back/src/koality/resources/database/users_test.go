@@ -8,7 +8,9 @@ import (
 )
 
 func TestCreateInvalidUser(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -48,7 +50,9 @@ func TestCreateInvalidUser(test *testing.T) {
 }
 
 func TestCreateAndDeleteUser(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -174,7 +178,9 @@ func TestCreateAndDeleteUser(test *testing.T) {
 }
 
 func TestUsersRead(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -217,7 +223,9 @@ func TestUsersRead(test *testing.T) {
 }
 
 func TestUsersUpdateName(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -295,7 +303,9 @@ func TestUsersUpdateName(test *testing.T) {
 }
 
 func TestUsersUpdatePassword(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -338,7 +348,9 @@ func TestUsersUpdatePassword(test *testing.T) {
 }
 
 func TestUsersUpdateGitHubOauth(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -381,7 +393,9 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 }
 
 func TestUsersUpdateAdmin(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
@@ -455,7 +469,9 @@ func TestUsersUpdateAdmin(test *testing.T) {
 }
 
 func TestUsersSshKeys(test *testing.T) {
-	PopulateDatabase()
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
 
 	connection, err := New()
 	if err != nil {
