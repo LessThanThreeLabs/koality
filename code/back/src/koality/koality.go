@@ -19,6 +19,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	database.KeepClean(resourcesConnection)
 
 	// TODO (bbland): use a real pool instead of this bogus one (although this is nice and fast/free)
 	virtualMachinePool := vm.NewPool(0, localmachine.Launcher, 0, 3)
