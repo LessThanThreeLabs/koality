@@ -24,6 +24,8 @@ const (
 	ec2BaseAmiIdRegex        = "^ami-[a-f0-9]+$"
 	ec2SecurityGroupIdRegex  = "^sg-[a-f0-9]+$"
 	ec2VpcSubnetIdRegex      = "^subnet-[a-f0-9]+$"
+	defaultBaseAmiId         = ""
+	defaultSecurityGroupId   = ""
 )
 
 var (
@@ -80,9 +82,10 @@ func (verifier *Verifier) verifyEc2SecretKey(secretKey string) error {
 }
 
 func (verifier *Verifier) verifyEc2BaseAmiId(baseAmiId string) error {
-	if baseAmiId == "" {
+	if baseAmiId == defaultBaseAmiId {
 		return nil
 	}
+
 	if len(baseAmiId) != ec2BaseAmiIdLegth {
 		return fmt.Errorf("Base AMI Id must be %d characters long", ec2BaseAmiIdLegth)
 	} else if ok, err := regexp.MatchString(ec2BaseAmiIdRegex, baseAmiId); !ok || err != nil {
@@ -92,9 +95,10 @@ func (verifier *Verifier) verifyEc2BaseAmiId(baseAmiId string) error {
 }
 
 func (verifier *Verifier) verifyEc2SecurityGroupId(securityGroupId string) error {
-	if securityGroupId == "" {
+	if securityGroupId == defaultSecurityGroupId {
 		return nil
 	}
+
 	if len(securityGroupId) != ec2SecurityGroupIdLength {
 		return fmt.Errorf("Security Group Id must be %d characters long", ec2SecurityGroupIdLength)
 	} else if ok, err := regexp.MatchString(ec2SecurityGroupIdRegex, securityGroupId); !ok || err != nil {
@@ -107,6 +111,7 @@ func (verifier *Verifier) verifyEc2VpcSubnetId(vpcSubnetId string) error {
 	if vpcSubnetId == "" {
 		return nil
 	}
+
 	if len(vpcSubnetId) != ec2VpcSubnetIdLength {
 		return fmt.Errorf("VPC Subnet Id must be %d characters long", ec2VpcSubnetIdLength)
 	} else if ok, err := regexp.MatchString(ec2VpcSubnetIdRegex, vpcSubnetId); !ok || err != nil {

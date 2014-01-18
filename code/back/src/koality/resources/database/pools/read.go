@@ -22,9 +22,9 @@ func NewReadHandler(database *sql.DB, verifier *Verifier, subscriptionHandler re
 func (readHandler *ReadHandler) scanEc2Pool(scannable Scannable) (*resources.Ec2Pool, error) {
 	ec2Pool := new(resources.Ec2Pool)
 
-	var vpcSubnetId, userData sql.NullString
+	var baseAmiId, securityGroupId, vpcSubnetId, userData sql.NullString
 	err := scannable.Scan(&ec2Pool.Id, &ec2Pool.Name, &ec2Pool.AccessKey, &ec2Pool.SecretKey,
-		&ec2Pool.Username, &ec2Pool.BaseAmiId, &ec2Pool.SecurityGroupId, &vpcSubnetId,
+		&ec2Pool.Username, &baseAmiId, &securityGroupId, &vpcSubnetId,
 		&ec2Pool.InstanceType, &ec2Pool.NumReadyInstances, &ec2Pool.NumMaxInstances,
 		&ec2Pool.RootDriveSize, &userData, &ec2Pool.Created)
 	if err == sql.ErrNoRows {
@@ -33,6 +33,12 @@ func (readHandler *ReadHandler) scanEc2Pool(scannable Scannable) (*resources.Ec2
 		return nil, err
 	}
 
+	if baseAmiId.Valid {
+		ec2Pool.BaseAmiId = baseAmiId.String
+	}
+	if securityGroupId.Valid {
+		ec2Pool.SecurityGroupId = securityGroupId.String
+	}
 	if vpcSubnetId.Valid {
 		ec2Pool.VpcSubnetId = vpcSubnetId.String
 	}
