@@ -30,7 +30,7 @@ type SnapshotsCreateHandler interface {
 
 type SnapshotsReadHandler interface {
 	GetSnapshot(snapshotId uint64) (*Snapshot, error)
-	GetSnapshotsForPoolId(poolId uint64) ([]Snapshot, error)
+	GetSnapshotsForPool(poolId uint64) ([]Snapshot, error)
 }
 
 type SnapshotsUpdateHandler interface {
@@ -83,11 +83,11 @@ func (err NoSuchSnapshotError) Error() string {
 	return err.Message
 }
 
-type SnapshotAlreadyExistsError struct {
+type InvalidSnapshotStatusError struct {
 	Message string
 }
 
-func (err SnapshotAlreadyExistsError) Error() string {
+func (err InvalidSnapshotStatusError) Error() string {
 	return err.Message
 }
 

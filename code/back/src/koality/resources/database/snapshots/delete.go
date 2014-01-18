@@ -28,7 +28,7 @@ func (deleteHandler *DeleteHandler) DeleteSnapshot(snapshotId uint64) error {
 		return err
 	} else if count != 1 {
 		errorText := fmt.Sprintf("Unable to find snapshot with id: %d ", snapshotId)
-		return resources.NoSuchPoolError{errorText}
+		return resources.NoSuchSnapshotError{errorText}
 	}
 
 	deleteHandler.subscriptionHandler.FireDeletedEvent(snapshotId)

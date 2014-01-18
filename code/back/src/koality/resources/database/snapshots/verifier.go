@@ -36,7 +36,7 @@ func (verifier *Verifier) verifyStatus(status string) error {
 			return nil
 		}
 	}
-	return resources.InvalidVerificationStatusError{"Unexpected verification status: " + status}
+	return resources.InvalidSnapshotStatusError{"Unexpected snapshot status: " + status}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {
