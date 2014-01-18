@@ -7,4 +7,5 @@ type Connection struct {
 	Stages        *StagesHandler
 	Pools         *PoolsHandler
 	Settings      *SettingsHandler
+	Snapshots     *SnapshotsHandler
 }
