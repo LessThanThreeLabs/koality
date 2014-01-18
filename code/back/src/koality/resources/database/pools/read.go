@@ -28,7 +28,7 @@ func (readHandler *ReadHandler) scanEc2Pool(scannable Scannable) (*resources.Ec2
 		&ec2Pool.InstanceType, &ec2Pool.NumReadyInstances, &ec2Pool.NumMaxInstances,
 		&ec2Pool.RootDriveSize, &userData, &ec2Pool.Created)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchUserError{"Unable to find ec2 pool"}
+		return nil, resources.NoSuchPoolError{"Unable to find ec2 pool"}
 	} else if err != nil {
 		return nil, err
 	}

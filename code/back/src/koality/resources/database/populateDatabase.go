@@ -14,6 +14,10 @@ const (
 	parallelizationLevel          = 2
 )
 
+var (
+	dumpStaleTime time.Time = time.Now()
+)
+
 func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
@@ -29,7 +33,7 @@ func PopulateDatabase() error {
 }
 
 func makeSureDumpExists() error {
-	exists, err := DumpExists()
+	exists, err := DumpExistsAndNotStale(dumpStaleTime)
 	if err != nil {
 		return err
 	}

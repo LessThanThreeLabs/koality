@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"time"
 )
 
 const (
@@ -97,17 +98,19 @@ func Reseed() error {
 	return err
 }
 
-func DumpExists() (bool, error) {
+func DumpExistsAndNotStale(staleTime time.Time) (bool, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return false, err
 	}
 
-	_, err = os.Stat(currentUser.HomeDir + dumpLocation)
+	fileInfo, err := os.Stat(currentUser.HomeDir + dumpLocation)
 	if os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {
 		return false, err
+	} else if fileInfo.ModTime().Before(staleTime) {
+		return false, nil
 	} else {
 		return true, nil
 	}
