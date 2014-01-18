@@ -19,6 +19,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = database.Migrate()
+	if err != nil {
+		panic(err)
+	}
 	database.KeepClean(resourcesConnection)
 
 	// TODO (bbland): use a real pool instead of this bogus one (although this is nice and fast/free)

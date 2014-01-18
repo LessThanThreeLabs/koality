@@ -200,3 +200,17 @@ CREATE TABLE IF NOT EXISTS settings (
 
 	UNIQUE (resource, key)
 );
+
+CREATE TABLE IF NOT EXISTS version (
+	id serial PRIMARY KEY,
+	version integer NOT NULL
+);
+
+DO
+$insert_version$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM version) THEN
+		INSERT INTO version (version) VALUES (0);  -- change this whenever we change the schema
+	END IF;
+END
+$insert_version$
