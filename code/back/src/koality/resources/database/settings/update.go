@@ -7,7 +7,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"encoding/pem"
+	"io/ioutil"
 	"koality/resources"
+	"os/exec"
 )
 
 type UpdateHandler struct {
@@ -105,6 +107,27 @@ func (updateHandler *UpdateHandler) generateRepositoryKeyPair() (*resources.Repo
 		return string(pem.EncodeToMemory(&publicKeyBlock)), nil
 	}
 
+	generatePublicSshKey := func(publicPem string) (string, error) {
+		file, err := ioutil.TempFile("", "publicKey.pem")
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+
+		_, err = file.Write([]byte(publicPem))
+		if err != nil {
+			return "", err
+		}
+
+		command := exec.Command("ssh-keygen", "-m", "PKCS8", "-f", file.Name(), "-i")
+		publicSshKey, err := command.Output()
+		if err != nil {
+			return "", err
+		}
+
+		return string(publicSshKey), nil
+	}
+
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2014)
 	if err != nil {
 		return nil, err
@@ -120,9 +143,14 @@ func (updateHandler *UpdateHandler) generateRepositoryKeyPair() (*resources.Repo
 		return nil, err
 	}
 
+	publicSshKey, err := generatePublicSshKey(publicKeyPem)
+	if err != nil {
+		return nil, err
+	}
+
 	repositoryKeyPair := resources.RepositoryKeyPair{
 		PrivateKey: privateKeyPem,
-		PublicKey:  publicKeyPem,
+		PublicKey:  publicSshKey,
 	}
 	return &repositoryKeyPair, nil
 }
