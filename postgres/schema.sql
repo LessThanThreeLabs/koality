@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 	email 				varchar(256) NOT NULL,
 	first_name 			varchar(64) NOT NULL,
 	last_name 			varchar(64) NOT NULL,
-	password_hash 		varchar(100) NOT NULL,  -- base64 encoding
-	password_salt 		varchar(64) NOT NULL,   -- base64 encoding
+	password_hash 		bytea NOT NULL,
+	password_salt 		bytea NOT NULL,
 	github_oauth 		varchar(40),
 	is_admin			boolean NOT NULL DEFAULT false,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,

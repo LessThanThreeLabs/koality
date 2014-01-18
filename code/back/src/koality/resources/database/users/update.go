@@ -2,7 +2,6 @@ package users
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"fmt"
 	"koality/resources"
 )
@@ -49,11 +48,8 @@ func (updateHandler *UpdateHandler) SetName(userId uint64, firstName, lastName s
 }
 
 func (updateHandler *UpdateHandler) SetPassword(userId uint64, passwordHash, passwordSalt []byte) error {
-	passwordHashBase64 := base64.StdEncoding.EncodeToString(passwordHash)
-	passwordSaltBase64 := base64.StdEncoding.EncodeToString(passwordSalt)
-
 	query := "UPDATE users SET password_hash=$1, password_salt=$2 WHERE id=$3"
-	return updateHandler.updateUser(query, passwordHashBase64, passwordSaltBase64, userId)
+	return updateHandler.updateUser(query, passwordHash, passwordSalt, userId)
 }
 
 func (updateHandler *UpdateHandler) SetGitHubOauth(userId uint64, gitHubOauth string) error {

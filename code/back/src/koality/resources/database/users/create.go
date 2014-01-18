@@ -2,7 +2,6 @@ package users
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"koality/resources"
 )
 
@@ -25,13 +24,10 @@ func (createHandler *CreateHandler) Create(email, firstName, lastName string, pa
 		return nil, err
 	}
 
-	passwordHashBase64 := base64.StdEncoding.EncodeToString(passwordHash)
-	passwordSaltBase64 := base64.StdEncoding.EncodeToString(passwordSalt)
-
 	id := uint64(0)
 	query := "INSERT INTO users (email, first_name, last_name, password_hash, password_salt, is_admin)" +
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
-	err = createHandler.database.QueryRow(query, email, firstName, lastName, passwordHashBase64, passwordSaltBase64, admin).Scan(&id)
+	err = createHandler.database.QueryRow(query, email, firstName, lastName, passwordHash, passwordSalt, admin).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
