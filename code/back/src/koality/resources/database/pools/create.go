@@ -53,9 +53,9 @@ func (createHandler *CreateHandler) getEc2ParamsError(name, accessKey, secretKey
 
 	if err := createHandler.verifier.verifyName(name); err != nil {
 		return err
-	} else if err := createHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
+	} else if err := createHandler.verifier.verifyAwsAccessKey(accessKey); err != nil {
 		return err
-	} else if err := createHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
+	} else if err := createHandler.verifier.verifyAwsSecretKey(secretKey); err != nil {
 		return err
 	} else if err := createHandler.verifier.verifyUsername(username); err != nil {
 		return err

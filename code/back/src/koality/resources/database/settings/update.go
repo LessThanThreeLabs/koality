@@ -81,11 +81,11 @@ func (updateHandler *UpdateHandler) ResetRepositoryKeyPair() (*resources.Reposit
 }
 
 func (updateHandler *UpdateHandler) SetS3ExporterSettings(accessKey, secretKey, bucketName string) (*resources.S3ExporterSettings, error) {
-	if err := updateHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
+	if err := updateHandler.verifier.verifyAwsAccessKey(accessKey); err != nil {
 		return nil, err
-	} else if err := updateHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
+	} else if err := updateHandler.verifier.verifyAwsSecretKey(secretKey); err != nil {
 		return nil, err
-	} else if err := updateHandler.verifier.verifyEc2BucketName(bucketName); err != nil {
+	} else if err := updateHandler.verifier.verifyS3BucketName(bucketName); err != nil {
 		return nil, err
 	}
 

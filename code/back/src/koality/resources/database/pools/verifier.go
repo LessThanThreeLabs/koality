@@ -9,23 +9,23 @@ import (
 )
 
 const (
-	minNameLength            = 1
-	maxNameLength            = 256
-	minUsernameLength        = 1
-	maxUsernameLength        = 256
-	minNumMaxInstances       = 1
-	ec2AccessKeyLength       = 20
-	ec2SecretKeyLength       = 40
-	ec2BaseAmiIdLegth        = 12
-	ec2SecurityGroupIdLength = 11
-	ec2VpcSubnetIdLength     = 15
-	ec2MinRootDriveSize      = 10
-	nameRegex                = "^[-_a-zA-Z0-9 ]+$"
-	ec2BaseAmiIdRegex        = "^ami-[a-f0-9]+$"
-	ec2SecurityGroupIdRegex  = "^sg-[a-f0-9]+$"
-	ec2VpcSubnetIdRegex      = "^subnet-[a-f0-9]+$"
-	defaultBaseAmiId         = ""
-	defaultSecurityGroupId   = ""
+	minNameLength             = 1
+	maxNameLength             = 256
+	minUsernameLength         = 1
+	maxUsernameLength         = 256
+	minNumMaxInstances        = 1
+	awsAccessKeyLength        = 20
+	awsSecretKeyLength        = 40
+	ec2BaseAmiIdLength        = 12
+	ec2SecurityGroupIdLength  = 11
+	ec2VpcSubnetIdLength      = 15
+	ec2MinRootDriveSize       = 10
+	nameRegex                 = "^[-_a-zA-Z0-9 ]+$"
+	ec2BaseAmiIdRegex         = "^ami-[a-f0-9]+$"
+	ec2SecurityGroupIdRegex   = "^sg-[a-f0-9]+$"
+	ec2VpcSubnetIdRegex       = "^subnet-[a-f0-9]+$"
+	defaultEc2BaseAmiId       = ""
+	defaultEc2SecurityGroupId = ""
 )
 
 var (
@@ -67,27 +67,27 @@ func (verifier *Verifier) verifyUsername(username string) error {
 	return nil
 }
 
-func (verifier *Verifier) verifyEc2AccessKey(accessKey string) error {
-	if len(accessKey) != ec2AccessKeyLength {
-		return fmt.Errorf("Access key must be %d characters long", ec2AccessKeyLength)
+func (verifier *Verifier) verifyAwsAccessKey(accessKey string) error {
+	if len(accessKey) != awsAccessKeyLength {
+		return fmt.Errorf("Access key must be %d characters long", awsAccessKeyLength)
 	}
 	return nil
 }
 
-func (verifier *Verifier) verifyEc2SecretKey(secretKey string) error {
-	if len(secretKey) != ec2SecretKeyLength {
-		return fmt.Errorf("Secret key must be %d characters long", ec2SecretKeyLength)
+func (verifier *Verifier) verifyAwsSecretKey(secretKey string) error {
+	if len(secretKey) != awsSecretKeyLength {
+		return fmt.Errorf("Secret key must be %d characters long", awsSecretKeyLength)
 	}
 	return nil
 }
 
 func (verifier *Verifier) verifyEc2BaseAmiId(baseAmiId string) error {
-	if baseAmiId == defaultBaseAmiId {
+	if baseAmiId == defaultEc2BaseAmiId {
 		return nil
 	}
 
-	if len(baseAmiId) != ec2BaseAmiIdLegth {
-		return fmt.Errorf("Base AMI Id must be %d characters long", ec2BaseAmiIdLegth)
+	if len(baseAmiId) != ec2BaseAmiIdLength {
+		return fmt.Errorf("Base AMI Id must be %d characters long", ec2BaseAmiIdLength)
 	} else if ok, err := regexp.MatchString(ec2BaseAmiIdRegex, baseAmiId); !ok || err != nil {
 		return errors.New("Base AMI Id must match regex: " + ec2BaseAmiIdRegex)
 	}
@@ -95,7 +95,7 @@ func (verifier *Verifier) verifyEc2BaseAmiId(baseAmiId string) error {
 }
 
 func (verifier *Verifier) verifyEc2SecurityGroupId(securityGroupId string) error {
-	if securityGroupId == defaultSecurityGroupId {
+	if securityGroupId == defaultEc2SecurityGroupId {
 		return nil
 	}
 

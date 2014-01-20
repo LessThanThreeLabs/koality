@@ -60,9 +60,9 @@ func (updateHandler *UpdateHandler) SetEc2Settings(poolId uint64, accessKey, sec
 func (updateHandler *UpdateHandler) getEc2ParamsError(accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
 	numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) error {
 
-	if err := updateHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
+	if err := updateHandler.verifier.verifyAwsAccessKey(accessKey); err != nil {
 		return err
-	} else if err := updateHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
+	} else if err := updateHandler.verifier.verifyAwsSecretKey(secretKey); err != nil {
 		return err
 	} else if err := updateHandler.verifier.verifyUsername(username); err != nil {
 		return err
