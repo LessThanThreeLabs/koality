@@ -79,8 +79,27 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	connection := resources.Connection{usersHandler, repositoriesHandler, verificationsHandler, stagesHandler, poolsHandler, settingsHandler, snapshotsHandler}
-	return &connection, nil
+	connection := &resources.Connection{usersHandler, repositoriesHandler, verificationsHandler, stagesHandler, poolsHandler, settingsHandler, snapshotsHandler}
+	checkSettingsInitialized(connection)
+	return connection, nil
+}
+
+func checkSettingsInitialized(connection *resources.Connection) error {
+	_, err := connection.Settings.Read.GetRepositoryKeyPair()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		connection.Settings.Update.ResetRepositoryKeyPair()
+	} else if err != nil {
+		return err
+	}
+
+	_, err = connection.Settings.Read.GetCookieStoreKeys()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		connection.Settings.Update.ResetCookieStoreKeys()
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func Reseed() error {

@@ -15,9 +15,9 @@ func NewDeleteHandler(database *sql.DB, subscriptionHandler resources.InternalSe
 	return &DeleteHandler{database, subscriptionHandler}, nil
 }
 
-func (updateHandler *DeleteHandler) removeSetting(resource, key string) error {
+func (updateHandler *DeleteHandler) removeSetting(locator SettingLocator) error {
 	query := "DELETE FROM settings WHERE resource=$1 AND key=$2"
-	result, err := updateHandler.database.Exec(query, resource, key)
+	result, err := updateHandler.database.Exec(query, locator.Resource, locator.Key)
 	if err != nil {
 		return err
 	}
@@ -26,14 +26,14 @@ func (updateHandler *DeleteHandler) removeSetting(resource, key string) error {
 	if err != nil {
 		return err
 	} else if count != 1 {
-		errorText := fmt.Sprintf("Unable to find setting %s-%s", resource, key)
+		errorText := fmt.Sprintf("Unable to find setting with locator %v", locator)
 		return resources.NoSuchSettingError{errorText}
 	}
 	return nil
 }
 
 func (deleteHandler *DeleteHandler) ClearS3ExporterSettings() error {
-	err := deleteHandler.removeSetting("Exporter", "S3Settings")
+	err := deleteHandler.removeSetting(s3ExporterSettingsLocator)
 	deleteHandler.subscriptionHandler.FireS3ExporterSettingsClearedEvent()
 	return err
 }

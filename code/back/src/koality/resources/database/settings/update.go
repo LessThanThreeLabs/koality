@@ -1,8 +1,11 @@
 package settings
 
 import (
+	"bytes"
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"io"
 	"koality/resources"
 )
 
@@ -18,10 +21,10 @@ func NewUpdateHandler(database *sql.DB, verifier *Verifier, encrypter *Encrypter
 	return &UpdateHandler{database, verifier, encrypter, keyPairGenerator, subscriptionHandler}, nil
 }
 
-func (updateHandler *UpdateHandler) setSetting(resource, key string, value interface{}) error {
-	doesSettingExist := func(resource, key string) (bool, error) {
+func (updateHandler *UpdateHandler) setSetting(locator SettingLocator, value interface{}) error {
+	doesSettingExist := func(locator SettingLocator) (bool, error) {
 		query := "SELECT value FROM settings WHERE resource=$1 AND key=$2"
-		row := updateHandler.database.QueryRow(query, resource, key)
+		row := updateHandler.database.QueryRow(query, locator.Resource, locator.Key)
 		var tempBytes []byte
 		err := row.Scan(&tempBytes)
 		if err == sql.ErrNoRows {
@@ -33,7 +36,7 @@ func (updateHandler *UpdateHandler) setSetting(resource, key string, value inter
 		}
 	}
 
-	settingExists, err := doesSettingExist(resource, key)
+	settingExists, err := doesSettingExist(locator)
 	if err != nil {
 		return err
 	}
@@ -55,7 +58,7 @@ func (updateHandler *UpdateHandler) setSetting(resource, key string, value inter
 		query = "INSERT INTO settings (resource, key, value) VALUES ($1, $2, $3)"
 	}
 
-	_, err = updateHandler.database.Exec(query, resource, key, encryptedValue)
+	_, err = updateHandler.database.Exec(query, locator.Resource, locator.Key, encryptedValue)
 	if err != nil {
 		return err
 	}
@@ -68,7 +71,7 @@ func (updateHandler *UpdateHandler) ResetRepositoryKeyPair() (*resources.Reposit
 		return nil, err
 	}
 
-	err = updateHandler.setSetting("Repository", "KeyPair", repositoryKeyPair)
+	err = updateHandler.setSetting(repositoryKeyPairLocator, repositoryKeyPair)
 	if err != nil {
 		return nil, err
 	}
@@ -87,11 +90,37 @@ func (updateHandler *UpdateHandler) SetS3ExporterSettings(accessKey, secretKey, 
 	}
 
 	s3Settings := &resources.S3ExporterSettings{accessKey, secretKey, bucketName}
-	err := updateHandler.setSetting("Exporter", "S3Settings", s3Settings)
+	err := updateHandler.setSetting(s3ExporterSettingsLocator, s3Settings)
 	if err != nil {
 		return nil, err
 	}
 
 	updateHandler.subscriptionHandler.FireS3ExporterSettingsUpdatedEvent(s3Settings)
 	return s3Settings, nil
+}
+
+func (updateHandler *UpdateHandler) ResetCookieStoreKeys() (*resources.CookieStoreKeys, error) {
+	cookieStoreKeys := new(resources.CookieStoreKeys)
+
+	var authenticationBuffer bytes.Buffer
+	_, err := io.CopyN(&authenticationBuffer, rand.Reader, 32)
+	if err != nil {
+		return nil, err
+	}
+	cookieStoreKeys.Authentication = authenticationBuffer.Bytes()
+
+	var encryptionBuffer bytes.Buffer
+	_, err = io.CopyN(&encryptionBuffer, rand.Reader, 32)
+	if err != nil {
+		return nil, err
+	}
+	cookieStoreKeys.Encryption = encryptionBuffer.Bytes()
+
+	err = updateHandler.setSetting(cookieStoreKeysLocator, cookieStoreKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	updateHandler.subscriptionHandler.FireCookieStoreKeysUpdatedEvent(cookieStoreKeys)
+	return cookieStoreKeys, nil
 }

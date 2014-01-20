@@ -5,9 +5,10 @@ import (
 )
 
 type SubscriptionHandler struct {
-	repositoryKeyPairUpdatedSubscriptionManager  resources.SubscriptionManager
-	s3ExporterSettingsUpdatedSubscriptionManager resources.SubscriptionManager
-	s3ExporterSettingsClearedSubscriptionManager resources.SubscriptionManager
+	repositoryKeyPairUpdatedSubscriptionManager         resources.SubscriptionManager
+	s3ExporterSettingsUpdatedSubscriptionManager        resources.SubscriptionManager
+	s3ExporterSettingsClearedSubscriptionManager        resources.SubscriptionManager
+	s3ExporterCookieStoreKeysUpdatedSubscriptionManager resources.SubscriptionManager
 }
 
 func NewInternalSubscriptionHandler() (resources.InternalSettingsSubscriptionHandler, error) {
@@ -48,4 +49,16 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromS3ExporterSetting
 
 func (subscriptionHandler *SubscriptionHandler) FireS3ExporterSettingsClearedEvent() {
 	subscriptionHandler.s3ExporterSettingsClearedSubscriptionManager.Fire()
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToCookieStoreKeysUpdatedEvents(updateHandler resources.CookieStoreKeysUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.s3ExporterCookieStoreKeysUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCookieStoreKeysUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.s3ExporterCookieStoreKeysUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireCookieStoreKeysUpdatedEvent(keys *resources.CookieStoreKeys) {
+	subscriptionHandler.s3ExporterCookieStoreKeysUpdatedSubscriptionManager.Fire(keys)
 }

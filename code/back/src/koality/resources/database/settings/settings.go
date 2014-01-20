@@ -9,6 +9,17 @@ const (
 	encryptionKey = "e36d0e19bbc78ca123540f7334896c71"
 )
 
+type SettingLocator struct {
+	Resource string
+	Key      string
+}
+
+var (
+	repositoryKeyPairLocator  SettingLocator = SettingLocator{"Repository", "KeyPair"}
+	s3ExporterSettingsLocator SettingLocator = SettingLocator{"Exporter", "S3Settings"}
+	cookieStoreKeysLocator    SettingLocator = SettingLocator{"CookieStore", "Keys"}
+)
+
 func New(database *sql.DB) (*resources.SettingsHandler, error) {
 	verifier, err := NewVerifier(database)
 	if err != nil {

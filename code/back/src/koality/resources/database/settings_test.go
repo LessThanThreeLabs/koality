@@ -1,6 +1,7 @@
 package database
 
 import (
+	"bytes"
 	"koality/resources"
 	"testing"
 	"time"
@@ -16,6 +17,13 @@ func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	repositoryKeyPair, err := connection.Settings.Read.GetRepositoryKeyPair()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		test.Fatal("Expected repository key pair to have default")
+	} else if err != nil {
+		test.Fatal(err)
+	}
+
 	keyPairUpdatedEventReceived := make(chan bool, 1)
 	var keyPairUpdatedEventKeyPair *resources.RepositoryKeyPair
 	keyPairUpdatedHandler := func(keyPair *resources.RepositoryKeyPair) {
@@ -27,7 +35,7 @@ func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repositoryKeyPair, err := connection.Settings.Update.ResetRepositoryKeyPair()
+	repositoryKeyPair, err = connection.Settings.Update.ResetRepositoryKeyPair()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -154,5 +162,73 @@ func TestSettingsS3ExporterSettings(test *testing.T) {
 	_, err = connection.Settings.Read.GetS3ExporterSettings()
 	if _, ok := err.(resources.NoSuchSettingError); !ok {
 		test.Fatal("Expected NoSuchSettingError when trying to get s3 exporter settings that have been cleared")
+	}
+}
+
+func TestSettingsResetCookieStoreKeys(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	cookieStoreKeys, err := connection.Settings.Read.GetCookieStoreKeys()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		test.Fatal("Expected cookie store keys to have default")
+	} else if err != nil {
+		test.Fatal(err)
+	}
+
+	keysUpdatedEventReceived := make(chan bool, 1)
+	var keysUpdatedEventKeys *resources.CookieStoreKeys
+	keysUpdatedHandler := func(keys *resources.CookieStoreKeys) {
+		keysUpdatedEventKeys = keys
+		keysUpdatedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToCookieStoreKeysUpdatedEvents(keysUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	cookieStoreKeys, err = connection.Settings.Update.ResetCookieStoreKeys()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-keysUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear cookie store keys updated event")
+	}
+
+	if bytes.Compare(keysUpdatedEventKeys.Authentication, cookieStoreKeys.Authentication) != 0 {
+		test.Fatal("Bad cookieStoreKeys.Authentication in cookie store keys updated event")
+	} else if bytes.Compare(keysUpdatedEventKeys.Encryption, cookieStoreKeys.Encryption) != 0 {
+		test.Fatal("Bad cookieStoreKeys.Encryption in cookie store keys updated event")
+	}
+
+	cookieStoreKeys2, err := connection.Settings.Read.GetCookieStoreKeys()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if bytes.Compare(cookieStoreKeys.Authentication, cookieStoreKeys2.Authentication) != 0 {
+		test.Fatal("Authentication mismatch")
+	} else if bytes.Compare(cookieStoreKeys.Encryption, cookieStoreKeys2.Encryption) != 0 {
+		test.Fatal("Encryption mismatch")
+	}
+
+	cookieStoreKeys3, err := connection.Settings.Update.ResetCookieStoreKeys()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if bytes.Compare(cookieStoreKeys.Authentication, cookieStoreKeys3.Authentication) == 0 {
+		test.Fatal("Expected new Authentication")
+	} else if bytes.Compare(cookieStoreKeys.Encryption, cookieStoreKeys3.Encryption) == 0 {
+		test.Fatal("Expected new Encryption")
 	}
 }

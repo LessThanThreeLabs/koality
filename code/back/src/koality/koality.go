@@ -34,10 +34,15 @@ func main() {
 
 	// TODO: initialize more components here
 
+	webserver, err := webserver.New(resourcesConnection, webserverPort)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("Koality successfully started!")
 
 	// This will block
-	err = webserver.Start(resourcesConnection, webserverPort)
+	err = webserver.Start()
 	if err != nil {
 		panic(err)
 	}
