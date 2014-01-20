@@ -88,6 +88,15 @@ func TestSettingsS3ExporterSettings(test *testing.T) {
 		test.Fatal(err)
 	}
 
+	s3ExporterSettingsClearedEventReceived := make(chan bool, 1)
+	s3ExporterSettingsClearedHandler := func() {
+		s3ExporterSettingsClearedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToS3ExporterSettingsClearedEvents(s3ExporterSettingsClearedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	accessKey := "aaaabbbbccccddddeeee"
 	secretKey := "0000111122223333444455556666777788889999"
 	bucketName := "some-bucket-name"
@@ -129,5 +138,21 @@ func TestSettingsS3ExporterSettings(test *testing.T) {
 		test.Fatal("SecretKey mismatch")
 	} else if s3ExporterSettings.BucketName != s3ExporterSettings2.BucketName {
 		test.Fatal("BucketName mismatch")
+	}
+
+	err = connection.Settings.Delete.ClearS3ExporterSettings()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-s3ExporterSettingsClearedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear s3 exporter settings cleared event")
+	}
+
+	_, err = connection.Settings.Read.GetS3ExporterSettings()
+	if _, ok := err.(resources.NoSuchSettingError); !ok {
+		test.Fatal("Expected NoSuchSettingError when trying to get s3 exporter settings that have been cleared")
 	}
 }

@@ -40,5 +40,10 @@ func New(database *sql.DB) (*resources.SettingsHandler, error) {
 		return nil, err
 	}
 
-	return &resources.SettingsHandler{readHandler, updateHandler, internalSubscriptionHandler}, nil
+	deleteHandler, err := NewDeleteHandler(database, internalSubscriptionHandler)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resources.SettingsHandler{readHandler, updateHandler, deleteHandler, internalSubscriptionHandler}, nil
 }

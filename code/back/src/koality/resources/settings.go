@@ -14,6 +14,7 @@ type S3ExporterSettings struct {
 type SettingsHandler struct {
 	Read         SettingsReadHandler
 	Update       SettingsUpdateHandler
+	Delete       SettingsDeleteHandler
 	Subscription SettingsSubscriptionHandler
 }
 
@@ -27,19 +28,27 @@ type SettingsUpdateHandler interface {
 	SetS3ExporterSettings(accessKey, secretKey, bucketName string) (*S3ExporterSettings, error)
 }
 
+type SettingsDeleteHandler interface {
+	ClearS3ExporterSettings() error
+}
+
 type RepositoryKeyPairUpdatedHandler func(keyPair *RepositoryKeyPair)
 type S3ExporterSettingsUpdatedHandler func(s3Settings *S3ExporterSettings)
+type S3ExporterSettingsClearedHandler func()
 
 type SettingsSubscriptionHandler interface {
 	SubscribeToRepositoryKeyPairUpdatedEvents(updateHandler RepositoryKeyPairUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromRepositoryKeyPairUpdatedEvents(subscriptionId SubscriptionId) error
 	SubscribeToS3ExporterSettingsUpdatedEvents(updateHandler S3ExporterSettingsUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromS3ExporterSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+	SubscribeToS3ExporterSettingsClearedEvents(updateHandler S3ExporterSettingsClearedHandler) (SubscriptionId, error)
+	UnsubscribeFromS3ExporterSettingsClearedEvents(subscriptionId SubscriptionId) error
 }
 
 type InternalSettingsSubscriptionHandler interface {
 	FireRepositoryKeyPairUpdatedEvent(keyPair *RepositoryKeyPair)
 	FireS3ExporterSettingsUpdatedEvent(s3ExporterSettings *S3ExporterSettings)
+	FireS3ExporterSettingsClearedEvent()
 	SettingsSubscriptionHandler
 }
 

@@ -18,9 +18,7 @@ func main() {
 	resourcesConnection, err := database.New()
 	if err != nil {
 		panic(err)
-	}
-	err = database.Migrate()
-	if err != nil {
+	} else if err = database.Migrate(); err != nil {
 		panic(err)
 	}
 	database.KeepClean(resourcesConnection)
