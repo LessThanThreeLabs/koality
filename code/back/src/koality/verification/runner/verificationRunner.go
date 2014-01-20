@@ -48,7 +48,9 @@ func New(resourcesConnection *resources.Connection, virtualMachinePools []vm.Vir
 
 func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
 	onVerificationCreated := func(verification *resources.Verification) {
-		verificationRunner.RunVerification(verification)
+		if verification.SnapshotId == 0 {
+			verificationRunner.RunVerification(verification)
+		}
 	}
 	onEc2PoolCreated := func(ec2Pool *resources.Ec2Pool) {
 		verificationRunner.virtualMachinePoolMapLocker.Lock()

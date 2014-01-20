@@ -62,11 +62,3 @@ type InternalSettingsSubscriptionHandler interface {
 	FireCookieStoreKeysUpdatedEvent(keys *CookieStoreKeys)
 	SettingsSubscriptionHandler
 }
-
-type NoSuchSettingError struct {
-	Message string
-}
-
-func (err NoSuchSettingError) Error() string {
-	return err.Message
-}

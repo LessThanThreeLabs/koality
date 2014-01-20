@@ -35,6 +35,17 @@ func NewVerifier(database *sql.DB) (*Verifier, error) {
 	return &Verifier{database}, nil
 }
 
+func (verifier *Verifier) verifySnapshotExists(snapshotId uint64) error {
+	query := "SELECT id FROM snapshots WHERE id=$1"
+	err := verifier.database.QueryRow(query, snapshotId).Scan(new(uint64))
+	if err == sql.ErrNoRows {
+		return resources.NoSuchSnapshotError{fmt.Sprintf("Snapshot with id %d does not exist.", snapshotId)}
+	} else if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (verifier *Verifier) verifyHeadSha(headSha string) error {
 	if len(headSha) != headShaLength {
 		return fmt.Errorf("Head SHA must be %d characters long", headShaLength)

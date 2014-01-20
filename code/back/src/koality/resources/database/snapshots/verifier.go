@@ -59,10 +59,10 @@ func (verifier *Verifier) verifyPoolExists(poolId uint64) error {
 	//TODO(akostov) pools in general? Trying to have snapshots be general over here...
 	query := "SELECT id FROM ec2_pools WHERE id=$1"
 	err := verifier.database.QueryRow(query, poolId).Scan(new(uint64))
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return resources.NoSuchPoolError{fmt.Sprintf("Pool with id %d does not exist.", poolId)}
+	} else if err != nil {
 		return err
-	} else if err == sql.ErrNoRows {
-		return resources.PoolDoesNotExistError{fmt.Sprintf("Pool with id %d does not exist.", poolId)}
 	}
 	return nil
 }

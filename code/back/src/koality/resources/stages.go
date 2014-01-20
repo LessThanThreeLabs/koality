@@ -119,35 +119,3 @@ type InternalStagesSubscriptionHandler interface {
 	FireExportsAddedEvent(stageRunId uint64, exports []Export)
 	StagesSubscriptionHandler
 }
-
-type NoSuchStageError struct {
-	Message string
-}
-
-func (err NoSuchStageError) Error() string {
-	return err.Message
-}
-
-type StageAlreadyExistsError struct {
-	Message string
-}
-
-func (err StageAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type NoSuchStageRunError struct {
-	Message string
-}
-
-func (err NoSuchStageRunError) Error() string {
-	return err.Message
-}
-
-type NoSuchXunitError struct {
-	Message string
-}
-
-func (err NoSuchXunitError) Error() string {
-	return err.Message
-}

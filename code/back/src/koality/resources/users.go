@@ -91,35 +91,3 @@ type InternalUsersSubscriptionHandler interface {
 	FireSshKeyRemovedEvent(userId, sshKeyId uint64)
 	UsersSubscriptionHandler
 }
-
-type UserAlreadyExistsError struct {
-	Message string
-}
-
-func (err UserAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type NoSuchUserError struct {
-	Message string
-}
-
-func (err NoSuchUserError) Error() string {
-	return err.Message
-}
-
-type KeyAlreadyExistsError struct {
-	Message string
-}
-
-func (err KeyAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type NoSuchKeyError struct {
-	Message string
-}
-
-func (err NoSuchKeyError) Error() string {
-	return err.Message
-}

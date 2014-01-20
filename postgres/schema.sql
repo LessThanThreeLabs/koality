@@ -75,9 +75,49 @@ CREATE TABLE IF NOT EXISTS changesets (
 	UNIQUE (head_sha, base_sha)
 );
 
+CREATE TABLE IF NOT EXISTS ec2_pools (
+	id 					serial PRIMARY KEY,
+	name 				varchar(256) NOT NULL,
+	access_key 			varchar(20) NOT NULL,
+	secret_key 			varchar(40) NOT NULL,
+	username 			varchar(256) NOT NULL,
+	base_ami_id 		varchar(12),
+	security_group_id 	varchar(11),
+	vpc_subnet_id 		varchar(15),
+	instance_type 		varchar(64) NOT NULL,
+	num_ready_instances integer NOT NULL,
+	num_max_instances 	integer NOT NULL,
+	root_drive_size 	integer NOT NULL,  -- in GB
+	user_data 			varchar(1000000),  -- 1MB
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
+	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
+
+	UNIQUE (name, deleted),
+	CHECK (deleted = 0 OR deleted = id),
+	CHECK (num_ready_instances <= num_max_instances)
+);
+
+CREATE TABLE IF NOT EXISTS snapshots (
+	id 					serial PRIMARY KEY,
+	pool_id				integer NOT NULL references ec2_pools(id) ON DELETE CASCADE,
+	image_id			varchar(12),
+	image_type			varchar(20) NOT NULL,
+	status 				varchar(32) NOT NULL,
+	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
+	started				timestamp with time zone,
+	ended				timestamp with time zone,
+	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
+
+	UNIQUE (image_id),
+	CHECK (deleted = 0 OR deleted = id),
+	CHECK (started IS NULL OR created <= started),
+	CHECK (started IS NULL OR ended IS NULL OR started <= ended)
+);
+
 CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
 	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
+	snapshot_id			integer references snapshots(id) ON DELETE CASCADE,
 	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
 	merge_target		varchar(1024),
 	email_to_notify		varchar(256),
@@ -168,28 +208,6 @@ CREATE TABLE IF NOT EXISTS exports (
 
 	UNIQUE (run_id, path),
 	UNIQUE (run_id, key)
-);
-
-CREATE TABLE IF NOT EXISTS ec2_pools (
-	id 					serial PRIMARY KEY,
-	name 				varchar(256) NOT NULL,
-	access_key 			varchar(20) NOT NULL,
-	secret_key 			varchar(40) NOT NULL,
-	username 			varchar(256) NOT NULL,
-	base_ami_id 		varchar(12),
-	security_group_id 	varchar(11),
-	vpc_subnet_id 		varchar(15),
-	instance_type 		varchar(64) NOT NULL,
-	num_ready_instances integer NOT NULL,
-	num_max_instances 	integer NOT NULL,
-	root_drive_size 	integer NOT NULL,  -- in GB
-	user_data 			varchar(1000000),  -- 1MB
-	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
-	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
-
-	UNIQUE (name, deleted),
-	CHECK (deleted = 0 OR deleted = id),
-	CHECK (num_ready_instances <= num_max_instances)
 );
 
 CREATE TABLE IF NOT EXISTS settings (

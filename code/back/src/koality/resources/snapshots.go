@@ -74,27 +74,3 @@ type InternalSnapshotsSubscriptionHandler interface {
 	FireEndTimeUpdatedEvent(snapshotId uint64, endTime time.Time)
 	SnapshotsSubscriptionHandler
 }
-
-type NoSuchSnapshotError struct {
-	Message string
-}
-
-func (err NoSuchSnapshotError) Error() string {
-	return err.Message
-}
-
-type InvalidSnapshotStatusError struct {
-	Message string
-}
-
-func (err InvalidSnapshotStatusError) Error() string {
-	return err.Message
-}
-
-type PoolDoesNotExistError struct {
-	Message string
-}
-
-func (err PoolDoesNotExistError) Error() string {
-	return err.Message
-}

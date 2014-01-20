@@ -74,19 +74,3 @@ type InternalPoolsSubscriptionHandler interface {
 		numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string)
 	PoolsSubscriptionHandler
 }
-
-type NoSuchPoolError struct {
-	Message string
-}
-
-func (err NoSuchPoolError) Error() string {
-	return err.Message
-}
-
-type PoolAlreadyExistsError struct {
-	Message string
-}
-
-func (err PoolAlreadyExistsError) Error() string {
-	return err.Message
-}
