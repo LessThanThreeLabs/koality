@@ -8,6 +8,7 @@ import (
 	"koality/vm/ec2/ec2broker"
 	"koality/vm/localmachine"
 	"koality/webserver"
+	"runtime"
 )
 
 const (
@@ -15,6 +16,8 @@ const (
 )
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	resourcesConnection, err := database.New()
 	if err != nil {
 		panic(err)
