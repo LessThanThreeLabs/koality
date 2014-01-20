@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/sessions"
 	"koality/resources"
 	"net/http"
-	"time"
 )
 
 type Webserver struct {
@@ -22,8 +21,16 @@ func New(resourcesConnection *resources.Connection, port int) (*Webserver, error
 }
 
 func (webserver *Webserver) Start() error {
-	sessionStore := webserver.createSessionStore()
-	router := webserver.createRouter()
+	sessionStore, err := webserver.createSessionStore()
+	if err != nil {
+		return err
+	}
+
+	router, err := webserver.createRouter()
+	if err != nil {
+		return err
+	}
+
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
 		context.Set(request, "userId", session.Values["userId"])
@@ -34,10 +41,10 @@ func (webserver *Webserver) Start() error {
 	return http.ListenAndServe(webserver.address, nil)
 }
 
-func (webserver *Webserver) createSessionStore() sessions.Store {
+func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 	cookieStoreKeys, err := webserver.resourcesConnection.Settings.Read.GetCookieStoreKeys()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	sessionStore := sessions.NewCookieStore(cookieStoreKeys.Authentication, cookieStoreKeys.Encryption)
@@ -47,38 +54,28 @@ func (webserver *Webserver) createSessionStore() sessions.Store {
 		HttpOnly: true,
 		Secure:   true,
 	}
-	return sessionStore
+	return sessionStore, nil
 }
 
-func (webserver *Webserver) createRouter() *mux.Router {
+func (webserver *Webserver) createRouter() (*mux.Router, error) {
 	router := mux.NewRouter()
 	subrouter := router.PathPrefix("/app").Subrouter()
 
-	userSubrouter := subrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()
-	userSubrouter.HandleFunc("/blah", SomeUserHandler)
+	usersSubrouter := subrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()
+	handleUsersSubroute(usersSubrouter, webserver.resourcesConnection.Users)
 
-	subrouter.HandleFunc("/", SomeHandler)
-	subrouter.HandleFunc("/2", SomeHandler2)
+	// TODO: create and handle more subroutes
 
-	return router
+	return router, nil
 }
 
 func isLoggedIn(request *http.Request, match *mux.RouteMatch) bool {
-	userId, ok := context.Get(request, "userId").(uint64)
-	if !ok {
-		return false
-	}
-	return userId != 0
-}
+	fmt.Println("Temporarily assuming logged in")
+	return true
 
-func SomeUserHandler(writer http.ResponseWriter, request *http.Request) {
-	fmt.Fprintf(writer, "Some user handler - %v", time.Now())
-}
-
-func SomeHandler(writer http.ResponseWriter, request *http.Request) {
-	fmt.Fprintf(writer, "Some handler - %v", time.Now())
-}
-
-func SomeHandler2(writer http.ResponseWriter, request *http.Request) {
-	fmt.Fprintf(writer, "Some handler 2 - %v", time.Now())
+	// userId, ok := context.Get(request, "userId").(uint64)
+	// if !ok {
+	// 	return false
+	// }
+	// return userId != 0
 }
