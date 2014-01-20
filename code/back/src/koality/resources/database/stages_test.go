@@ -104,10 +104,9 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal("stage.OrderNumber mismatch")
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-createEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage creation event")
 	}
 
@@ -160,10 +159,9 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-stageRunCreatedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run creation event")
 	}
 
@@ -176,10 +174,9 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-stageRunCreatedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run creation event")
 	}
 
@@ -270,10 +267,9 @@ func TestStageReturnCode(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-stageRunEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run return code updated event")
 	}
 
@@ -374,10 +370,9 @@ func TestStageTimes(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-stageRunStartTimeEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run start time event")
 	}
 
@@ -403,10 +398,9 @@ func TestStageTimes(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-stageRunEndTimeEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run end time event")
 	}
 
@@ -481,10 +475,9 @@ func TestConsoleLines(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-stageRunEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run console lines added event")
 	}
 
@@ -611,10 +604,9 @@ func TestXunit(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-stageRunEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run xunit results added event")
 	}
 
@@ -715,10 +707,9 @@ func TestExport(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-stageRunEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear stage run exports added event")
 	}
 

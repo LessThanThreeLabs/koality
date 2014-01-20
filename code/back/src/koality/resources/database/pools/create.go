@@ -53,32 +53,23 @@ func (createHandler *CreateHandler) getEc2ParamsError(name, accessKey, secretKey
 
 	if err := createHandler.verifier.verifyName(name); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
+	} else if err := createHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
+	} else if err := createHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyUsername(username); err != nil {
+	} else if err := createHandler.verifier.verifyUsername(username); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2BaseAmiId(baseAmiId); err != nil {
+	} else if err := createHandler.verifier.verifyEc2BaseAmiId(baseAmiId); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2SecurityGroupId(securityGroupId); err != nil {
+	} else if err := createHandler.verifier.verifyEc2SecurityGroupId(securityGroupId); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2VpcSubnetId(vpcSubnetId); err != nil {
+	} else if err := createHandler.verifier.verifyEc2VpcSubnetId(vpcSubnetId); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2InstanceType(instanceType); err != nil {
+	} else if err := createHandler.verifier.verifyEc2InstanceType(instanceType); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyReadyAndMaxInstances(numReadyInstances, numMaxInstances); err != nil {
+	} else if err := createHandler.verifier.verifyReadyAndMaxInstances(numReadyInstances, numMaxInstances); err != nil {
 		return err
-	}
-	if err := createHandler.verifier.verifyEc2RootDriveSize(rootDriveSize); err != nil {
+	} else if err := createHandler.verifier.verifyEc2RootDriveSize(rootDriveSize); err != nil {
 		return err
 	}
 	return nil

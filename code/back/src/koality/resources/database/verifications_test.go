@@ -109,10 +109,9 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal("verification.Changeset.HeadEmail mismatch")
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-createdEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear verification creation event")
 	}
 
@@ -169,10 +168,9 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-createdEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear verification creation event")
 	}
 
@@ -261,10 +259,9 @@ func TestVerificationStatuses(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-verificationStatusEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear verification status updated event")
 	}
 
@@ -291,10 +288,9 @@ func TestVerificationStatuses(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-verificationMergeStatusEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear verification merge status updated event")
 	}
 
@@ -388,10 +384,9 @@ func TestVerificationTimes(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-verificationStartTimeEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear verification start time event")
 	}
 
@@ -417,10 +412,9 @@ func TestVerificationTimes(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-verificationEndTimeEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear verification end time event")
 	}
 

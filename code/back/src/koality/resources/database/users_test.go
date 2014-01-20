@@ -106,10 +106,9 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal("user.IsAdmin mismatch")
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-createdEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear user creation event")
 	}
 
@@ -160,10 +159,9 @@ func TestCreateAndDeleteUser(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-deletedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear user creation event")
 	}
 
@@ -253,10 +251,9 @@ func TestUsersUpdateName(test *testing.T) {
 			test.Fatal(err)
 		}
 
-		timeout := time.After(10 * time.Second)
 		select {
 		case <-userEventReceived:
-		case <-timeout:
+		case <-time.After(10 * time.Second):
 			test.Fatal("Failed to hear user name updated event")
 		}
 
@@ -421,10 +418,9 @@ func TestUsersUpdateAdmin(test *testing.T) {
 			test.Fatal(err)
 		}
 
-		timeout := time.After(10 * time.Second)
 		select {
 		case <-userEventReceived:
-		case <-timeout:
+		case <-time.After(10 * time.Second):
 			test.Fatal("Failed to hear user admin updated event")
 		}
 
@@ -522,10 +518,9 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-userSshKeyAddedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear user ssh key added event")
 	}
 
@@ -556,10 +551,9 @@ func TestUsersSshKeys(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-userSshKeyRemovedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear user ssh key removed event")
 	}
 

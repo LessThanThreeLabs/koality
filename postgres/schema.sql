@@ -202,8 +202,8 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 CREATE TABLE IF NOT EXISTS version (
-	id serial PRIMARY KEY,
-	version integer NOT NULL
+	id 					serial PRIMARY KEY,
+	version 			integer NOT NULL
 );
 
 DO

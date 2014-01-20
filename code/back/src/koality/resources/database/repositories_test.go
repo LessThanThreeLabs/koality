@@ -115,10 +115,9 @@ func TestCreateRepository(test *testing.T) {
 		test.Fatal("Expected repository.GitHub to be nil")
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-createdEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository creation event")
 	}
 
@@ -175,10 +174,9 @@ func TestCreateRepository(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-deletedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository deletion event")
 	}
 
@@ -249,10 +247,9 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Name mismatch")
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-createdEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository creation event")
 	}
 
@@ -303,10 +300,9 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-deletedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository deletion event")
 	}
 
@@ -357,10 +353,9 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-repositoryEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository status updated event")
 	}
 
@@ -375,10 +370,9 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-repositoryEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository status event")
 	}
 
@@ -440,10 +434,9 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-repositoryEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository hook event")
 	}
 
@@ -481,10 +474,9 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-repositoryEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear repository hook event")
 	}
 

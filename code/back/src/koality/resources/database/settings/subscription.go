@@ -5,7 +5,8 @@ import (
 )
 
 type SubscriptionHandler struct {
-	repositoryKeyPairUpdatedSubscriptionManager resources.SubscriptionManager
+	repositoryKeyPairUpdatedSubscriptionManager  resources.SubscriptionManager
+	s3ExporterSettingsUpdatedSubscriptionManager resources.SubscriptionManager
 }
 
 func NewInternalSubscriptionHandler() (resources.InternalSettingsSubscriptionHandler, error) {
@@ -22,4 +23,16 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromRepositoryKeyPair
 
 func (subscriptionHandler *SubscriptionHandler) FireRepositoryKeyPairUpdatedEvent(keyPair *resources.RepositoryKeyPair) {
 	subscriptionHandler.repositoryKeyPairUpdatedSubscriptionManager.Fire(keyPair)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToS3ExporterSettingsUpdatedEvents(updateHandler resources.S3ExporterSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.s3ExporterSettingsUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromS3ExporterSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.s3ExporterSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireS3ExporterSettingsUpdatedEvent(s3ExporterSettings *resources.S3ExporterSettings) {
+	subscriptionHandler.s3ExporterSettingsUpdatedSubscriptionManager.Fire(s3ExporterSettings)
 }

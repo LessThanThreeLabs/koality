@@ -18,34 +18,40 @@ func NewReadHandler(database *sql.DB, verifier *Verifier, encrypter *Encrypter, 
 	return &ReadHandler{database, verifier, encrypter, subscriptionHandler}, nil
 }
 
-func (readHandler *ReadHandler) getSetting(resource, key string) ([]byte, error) {
+func (readHandler *ReadHandler) getSetting(resource, key string, destination interface{}) error {
 	var value []byte
 	query := "SELECT value FROM settings WHERE resource=$1 AND key=$2"
 	row := readHandler.database.QueryRow(query, resource, key)
 	err := row.Scan(&value)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find setting %s-%s", resource, key)
-		return nil, resources.NoSuchSettingError{errorText}
+		return resources.NoSuchSettingError{errorText}
 	} else if err != nil {
-		return nil, err
+		return err
 	}
 
-	if len(value) == 0 {
-		return nil, nil
+	decryptedValue, err := readHandler.encrypter.DecryptValue(value)
+	if err != nil {
+		return err
 	}
-	return readHandler.encrypter.DecryptValue(value)
+
+	return json.Unmarshal(decryptedValue, destination)
 }
 
 func (readHandler *ReadHandler) GetRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
-	jsonedKeyPair, err := readHandler.getSetting("Repository", "KeyPair")
-	if err != nil {
-		return nil, err
-	}
-
 	repositoryKeyPair := new(resources.RepositoryKeyPair)
-	err = json.Unmarshal(jsonedKeyPair, repositoryKeyPair)
+	err := readHandler.getSetting("Repository", "KeyPair", repositoryKeyPair)
 	if err != nil {
 		return nil, err
 	}
 	return repositoryKeyPair, nil
+}
+
+func (readHandler *ReadHandler) GetS3ExporterSettings() (*resources.S3ExporterSettings, error) {
+	s3Settings := new(resources.S3ExporterSettings)
+	err := readHandler.getSetting("Exporter", "S3Settings", s3Settings)
+	if err != nil {
+		return nil, err
+	}
+	return s3Settings, nil
 }

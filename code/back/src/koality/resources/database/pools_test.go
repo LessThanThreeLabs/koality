@@ -173,10 +173,9 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal("pool.UserData mismatch")
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-poolCreatedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear ec2 pool creation event")
 	}
 
@@ -299,10 +298,9 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout = time.After(10 * time.Second)
 	select {
 	case <-poolDeletedEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear ec2 pool deletion event")
 	}
 
@@ -406,10 +404,9 @@ func TestUsersEc2Settings(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	timeout := time.After(10 * time.Second)
 	select {
 	case <-poolEventReceived:
-	case <-timeout:
+	case <-time.After(10 * time.Second):
 		test.Fatal("Failed to hear ec2 pool settings updated updated event")
 	}
 

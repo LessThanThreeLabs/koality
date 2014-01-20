@@ -57,34 +57,26 @@ func (updateHandler *UpdateHandler) SetEc2Settings(poolId uint64, accessKey, sec
 	return nil
 }
 
-func (UpdateHandler *UpdateHandler) getEc2ParamsError(accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
+func (updateHandler *UpdateHandler) getEc2ParamsError(accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType string,
 	numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) error {
 
-	if err := UpdateHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
+	if err := updateHandler.verifier.verifyEc2AccessKey(accessKey); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
+	} else if err := updateHandler.verifier.verifyEc2SecretKey(secretKey); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyUsername(username); err != nil {
+	} else if err := updateHandler.verifier.verifyUsername(username); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyEc2BaseAmiId(baseAmiId); err != nil {
+	} else if err := updateHandler.verifier.verifyEc2BaseAmiId(baseAmiId); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyEc2SecurityGroupId(securityGroupId); err != nil {
+	} else if err := updateHandler.verifier.verifyEc2SecurityGroupId(securityGroupId); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyEc2VpcSubnetId(vpcSubnetId); err != nil {
+	} else if err := updateHandler.verifier.verifyEc2VpcSubnetId(vpcSubnetId); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyEc2InstanceType(instanceType); err != nil {
+	} else if err := updateHandler.verifier.verifyEc2InstanceType(instanceType); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyReadyAndMaxInstances(numReadyInstances, numMaxInstances); err != nil {
+	} else if err := updateHandler.verifier.verifyReadyAndMaxInstances(numReadyInstances, numMaxInstances); err != nil {
 		return err
-	}
-	if err := UpdateHandler.verifier.verifyEc2RootDriveSize(rootDriveSize); err != nil {
+	} else if err := updateHandler.verifier.verifyEc2RootDriveSize(rootDriveSize); err != nil {
 		return err
 	}
 	return nil

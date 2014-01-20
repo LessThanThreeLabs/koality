@@ -20,6 +20,11 @@ func New(database *sql.DB) (*resources.SettingsHandler, error) {
 		return nil, err
 	}
 
+	keyPairGenerator, err := resources.NewKeyPairGenerator()
+	if err != nil {
+		return nil, err
+	}
+
 	internalSubscriptionHandler, err := NewInternalSubscriptionHandler()
 	if err != nil {
 		return nil, err
@@ -30,7 +35,7 @@ func New(database *sql.DB) (*resources.SettingsHandler, error) {
 		return nil, err
 	}
 
-	updateHandler, err := NewUpdateHandler(database, verifier, encrypter, internalSubscriptionHandler)
+	updateHandler, err := NewUpdateHandler(database, verifier, encrypter, keyPairGenerator, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
