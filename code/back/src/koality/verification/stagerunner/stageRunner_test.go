@@ -81,8 +81,6 @@ func TestSimplePassingStages(test *testing.T) {
 }
 
 func TestExporting(test *testing.T) {
-	// FIXME right now you need to set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
-	// env vars for this test to work
 	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -96,6 +94,13 @@ func TestExporting(test *testing.T) {
 	defer virtualMachine.Terminate()
 
 	repository, err := resourcesConnection.Repositories.Create.Create("repositoryName", "git", "localUri", "remote@Uri")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	// REVIEW(dhuang) is putting this here a good idea?
+	_, err = resourcesConnection.Settings.Update.SetS3ExporterSettings(
+		"AKIAJIXWHV32ZY75SQBQ", "JgD4KK376m9Z3E3MjMt8YcPg3cuzl958Qjtbrht1", "koality-whim")
 	if err != nil {
 		test.Fatal(err)
 	}

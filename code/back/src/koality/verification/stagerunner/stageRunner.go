@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/dchest/goyaml"
 	"io"
@@ -135,10 +136,17 @@ func (stageRunner *StageRunner) exportAndGetResults(stageId uint64, stageRunId u
 
 	exportPrefix := fmt.Sprintf("repository/%d/verification/%d/stage/%d/stageRun/%d",
 		stageRunner.verification.Changeset.RepositoryId, stageRunner.verification.Id, stageId, stageRunId)
+	s3ExporterSettings, err := stageRunner.resourcesConnection.Settings.Read.GetS3ExporterSettings()
+	if err != nil {
+		return nil, err
+	} else if s3ExporterSettings == nil {
+		return nil, errors.New("No s3 settings present.")
+	}
+
 	args := append([]string{
-		shell.Quote(""), // TODO accessKey
-		shell.Quote(""), // TODO secretKey
-		"koality-whim",  // TODO bucketName,
+		shell.Quote(s3ExporterSettings.AccessKey),
+		shell.Quote(s3ExporterSettings.SecretKey),
+		shell.Quote(s3ExporterSettings.BucketName),
 		exportPrefix,
 		"us-east-1", // US Standard
 	}, sectionToRun.Exports()...)
