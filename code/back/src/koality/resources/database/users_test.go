@@ -224,7 +224,7 @@ func TestUsersRead(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	userId, err := connection.Users.Read.GetIdByKey("ssh-rsa abc")
+	userId, err := connection.Users.Read.GetIdByPublicKey("ssh-rsa abc")
 	if err != nil {
 		test.Fatal(err)
 	}
