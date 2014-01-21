@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"koality/internalapi"
 	"koality/resources/database"
+	"koality/resources/database/migrate"
 	verificationrunner "koality/verification/runner"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
@@ -22,7 +23,7 @@ func main() {
 	resourcesConnection, err := database.New()
 	if err != nil {
 		panic(err)
-	} else if err = database.Migrate(); err != nil {
+	} else if err = database.Migrate(migrate.Migrations); err != nil {
 		panic(err)
 	}
 	database.KeepClean(resourcesConnection)

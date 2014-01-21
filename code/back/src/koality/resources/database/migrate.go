@@ -3,61 +3,90 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"koality/resources/database/migrate"
+	"koality/util/log"
 )
 
-func Migrate() error {
+type Migration struct {
+	FromVersion uint64
+	ToVersion   uint64
+	Migrate     func(transaction *sql.Tx) error
+}
+
+func Migrate(migrations []Migration) error {
+	migrationsMap, err := toMigrationsMap(migrations)
+	if err != nil {
+		return err
+	}
+
 	database, err := getDatabaseConnection()
 	if err != nil {
 		return err
 	}
 
-	version, err := getDatabaseVersion(database)
+	originalVersion, err := getDatabaseVersion(database)
 	if err != nil {
 		return err
 	}
-
-	originalVersion := version
 
 	transaction, err := database.Begin()
 	if err != nil {
 		return err
 	}
 
-	for {
-		migration, ok := migrate.Migrations[version]
-		if !ok {
-			if version != originalVersion {
-				_, err = transaction.Exec("UPDATE version SET version=$1", version)
-				if err == nil {
-					err = transaction.Commit()
-				}
-				if err != nil {
-					fmt.Printf("Failed to migrate database from version %d to %d\n", originalVersion, version)
-					txErr := transaction.Rollback()
-					if txErr != nil {
-						return txErr
-					}
-					return err
-				}
-				fmt.Printf("Migrated database from version %d to %d\n", originalVersion, version)
-				return nil
-			}
-			fmt.Printf("Already at latest database version: %d\n", version)
-			return nil
+	finalVersion, err := runMigrations(originalVersion, migrationsMap, transaction)
+	if err != nil {
+		rollbackErr := transaction.Rollback()
+		if rollbackErr != nil {
+			return fmt.Errorf("%v\n%v", err, rollbackErr)
 		}
+		return err
+	}
 
-		err = migration.Migrate(transaction)
+	if finalVersion == originalVersion {
+		log.Infof("Already at latest database version: %d\n", finalVersion)
+	} else {
+		_, err = transaction.Exec("UPDATE version SET version=$1", finalVersion)
+		if err == nil {
+			err = transaction.Commit()
+		}
 		if err != nil {
-			fmt.Printf("Failed to migrate database from version %d to %d, rolling back to %d\n", version, migration.ToVersion, originalVersion)
-			txErr := transaction.Rollback()
-			if txErr != nil {
-				return txErr
+			fmt.Printf("Failed to migrate database from version %d to %d\n", originalVersion, finalVersion)
+			rollbackErr := transaction.Rollback()
+			if rollbackErr != nil {
+				return fmt.Errorf("Failed to migrate database from version %d to %d\n%v\n%v", originalVersion, finalVersion, err, rollbackErr)
 			}
-			return err
+			return fmt.Errorf("Failed to migrate database from version %d to %d\n%v", originalVersion, finalVersion, err)
+		}
+		log.Infof("Migrated database from version %d to %d\n", originalVersion, finalVersion)
+	}
+	return nil
+}
+
+func runMigrations(originalVersion uint64, migrationsMap map[uint64]Migration, transaction *sql.Tx) (uint64, error) {
+	version := originalVersion
+	for {
+		migration, ok := migrationsMap[version]
+		if !ok {
+			return version, nil
+		}
+		if err := migration.Migrate(transaction); err != nil {
+			return version, fmt.Errorf("Failed to migrate database from version %d to %d, rolling back to %d\n%v", version, migration.ToVersion, originalVersion, err)
 		}
 		version = migration.ToVersion
 	}
+}
+
+func toMigrationsMap(migrations []Migration) (map[uint64]Migration, error) {
+	migrationsMap := make(map[uint64]Migration, len(migrations))
+	for _, migration := range migrations {
+		_, ok := migrationsMap[migration.FromVersion]
+		if ok {
+			return nil, fmt.Errorf("Found multiple migrations which have FromVersion: %d", migration.FromVersion)
+		}
+
+		migrationsMap[migration.FromVersion] = migration
+	}
+	return migrationsMap, nil
 }
 
 func getDatabaseVersion(database *sql.DB) (uint64, error) {
