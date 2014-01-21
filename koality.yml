@@ -6,20 +6,11 @@ setup:
       username: koality
       password: lt3
 - scripts:
-  - |
-    echo '
-    file_cache_path "/home/lt3/koality-v1/chef-cache"
-    cookbook_path "/home/lt3/koality-v1/chef/cookbooks"
-    json_attribs "/home/lt3/koality-v1/chef-node.json"
-    ' > chef-config.rb
-  - |
-    echo '
-    {
-      "run_list": [ "recipe[golang]" ]
-    }' > chef-node.json
-  - git submodule update --init --recursive
-  - gem install chef --no-ri --no-rdoc
-  - chef-solo -c chef-config.rb
+  # install go
+  - wget https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz
+  - tar -C /usr/local -xzf go1.1.linux-amd64.tar.gz
+  - export GOROOT=/home/lt3/koality-v1/code/back
+  - export PATH=$PATH:/usr/local/go/bin:$GOROOT/bin
 factories:
   - koality test factory:
     script:
