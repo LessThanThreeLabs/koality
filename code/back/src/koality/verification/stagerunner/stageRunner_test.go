@@ -77,8 +77,9 @@ func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
 
 	go func(doneChan chan error) {
 		for result := range suite.stageRunner.ResultsChan {
-			check.Check(result.Passed, gocheck.Equals, true,
-				fmt.Sprintf("Failed section %s", result.Section))
+			// check.Check(result.Passed, gocheck.Equals, true,
+			// 	check.Commentf("Failed section %s", result.Section))
+			check.Check(result.Passed, gocheck.Equals, true)
 		}
 
 		doneChan <- err
@@ -102,8 +103,9 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	err = copyExec.Run()
 	check.Assert(err, gocheck.IsNil)
 
+	exportPathsBinPath := "/home/koality/code/back/src/koality/util/exportPaths"
 	compileCmd := exec.Command("go", "build", "-o",
-		"/home/koality/code/back/src/koality/util/exportPaths",
+		exportPathsBinPath,
 		"/home/koality/code/back/src/koality/util/exportPaths.go")
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
@@ -162,6 +164,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	check.Assert(exports[0], gocheck.Equals, expectedExport)
 
 	close(suite.stageRunner.ResultsChan)
+	os.Remove(exportPathsBinPath)
 }
 
 func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
@@ -171,8 +174,9 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	err = copyExec.Run()
 	check.Assert(err, gocheck.IsNil)
 
+	getXunitResultsBinPath := "/home/koality/code/back/src/koality/util/getXunitResults"
 	compileCmd := exec.Command("go", "build", "-o",
-		"/home/koality/code/back/src/koality/util/getXunitResults",
+		getXunitResultsBinPath,
 		"/home/koality/code/back/src/koality/util/getXunitResults.go")
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
@@ -235,6 +239,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	check.Assert(xunitResults, gocheck.Equals, expectedXunitResults)
 
 	close(suite.stageRunner.ResultsChan)
+	os.Remove(getXunitResultsBinPath)
 }
 
 func (suite *StageRunnerSuite) TestSimpleFailingStages(check *gocheck.C) {
