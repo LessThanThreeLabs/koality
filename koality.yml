@@ -7,8 +7,7 @@ setup:
       password: lt3
 - scripts:
   # install go
-  - wget https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz
-  - tar -C /usr/local -xzf go1.2.linux-amd64.tar.gz
+  - curl -L https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz -s -o - | tar -C /usr/local -xzf -
   - export GOROOT=/home/lt3/koality-v1/code/back
   - export PATH=$PATH:/usr/local/go/bin:$GOROOT/bin
 factories:
