@@ -3,6 +3,7 @@ package webserver
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"koality/repositorymanager"
 	"koality/resources"
 	"net/http"
 	"strconv"
@@ -24,6 +25,18 @@ func CreateChangeHandler(resourcesConnection *resources.Connection) http.Handler
 
 		headSha := queryValues.Get("headSha")
 
-		fmt.Fprintf(writer, "Need to create a change with repository %v and sha %v", repositoryId, headSha)
+		repository, err := resourcesConnection.Repositories.Read.Get(repositoryId)
+		if err != nil {
+			fmt.Fprintf(writer, "I shit my pants")
+		}
+
+		repositorymanager.StorePending(repository, headSha)
+
+		message, username, email, err := repositorymanager.GetCommitAttributes(repository, headSha)
+		if err != nil {
+			fmt.Fprintf(writer, "I shit my pants")
+		}
+
+		fmt.Fprintf(writer, "Need to create a change with repository %v, message %s, username %s and email %s ", repository, message, username, email)
 	}
 }
