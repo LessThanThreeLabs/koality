@@ -51,7 +51,7 @@ func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error
 	return readHandler.scanUser(row)
 }
 
-func (readHandler *ReadHandler) GetIdByKey(publicKey string) (uint64, error) {
+func (readHandler *ReadHandler) GetIdByPublicKey(publicKey string) (uint64, error) {
 	query := "SELECT user_id FROM ssh_keys WHERE public_key=$1"
 	row := readHandler.database.QueryRow(query, publicKey)
 	var userId uint64
@@ -61,7 +61,6 @@ func (readHandler *ReadHandler) GetIdByKey(publicKey string) (uint64, error) {
 	} else if err != nil {
 		return 0, err
 	}
-
 	return userId, nil
 }
 

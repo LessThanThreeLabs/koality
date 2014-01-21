@@ -37,6 +37,7 @@ func main() {
 	}
 
 	// TODO: initialize more components here
+
 	internalapi.Setup(resourcesConnection, internalapi.RpcSocket)
 
 	webserver, err := webserver.New(resourcesConnection, webserverPort)

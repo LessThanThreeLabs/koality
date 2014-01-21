@@ -9,7 +9,7 @@ type PublicKeyVerifier struct {
 }
 
 func (publicKeyVerifier PublicKeyVerifier) GetUserIdForKey(publicKey string, userIdRes *uint64) error {
-	userId, err := publicKeyVerifier.resourcesConnection.Users.Read.GetIdByKey(publicKey)
+	userId, err := publicKeyVerifier.resourcesConnection.Users.Read.GetIdByPublicKey(publicKey)
 	if err == nil {
 		*userIdRes = userId
 		return nil

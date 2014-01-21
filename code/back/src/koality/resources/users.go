@@ -38,9 +38,9 @@ type UsersCreateHandler interface {
 type UsersReadHandler interface {
 	Get(userId uint64) (*User, error)
 	GetByEmail(email string) (*User, error)
+	GetIdByPublicKey(publicKey string) (uint64, error)
 	GetAll() ([]User, error)
 	GetKeys(userId uint64) ([]SshKey, error)
-	GetIdByKey(email string) (uint64, error)
 }
 
 type UsersUpdateHandler interface {
