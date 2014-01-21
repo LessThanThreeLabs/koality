@@ -49,9 +49,12 @@ func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
 	suite.client, err = rpc.Dial("unix", rpcSocket)
 }
 func (suite *InternalAPISuite) TearDownTest(check *gocheck.C) {
+	suite.resourcesConnection.Close()
+
 	if suite.client != nil {
 		suite.client.Close()
 	}
+
 	os.Remove(rpcSocket)
 }
 

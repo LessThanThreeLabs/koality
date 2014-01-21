@@ -37,7 +37,7 @@ func New() (*resources.Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	database.SetMaxIdleConns(2)
+	database.SetMaxIdleConns(10)
 	database.SetMaxOpenConns(100)
 
 	err = loadSchema(database)
@@ -80,7 +80,16 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	connection := &resources.Connection{usersHandler, repositoriesHandler, verificationsHandler, stagesHandler, poolsHandler, settingsHandler, snapshotsHandler}
+	connection := &resources.Connection{
+		Users:         usersHandler,
+		Repositories:  repositoriesHandler,
+		Verifications: verificationsHandler,
+		Stages:        stagesHandler,
+		Pools:         poolsHandler,
+		Settings:      settingsHandler,
+		Snapshots:     snapshotsHandler,
+		Closer:        database,
+	}
 	checkSettingsInitialized(connection)
 	return connection, nil
 }
@@ -108,6 +117,7 @@ func Reseed() error {
 	if err != nil {
 		return err
 	}
+	defer database.Close()
 
 	_, err = database.Exec("DROP SCHEMA IF EXISTS public CASCADE")
 	if err != nil {
@@ -157,6 +167,7 @@ func LoadDump() error {
 	if err != nil {
 		return err
 	}
+	defer database.Close()
 
 	_, err = database.Exec("DROP SCHEMA IF EXISTS public CASCADE")
 	if err != nil {

@@ -25,6 +25,7 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer resourcesConnection.Close()
 
 	tmpDir, err := ioutil.TempDir("", "tmp@") // We need an @ symbol to beat the repositories remoteUri verifier
 	defer os.RemoveAll(tmpDir)

@@ -22,6 +22,7 @@ func Migrate(migrations []Migration) error {
 	if err != nil {
 		return err
 	}
+	defer database.Close()
 
 	originalVersion, err := getDatabaseVersion(database)
 	if err != nil {
@@ -99,6 +100,5 @@ func getDatabaseVersion(database *sql.DB) (uint64, error) {
 	} else if err != nil {
 		return 0, err
 	}
-
 	return version, nil
 }

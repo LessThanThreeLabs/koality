@@ -56,6 +56,8 @@ func (suite *StageRunnerSuite) SetUpTest(check *gocheck.C) {
 }
 
 func (suite *StageRunnerSuite) TearDownTest(check *gocheck.C) {
+	suite.resourcesConnection.Close()
+
 	if suite.virtualMachine != nil {
 		suite.virtualMachine.Terminate()
 	}

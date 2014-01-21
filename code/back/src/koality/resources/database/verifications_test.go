@@ -15,6 +15,7 @@ func TestCreateInvalidVerification(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
@@ -66,6 +67,7 @@ func TestCreateVerification(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	createdEventReceived := make(chan bool, 1)
 	var createdEventVerification *resources.Verification
@@ -218,6 +220,7 @@ func TestVerificationStatuses(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	verificationStatusEventReceived := make(chan bool, 1)
 	verificationStatusEventId := uint64(0)
@@ -336,6 +339,7 @@ func TestVerificationTimes(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	verificationStartTimeEventReceived := make(chan bool, 1)
 	verificationStartTimeEventId := uint64(0)
@@ -453,6 +457,7 @@ func TestGetTail(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {

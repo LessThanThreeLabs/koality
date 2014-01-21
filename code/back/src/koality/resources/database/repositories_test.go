@@ -15,6 +15,7 @@ func TestCreateInvalidRepository(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	name := "repository-name"
 	vcsType := "git"
@@ -71,6 +72,7 @@ func TestCreateRepository(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	createdEventReceived := make(chan bool, 1)
 	var createdEventRepository *resources.Repository
@@ -199,6 +201,7 @@ func TestCreateGitHubRepository(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	createdEventReceived := make(chan bool, 1)
 	var createdEventRepository *resources.Repository
@@ -325,6 +328,7 @@ func TestRepositoryStatus(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	repositoryEventReceived := make(chan bool, 1)
 	repositoryEventId := uint64(0)
@@ -402,6 +406,7 @@ func TestRepositoryHook(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	repositoryEventReceived := make(chan bool, 1)
 	repositoryEventId := uint64(0)

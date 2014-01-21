@@ -38,6 +38,7 @@ func TestSingleMigration(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	database, err := getDatabaseConnection()
 	if err != nil {
@@ -80,6 +81,7 @@ func TestMultiplePassingMigrations(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	database, err := getDatabaseConnection()
 	if err != nil {
@@ -123,6 +125,7 @@ func TestMultipleMigrationsWithFailure(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	database, err := getDatabaseConnection()
 	if err != nil {

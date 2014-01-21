@@ -15,6 +15,7 @@ func TestCreateInvalidEc2Pool(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	name := "ec2-pool"
 	accessKey := "aaaabbbbccccddddeeee"
@@ -105,6 +106,7 @@ func TestCreateEc2Pool(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	poolCreatedEventReceived := make(chan bool, 1)
 	var poolCreatedEventEc2Pool *resources.Ec2Pool
@@ -332,6 +334,7 @@ func TestUsersEc2Settings(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	poolEventReceived := make(chan bool, 1)
 	poolEventId := uint64(0)

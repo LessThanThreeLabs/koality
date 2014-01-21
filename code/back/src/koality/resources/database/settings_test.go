@@ -16,6 +16,7 @@ func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	repositoryKeyPair, err := connection.Settings.Read.GetRepositoryKeyPair()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
@@ -84,6 +85,7 @@ func TestSettingsS3ExporterSettings(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	s3ExporterSettingsUpdatedEventReceived := make(chan bool, 1)
 	var s3ExporterSettingsUpdatedEventSettings *resources.S3ExporterSettings
@@ -174,6 +176,7 @@ func TestSettingsResetCookieStoreKeys(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	cookieStoreKeys, err := connection.Settings.Read.GetCookieStoreKeys()
 	if _, ok := err.(resources.NoSuchSettingError); ok {

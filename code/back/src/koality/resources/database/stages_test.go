@@ -16,6 +16,7 @@ func TestCreateInvalidStage(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
@@ -52,6 +53,7 @@ func TestCreateStage(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	createEventReceived := make(chan bool, 1)
 	var createEventStage *resources.Stage
@@ -221,6 +223,7 @@ func TestStageReturnCode(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	stageRunEventReceived := make(chan bool, 1)
 	stageRunEventId := uint64(0)
@@ -301,6 +304,7 @@ func TestStageTimes(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	stageRunStartTimeEventReceived := make(chan bool, 1)
 	stageRunStartTimeEventId := uint64(0)
@@ -425,6 +429,7 @@ func TestConsoleLines(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	stageRunEventReceived := make(chan bool, 1)
 	stageRunEventId := uint64(0)
@@ -548,6 +553,7 @@ func TestXunit(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	stageRunEventReceived := make(chan bool, 1)
 	stageRunEventId := uint64(0)
@@ -659,6 +665,7 @@ func TestExport(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	stageRunEventReceived := make(chan bool, 1)
 	stageRunEventId := uint64(0)

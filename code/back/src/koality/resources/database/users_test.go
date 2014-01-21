@@ -16,6 +16,7 @@ func TestCreateInvalidUser(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	email := "test-email@address.com"
 	firstName := "First"
@@ -58,6 +59,7 @@ func TestCreateAndDeleteUser(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	createdEventReceived := make(chan bool, 1)
 	var createdEventUser *resources.User
@@ -184,6 +186,7 @@ func TestUsersRead(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	users, err := connection.Users.Read.GetAll()
 	if err != nil {
@@ -244,6 +247,7 @@ func TestUsersUpdateName(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	updateAndCheckName := func(userId uint64, firstName, lastName string) {
 		userEventReceived := make(chan bool, 1)
@@ -323,6 +327,7 @@ func TestUsersUpdatePassword(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	updateAndCheckPassword := func(userId uint64, passwordHash, passwordSalt []byte) {
 		err = connection.Users.Update.SetPassword(userId, passwordHash, passwordSalt)
@@ -368,6 +373,7 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	updateAndCheckGitHubOauth := func(userId uint64, gitHubOauth string) {
 		err = connection.Users.Update.SetGitHubOauth(userId, gitHubOauth)
@@ -413,6 +419,7 @@ func TestUsersUpdateAdmin(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	updateAndCheckAdmin := func(userId uint64, admin bool) {
 		userEventReceived := make(chan bool, 1)
@@ -488,6 +495,7 @@ func TestUsersSshKeys(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	userSshKeyAddedEventReceived := make(chan bool, 1)
 	userSshKeyAddedEventUserId := uint64(0)

@@ -1,5 +1,9 @@
 package resources
 
+type Closer interface {
+	Close() error
+}
+
 type Connection struct {
 	Users         *UsersHandler
 	Repositories  *RepositoriesHandler
@@ -8,4 +12,5 @@ type Connection struct {
 	Pools         *PoolsHandler
 	Settings      *SettingsHandler
 	Snapshots     *SnapshotsHandler
+	Closer
 }

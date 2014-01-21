@@ -15,6 +15,7 @@ func TestMaid(test *testing.T) {
 	if err != nil {
 		test.Fatal(err)
 	}
+	defer connection.Close()
 
 	err = addVerifications(connection, 10)
 	if err != nil {
