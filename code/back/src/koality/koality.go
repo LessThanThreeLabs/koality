@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"koality/internal_api"
+	"koality/internalapi"
 	"koality/resources/database"
 	verificationrunner "koality/verification/runner"
 	"koality/vm"
@@ -14,7 +14,6 @@ import (
 
 const (
 	webserverPort = 8080
-	rpcSocket     = "/tmp/koality-rpc.sock"
 )
 
 func main() {
@@ -38,7 +37,7 @@ func main() {
 	}
 
 	// TODO: initialize more components here
-	internal_api.Setup(resourcesConnection, rpcSocket)
+	internalapi.Setup(resourcesConnection, internalapi.RpcSocket)
 
 	webserver, err := webserver.New(resourcesConnection, webserverPort)
 	if err != nil {

@@ -6,6 +6,10 @@ import (
 	"net/rpc"
 )
 
+const (
+	RpcSocket     = "/tmp/koality-rpc.sock"
+)
+
 func Setup(resourcesConnection *resources.Connection, rpcSocket string) error {
 	server := rpc.NewServer()
 	server.Register(&PublicKeyVerifier{resourcesConnection})
