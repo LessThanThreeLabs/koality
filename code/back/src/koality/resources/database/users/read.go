@@ -51,6 +51,20 @@ func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error
 	return readHandler.scanUser(row)
 }
 
+func (readHandler *ReadHandler) GetIdByKey(publicKey string) (*uint64, error) {
+	query := "SELECT user_id FROM ssh_keys WHERE public_key=$1"
+	row := readHandler.database.QueryRow(query, publicKey)
+        userId := new(uint64)
+	err := row.Scan(userId)
+	if err == sql.ErrNoRows {
+		return nil, resources.NoSuchUserError{"Unable to find user for key"}
+	} else if err != nil {
+		return nil, err
+	}
+
+	return userId, nil
+}
+
 func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
 		" github_oauth, is_admin, created FROM users WHERE id >= 1000 AND id != deleted"
