@@ -37,7 +37,7 @@ func New() (*resources.Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	database.SetMaxIdleConns(10)
+	database.SetMaxIdleConns(2)
 	database.SetMaxOpenConns(100)
 
 	err = loadSchema(database)
