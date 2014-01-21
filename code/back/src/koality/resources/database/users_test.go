@@ -218,6 +218,21 @@ func TestUsersRead(test *testing.T) {
 	if user.Id != firstUser.Id {
 		test.Fatal("user.Id mismatch")
 	}
+
+	_, err = connection.Users.Update.AddKey(user.Id, "akey", "ssh-rsa abc")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	userId, err := connection.Users.Read.GetIdByKey("ssh-rsa abc")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if *userId != user.Id {
+		test.Fatal("expected userId to equal user.Id")
+	}
+
 }
 
 func TestUsersUpdateName(test *testing.T) {
