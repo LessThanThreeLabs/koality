@@ -38,6 +38,7 @@ type RepositoriesCreateHandler interface {
 
 type RepositoriesReadHandler interface {
 	Get(repositoryId uint64) (*Repository, error)
+	GetByLocalUri(localUri string) (*Repository, error)
 	GetAll() ([]Repository, error)
 }
 

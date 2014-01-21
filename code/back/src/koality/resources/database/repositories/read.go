@@ -66,6 +66,15 @@ func (readHandler *ReadHandler) Get(repositoryId uint64) (*resources.Repository,
 	return readHandler.scanRepository(row)
 }
 
+func (readHandler *ReadHandler) GetByLocalUri(localUri string) (*resources.Repository, error) {
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created," +
+		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
+		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
+		" ON R.id=RGM.repository_id WHERE R.local_uri=$1"
+	row := readHandler.database.QueryRow(query, localUri)
+	return readHandler.scanRepository(row)
+}
+
 func (readHandler *ReadHandler) GetAll() ([]resources.Repository, error) {
 	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
