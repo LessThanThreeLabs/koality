@@ -3,7 +3,11 @@ package internalapi
 import (
 	"github.com/ashokgelal/gocheck"
 	"koality/resources"
+	"koality/repositorymanager"
 	"koality/resources/database"
+	"koality/vm"
+	"koality/vm/localmachine"
+	"koality/vm/poolmanager"
 	"net/rpc"
 	"os"
 	"testing"
@@ -30,7 +34,11 @@ func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
 	suite.resourcesConnection, err = database.New()
 	check.Assert(err, gocheck.IsNil)
 
-	err = Setup(suite.resourcesConnection, rpcSocket)
+	virtualMachinePool := vm.NewPool(0, localmachine.Manager, 0, 3)
+	poolManager := poolmanager.New([]vm.VirtualMachinePool{virtualMachinePool})
+	repositoryManager := repositorymanager.New("/etc/koality/repositories")
+
+	err = Setup(suite.resourcesConnection, poolManager, repositoryManager, rpcSocket)
 	check.Assert(err, gocheck.IsNil)
 
 	// REVIEW(dhuang) is there a better way to do this?
