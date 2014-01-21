@@ -8,8 +8,8 @@ setup:
 - scripts:
   # install go
   - curl -L https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz -s -o - | tar -C /usr/local -xzf -
-  - echo 'export GOROOT=/home/lt3/koality-v1/code/back' >> /home/lt3/.bashrc
-  - echo 'export PATH=$PATH:/usr/local/go/bin:$GOROOT/bin' >> /home/lt3/.bashrc
+  - echo 'export GOROOT=$HOME/koality-v1/code/back' >> /home/lt3/.bash_profile
+  - echo 'export PATH=$PATH:/usr/local/go/bin:$GOROOT/bin' >> /home/lt3/.bash_profile
 test:
   machines: 1
   factories:
@@ -18,5 +18,6 @@ test:
       - |
         cd code/back/src/koality
         ls -d */ | while read testDirectory; do
-          echo - go test koality/$testDirectory...
+          echo - ${testDirectory%?}:
+          echo "    script: go test koality/$testDirectory..."
         done
