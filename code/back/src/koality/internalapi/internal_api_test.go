@@ -44,10 +44,10 @@ func TestSetup(testing *testing.T) {
 	}
 
 	publicKey := "wrongkey"
-	var isValid bool
-	if err = client.Call("PublicKeyVerifier.CheckKey", &publicKey, &isValid); err != nil {
+	var userId uint64
+	if err = client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId); err != nil {
 		testing.Fatal(err)
-	} else if isValid {
+	} else if userId != 0 {
 		testing.Fatal("expected key to be invalid")
 	}
 
@@ -61,9 +61,9 @@ func TestSetup(testing *testing.T) {
 	publicKey = "ssh-rsa abc"
 	if _, err = resourcesConnection.Users.Update.AddKey(users[0].Id, "mykey", publicKey); err != nil {
 		testing.Fatal(err)
-	} else if err = client.Call("PublicKeyVerifier.CheckKey", &publicKey, &isValid); err != nil {
+	} else if err = client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId); err != nil {
 		testing.Fatal(err)
-	} else if !isValid {
+	} else if userId == 0 {
 		testing.Fatal("expected key to be valid")
 	}
 }

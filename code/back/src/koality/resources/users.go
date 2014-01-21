@@ -40,7 +40,7 @@ type UsersReadHandler interface {
 	GetByEmail(email string) (*User, error)
 	GetAll() ([]User, error)
 	GetKeys(userId uint64) ([]SshKey, error)
-	GetIdByKey(email string) (*uint64, error)
+	GetIdByKey(email string) (uint64, error)
 }
 
 type UsersUpdateHandler interface {

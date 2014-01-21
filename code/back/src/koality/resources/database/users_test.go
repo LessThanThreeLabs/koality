@@ -229,7 +229,7 @@ func TestUsersRead(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if *userId != user.Id {
+	if userId != user.Id {
 		test.Fatal("expected userId to equal user.Id")
 	}
 

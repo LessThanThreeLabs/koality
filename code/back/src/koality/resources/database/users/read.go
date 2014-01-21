@@ -51,15 +51,15 @@ func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error
 	return readHandler.scanUser(row)
 }
 
-func (readHandler *ReadHandler) GetIdByKey(publicKey string) (*uint64, error) {
+func (readHandler *ReadHandler) GetIdByKey(publicKey string) (uint64, error) {
 	query := "SELECT user_id FROM ssh_keys WHERE public_key=$1"
 	row := readHandler.database.QueryRow(query, publicKey)
-        userId := new(uint64)
-	err := row.Scan(userId)
+	var userId uint64
+	err := row.Scan(&userId)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchUserError{"Unable to find user for key"}
+		return 0, resources.NoSuchUserError{"Unable to find user for key"}
 	} else if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	return userId, nil
