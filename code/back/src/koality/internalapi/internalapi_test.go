@@ -1,6 +1,8 @@
 package internalapi
 
 import (
+	"github.com/ashokgelal/gocheck"
+	"koality/resources"
 	"koality/resources/database"
 	"net/rpc"
 	"os"
@@ -8,21 +10,29 @@ import (
 	"time"
 )
 
-func TestSetup(testing *testing.T) {
-	rpcSocket := "/tmp/koality-test-rpc.sock"
-	if err := database.PopulateDatabase(); err != nil {
-		testing.Fatal(err)
-	}
+func Test(t *testing.T) { gocheck.TestingT(t) }
 
-	resourcesConnection, err := database.New()
-	if err != nil {
-		testing.Fatal(err)
-	}
+const (
+	rpcSocket = "/tmp/koality-test-rpc.sock"
+)
+
+type InternalAPISuite struct {
+	resourcesConnection *resources.Connection
+	client              *rpc.Client
+}
+
+var _ = gocheck.Suite(&InternalAPISuite{})
+
+func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
+	err := database.PopulateDatabase()
+	check.Assert(err, gocheck.IsNil)
+
+	suite.resourcesConnection, err = database.New()
+	check.Assert(err, gocheck.IsNil)
 
 	go func() {
-		if err := Setup(resourcesConnection, rpcSocket); err != nil {
-			testing.Fatal(err)
-		}
+		err := Setup(suite.resourcesConnection, rpcSocket)
+		check.Assert(err, gocheck.IsNil)
 	}()
 
 	// REVIEW(dhuang) is there a better way to do this?
@@ -35,35 +45,33 @@ func TestSetup(testing *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 	if !socketOpen {
-		testing.Fatal("socket took too long to exist")
+		check.Fatalf("socket took too long to exist")
 	}
 
-	client, err := rpc.Dial("unix", rpcSocket)
-	if err != nil {
-		testing.Fatal(err)
+	suite.client, err = rpc.Dial("unix", rpcSocket)
+}
+func (suite *InternalAPISuite) TearDownTest(check *gocheck.C) {
+	if suite.client != nil {
+		suite.client.Close()
 	}
+	os.Remove(rpcSocket)
+}
 
+func (suite *InternalAPISuite) TestSetup(check *gocheck.C) {
 	publicKey := "wrongkey"
 	var userId uint64
-	if err = client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId); err != nil {
-		testing.Fatal(err)
-	} else if userId != 0 {
-		testing.Fatal("expected key to be invalid")
-	}
+	err := suite.client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId)
+	check.Assert(err, gocheck.IsNil)
+	check.Assert(userId, gocheck.Equals, uint64(0))
 
-	users, err := resourcesConnection.Users.Read.GetAll()
-	if err != nil {
-		testing.Fatal(err)
-	} else if len(users) == 0 {
-		testing.Fatal("expected nonzero number of users")
-	}
+	users, err := suite.resourcesConnection.Users.Read.GetAll()
+	check.Assert(err, gocheck.IsNil)
+	check.Assert(len(users), gocheck.Not(gocheck.Equals), 0)
 
 	publicKey = "ssh-rsa abc"
-	if _, err = resourcesConnection.Users.Update.AddKey(users[0].Id, "mykey", publicKey); err != nil {
-		testing.Fatal(err)
-	} else if err = client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId); err != nil {
-		testing.Fatal(err)
-	} else if userId == 0 {
-		testing.Fatal("expected key to be valid")
-	}
+	_, err = suite.resourcesConnection.Users.Update.AddKey(users[0].Id, "mykey", publicKey)
+	check.Assert(err, gocheck.IsNil)
+	err = suite.client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId)
+	check.Assert(err, gocheck.IsNil)
+	check.Assert(userId, gocheck.Not(gocheck.Equals), 0)
 }
