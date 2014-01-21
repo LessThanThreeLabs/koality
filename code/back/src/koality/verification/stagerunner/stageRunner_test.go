@@ -56,7 +56,9 @@ func (suite *StageRunnerSuite) SetUpTest(check *gocheck.C) {
 }
 
 func (suite *StageRunnerSuite) TearDownTest(check *gocheck.C) {
-	suite.virtualMachine.Terminate()
+	if suite.virtualMachine != nil {
+		suite.virtualMachine.Terminate()
+	}
 }
 
 func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
@@ -143,11 +145,13 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 
 	// check.Assert(stageRuns, gocheck.HasLen, 1)
+	check.Assert(len(stageRuns), gocheck.Equals, 1)
 
 	exports, err := suite.resourcesConnection.Stages.Read.GetExports(stageRuns[0].Id)
 	check.Assert(err, gocheck.IsNil)
 
 	// check.Assert(exports, gocheck.HasLen, 1)
+	check.Assert(len(exports), gocheck.Equals, 1)
 	expectedBucket := "koality-whim"
 	expectedPath := "/home/koality/code/back/src/koality/util/xunitsamples/sample1.xml"
 	expectedKey :=
@@ -205,6 +209,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	stageRuns, err := suite.resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
 	check.Assert(err, gocheck.IsNil)
 	// check.Assert(stageRuns, gocheck.HasLen, 1)
+	check.Assert(len(stageRuns), gocheck.Equals, 1)
 
 	xunitResults, err := suite.resourcesConnection.Stages.Read.GetAllXunitResults(stageRuns[0].Id)
 	check.Assert(err, gocheck.IsNil)
