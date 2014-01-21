@@ -1,20 +1,36 @@
 package resources
 
-//-------------------- Pools --------------------
+//-------------------- Users --------------------
 
-type NoSuchPoolError struct {
+type UserAlreadyExistsError struct {
 	Message string
 }
 
-func (err NoSuchPoolError) Error() string {
+func (err UserAlreadyExistsError) Error() string {
 	return err.Message
 }
 
-type PoolAlreadyExistsError struct {
+type NoSuchUserError struct {
 	Message string
 }
 
-func (err PoolAlreadyExistsError) Error() string {
+func (err NoSuchUserError) Error() string {
+	return err.Message
+}
+
+type KeyAlreadyExistsError struct {
+	Message string
+}
+
+func (err KeyAlreadyExistsError) Error() string {
+	return err.Message
+}
+
+type NoSuchKeyError struct {
+	Message string
+}
+
+func (err NoSuchKeyError) Error() string {
 	return err.Message
 }
 
@@ -60,13 +76,21 @@ func (err InvalidRepositoryHookTypeError) Error() string {
 	return err.Message
 }
 
-//-------------------- Settings --------------------
+//-------------------- Pools --------------------
 
-type NoSuchSettingError struct {
+type NoSuchPoolError struct {
 	Message string
 }
 
-func (err NoSuchSettingError) Error() string {
+func (err NoSuchPoolError) Error() string {
+	return err.Message
+}
+
+type PoolAlreadyExistsError struct {
+	Message string
+}
+
+func (err PoolAlreadyExistsError) Error() string {
 	return err.Message
 }
 
@@ -85,74 +109,6 @@ type InvalidSnapshotStatusError struct {
 }
 
 func (err InvalidSnapshotStatusError) Error() string {
-	return err.Message
-}
-
-//-------------------- Stages --------------------
-
-type NoSuchStageError struct {
-	Message string
-}
-
-func (err NoSuchStageError) Error() string {
-	return err.Message
-}
-
-type StageAlreadyExistsError struct {
-	Message string
-}
-
-func (err StageAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type NoSuchStageRunError struct {
-	Message string
-}
-
-func (err NoSuchStageRunError) Error() string {
-	return err.Message
-}
-
-type NoSuchXunitError struct {
-	Message string
-}
-
-func (err NoSuchXunitError) Error() string {
-	return err.Message
-}
-
-//-------------------- Users --------------------
-
-type UserAlreadyExistsError struct {
-	Message string
-}
-
-func (err UserAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type NoSuchUserError struct {
-	Message string
-}
-
-func (err NoSuchUserError) Error() string {
-	return err.Message
-}
-
-type KeyAlreadyExistsError struct {
-	Message string
-}
-
-func (err KeyAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type NoSuchKeyError struct {
-	Message string
-}
-
-func (err NoSuchKeyError) Error() string {
 	return err.Message
 }
 
@@ -195,5 +151,49 @@ type NoSuchChangesetError struct {
 }
 
 func (err NoSuchChangesetError) Error() string {
+	return err.Message
+}
+
+//-------------------- Stages --------------------
+
+type NoSuchStageError struct {
+	Message string
+}
+
+func (err NoSuchStageError) Error() string {
+	return err.Message
+}
+
+type StageAlreadyExistsError struct {
+	Message string
+}
+
+func (err StageAlreadyExistsError) Error() string {
+	return err.Message
+}
+
+type NoSuchStageRunError struct {
+	Message string
+}
+
+func (err NoSuchStageRunError) Error() string {
+	return err.Message
+}
+
+type NoSuchXunitError struct {
+	Message string
+}
+
+func (err NoSuchXunitError) Error() string {
+	return err.Message
+}
+
+//-------------------- Settings --------------------
+
+type NoSuchSettingError struct {
+	Message string
+}
+
+func (err NoSuchSettingError) Error() string {
 	return err.Message
 }
