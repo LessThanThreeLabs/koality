@@ -1,11 +1,9 @@
 --- #Koality: 1337
 setup:
-- databases:
-  - postgres:
-    - name: koality
-      username: koality
-      password: lt3
 - scripts:
+  # prepare database
+  - "psql -c \"SELECT 1 FROM pg_user WHERE usename='koality'\" | grep -q 1 || psql -c \"CREATE USER koality PASSWORD 'lt3' SUPERUSER\""
+  - command "psql -c \"SELECT 1 FROM pg_database WHERE datname='koality'\" | grep -q 1 || createdb koality --template template0 --locale en_US.utf8 --encoding UTF8"
   #  pull down missing submodules
   - git submodule update --init --recursive
   # install go
