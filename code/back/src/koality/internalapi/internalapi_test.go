@@ -30,10 +30,8 @@ func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
 	suite.resourcesConnection, err = database.New()
 	check.Assert(err, gocheck.IsNil)
 
-	go func() {
-		err := Setup(suite.resourcesConnection, rpcSocket)
-		check.Assert(err, gocheck.IsNil)
-	}()
+	err = Setup(suite.resourcesConnection, rpcSocket)
+	check.Assert(err, gocheck.IsNil)
 
 	// REVIEW(dhuang) is there a better way to do this?
 	socketOpen := false
