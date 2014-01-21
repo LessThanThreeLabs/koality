@@ -59,9 +59,11 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 
 func (webserver *Webserver) createRouter() (*mux.Router, error) {
 	router := mux.NewRouter()
-	subrouter := router.PathPrefix("/app").Subrouter()
+	apiSubrouter := router.PathPrefix("/api").Subrouter()
+	handleApiSubroute(apiSubrouter, webserver.resourcesConnection)
 
-	usersSubrouter := subrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()
+	appSubrouter := router.PathPrefix("/app").Subrouter()
+	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()
 	handleUsersSubroute(usersSubrouter, webserver.resourcesConnection.Users)
 
 	// TODO: create and handle more subroutes
