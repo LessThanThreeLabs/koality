@@ -5,8 +5,8 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"os/exec"
+	"strings"
 )
 
 type KeyPairGenerator struct {
@@ -69,22 +69,12 @@ func (keyPairGenerator *KeyPairGenerator) getPublicPem(publicKey *rsa.PublicKey)
 }
 
 func (keyPairGenerator *KeyPairGenerator) getPublicSshKey(publicPem string) (string, error) {
-	file, err := ioutil.TempFile("", "publicKey.pem")
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	_, err = file.Write([]byte(publicPem))
-	if err != nil {
-		return "", err
-	}
-
-	command := exec.Command("ssh-keygen", "-m", "PKCS8", "-f", file.Name(), "-i")
+	command := exec.Command("ssh-keygen", "-m", "PKCS8", "-f", "/dev/stdin", "-i")
+	command.Stdin = strings.NewReader(publicPem)
 	publicSshKey, err := command.Output()
 	if err != nil {
 		return "", err
 	}
 
-	return string(publicSshKey), nil
+	return strings.TrimSpace(string(publicSshKey)), nil
 }
