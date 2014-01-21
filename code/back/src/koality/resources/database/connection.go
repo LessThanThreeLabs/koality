@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq" // Adds the Postgres driver
 	"io/ioutil"
 	"koality/resources"
@@ -144,7 +145,10 @@ func CreateDump() error {
 	}
 
 	command := exec.Command("pg_dump", "--file", currentUser.HomeDir+dumpLocation, "--format", "custom")
-	err = command.Run()
+	output, err := command.CombinedOutput()
+	if _, ok := err.(*exec.ExitError); ok {
+		return fmt.Errorf("%v: %s", err, output)
+	}
 	return err
 }
 
@@ -170,7 +174,10 @@ func LoadDump() error {
 	}
 
 	command := exec.Command("pg_restore", "--dbname", databaseName, "--jobs", "4", currentUser.HomeDir+dumpLocation)
-	err = command.Run()
+	output, err := command.CombinedOutput()
+	if _, ok := err.(*exec.ExitError); ok {
+		return fmt.Errorf("%v: %s", err, output)
+	}
 	return err
 }
 

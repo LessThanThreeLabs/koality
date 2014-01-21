@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -71,10 +72,11 @@ func (keyPairGenerator *KeyPairGenerator) getPublicPem(publicKey *rsa.PublicKey)
 func (keyPairGenerator *KeyPairGenerator) getPublicSshKey(publicPem string) (string, error) {
 	command := exec.Command("ssh-keygen", "-m", "PKCS8", "-f", "/dev/stdin", "-i")
 	command.Stdin = strings.NewReader(publicPem)
-	publicSshKey, err := command.Output()
-	if err != nil {
+	output, err := command.CombinedOutput()
+	if _, ok := err.(*exec.ExitError); ok {
+		return "", fmt.Errorf("%v: %s", err, output)
+	} else if err != nil {
 		return "", err
 	}
-
-	return strings.TrimSpace(string(publicSshKey)), nil
+	return strings.TrimSpace(string(output)), nil
 }
