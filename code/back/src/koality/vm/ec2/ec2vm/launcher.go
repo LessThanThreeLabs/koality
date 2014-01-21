@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"github.com/crowdmob/goamz/aws"
 	"github.com/crowdmob/goamz/ec2"
-	"io/ioutil"
 	"koality/resources"
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/cloudinit"
 	"koality/vm/ec2/ec2broker"
 	"net"
-	"os/user"
 	"path"
 	"strconv"
 	"strings"
@@ -21,12 +19,13 @@ import (
 )
 
 type Ec2VirtualMachineLauncher struct {
-	ec2Broker *ec2broker.Ec2Broker
-	Ec2Pool   *resources.Ec2Pool
-	ec2Cache  *ec2broker.Ec2Cache
+	ec2Broker           *ec2broker.Ec2Broker
+	Ec2Pool             *resources.Ec2Pool
+	ec2Cache            *ec2broker.Ec2Cache
+	resourcesConnection *resources.Connection
 }
 
-func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool) (*Ec2VirtualMachineLauncher, error) {
+func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool, resourcesConnection *resources.Connection) (*Ec2VirtualMachineLauncher, error) {
 	auth, err := aws.GetAuth(ec2Pool.AccessKey, ec2Pool.SecretKey, "", time.Time{})
 	if err != nil {
 		return nil, err
@@ -37,7 +36,7 @@ func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool) (*E
 		return nil, err
 	}
 
-	return &Ec2VirtualMachineLauncher{ec2Broker, ec2Pool, ec2Cache}, nil
+	return &Ec2VirtualMachineLauncher{ec2Broker, ec2Pool, ec2Cache, resourcesConnection}, nil
 }
 
 func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMachine, error) {
@@ -52,7 +51,12 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 		return nil, err
 	}
 
-	userData, err := launcher.getUserData(username)
+	keyPair, err := launcher.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
+	userData, err := launcher.getUserData(username, keyPair)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +102,7 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 		return nil, err
 	}
 
-	ec2Vm, err := launcher.waitForSsh(instance, username, 5*time.Minute)
+	ec2Vm, err := launcher.waitForSsh(instance, username, keyPair, 5*time.Minute)
 	if err != nil {
 		launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
 		return nil, err
@@ -133,7 +137,7 @@ func (launcher *Ec2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instan
 	}
 }
 
-func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, username string, timeout time.Duration) (*Ec2VirtualMachine, error) {
+func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, username string, keyPair *resources.RepositoryKeyPair, timeout time.Duration) (*Ec2VirtualMachine, error) {
 	for {
 		select {
 		case <-time.After(timeout):
@@ -143,7 +147,7 @@ func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, us
 			}
 			return nil, fmt.Errorf("Failed to ssh into the instance after %s", timeout.String())
 		default:
-			ec2Vm, err := New(instance, launcher.ec2Cache, username)
+			ec2Vm, err := New(instance, launcher.ec2Cache, username, keyPair.PrivateKey)
 			if err != nil {
 				time.Sleep(3 * time.Second)
 				continue
@@ -330,47 +334,31 @@ func (launcher *Ec2VirtualMachineLauncher) getBlockDeviceMappings(image ec2.Imag
 	return blockDeviceMappings
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getUserData(username string) ([]byte, error) {
+func (launcher *Ec2VirtualMachineLauncher) getUserData(username string, keyPair *resources.RepositoryKeyPair) ([]byte, error) {
 	buffer := new(bytes.Buffer)
 	mimeMultipartWriter := cloudinit.NewMimeMultipartWriter(buffer)
 
-	defaultUserData, err := launcher.getDefaultUserData(username)
-	if err != nil {
-		return nil, err
-	}
+	defaultUserData := launcher.getDefaultUserData(username, keyPair)
 
-	err = mimeMultipartWriter.WriteMimePart("koality-default-data", defaultUserData)
-	if err != nil {
+	if err := mimeMultipartWriter.WriteMimePart("koality-default-data", defaultUserData); err != nil {
 		return nil, err
 	}
 
 	customUserData := strings.TrimSpace(launcher.Ec2Pool.UserData)
 	if customUserData != "" {
-		err = mimeMultipartWriter.WriteMimePart("koality-custom-data", customUserData)
-		if err != nil {
+		if err := mimeMultipartWriter.WriteMimePart("koality-custom-data", customUserData); err != nil {
 			return nil, err
 		}
 	}
 
-	err = mimeMultipartWriter.Close()
-	if err != nil {
+	if err := mimeMultipartWriter.Close(); err != nil {
 		return nil, err
 	}
 
 	return buffer.Bytes(), nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) (string, error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	privateKeyBytes, err := ioutil.ReadFile(path.Join(currentUser.HomeDir, ".ssh", "id_rsa"))
-	if err != nil {
-		return "", err
-	}
-
+func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string, keyPair *resources.RepositoryKeyPair) string {
 	configureUserCommand := func(username string) shell.Command {
 		homeDir := "~" + username
 		sshDir := path.Join(homeDir, ".ssh")
@@ -382,13 +370,14 @@ func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) (
 
 		return shell.Chain(
 			shell.Commandf("mkdir -p %s", sshDir),
-			shell.Redirect(shell.Commandf("echo %s", shell.Quote(string(privateKeyBytes))), shell.Command(privateKeyPath), false),
-			shell.Redirect(shell.Commandf("ssh-keygen -y -f %s -P ''", privateKeyPath), shell.Command(publicKeyPath), false),
-			shell.Append(shell.Commandf("cat %s", publicKeyPath), shell.Command(authorizedKeysPath), false),
+			shell.Redirect(shell.Commandf("echo %s", shell.Quote(keyPair.PrivateKey)), shell.Command(privateKeyPath), false),
+			shell.Redirect(shell.Commandf("echo %s", shell.Quote(keyPair.PublicKey)), shell.Command(publicKeyPath), false),
+			shell.Append(shell.Commandf("echo %s", shell.Quote(keyPair.PublicKey)), shell.Command(authorizedKeysPath), false),
 			shell.Or(
 				shell.Commandf("grep %s %s", shell.Quote(sshConfigContents), shell.Command(sshConfigPath)),
 				shell.Append(shell.Commandf("echo %s", shell.Quote(sshConfigContents)), shell.Command(sshConfigPath), false),
 			),
+			shell.Commandf("chmod -R 0400 %s", sshDir),
 			shell.Commandf("chown -R %s:%s %s", username, username, username, sshDir),
 		)
 	}
@@ -422,5 +411,5 @@ func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string) (
 		)
 	}
 
-	return fmt.Sprintf("#!/bin/sh\n%s", configureInstanceCommand), nil
+	return fmt.Sprintf("#!/bin/sh\n%s", configureInstanceCommand)
 }

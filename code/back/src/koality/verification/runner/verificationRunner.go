@@ -54,7 +54,7 @@ func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
 	}
 	onEc2PoolCreated := func(ec2Pool *resources.Ec2Pool) {
 		verificationRunner.virtualMachinePoolMapLocker.Lock()
-		ec2Launcher, err := ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool)
+		ec2Launcher, err := ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool, verificationRunner.resourcesConnection)
 		if err != nil {
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]

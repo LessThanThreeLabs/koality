@@ -9,10 +9,8 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"koality/shell"
 	"os"
-	"os/user"
 	"path"
 	"strconv"
 )
@@ -31,16 +29,7 @@ type keychain struct {
 }
 
 func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
-	currentUser, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-
-	privateKey, err := ioutil.ReadFile(path.Join(currentUser.HomeDir, ".ssh", "id_rsa"))
-	if err != nil {
-		return nil, err
-	}
-	block, _ := pem.Decode(privateKey)
+	block, _ := pem.Decode([]byte(sshConfig.PrivateKey))
 	rsaKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
@@ -147,10 +136,11 @@ func (scper *sshScper) Scp(localFilePath, remoteFilePath string) (shell.Executab
 }
 
 type SshConfig struct {
-	Username string
-	Hostname string
-	Port     int
-	Options  map[string]string
+	Username   string
+	Hostname   string
+	Port       int
+	PrivateKey string
+	Options    map[string]string
 }
 
 type ScpConfig SshConfig
@@ -166,6 +156,7 @@ func toOptionsList(options map[string]string) []string {
 	return optionsList
 }
 
+// TODO: make this use the specified private key somehow, or maybe just get rid of this
 func (sshConfig SshConfig) SshArgs(remoteCommand string) []string {
 	options := toOptionsList(sshConfig.Options)
 	login := fmt.Sprintf("%s@%s", sshConfig.Username, sshConfig.Hostname)

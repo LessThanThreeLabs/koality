@@ -87,7 +87,7 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 
 	verificationRunner := New(resourcesConnection, []vm.VirtualMachinePool{vmPool}, nil)
 
-	verification, err := resourcesConnection.Verifications.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
+	verification, err := resourcesConnection.Verifications.Create.Create(repository.Id, 0, sha, "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")
 	if err != nil {
 		test.Fatal(err)

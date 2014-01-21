@@ -18,11 +18,12 @@ type Ec2VirtualMachine struct {
 	ec2Cache           *ec2broker.Ec2Cache
 }
 
-func New(instance *ec2.Instance, cache *ec2broker.Ec2Cache, username string) (*Ec2VirtualMachine, error) {
+func New(instance *ec2.Instance, cache *ec2broker.Ec2Cache, username, privateKey string) (*Ec2VirtualMachine, error) {
 	sshConfig := vm.SshConfig{
-		Username: username,
-		Hostname: instance.IPAddress,
-		Port:     22,
+		Username:   username,
+		Hostname:   instance.IPAddress,
+		Port:       22,
+		PrivateKey: privateKey,
 		Options: map[string]string{
 			"LogLevel":              "error",
 			"StrictHostKeyChecking": "no",
