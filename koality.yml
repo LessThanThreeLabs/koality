@@ -6,8 +6,20 @@ setup:
       username: koality
       password: lt3
 - scripts:
+  - |
+    echo '
+    file_cache_path "/home/lt3/koality-v1/chef-cache"
+    cookbook_path "/home/lt3/koality-v1/chef/cookbooks"
+    json_attribs "/home/lt3/koality-v1/chef-node.json"
+    ' > chef-config.rb
+  - |
+    echo '
+    {
+      "run_list": [ "recipe[golang]" ]
+    }' > chef-node.json
+  - git submodule update --init --recursive
   - gem install chef --no-ri --no-rdoc
-  - chef-solo  # need to fix this
+  - chef-solo -c chef-config.rb
 factories:
   - koality test factory:
     script:
