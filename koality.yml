@@ -1,15 +1,20 @@
 --- #Koality: 1337
 setup:
-- scripts:
-  - chef-solo  # need to fix this
-databases:
+- databases:
   - postgres:
     - name: koality
       username: koality
       password: lt3
+- scripts:
+  - gem install chef --no-ri --no-rdoc
+  - chef-solo  # need to fix this
+factories:
+  - koality test factory:
+    script:
+    - |
+      cd code/back/src/koality
+      ls -d */ | while read testDirectory; do
+        echo - go test koality/$testDirectory...:
+      done
 test:
   machines: 1
-  scripts:
-  - resources tests:
-      path: code/back/src
-      script: go test koality/resources/...
