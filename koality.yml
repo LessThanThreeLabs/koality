@@ -8,8 +8,9 @@ setup:
 - scripts:
   # install go
   - curl -L https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz -s -o - | tar -C /usr/local -xzf -
-  - echo 'export GOROOT=$HOME/koality-v1/code/back' >> /home/lt3/.bash_profile
-  - echo 'export PATH=$PATH:/usr/local/go/bin:$GOROOT/bin' >> /home/lt3/.bash_profile
+  - echo 'export GOPATH=$HOME/koality-v1/code/back' >> /home/lt3/.bash_profile
+  - echo 'export GOBIN=$GOPATH/bin' >> /home/lt3/.bash_profile
+  - echo 'export PATH=$PATH:/usr/local/go/bin:$GOBIN' >> /home/lt3/.bash_profile
 test:
   machines: 1
   factories:
