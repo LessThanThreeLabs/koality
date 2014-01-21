@@ -1,5 +1,7 @@
 package resources
 
+//-------------------- Pools --------------------
+
 type NoSuchPoolError struct {
 	Message string
 }
@@ -15,6 +17,8 @@ type PoolAlreadyExistsError struct {
 func (err PoolAlreadyExistsError) Error() string {
 	return err.Message
 }
+
+//-------------------- Repositories --------------------
 
 type RepositoryAlreadyExistsError struct {
 	Message string
@@ -56,6 +60,8 @@ func (err InvalidRepositoryHookTypeError) Error() string {
 	return err.Message
 }
 
+//-------------------- Settings --------------------
+
 type NoSuchSettingError struct {
 	Message string
 }
@@ -63,6 +69,8 @@ type NoSuchSettingError struct {
 func (err NoSuchSettingError) Error() string {
 	return err.Message
 }
+
+//-------------------- Snapshots --------------------
 
 type NoSuchSnapshotError struct {
 	Message string
@@ -79,6 +87,8 @@ type InvalidSnapshotStatusError struct {
 func (err InvalidSnapshotStatusError) Error() string {
 	return err.Message
 }
+
+//-------------------- Stages --------------------
 
 type NoSuchStageError struct {
 	Message string
@@ -112,6 +122,8 @@ func (err NoSuchXunitError) Error() string {
 	return err.Message
 }
 
+//-------------------- Users --------------------
+
 type UserAlreadyExistsError struct {
 	Message string
 }
@@ -144,6 +156,8 @@ func (err NoSuchKeyError) Error() string {
 	return err.Message
 }
 
+//-------------------- Verifications --------------------
+
 type NoSuchVerificationError struct {
 	Message string
 }
@@ -173,14 +187,6 @@ type ChangesetAlreadyExistsError struct {
 }
 
 func (err ChangesetAlreadyExistsError) Error() string {
-	return err.Message
-}
-
-type SnapshotDoesNotExistError struct {
-	Message string
-}
-
-func (err SnapshotDoesNotExistError) Error() string {
 	return err.Message
 }
 
