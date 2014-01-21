@@ -31,27 +31,27 @@ func TestCreateInvalidVerification(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	_, err = connection.Verifications.Create.Create(13370, nullSnapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Verifications.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when providing invalid repository id")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Verifications.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.NoSuchSnapshotError); !ok {
 		test.Fatal("Expected NoSuchSnapshotError")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Verifications.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid head sha")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Verifications.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid base sha")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
+	_, err = connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid email to notify")
 	}
@@ -92,7 +92,7 @@ func TestCreateVerification(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	verification, err := connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	verification, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -170,12 +170,12 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal("verification.Changeset.HeadEmail mismatch")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
 		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add verification with same changeset params twice")
 	}
 
-	verification2, err := connection.Verifications.Create.CreateFromChangeset(firstRepository.Id, nullSnapshotId, verification.Changeset.Id, mergeTarget, emailToNotify)
+	verification2, err := connection.Verifications.Create.CreateFromChangeset(firstRepository.Id, verification.Changeset.Id, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func TestVerificationStatuses(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	verification, err := connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	verification, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -377,7 +377,7 @@ func TestVerificationTimes(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	verification, err := connection.Verifications.Create.Create(firstRepository.Id, nullSnapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	verification, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}

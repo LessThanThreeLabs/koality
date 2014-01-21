@@ -37,8 +37,9 @@ type VerificationsHandler struct {
 }
 
 type VerificationsCreateHandler interface {
-	Create(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Verification, error)
-	CreateFromChangeset(repositoryId, snapshotId, changesetId uint64, mergeTarget, emailToNotify string) (*Verification, error)
+	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Verification, error)
+	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Verification, error)
+	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*Verification, error)
 }
 
 type VerificationsReadHandler interface {

@@ -30,7 +30,7 @@ func nilOnZero(snapshotId uint64) interface{} {
 	}
 }
 
-func (createHandler *CreateHandler) Create(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
+func (createHandler *CreateHandler) create(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
 	if err := createHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
 	} else if err := createHandler.getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail); err != nil {
@@ -74,12 +74,20 @@ func (createHandler *CreateHandler) Create(repositoryId, snapshotId uint64, head
 	return verification, nil
 }
 
-func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, snapshotId, changesetId uint64, mergeTarget, emailToNotify string) (*resources.Verification, error) {
+func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
+	return createHandler.create(repositoryId, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+}
+
+func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
+	return createHandler.create(repositoryId, snapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+}
+
+func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*resources.Verification, error) {
 	if err := createHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
 	} else if err := createHandler.verifier.verifyChangesetExists(changesetId); err != nil {
 		return nil, err
-	} else if err := createHandler.getVerificationParamsError(snapshotId, mergeTarget, emailToNotify); err != nil {
+	} else if err := createHandler.getVerificationParamsError(0, mergeTarget, emailToNotify); err != nil {
 		return nil, err
 	}
 
@@ -87,7 +95,7 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, snapshotId
 	query := "INSERT INTO verifications (repository_id, snapshot_id, changeset_id, merge_target, email_to_notify, status)" +
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 
-	err := createHandler.database.QueryRow(query, repositoryId, nilOnZero(snapshotId), changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&id)
+	err := createHandler.database.QueryRow(query, repositoryId, nil, changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&id)
 	if err != nil {
 		return nil, err
 	}

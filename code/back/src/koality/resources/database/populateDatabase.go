@@ -12,7 +12,6 @@ const (
 	numRepositories               = 2
 	numVerificationsPerRepository = 10
 	parallelizationLevel          = 2
-	nullSnapshotId                = 0
 )
 
 var (
@@ -138,7 +137,7 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 	for index := 0; index < numVerifications; index++ {
 		go func(index int) {
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
-			verification, err := connection.Verifications.Create.Create(repositoryId, nullSnapshotId, createSha(), createSha(),
+			verification, err := connection.Verifications.Create.Create(repositoryId, createSha(), createSha(),
 				headMessage, userNames[index%len(userNames)], userEmails[index%len(userEmails)],
 				mergeTargets[index%len(mergeTargets)], userEmails[rand.Intn(len(userEmails))])
 			if err != nil {

@@ -36,10 +36,8 @@ func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resource
 	}
 
 	if snapshotId.Valid {
-		//TODO(akostov) bug if overflow?
 		verification.SnapshotId = uint64(snapshotId.Int64)
 	}
-
 	if mergeTarget.Valid {
 		verification.MergeTarget = mergeTarget.String
 	}

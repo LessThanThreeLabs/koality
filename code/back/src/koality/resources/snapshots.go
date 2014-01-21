@@ -30,6 +30,7 @@ type SnapshotsCreateHandler interface {
 
 type SnapshotsReadHandler interface {
 	GetSnapshot(snapshotId uint64) (*Snapshot, error)
+	GetSnapshotFromImageId(imageId string) (*Snapshot, error)
 	GetSnapshotsForPool(poolId uint64) ([]Snapshot, error)
 }
 
