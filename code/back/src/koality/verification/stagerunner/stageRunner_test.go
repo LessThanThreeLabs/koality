@@ -107,10 +107,10 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	err = copyExec.Run()
 	check.Assert(err, gocheck.IsNil)
 
-	exportPathsBinPath := "/home/koality/code/back/src/koality/util/exportPaths"
+	exportPathsBinPath := os.ExpandEnv("$GOPATH/src/koality/util/exportPaths")
 	compileCmd := exec.Command("go", "build", "-o",
 		exportPathsBinPath,
-		"/home/koality/code/back/src/koality/util/exportPaths.go")
+		os.ExpandEnv("$GOPATH/src/koality/util/exportPaths.go"))
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
 
@@ -161,7 +161,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	// check.Assert(exports, gocheck.HasLen, 1)
 	check.Assert(len(exports), gocheck.Equals, 1)
 	expectedBucket := "koality-whim"
-	expectedPath := "/home/koality/code/back/src/koality/util/xunitsamples/sample1.xml"
+	expectedPath := os.ExpandEnv("$GOPATH/src/koality/util/xunitsamples/sample1.xml")
 	expectedKey :=
 		fmt.Sprintf("repository/%d/verification/%d/stage/%d/stageRun/%d%s",
 			suite.repository.Id, suite.verification.Id, stage.Id,
@@ -180,10 +180,10 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	err = copyExec.Run()
 	check.Assert(err, gocheck.IsNil)
 
-	getXunitResultsBinPath := "/home/koality/code/back/src/koality/util/getXunitResults"
+	getXunitResultsBinPath := os.ExpandEnv("$GOPATH/src/koality/util/getXunitResults")
 	compileCmd := exec.Command("go", "build", "-o",
 		getXunitResultsBinPath,
-		"/home/koality/code/back/src/koality/util/getXunitResults.go")
+		os.ExpandEnv("$GOPATH/src/koality/util/getXunitResults.go"))
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
 
