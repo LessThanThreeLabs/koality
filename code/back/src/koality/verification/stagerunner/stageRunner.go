@@ -18,7 +18,6 @@ import (
 	"koality/vm"
 	"os"
 	"os/exec"
-	"os/user"
 	"path"
 	"strings"
 	"syscall"
@@ -109,12 +108,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 }
 
 func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
-	usr, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-
-	localPath := path.Join(usr.HomeDir, "code", "back", "src", "koality", "util", execName)
+	localPath := path.Join(os.Getenv("GOPATH"), "src", "koality", "util", execName)
 	copyExec, err := stageRunner.virtualMachine.FileCopy(localPath, execName)
 	if err != nil {
 		return nil, err
@@ -132,6 +126,10 @@ func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName s
 	}
 
 	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, writeBuffer, io.MultiWriter(consoleTextWriter, os.Stderr), environment)
+	if err != nil {
+		return nil, err
+	}
+
 	if err = runExec.Run(); err != nil {
 		return nil, err
 	}

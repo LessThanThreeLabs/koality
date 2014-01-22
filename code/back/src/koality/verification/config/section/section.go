@@ -41,7 +41,7 @@ type Section interface {
 	Exports() []string
 }
 
-func New(name string, isFinal bool, runOn, failOn string, continueOnFailure bool, factoryCommands commandgroup.CommandGroup, commands commandgroup.AppendableCommandGroup, exportPaths []string) *section {
+func New(name string, isFinal bool, runOn, failOn string, continueOnFailure bool, factoryCommands commandgroup.CommandGroup, commands commandgroup.AppendableCommandGroup, exportPaths []string) Section {
 	if runOn != RunOnAll && runOn != RunOnSplit && runOn != RunOnSingle {
 		panic(fmt.Sprintf("Invalid runOn argument: %q", runOn))
 	}

@@ -1,13 +1,12 @@
 package localmachine
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"koality/shell"
 	"koality/vm"
 	"os"
-	"path/filepath"
+	"path"
 )
 
 type LocalMachine struct {
@@ -66,7 +65,11 @@ func (localMachine *LocalMachine) Patch(patchConfig *vm.PatchConfig) (shell.Exec
 }
 
 func (localMachine *LocalMachine) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
-	return localMachine.copier.FileCopy(sourceFilePath, fmt.Sprintf("%s/%s", localMachine.rootDir, destFilePath))
+	destPath := path.Join(localMachine.rootDir, destFilePath)
+	if destFilePath[len(destFilePath)-1] == '/' {
+		destPath += "/"
+	}
+	return localMachine.copier.FileCopy(sourceFilePath, destPath)
 }
 
 func (localMachine *LocalMachine) Terminate() error {
@@ -78,7 +81,7 @@ type localCopier struct {
 }
 
 func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
-	command := shell.Advertised(shell.And(shell.Commandf("mkdir -p %s", filepath.Dir(destFilePath)),
+	command := shell.Advertised(shell.And(shell.Commandf("mkdir -p %s", path.Dir(destFilePath)),
 		shell.Commandf("cp %s %s", sourceFilePath, destFilePath)))
 	return copier.executableMaker.MakeExecutable(command, nil, nil, nil, nil)
 }
