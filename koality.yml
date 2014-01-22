@@ -14,7 +14,7 @@ setup:
     ' > chef-config.rb
   - |
     echo '{ 
-      "run_list": ["recipe[postgres]", "recipe[golang]"] 
+      "run_list": ["recipe[apt]", "recipe[build-essential]", "recipe[postgres]", "recipe[golang]"]
     }' > chef-node.json
   - gem install chef --no-ri --no-rdoc -v 10.30.2
   - mkdir /home/lt3/koality-v1/chef-cache
