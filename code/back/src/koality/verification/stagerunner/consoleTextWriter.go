@@ -38,6 +38,25 @@ func newConsoleTextWriter(stagesUpdateHandler resources.StagesUpdateHandler, sta
 	return writer
 }
 
+func continuedConsoleTextWriter(stagesReadHandler resources.StagesReadHandler, stagesUpdateHandler resources.StagesUpdateHandler, stageRunId uint64) (*consoleTextWriter, error) {
+	consoleLines, err := stagesReadHandler.GetConsoleLinesTail(stageRunId, 0, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	var oldMaxLineNumber uint64
+	for lineNumber, _ := range consoleLines {
+		oldMaxLineNumber = lineNumber
+		break
+	}
+
+	var buffer bytes.Buffer
+	var locker sync.Mutex
+	writer := &consoleTextWriter{stagesUpdateHandler, stageRunId, buffer, locker, make(chan bool, 1), "", oldMaxLineNumber + 1}
+	go writer.flushOnTick()
+	return writer, nil
+}
+
 func (writer *consoleTextWriter) flushOnTick() {
 	ticker := time.NewTicker(250 * time.Millisecond)
 	for {

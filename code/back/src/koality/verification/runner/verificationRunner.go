@@ -241,7 +241,6 @@ func (verificationRunner *VerificationRunner) createStages(currentVerification *
 		stageNumber := 0
 
 		factoryCommands := section.FactoryCommands(true)
-
 		for command, err := factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
 			_, err := verificationRunner.resourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), command.Name(), uint64(stageNumber))
 			if err != nil {
@@ -263,6 +262,15 @@ func (verificationRunner *VerificationRunner) createStages(currentVerification *
 		}
 		if err != nil && err != commandgroup.NoMoreCommands {
 			return err
+		}
+
+		exports := section.Exports()
+		if len(exports) > 0 {
+			_, err := verificationRunner.resourcesConnection.Stages.Create.Create(currentVerification, uint64(sectionNumber), section.Name()+".export", uint64(stageNumber))
+			if err != nil {
+				return err
+			}
+			stageNumber++
 		}
 	}
 	return nil

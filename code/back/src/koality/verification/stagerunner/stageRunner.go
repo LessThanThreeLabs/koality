@@ -92,7 +92,12 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 		return false, err
 	}
 
-	if factorySuccess && commandsSuccess {
+	exportSucess, err := stageRunner.runExports(sectionNumber, section, environment)
+	if err != nil {
+		return false, err
+	}
+
+	if factorySuccess && commandsSuccess && exportSucess {
 		stageRunner.ResultsChan <- verification.SectionResult{
 			Section:       section.Name(),
 			Final:         section.IsFinal(),
@@ -103,7 +108,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	return commandsSuccess || section.ContinueOnFailure(), nil
 }
 
-func (stageRunner *StageRunner) copyAndRunExecOnVm(execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
+func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
 	usr, err := user.Current()
 	if err != nil {
 		return nil, err
@@ -121,7 +126,12 @@ func (stageRunner *StageRunner) copyAndRunExecOnVm(execName string, args []strin
 
 	cmd := shell.Commandf("./%s %s", execName, strings.Join(args, " "))
 	writeBuffer := new(bytes.Buffer)
-	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, writeBuffer, os.Stderr, environment)
+	consoleTextWriter, err := continuedConsoleTextWriter(stageRunner.resourcesConnection.Stages.Read, stageRunner.resourcesConnection.Stages.Update, stageRunId)
+	if err != nil {
+		return nil, err
+	}
+
+	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, writeBuffer, io.MultiWriter(consoleTextWriter, os.Stderr), environment)
 	if err = runExec.Run(); err != nil {
 		return nil, err
 	}
@@ -129,8 +139,8 @@ func (stageRunner *StageRunner) copyAndRunExecOnVm(execName string, args []strin
 	return writeBuffer, nil
 }
 
-func (stageRunner *StageRunner) exportAndGetResults(stageId uint64, stageRunId uint64, sectionToRun section.Section, environment map[string]string) ([]resources.Export, error) {
-	if len(sectionToRun.Exports()) == 0 {
+func (stageRunner *StageRunner) exportAndGetResults(stageId uint64, stageRunId uint64, exportPaths []string, environment map[string]string) ([]resources.Export, error) {
+	if len(exportPaths) == 0 {
 		return nil, nil
 	}
 
@@ -149,8 +159,8 @@ func (stageRunner *StageRunner) exportAndGetResults(stageId uint64, stageRunId u
 		shell.Quote(s3ExporterSettings.BucketName),
 		exportPrefix,
 		"us-east-1", // US Standard
-	}, sectionToRun.Exports()...)
-	writeBuffer, err := stageRunner.copyAndRunExecOnVm("exportPaths", args, environment)
+	}, exportPaths...)
+	writeBuffer, err := stageRunner.copyAndRunExecOnVm(stageRunId, "exportPaths", args, environment)
 	if err != nil {
 		return nil, err
 	}
@@ -163,13 +173,13 @@ func (stageRunner *StageRunner) exportAndGetResults(stageId uint64, stageRunId u
 	return exportOutput.Exports, exportOutput.Error
 }
 
-func (stageRunner *StageRunner) getXunitResults(command verification.Command, environment map[string]string) ([]resources.XunitResult, error) {
+func (stageRunner *StageRunner) getXunitResults(stageRunId uint64, command verification.Command, environment map[string]string) ([]resources.XunitResult, error) {
 	directories := command.XunitPaths()
 	if len(directories) == 0 {
 		return nil, nil
 	}
 	args := []string{shell.Quote("*.xml"), strings.Join(directories, " ")}
-	writeBuffer, err := stageRunner.copyAndRunExecOnVm("getXunitResults", args, environment)
+	writeBuffer, err := stageRunner.copyAndRunExecOnVm(stageRunId, "getXunitResults", args, environment)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +218,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			}
 		}
 		if stageId == 0 {
-			return false, fmt.Errorf("Unable to find a stage to match %#v", sectionToRun)
+			return false, fmt.Errorf("Unable to find a stage to match %#v", command)
 		}
 
 		stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
@@ -330,7 +340,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 			}
 		}
 		if stageId == 0 {
-			return false, fmt.Errorf("Unable to find a stage to match %#v", sectionToRun)
+			return false, fmt.Errorf("Unable to find a stage to match %#v", command)
 		}
 
 		stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
@@ -363,7 +373,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 
 		setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
 		setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, returnCode)
-		xunitResults, xunitErr := stageRunner.getXunitResults(command, environment)
+		xunitResults, xunitErr := stageRunner.getXunitResults(stageRun.Id, command, environment)
 		if xunitErr != nil {
 			return false, xunitErr
 		}
@@ -371,15 +381,6 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		xunitErr = stageRunner.resourcesConnection.Stages.Update.AddXunitResults(stageRun.Id, xunitResults)
 		if xunitErr != nil {
 			return false, xunitErr
-		}
-
-		exports, exportErr := stageRunner.exportAndGetResults(stageId, stageRun.Id, sectionToRun, environment)
-		if exportErr != nil {
-			return false, exportErr
-		}
-		exportErr = stageRunner.resourcesConnection.Stages.Update.AddExports(stageRun.Id, exports)
-		if exportErr != nil {
-			return false, exportErr
 		}
 
 		if closeErr != nil {
@@ -403,6 +404,62 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		return false, err
 	}
 	return !sectionFailed, nil
+}
+
+func (stageRunner *StageRunner) runExports(sectionNumber uint64, sectionToRun section.Section, environment map[string]string) (bool, error) {
+	exportPaths := sectionToRun.Exports()
+	if len(exportPaths) == 0 {
+		return true, nil
+	}
+	if stageRunner.verification.Status == "cancelled" {
+		return false, nil
+	}
+
+	stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
+	if err != nil {
+		return false, err
+	}
+
+	var stageId uint64
+
+	for _, stage := range stages {
+		if stage.SectionNumber == sectionNumber && stage.Name == sectionToRun.Name()+".export" {
+			stageId = stage.Id
+			break
+		}
+	}
+	if stageId == 0 {
+		return false, fmt.Errorf("Unable to find a stage to match %#v", sectionToRun)
+	}
+
+	stageRun, err := stageRunner.resourcesConnection.Stages.Create.CreateRun(stageId)
+	if err != nil {
+		return false, err
+	}
+	err = stageRunner.resourcesConnection.Stages.Update.SetStartTime(stageRun.Id, time.Now())
+	if err != nil {
+		return false, err
+	}
+
+	exports, exportErr := stageRunner.exportAndGetResults(stageId, stageRun.Id, exportPaths, environment)
+	if exportErr != nil {
+		return false, exportErr
+	}
+
+	setEndTimeErr := stageRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
+	setReturnCodeErr := stageRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, 0)
+	exportErr = stageRunner.resourcesConnection.Stages.Update.AddExports(stageRun.Id, exports)
+
+	if setEndTimeErr != nil {
+		return false, setEndTimeErr
+	}
+	if setReturnCodeErr != nil {
+		return false, setReturnCodeErr
+	}
+	if exportErr != nil {
+		return false, setEndTimeErr
+	}
+	return true, nil
 }
 
 func (stageRunner *StageRunner) runCommand(command verification.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (int, error) {

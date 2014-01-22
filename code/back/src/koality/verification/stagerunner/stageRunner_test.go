@@ -119,6 +119,8 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 		_, err = suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))
 		check.Assert(err, gocheck.IsNil)
 	}
+	_, err = suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, "test.export", uint64(len(commands)))
+	check.Assert(err, gocheck.IsNil)
 
 	commandGroup := commandgroup.New(commands)
 	usr, err := user.Current()
@@ -144,7 +146,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	err = suite.stageRunner.RunStages([]section.Section{testSection}, nil, nil)
 	check.Assert(err, gocheck.IsNil)
 
-	stage, err := suite.resourcesConnection.Stages.Read.GetBySectionNumberAndName(suite.verification.Id, 0, "pass")
+	stage, err := suite.resourcesConnection.Stages.Read.GetBySectionNumberAndName(suite.verification.Id, 0, "test.export")
 	check.Assert(err, gocheck.IsNil)
 
 	stageRuns, err := suite.resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
