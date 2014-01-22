@@ -28,7 +28,7 @@ setup:
   - mkdir /home/lt3/koality-v1/chef-cache
   - chef-solo -c chef-config.rb
 test:
-  machines: 1
+  machines: 2
   factories:
   - koality test factory:
       script:
