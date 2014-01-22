@@ -44,9 +44,7 @@ func (suite *StageRunnerSuite) SetUpTest(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 
 	suite.virtualMachine, err = localmachine.New()
-	if err != nil {
-		check.Fatal(err)
-	}
+	check.Assert(err, gocheck.IsNil)
 
 	suite.repository, err = suite.resourcesConnection.Repositories.Create.Create("repositoryName", "git", "localUri", "remote@Uri")
 	check.Assert(err, gocheck.IsNil)

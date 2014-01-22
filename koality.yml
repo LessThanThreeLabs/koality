@@ -5,6 +5,9 @@ setup:
   - git submodule update --init --recursive
   # prepare database
   - ln -s $HOME/koality-v1/postgres $HOME/postgres
+  # create repositories directory
+  - mkdir -p /etc/koality/repositories
+  - chmod -R 777 /etc/koality/repositories
   # run chef
   - |
     echo '
