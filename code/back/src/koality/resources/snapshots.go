@@ -25,13 +25,13 @@ type SnapshotsHandler struct {
 }
 
 type SnapshotsCreateHandler interface {
-	CreateSnapshot(poolId uint64, imageType string) (*Snapshot, error)
+	Create(poolId uint64, imageType string) (*Snapshot, error)
 }
 
 type SnapshotsReadHandler interface {
-	GetSnapshot(snapshotId uint64) (*Snapshot, error)
-	GetSnapshotFromImageId(imageId string) (*Snapshot, error)
-	GetSnapshotsForPool(poolId uint64) ([]Snapshot, error)
+	Get(snapshotId uint64) (*Snapshot, error)
+	GetFromImageId(imageId string) (*Snapshot, error)
+	GetForPool(poolId uint64) ([]Snapshot, error)
 }
 
 type SnapshotsUpdateHandler interface {
@@ -41,7 +41,7 @@ type SnapshotsUpdateHandler interface {
 }
 
 type SnapshotsDeleteHandler interface {
-	DeleteSnapshot(snapshotId uint64) error
+	Delete(snapshotId uint64) error
 }
 
 type SnapshotCreatedHandler func(Snapshot *Snapshot)

@@ -16,8 +16,8 @@ func NewDeleteHandler(database *sql.DB, verifier *Verifier, subscriptionHandler 
 	return &DeleteHandler{database, verifier, subscriptionHandler}, nil
 }
 
-func (deleteHandler *DeleteHandler) DeleteSnapshot(snapshotId uint64) error {
-	query := "UPDATE ec2_snapshots SET deleted = id WHERE id=$1 AND id != deleted"
+func (deleteHandler *DeleteHandler) Delete(snapshotId uint64) error {
+	query := "UPDATE snapshots SET deleted = id WHERE id=$1 AND id != deleted"
 	result, err := deleteHandler.database.Exec(query, snapshotId)
 	if err != nil {
 		return err

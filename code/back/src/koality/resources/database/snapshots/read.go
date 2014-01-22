@@ -38,21 +38,21 @@ func (readHandler *ReadHandler) scanSnapshot(scannable Scannable) (*resources.Sn
 	return snapshot, nil
 }
 
-func (readHandler *ReadHandler) GetSnapshot(snapshotId uint64) (*resources.Snapshot, error) {
+func (readHandler *ReadHandler) Get(snapshotId uint64) (*resources.Snapshot, error) {
 	query := "SELECT id, pool_id, image_id, image_type, status, deleted, created, started, ended" +
 		" FROM snapshots WHERE id=$1"
 	row := readHandler.database.QueryRow(query, snapshotId)
 	return readHandler.scanSnapshot(row)
 }
 
-func (readHandler *ReadHandler) GetSnapshotFromImageId(imageId string) (*resources.Snapshot, error) {
+func (readHandler *ReadHandler) GetFromImageId(imageId string) (*resources.Snapshot, error) {
 	query := "SELECT id, pool_id, image_id, image_type, status, deleted, created, started, ended" +
 		" FROM snapshots WHERE image_id=$1"
 	row := readHandler.database.QueryRow(query, imageId)
 	return readHandler.scanSnapshot(row)
 }
 
-func (readHandler *ReadHandler) GetSnapshotsForPool(poolId uint64) ([]resources.Snapshot, error) {
+func (readHandler *ReadHandler) GetForPool(poolId uint64) ([]resources.Snapshot, error) {
 	query := "SELECT id, pool_id, image_id, image_type, status, deleted, created, started, ended" +
 		" FROM snapshots WHERE pool_id = $1" +
 		" ORDER BY id DESC"

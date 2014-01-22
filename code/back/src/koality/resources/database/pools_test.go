@@ -97,7 +97,7 @@ func TestCreateInvalidEc2Pool(test *testing.T) {
 	}
 }
 
-func TestCreateEc2Pool(test *testing.T) {
+func TestCreateAndDeleteEc2Pool(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -245,8 +245,8 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if len(pools) != 1 {
-		test.Fatal("Expected there to only be one pool")
+	if len(pools) != 2 {
+		test.Fatal("Expected there to be two pools")
 	}
 
 	pool2, err := connection.Pools.Create.CreateEc2Pool(name+"2", accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
@@ -291,8 +291,8 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if len(pools) != 2 {
-		test.Fatal("Expected there to be two pools")
+	if len(pools) != 3 {
+		test.Fatal("Expected there to be three pools")
 	}
 
 	err = connection.Pools.Delete.DeleteEc2Pool(pool1.Id)
@@ -320,8 +320,8 @@ func TestCreateEc2Pool(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if len(pools) != 1 {
-		test.Fatal("Expected there to be only one pool")
+	if len(pools) != 2 {
+		test.Fatal("Expected there to be two pools")
 	}
 }
 

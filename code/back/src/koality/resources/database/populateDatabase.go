@@ -42,8 +42,7 @@ func makeSureDumpExists() error {
 		return nil
 	}
 
-	err = Reseed()
-	if err != nil {
+	if err = Reseed(); err != nil {
 		return err
 	}
 
@@ -52,13 +51,15 @@ func makeSureDumpExists() error {
 		return err
 	}
 
-	err = createUsers(connection)
-	if err != nil {
+	if err = createUsers(connection); err != nil {
 		return err
 	}
 
-	err = createRepositories(connection)
-	if err != nil {
+	if err = createRepositories(connection); err != nil {
+		return err
+	}
+
+	if err = createPool(connection); err != nil {
 		return err
 	}
 
@@ -232,4 +233,28 @@ func addConsoleText(connection *resources.Connection, stageRunId uint64) error {
 	textToAdd := text[0:maxLines]
 	err := connection.Stages.Update.AddConsoleLines(stageRunId, textToTextMap(textToAdd))
 	return err
+}
+
+func createPool(connection *resources.Connection) error {
+	name := "default-pool"
+	accessKey := "aaaabbbbccccddddeeee"
+	secretKey := "0000111122223333444455556666777788889999"
+	username := "koality"
+	baseAmiId := "ami-12345678"
+	securityGroupId := "sg-12345678"
+	vpcSubnetId := "subnet-12345678"
+	instanceType := "m1.medium"
+	numReadyInstances := uint64(2)
+	numMaxInstances := uint64(10)
+	rootDriveSize := uint64(100)
+	userData := "echo hello"
+
+	_, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

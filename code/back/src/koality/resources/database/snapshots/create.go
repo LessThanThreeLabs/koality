@@ -8,7 +8,7 @@ import (
 const (
 	initialSnapshotStatus = "declared"
 	defaultImageId        = ""
-	initiallyDeleted      = false
+	initiallyDeleted      = 0
 )
 
 type CreateHandler struct {
@@ -24,21 +24,21 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) CreateSnapshot(poolId uint64, imageType string) (*resources.Snapshot, error) {
+func (createHandler *CreateHandler) Create(poolId uint64, imageType string) (*resources.Snapshot, error) {
 	err := createHandler.getSnapshotParamsError(poolId, imageType)
 	if err != nil {
 		return nil, err
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO snapshots (poolId, imageId, imageType, status, deleted)" +
+	query := "INSERT INTO snapshots (pool_id, image_id, image_type, status, deleted)" +
 		" VALUES ($1, $2, $3, $4, $5) RETURNING id"
 	err = createHandler.database.QueryRow(query, poolId, defaultImageId, imageType, initialSnapshotStatus, initiallyDeleted).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
 
-	snapshot, err := createHandler.readHandler.GetSnapshot(id)
+	snapshot, err := createHandler.readHandler.Get(id)
 	if err != nil {
 		return nil, err
 	}

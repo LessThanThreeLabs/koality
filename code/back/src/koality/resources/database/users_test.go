@@ -164,7 +164,7 @@ func TestCreateAndDeleteUser(test *testing.T) {
 	select {
 	case <-deletedEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear user creation event")
+		test.Fatal("Failed to hear user deletion event")
 	}
 
 	if deletedEventId != user.Id {
