@@ -4,7 +4,6 @@ import (
 	"github.com/dchest/goyaml"
 	"io/ioutil"
 	"koality/repositorymanager"
-	"koality/repositorymanager/pathgenerator"
 	"koality/resources/database"
 	"koality/shell"
 	"koality/vm"
@@ -71,7 +70,7 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 		test.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(path.Join(repoPath, ".git", pathgenerator.GitHiddenRef(sha)), shaBytes, 0664)
+	err = ioutil.WriteFile(path.Join(repoPath, ".git", repositorymanager.GitHiddenRef(sha)), shaBytes, 0664)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -81,16 +80,18 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 		test.Fatal(err)
 	}
 
-	err = repositorymanager.CreateRepository(repository)
+	repositoryManager := repositorymanager.New("/tmp/repositoryManager")
+
+	err = repositoryManager.CreateRepository(repository)
 	if err != nil {
 		test.Fatal(err)
 	}
-	defer os.RemoveAll(path.Dir(pathgenerator.ToPath(repository)))
+	defer os.RemoveAll(path.Dir(repositoryManager.ToPath(repository)))
 
 	vmPool := vm.NewPool(0, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	verificationRunner := New(resourcesConnection, poolManager)
+	verificationRunner := New(resourcesConnection, poolManager, repositoryManager)
 
 	verification, err := resourcesConnection.Verifications.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")

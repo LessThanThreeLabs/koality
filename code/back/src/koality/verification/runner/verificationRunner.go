@@ -3,7 +3,6 @@ package runner
 import (
 	"fmt"
 	"koality/repositorymanager"
-	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
 	"koality/shell"
 	"koality/util/log"
@@ -22,13 +21,15 @@ import (
 type VerificationRunner struct {
 	resourcesConnection               *resources.Connection
 	poolManager                       *poolmanager.PoolManager
+	repositoryManager                 repositorymanager.RepositoryManager
 	verificationCreatedSubscriptionId resources.SubscriptionId
 }
 
-func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager) *VerificationRunner {
+func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager) *VerificationRunner {
 	return &VerificationRunner{
 		resourcesConnection: resourcesConnection,
 		poolManager:         poolManager,
+		repositoryManager:   repositoryManager,
 	}
 }
 
@@ -194,7 +195,7 @@ func (verificationRunner *VerificationRunner) failVerification(verification *res
 
 func (verificationRunner *VerificationRunner) passVerification(verification *resources.Verification, repository *resources.Repository) error {
 	log.Infof("verification %d %sPASSED!!!%s\n", verification.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := repositorymanager.MergeChangeset(repository, pathgenerator.GitHiddenRef(verification.Changeset.HeadSha), verification.Changeset.BaseSha, verification.MergeTarget)
+	err := verificationRunner.repositoryManager.MergeChangeset(repository, repositorymanager.GitHiddenRef(verification.Changeset.HeadSha), verification.Changeset.BaseSha, verification.MergeTarget)
 	if err == nil {
 		(*verification).MergeStatus = "passed"
 		verificationRunner.resourcesConnection.Verifications.Update.SetMergeStatus(verification.Id, "passed")
@@ -216,7 +217,7 @@ func (verificationRunner *VerificationRunner) passVerification(verification *res
 func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerification *resources.Verification, repository *resources.Repository) (config.VerificationConfig, error) {
 	var emptyConfig config.VerificationConfig
 
-	configYaml, err := repositorymanager.GetYamlFile(repository, currentVerification.Changeset.HeadSha)
+	configYaml, err := verificationRunner.repositoryManager.GetYamlFile(repository, currentVerification.Changeset.HeadSha)
 	if err != nil {
 		return emptyConfig, err
 	}
@@ -227,7 +228,7 @@ func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerif
 	}
 
 	// TODO (bbland): add retry logic
-	checkoutCommand := vcs.CheckoutCommand(repository, pathgenerator.GitHiddenRef(currentVerification.Changeset.HeadSha))
+	checkoutCommand := vcs.CheckoutCommand(repository, repositorymanager.GitHiddenRef(currentVerification.Changeset.HeadSha))
 	setupCommands := []verification.Command{verification.NewShellCommand(repository.VcsType, checkoutCommand)}
 	setupSection := section.New("setup", false, section.RunOnAll, section.FailOnFirst, false, nil, commandgroup.New(setupCommands), nil)
 	verificationConfig.Sections = append([]section.Section{setupSection}, verificationConfig.Sections...)

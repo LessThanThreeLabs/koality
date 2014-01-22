@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"koality/internalapi"
+	"koality/repositorymanager"
 	"koality/resources"
 	"koality/resources/database"
 	"koality/resources/database/migrate"
@@ -43,7 +44,9 @@ func main() {
 		panic(err)
 	}
 
-	verificationRunner := verificationrunner.New(resourcesConnection, poolManager)
+	repositoryManager := repositorymanager.New("/etc/koality/repositories")
+
+	verificationRunner := verificationrunner.New(resourcesConnection, poolManager, repositoryManager)
 	err = verificationRunner.SubscribeToEvents()
 	if err != nil {
 		panic(err)
@@ -53,7 +56,7 @@ func main() {
 
 	internalapi.Setup(resourcesConnection, internalapi.RpcSocket)
 
-	webserver, err := webserver.New(resourcesConnection, webserverPort)
+	webserver, err := webserver.New(resourcesConnection, repositoryManager, webserverPort)
 	if err != nil {
 		panic(err)
 	}

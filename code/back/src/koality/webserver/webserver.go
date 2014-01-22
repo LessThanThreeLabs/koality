@@ -5,19 +5,21 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"koality/repositorymanager"
 	"koality/resources"
 	"net/http"
 )
 
 type Webserver struct {
 	resourcesConnection *resources.Connection
+	repositoryManager   repositorymanager.RepositoryManager
 	sessionName         string
 	address             string
 }
 
-func New(resourcesConnection *resources.Connection, port int) (*Webserver, error) {
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, port int) (*Webserver, error) {
 	address := fmt.Sprintf(":%d", port)
-	return &Webserver{resourcesConnection, "koality", address}, nil
+	return &Webserver{resourcesConnection, repositoryManager, "koality", address}, nil
 }
 
 func (webserver *Webserver) Start() error {
@@ -60,7 +62,7 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 func (webserver *Webserver) createRouter() (*mux.Router, error) {
 	router := mux.NewRouter()
 	apiSubrouter := router.PathPrefix("/api").Subrouter()
-	handleApiSubroute(apiSubrouter, webserver.resourcesConnection)
+	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
 
 	appSubrouter := router.PathPrefix("/app").Subrouter()
 	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()

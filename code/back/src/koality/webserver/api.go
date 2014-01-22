@@ -9,11 +9,11 @@ import (
 	"strconv"
 )
 
-func handleApiSubroute(subrouter *mux.Router, resourcesConnection *resources.Connection) {
-	subrouter.HandleFunc("/changes/create", CreateChangeHandler(resourcesConnection))
+func handleApiSubroute(subrouter *mux.Router, resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) {
+	subrouter.HandleFunc("/changes/create", CreateChangeHandler(resourcesConnection, repositoryManager))
 }
 
-func CreateChangeHandler(resourcesConnection *resources.Connection) http.HandlerFunc {
+func CreateChangeHandler(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		queryValues := request.URL.Query()
 
@@ -30,9 +30,9 @@ func CreateChangeHandler(resourcesConnection *resources.Connection) http.Handler
 			fmt.Fprintf(writer, "I shit my pants")
 		}
 
-		repositorymanager.StorePending(repository, headSha)
+		repositoryManager.StorePending(repository, headSha)
 
-		message, username, email, err := repositorymanager.GetCommitAttributes(repository, headSha)
+		message, username, email, err := repositoryManager.GetCommitAttributes(repository, headSha)
 		if err != nil {
 			fmt.Fprintf(writer, "I shit my pants")
 		}
