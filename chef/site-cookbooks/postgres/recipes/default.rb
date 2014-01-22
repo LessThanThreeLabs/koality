@@ -8,6 +8,12 @@ apt_repository 'apt.postgresql.org' do
   action :add
 end
 
+package 'postgresql' do
+	action :remove
+	notifies :run, 'execute[apt-get autoremove]', :immediately
+	not_if "psql --version | grep -q #{node['postgres']['version']}"
+end
+
 package 'postgresql-' + node["postgres"]["version"] do
 	action		:install
 end
@@ -36,10 +42,12 @@ end
 
 execute "create-role" do
 	user "postgres"
-	command "psql -c \"SELECT 1 FROM pg_user WHERE usename='#{node[:postgres][:username]}'\" | grep -q 1 || psql -c \"CREATE USER #{node[:postgres][:username]} PASSWORD '#{node[:postgres][:password]}' SUPERUSER\""
+	command "psql -c \"CREATE USER #{node[:postgres][:username]} PASSWORD '#{node[:postgres][:password]}' SUPERUSER\""
+	not_if "psql -c \"SELECT 1 FROM pg_user WHERE usename='#{node[:postgres][:username]}'\" | grep -q 1"
 end
 
 execute "create-database" do
 	user "postgres"
-	command "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{node[:postgres][:database_name]}'\" | grep -q 1 || createdb #{node[:postgres][:database_name]} --template template0 --locale #{node[:postgres][:locale]} --encoding #{node[:postgres][:character_encoding]}"
+	command "createdb #{node[:postgres][:database_name]} --template template0 --locale #{node[:postgres][:locale]} --encoding #{node[:postgres][:character_encoding]}"
+	not_if "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{node[:postgres][:database_name]}'\" | grep -q 1"
 end

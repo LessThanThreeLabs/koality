@@ -5,8 +5,6 @@ setup:
   - git submodule update --init --recursive
   # prepare database
   - ln -s $HOME/koality-v1/postgres $HOME/postgres
-  #  uninstall old postgresql
-  - psql --version | grep -q 9.3 || (apt-get remove -y postgresql && update-alternatives --remove postmaster.1.gz /usr/share/postgresql/9.1/man/man1/postmaster.1.gz && apt-get autoremove -y)
   # run chef
   - |
     echo '
