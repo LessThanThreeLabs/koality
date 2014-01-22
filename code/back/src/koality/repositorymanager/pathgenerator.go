@@ -1,4 +1,4 @@
-package pathgenerator
+package repositorymanager
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"strconv"
 )
 
-func ToPath(repo *resources.Repository) string {
-	return filepath.Join("/", "etc", "koality", "repositories", fmt.Sprintf("%d", repo.Id), repo.Name)
+func (repositoryManager *repositoryManager) ToPath(repo *resources.Repository) string {
+	return filepath.Join(repositoryManager.path, "repositories", fmt.Sprintf("%d", repo.Id), repo.Name)
 }
 
 func GitHiddenRef(commitId string) string {

@@ -2,7 +2,6 @@ package repositorymanager
 
 import (
 	"fmt"
-	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
 	"os"
 	"strings"
@@ -14,31 +13,31 @@ const (
 	retryTimeout     = 1000000000 // In nanoseconds
 )
 
-type GitSubRepository struct {
+type gitSubRepository struct {
 	path string
 }
 
-func (repository *GitSubRepository) getVcsBaseCommand() string {
+func (repository *gitSubRepository) getVcsBaseCommand() string {
 	return "git"
 }
 
-func (repository *GitSubRepository) getPath() string {
+func (repository *gitSubRepository) getPath() string {
 	return repository.path
 }
 
-type GitRepository struct {
-	bare  *GitSubRepository
-	slave *GitSubRepository
+type gitRepository struct {
+	bare  *gitSubRepository
+	slave *gitSubRepository
 
 	remoteUri string
 }
 
-func openGitRepository(repository *resources.Repository) *GitRepository {
-	path := pathgenerator.ToPath(repository)
-	return &GitRepository{&GitSubRepository{path}, &GitSubRepository{path + ".slave"}, repository.RemoteUri}
+func (repositoryManager *repositoryManager) openGitRepository(repository *resources.Repository) *gitRepository {
+	path := repositoryManager.ToPath(repository)
+	return &gitRepository{&gitSubRepository{path}, &gitSubRepository{path + ".slave"}, repository.RemoteUri}
 }
 
-func (repository *GitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
+func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
 	env := []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
 		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
@@ -56,7 +55,7 @@ func (repository *GitSubRepository) fetchWithPrivateKey(remoteUri string, args .
 	return
 }
 
-func (repository *GitSubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
+func (repository *gitSubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
 	env := []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
 		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
@@ -70,7 +69,7 @@ func (repository *GitSubRepository) pushWithPrivateKey(remoteUri string, args ..
 	return
 }
 
-func (repository *GitRepository) storePending(ref, remoteUri string, args ...string) (err error) {
+func (repository *gitRepository) storePending(ref, remoteUri string, args ...string) (err error) {
 	if err = repository.bare.fetchWithPrivateKey(remoteUri, "+refs/*:refs/*"); err != nil {
 		return
 	}
@@ -86,7 +85,7 @@ func (repository *GitRepository) storePending(ref, remoteUri string, args ...str
 	return
 }
 
-func (repository *GitRepository) createRepository() (err error) {
+func (repository *gitRepository) createRepository() (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err == nil {
 		return
 	}
@@ -114,7 +113,7 @@ func (repository *GitRepository) createRepository() (err error) {
 	return
 }
 
-func (repository *GitRepository) deleteRepository() (err error) {
+func (repository *gitRepository) deleteRepository() (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return err
 	}
@@ -127,7 +126,7 @@ func (repository *GitRepository) deleteRepository() (err error) {
 	return os.RemoveAll(repository.bare.path)
 }
 
-func (repository *GitRepository) mergeChangeset(headRef, baseRef, refToMergeInto string) (err error) {
+func (repository *gitRepository) mergeChangeset(headRef, baseRef, refToMergeInto string) (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
@@ -144,7 +143,7 @@ func (repository *GitRepository) mergeChangeset(headRef, baseRef, refToMergeInto
 	return
 }
 
-func (repository *GitRepository) mergeRefs(refToMerge, refToMergeInto string) (originalHead string, err error) {
+func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (originalHead string, err error) {
 	defer RunCommand(Command(repository.slave, nil, "reset", "--hard"))
 
 	if err = RunCommand(Command(repository.slave, nil, "remote", "prune", "origin")); err != nil {
@@ -205,7 +204,7 @@ func (repository *GitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 	return
 }
 
-func (repository *GitSubRepository) getHeadSha() (headSha string, err error) {
+func (repository *gitSubRepository) getHeadSha() (headSha string, err error) {
 	showCommand := Command(repository, nil, "show", "HEAD")
 	if err = RunCommand(showCommand); err != nil {
 		return
@@ -225,11 +224,11 @@ func (repository *GitSubRepository) getHeadSha() (headSha string, err error) {
 	return
 }
 
-func (repository *GitSubRepository) resetRepositoryHead(refToReset, originalHead string) error {
+func (repository *gitSubRepository) resetRepositoryHead(refToReset, originalHead string) error {
 	return RunCommand(Command(repository, nil, "push", "origin", fmt.Sprintf("%s:%s", originalHead, refToReset), "--force"))
 }
 
-func (repository *GitSubRepository) updateBranchFromForwardUrl(remoteUri, refToUpdate string) (headSha string, err error) {
+func (repository *gitSubRepository) updateBranchFromForwardUrl(remoteUri, refToUpdate string) (headSha string, err error) {
 	remoteBranch := fmt.Sprintf("origin/%s", refToUpdate)
 
 	if err = repository.fetchWithPrivateKey(remoteUri, refToUpdate); err != nil {
@@ -255,7 +254,7 @@ func (repository *GitSubRepository) updateBranchFromForwardUrl(remoteUri, refToU
 	return
 }
 
-func (repository *GitRepository) updateFromForwardUrl(remoteUri, refToMergeInto, originalHead string) (err error) {
+func (repository *gitRepository) updateFromForwardUrl(remoteUri, refToMergeInto, originalHead string) (err error) {
 	defer func() {
 		if err != nil {
 			repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
@@ -294,7 +293,7 @@ func (repository *GitRepository) updateFromForwardUrl(remoteUri, refToMergeInto,
 	return
 }
 
-func (repository *GitRepository) pushMergeRetry(remoteUri, refToMergeInto, originalHead string) (err error) {
+func (repository *gitRepository) pushMergeRetry(remoteUri, refToMergeInto, originalHead string) (err error) {
 	pushAttempts := 0
 
 	for {
@@ -314,7 +313,7 @@ func (repository *GitRepository) pushMergeRetry(remoteUri, refToMergeInto, origi
 	return
 }
 
-func (repository *GitRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
+func (repository *gitRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
@@ -370,7 +369,7 @@ func (repository *GitRepository) getCommitAttributes(ref string) (message, usern
 	return
 }
 
-func (repository *GitRepository) getYamlFile(ref string) (yamlFile string, err error) {
+func (repository *gitRepository) getYamlFile(ref string) (yamlFile string, err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}

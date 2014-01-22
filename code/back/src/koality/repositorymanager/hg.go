@@ -2,31 +2,30 @@ package repositorymanager
 
 import (
 	"fmt"
-	"koality/repositorymanager/pathgenerator"
 	"koality/resources"
 	"koality/shell"
 	"os"
 	"strings"
 )
 
-type HgRepository struct {
+type hgRepository struct {
 	path      string
 	remoteUri string
 }
 
-func openHgRepository(repository *resources.Repository) *HgRepository {
-	return &HgRepository{pathgenerator.ToPath(repository), repository.RemoteUri}
+func (repositoryManager *repositoryManager) openHgRepository(repository *resources.Repository) *hgRepository {
+	return &hgRepository{repositoryManager.ToPath(repository), repository.RemoteUri}
 }
 
-func (repository *HgRepository) getVcsBaseCommand() string {
+func (repository *hgRepository) getVcsBaseCommand() string {
 	return "hg"
 }
 
-func (repository *HgRepository) getPath() string {
+func (repository *hgRepository) getPath() string {
 	return repository.path
 }
 
-func (repository *HgRepository) fetchWithPrivateKey(args ...string) (err error) {
+func (repository *hgRepository) fetchWithPrivateKey(args ...string) (err error) {
 	//TODO(akostov) GIT_PRIVATE_KEY_PATH = change script much
 	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", shell.Quote(fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s %s -o ConnectTimeout=%s", defaultPrivateKeyPath, defaultSshScript, defaultTimeout)), repository.remoteUri}, args...)...)); err != nil {
 		return err
@@ -35,7 +34,7 @@ func (repository *HgRepository) fetchWithPrivateKey(args ...string) (err error) 
 	return
 }
 
-func (repository *HgRepository) createRepository() (err error) {
+func (repository *hgRepository) createRepository() (err error) {
 	if _, err = os.Stat(repository.path); !os.IsNotExist(err) {
 		return RepositoryAlreadyExistsInStoreError{fmt.Sprintf("The repository at %s already exists in the repository store.", repository.path)}
 	}
@@ -55,7 +54,7 @@ func (repository *HgRepository) createRepository() (err error) {
 	return
 }
 
-func (repository *HgRepository) deleteRepository() (err error) {
+func (repository *hgRepository) deleteRepository() (err error) {
 	if err = checkRepositoryExists(repository.path); err != nil {
 		return err
 	}
@@ -63,7 +62,7 @@ func (repository *HgRepository) deleteRepository() (err error) {
 	return os.RemoveAll(repository.path)
 }
 
-func (repository *HgRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
+func (repository *hgRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
 	command := Command(repository, nil, "log", "-r", ref)
 	if err = RunCommand(command); err != nil {
 		err = NoSuchCommitInRepositoryError{fmt.Sprintf(fmt.Sprintf("The repository %v does not contain commit %s", repository, ref))}
@@ -120,7 +119,7 @@ func (repository *HgRepository) getCommitAttributes(ref string) (message, userna
 	return
 }
 
-func (repository *HgRepository) getYamlFile(ref string) (yamlFile string, err error) {
+func (repository *hgRepository) getYamlFile(ref string) (yamlFile string, err error) {
 	command := Command(repository, nil, "cat", "-r", ref, "koality.yml")
 	if err = RunCommand(command); err != nil {
 		return

@@ -12,17 +12,18 @@ import (
 var buf []byte
 
 var remoteRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", "remote")
+var RM = repositoryManager{filepath.Join("/", "etc", "koality")}
 
 var (
 	gitRepositoryResource = &resources.Repository{0, "gitRepository", "", "git", "", remoteRepositoryPath, nil, nil}
-	gitRepository         = openGitRepository(gitRepositoryResource)
-	gitRemoteRepository   = &GitSubRepository{remoteRepositoryPath}
+	gitRepo               = RM.openGitRepository(gitRepositoryResource)
+	gitRemoteRepository   = &gitSubRepository{remoteRepositoryPath}
 )
 
 var (
 	hgRepositoryResource = &resources.Repository{1, "hgRepository", "", "hg", "", remoteRepositoryPath, nil, nil}
-	hgRepository         = openHgRepository(hgRepositoryResource)
-	hgRemoteRepository   = &HgRepository{remoteRepositoryPath, ""}
+	hgRepo               = RM.openHgRepository(hgRepositoryResource)
+	hgRemoteRepository   = &hgRepository{remoteRepositoryPath, ""}
 )
 
 func getTopRef(remoteRepository Repository) (ref string) {
@@ -70,7 +71,7 @@ func testCreateGetYamlDelete(repository StoredRepository, remoteRepository Repos
 	var err error
 	defer func() {
 		repositoryTestTeardown(repository, testing)
-		if _, err = os.Stat(gitRepository.bare.path); !os.IsNotExist(err) {
+		if _, err = os.Stat(gitRepo.bare.path); !os.IsNotExist(err) {
 			testing.Fatal("Repository still existed after deletion.")
 		}
 	}()
@@ -99,12 +100,12 @@ func testGetCommitAttributes(repository StoredRepository, remoteRepository Repos
 }
 
 func TestGitStorePending(testing *testing.T) {
-	defer repositoryTestTeardown(gitRepository, testing)
-	repositoryTestSetup(gitRepository, gitRemoteRepository, testing)
+	defer repositoryTestTeardown(gitRepo, testing)
+	repositoryTestSetup(gitRepo, gitRemoteRepository, testing)
 
 	headSha, _ := gitRemoteRepository.getHeadSha()
 
-	if err := gitRepository.storePending(headSha, remoteRepositoryPath); err != nil {
+	if err := gitRepo.storePending(headSha, remoteRepositoryPath); err != nil {
 		testing.Fatal(err)
 	}
 
@@ -116,16 +117,16 @@ func TestGitStorePending(testing *testing.T) {
 var (
 	//The cloned repository is the repository that would be pushing to the local bare repository
 	clonedRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", "clone")
-	clonedRepository     = &GitSubRepository{clonedRepositoryPath}
+	clonedRepository     = &gitSubRepository{clonedRepositoryPath}
 )
 
 func TestGitMergePass(testing *testing.T) {
-	defer repositoryTestTeardown(gitRepository, testing)
+	defer repositoryTestTeardown(gitRepo, testing)
 	defer os.RemoveAll(clonedRepositoryPath)
-	repositoryTestSetup(gitRepository, gitRemoteRepository, testing)
+	repositoryTestSetup(gitRepo, gitRemoteRepository, testing)
 
 	os.MkdirAll(clonedRepositoryPath, 0700)
-	RunCommand(Command(clonedRepository, nil, "clone", gitRepository.bare.path, clonedRepositoryPath))
+	RunCommand(Command(clonedRepository, nil, "clone", gitRepo.bare.path, clonedRepositoryPath))
 
 	oldHeadSha, _ := clonedRepository.getHeadSha()
 
@@ -138,11 +139,11 @@ func TestGitMergePass(testing *testing.T) {
 		fmt.Println(err)
 	}
 
-	if err := MergeChangeset(gitRepositoryResource, fmt.Sprintf("refs/for/%s", headSha), fmt.Sprintf("refs/for/%s", headSha), oldHeadSha); err != nil {
+	if err := RM.MergeChangeset(gitRepositoryResource, fmt.Sprintf("refs/for/%s", headSha), fmt.Sprintf("refs/for/%s", headSha), oldHeadSha); err != nil {
 		testing.Fatal(err)
 	}
 
-	if _, _, _, err := gitRepository.getCommitAttributes(headSha); err != nil {
+	if _, _, _, err := gitRepo.getCommitAttributes(headSha); err != nil {
 		testing.Fatal("Merging did not result in the new commit being present in the main repository.")
 	}
 }
@@ -150,17 +151,17 @@ func TestGitMergePass(testing *testing.T) {
 //TODO(akostov) Talk to Jon + add more git merging tests.
 
 func TestGitCreateGetYamlDelete(testing *testing.T) {
-	testCreateGetYamlDelete(gitRepository, gitRemoteRepository, testing)
+	testCreateGetYamlDelete(gitRepo, gitRemoteRepository, testing)
 }
 
 func TestHgCreateGetYamlDelete(testing *testing.T) {
-	testCreateGetYamlDelete(hgRepository, hgRemoteRepository, testing)
+	testCreateGetYamlDelete(hgRepo, hgRemoteRepository, testing)
 }
 
 func TestGitGetCommitAttributes(testing *testing.T) {
-	testGetCommitAttributes(gitRepository, gitRemoteRepository, testing)
+	testGetCommitAttributes(gitRepo, gitRemoteRepository, testing)
 }
 
 func TestHgGetCommitAttributes(testing *testing.T) {
-	testGetCommitAttributes(hgRepository, hgRemoteRepository, testing)
+	testGetCommitAttributes(hgRepo, hgRemoteRepository, testing)
 }
