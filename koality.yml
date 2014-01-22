@@ -1,17 +1,23 @@
 --- #Koality: 1337
 setup:
 - scripts:
-  # prepare database
-  - psql -U postgres -c "SELECT 1 FROM pg_user WHERE usename='koality'" | grep -q 1 || psql -U postgres -c "CREATE USER koality PASSWORD 'lt3' SUPERUSER"
-  - psql -U postgres -c "SELECT 1 FROM pg_database WHERE datname='koality'" | grep -q 1 || createdb -U postgres koality --template template0 --locale en_US.utf8 --encoding UTF8
-  - ln -s $HOME/koality-v1/postgres $HOME/postgres
   #  pull down missing submodules
   - git submodule update --init --recursive
-  # install go
-  - curl -L https://go.googlecode.com/files/go1.2.linux-amd64.tar.gz -s -o - | tar -C /usr/local -xzf -
-  - echo 'export GOPATH=$HOME/koality-v1/code/back' >> /home/lt3/.bash_profile
-  - echo 'export GOBIN=$GOPATH/bin' >> /home/lt3/.bash_profile
-  - echo 'export PATH=$PATH:/usr/local/go/bin:$GOBIN' >> /home/lt3/.bash_profile
+  # prepare database
+  - ln -s $HOME/koality-v1/postgres $HOME/postgres
+  # run chef
+  - |
+    echo '
+    file_cache_path "/home/lt3/koality-v1/chef-cache"
+    cookbook_path ["/home/lt3/koality-v1/chef/cookbooks", "/home/lt3/koality-v1/chef/site-cookbooks"]
+    json_attribs "/home/lt3/koality-v1/chef-node.json"
+    ' > chef-config.rb
+  - |
+    echo '{ 
+      "run_list": ["recipe[postgres]", "recipe[golang]"] 
+    }' > chef-node.json
+  - gem install chef --no-ri --no-rdoc
+  - chef-solo -c chef-config.rb
 test:
   machines: 1
   factories:
