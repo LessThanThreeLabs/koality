@@ -8,6 +8,12 @@ apt_repository 'apt.postgresql.org' do
   action :add
 end
 
+package 'postgresql' do
+	action :remove
+	notifies :run, 'execute[apt-get autoremove]', :immediately
+	not_if "psql --version | grep #{node['postgres']['version']}"
+end
+
 package 'postgresql-' + node["postgres"]["version"] do
 	action		:install
 end
