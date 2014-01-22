@@ -4,7 +4,7 @@ setup:
   # prepare database
   - psql -U postgres -c "SELECT 1 FROM pg_user WHERE usename='koality'" | grep -q 1 || psql -U postgres -c "CREATE USER koality PASSWORD 'lt3' SUPERUSER"
   - psql -U postgres -c "SELECT 1 FROM pg_database WHERE datname='koality'" | grep -q 1 || createdb -U postgres koality --template template0 --locale en_US.utf8 --encoding UTF8
-  - ln -s postgres $HOME/postgres
+  - ln -s $HOME/koality-v1/postgres $HOME/postgres
   #  pull down missing submodules
   - git submodule update --init --recursive
   # install go
