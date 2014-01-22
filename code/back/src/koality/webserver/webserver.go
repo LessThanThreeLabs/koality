@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/sessions"
 	"koality/repositorymanager"
 	"koality/resources"
+	"koality/webserver/users"
 	"net/http"
 )
 
@@ -35,7 +36,9 @@ func (webserver *Webserver) Start() error {
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
-		context.Set(request, "userId", session.Values["userId"])
+		// context.Set(request, "userId", session.Values["userId"])
+		var _ = session
+		context.Set(request, "userId", uint64(1001))
 		router.ServeHTTP(writer, request)
 	})
 
@@ -65,8 +68,14 @@ func (webserver *Webserver) createRouter() (*mux.Router, error) {
 	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
 
 	appSubrouter := router.PathPrefix("/app").Subrouter()
+
+	usersHandler, err := users.New(webserver.resourcesConnection, webserver.repositoryManager)
+	if err != nil {
+		return nil, err
+	}
+
 	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()
-	handleUsersSubroute(usersSubrouter, webserver.resourcesConnection.Users)
+	usersHandler.WireSubroutes(usersSubrouter)
 
 	// TODO: create and handle more subroutes
 
