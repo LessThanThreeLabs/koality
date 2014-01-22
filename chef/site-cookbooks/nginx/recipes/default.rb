@@ -8,6 +8,12 @@ apt_repository "nginx" do
 	deb_src      true
 end
 
+package 'nginx' do
+	action :remove
+	notifies :run, 'execute[apt-get autoremove]', :immediately
+	not_if "nginx -v 2>&1 | grep -q #{node['nginx']['version'][/^[0-9\\.]+/]}"
+end
+
 apt_package "nginx" do
 	version		node["nginx"]["version"]
 	action		:install
