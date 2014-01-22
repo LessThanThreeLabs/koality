@@ -45,14 +45,14 @@ func (readHandler *ReadHandler) Get(snapshotId uint64) (*resources.Snapshot, err
 	return readHandler.scanSnapshot(row)
 }
 
-func (readHandler *ReadHandler) GetFromImageId(imageId string) (*resources.Snapshot, error) {
+func (readHandler *ReadHandler) GetByImageId(imageId string) (*resources.Snapshot, error) {
 	query := "SELECT id, pool_id, image_id, image_type, status, deleted, created, started, ended" +
 		" FROM snapshots WHERE image_id=$1"
 	row := readHandler.database.QueryRow(query, imageId)
 	return readHandler.scanSnapshot(row)
 }
 
-func (readHandler *ReadHandler) GetForPool(poolId uint64) ([]resources.Snapshot, error) {
+func (readHandler *ReadHandler) GetAllForPool(poolId uint64) ([]resources.Snapshot, error) {
 	query := "SELECT id, pool_id, image_id, image_type, status, deleted, created, started, ended" +
 		" FROM snapshots WHERE pool_id = $1" +
 		" ORDER BY id DESC"

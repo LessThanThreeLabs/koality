@@ -11,6 +11,7 @@ import (
 const (
 	numRepositories               = 2
 	numVerificationsPerRepository = 10
+	numPools                      = 1
 	parallelizationLevel          = 2
 )
 
@@ -59,7 +60,7 @@ func makeSureDumpExists() error {
 		return err
 	}
 
-	if err = createPool(connection); err != nil {
+	if err = createPools(connection); err != nil {
 		return err
 	}
 
@@ -235,8 +236,7 @@ func addConsoleText(connection *resources.Connection, stageRunId uint64) error {
 	return err
 }
 
-func createPool(connection *resources.Connection) error {
-	name := "default-pool"
+func createPools(connection *resources.Connection) error {
 	accessKey := "aaaabbbbccccddddeeee"
 	secretKey := "0000111122223333444455556666777788889999"
 	username := "koality"
@@ -249,12 +249,13 @@ func createPool(connection *resources.Connection) error {
 	rootDriveSize := uint64(100)
 	userData := "echo hello"
 
-	_, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
-		instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
-
-	if err != nil {
-		return err
+	for index := 0; index < numPools; index++ {
+		name := fmt.Sprintf("Pool-%d", index)
+		_, err := connection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId,
+			instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
