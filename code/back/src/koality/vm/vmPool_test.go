@@ -43,7 +43,7 @@ func TestPoolReachesCap(test *testing.T) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
-		vmChan, _ := pool.Get(poolSize)
+		vmChan, _ := pool.GetReady(poolSize)
 
 		for x := uint64(0); x < poolSize; x++ {
 			select {
@@ -69,7 +69,7 @@ func TestPoolEnforcesCap(test *testing.T) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, poolSize)
 		timeout := time.After(time.Duration(poolSize*20) * time.Millisecond)
 
-		vmChan, _ := pool.Get(poolSize + 1)
+		vmChan, _ := pool.GetReady(poolSize + 1)
 
 		for x := uint64(0); x < poolSize+1; x++ {
 			select {
@@ -103,7 +103,7 @@ func TestPoolMaxSizeIncrease(test *testing.T) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
-		vmChan, _ := pool.Get(startingPoolSize)
+		vmChan, _ := pool.GetReady(startingPoolSize)
 
 		for x := uint64(0); x < startingPoolSize; x++ {
 			select {
@@ -121,7 +121,7 @@ func TestPoolMaxSizeIncrease(test *testing.T) {
 		pool.SetMaxSize(endingPoolSize)
 
 		timeout = time.After(time.Duration((endingPoolSize-startingPoolSize)*20) * time.Millisecond)
-		vmChan, _ = pool.Get(endingPoolSize - startingPoolSize)
+		vmChan, _ = pool.GetReady(endingPoolSize - startingPoolSize)
 
 		for x := startingPoolSize; x < endingPoolSize+1; x++ {
 			select {
@@ -156,7 +156,7 @@ func TestPoolMaxSizeDecrease(test *testing.T) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, startingPoolSize)
 		timeout := time.After(time.Duration(startingPoolSize*20) * time.Millisecond)
 
-		vmChan, _ := pool.Get(amountToRequest)
+		vmChan, _ := pool.GetReady(amountToRequest)
 
 		for x := uint64(0); x < amountToRequest; x++ {
 			select {
@@ -175,7 +175,7 @@ func TestPoolMaxSizeDecrease(test *testing.T) {
 
 		if amountToRequest <= endingPoolSize {
 			timeout = time.After(time.Duration((endingPoolSize-amountToRequest)*20) * time.Millisecond)
-			vmChan, _ = pool.Get(endingPoolSize - amountToRequest)
+			vmChan, _ = pool.GetReady(endingPoolSize - amountToRequest)
 
 			for x := amountToRequest; x < endingPoolSize+1; x++ {
 				select {
@@ -196,7 +196,7 @@ func TestPoolMaxSizeDecrease(test *testing.T) {
 			}
 		} else {
 			timeout = time.After(20 * time.Millisecond)
-			vmChan, _ = pool.Get(1)
+			vmChan, _ = pool.GetReady(1)
 
 			select {
 			case <-timeout:

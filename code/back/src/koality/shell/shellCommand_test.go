@@ -505,10 +505,13 @@ func TestSudoCommand(test *testing.T) {
 }
 
 func executeAndAssert(test *testing.T, command shell.Command, expectSuccess bool) {
-	vm := localmachine.New()
+	vm, err := localmachine.New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	defer vm.Terminate()
 
-	var err error
 	executable, err := vm.MakeExecutable(command, nil, nil, nil, nil)
 	if err != nil {
 		test.Logf("Failed to create executable from command:\n%s\n", command)

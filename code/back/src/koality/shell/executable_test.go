@@ -9,11 +9,13 @@ import (
 	"testing"
 )
 
-func TestInputOuputStreams(testing *testing.T) {
-	vm := localmachine.New()
-	defer vm.Terminate()
+func TestInputOuputStreams(test *testing.T) {
+	vm, err := localmachine.New()
+	if err != nil {
+		test.Fatal(err)
+	}
 
-	var err error
+	defer vm.Terminate()
 
 	inputString := "hello world"
 	stdin := bytes.NewBufferString(inputString)
@@ -23,22 +25,24 @@ func TestInputOuputStreams(testing *testing.T) {
 
 	executable, err := vm.MakeExecutable(command, stdin, outBuffer, outBuffer, nil)
 	if err != nil {
-		testing.Logf("Failed to create executable from command:\n%s\n", command)
-		testing.Error(err)
+		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Fatal(err)
 	}
 	executable.Run()
 
 	outputString := strings.TrimSpace(outBuffer.String())
 	if outputString != inputString {
-		testing.Errorf("Expected output=%q, was %q", inputString, outputString)
+		test.Errorf("Expected output=%q, was %q", inputString, outputString)
 	}
 }
 
-func TestStdoutStderrStreams(testing *testing.T) {
-	vm := localmachine.New()
-	defer vm.Terminate()
+func TestStdoutStderrStreams(test *testing.T) {
+	vm, err := localmachine.New()
+	if err != nil {
+		test.Fatal(err)
+	}
 
-	var err error
+	defer vm.Terminate()
 
 	stdoutString := "this IS some\nstdout..."
 	stderrString := "This shouldn't be in stdout.\n      \t      It is stderr."
@@ -53,8 +57,8 @@ func TestStdoutStderrStreams(testing *testing.T) {
 
 	executable, err := vm.MakeExecutable(command, nil, stdoutBuffer, stderrBuffer, nil)
 	if err != nil {
-		testing.Logf("Failed to create executable from command:\n%s\n", command)
-		testing.Error(err)
+		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Fatal(err)
 	}
 	executable.Run()
 
@@ -62,38 +66,41 @@ func TestStdoutStderrStreams(testing *testing.T) {
 	stderr := strings.TrimSpace(stderrBuffer.String())
 
 	if stdout != stdoutString {
-		testing.Errorf("Expected stdout=%q, was %q", stdoutString, stdout)
+		test.Errorf("Expected stdout=%q, was %q", stdoutString, stdout)
 	}
 
 	if stderr != stderrString {
-		testing.Errorf("Expected stderr=%q, was %q", stderrString, stderr)
+		test.Errorf("Expected stderr=%q, was %q", stderrString, stderr)
 	}
 }
 
-func TestEnvironment(testing *testing.T) {
-	vm := localmachine.New()
+func TestEnvironment(test *testing.T) {
+	vm, err := localmachine.New()
+	if err != nil {
+		test.Fatal(err)
+	}
+
 	defer vm.Terminate()
 
-	var err error
 	buffer := new(bytes.Buffer)
 
 	command := shell.Command("echo $USER")
 
 	executable, err := vm.MakeExecutable(command, nil, buffer, nil, nil)
 	if err != nil {
-		testing.Logf("Failed to create executable from command:\n%s\n", command)
-		testing.Error(err)
+		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Fatal(err)
 	}
 	err = executable.Run()
 	if err != nil {
-		testing.Logf("Expected command to pass:\n%s\n", command)
-		testing.Error(err)
+		test.Logf("Expected command to pass:\n%s\n", command)
+		test.Fatal(err)
 	}
 
 	userVar := strings.TrimSpace(buffer.String())
 
 	if os.Getenv("USER") != userVar {
-		testing.Errorf("Expected $USER=%s, was %s", os.Getenv("USER"), userVar)
+		test.Errorf("Expected $USER=%s, was %s", os.Getenv("USER"), userVar)
 	}
 
 	buffer.Reset()
@@ -102,18 +109,18 @@ func TestEnvironment(testing *testing.T) {
 
 	executable, err = vm.MakeExecutable(command, nil, buffer, nil, map[string]string{"USER": fakeUserVar})
 	if err != nil {
-		testing.Logf("Failed to create executable from command:\n%s\n", command)
-		testing.Error(err)
+		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Fatal(err)
 	}
 	err = executable.Run()
 	if err != nil {
-		testing.Logf("Expected command to pass:\n%s\n", command)
-		testing.Error(err)
+		test.Logf("Expected command to pass:\n%s\n", command)
+		test.Fatal(err)
 	}
 
 	userVar = strings.TrimSpace(buffer.String())
 
 	if fakeUserVar != userVar {
-		testing.Errorf("Failed to override environment variable.\nExpected $USER=%s, was %s", fakeUserVar, userVar)
+		test.Errorf("Failed to override environment variable.\nExpected $USER=%s, was %s", fakeUserVar, userVar)
 	}
 }
