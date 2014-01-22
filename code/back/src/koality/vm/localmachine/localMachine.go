@@ -17,11 +17,15 @@ type LocalMachine struct {
 	patcher         vm.Patcher
 }
 
-func New() *LocalMachine {
+func New() (*LocalMachine, error) {
 	rootDir, err := ioutil.TempDir("", "fakevm-")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	return FromDir(rootDir)
+}
+
+func FromDir(rootDir string) (*LocalMachine, error) {
 	executableMaker := shell.ShellExecutableMaker
 	copier := &localCopier{executableMaker}
 
@@ -34,11 +38,15 @@ func New() *LocalMachine {
 
 	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Commandf("mkdir -p %s", rootDir)), nil, nil, nil, nil)
 	if err != nil {
-		panic(err)
+		os.RemoveAll(rootDir)
+		return nil, err
 	}
-	setupExec.Run()
+	if err = setupExec.Run(); err != nil {
+		os.RemoveAll(rootDir)
+		return nil, err
+	}
 
-	return &localMachine
+	return &localMachine, nil
 }
 
 func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {

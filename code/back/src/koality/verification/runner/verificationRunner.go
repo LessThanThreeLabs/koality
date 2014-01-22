@@ -13,36 +13,22 @@ import (
 	"koality/verification/config/section"
 	"koality/verification/stagerunner"
 	"koality/vm"
-	"koality/vm/ec2/ec2broker"
-	"koality/vm/ec2/ec2vm"
+	"koality/vm/poolmanager"
 	"koality/vm/vcs"
 	"runtime"
-	"sync"
 	"time"
 )
 
 type VerificationRunner struct {
-	resourcesConnection                  *resources.Connection
-	virtualMachinePoolMap                map[uint64]vm.VirtualMachinePool
-	virtualMachinePoolMapLocker          sync.Locker
-	ec2Broker                            *ec2broker.Ec2Broker
-	verificationCreatedSubscriptionId    resources.SubscriptionId
-	ec2PoolCreatedSubscriptionId         resources.SubscriptionId
-	ec2PoolDeletedSubscriptionId         resources.SubscriptionId
-	ec2PoolSettingsUpdatedSubscriptionId resources.SubscriptionId
+	resourcesConnection               *resources.Connection
+	poolManager                       *poolmanager.PoolManager
+	verificationCreatedSubscriptionId resources.SubscriptionId
 }
 
-func New(resourcesConnection *resources.Connection, virtualMachinePools []vm.VirtualMachinePool, ec2Broker *ec2broker.Ec2Broker) *VerificationRunner {
-	virtualMachinePoolMap := make(map[uint64]vm.VirtualMachinePool, len(virtualMachinePools))
-	for _, virtualMachinePool := range virtualMachinePools {
-		virtualMachinePoolMap[virtualMachinePool.Id()] = virtualMachinePool
-	}
-
+func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager) *VerificationRunner {
 	return &VerificationRunner{
-		resourcesConnection:         resourcesConnection,
-		virtualMachinePoolMap:       virtualMachinePoolMap,
-		virtualMachinePoolMapLocker: new(sync.Mutex),
-		ec2Broker:                   ec2Broker,
+		resourcesConnection: resourcesConnection,
+		poolManager:         poolManager,
 	}
 }
 
@@ -52,119 +38,25 @@ func (verificationRunner *VerificationRunner) SubscribeToEvents() error {
 			verificationRunner.RunVerification(verification)
 		}
 	}
-	onEc2PoolCreated := func(ec2Pool *resources.Ec2Pool) {
-		verificationRunner.virtualMachinePoolMapLocker.Lock()
-		ec2Launcher, err := ec2vm.NewLauncher(verificationRunner.ec2Broker, ec2Pool, verificationRunner.resourcesConnection)
-		if err != nil {
-			stacktrace := make([]byte, 4096)
-			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
-			log.Errorf("Failed to construct new ec2 launcher with pool parameters: %v\n%s", ec2Pool, stacktrace)
-		}
 
-		ec2VirtualMachinePool := ec2vm.NewPool(ec2Launcher)
-		verificationRunner.virtualMachinePoolMap[ec2Pool.Id] = ec2VirtualMachinePool
-		verificationRunner.virtualMachinePoolMapLocker.Unlock()
-	}
-	onEc2PoolDeleted := func(ec2PoolId uint64) {
-		verificationRunner.virtualMachinePoolMapLocker.Lock()
-		delete(verificationRunner.virtualMachinePoolMap, ec2PoolId)
-		verificationRunner.virtualMachinePoolMapLocker.Unlock()
-	}
-	onEc2PoolSettingsUpdated := func(ec2PoolId uint64, accessKey, secretKey, username, baseAmiId, securityGroupId,
-		vpcSubnetId, instanceType string, numReadyInstances, numMaxInstances, rootDriveSize uint64, userData string) {
-		verificationRunner.virtualMachinePoolMapLocker.Lock()
-		vmPool, ok := verificationRunner.virtualMachinePoolMap[ec2PoolId]
-		verificationRunner.virtualMachinePoolMapLocker.Unlock()
-		if !ok {
-			stacktrace := make([]byte, 4096)
-			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
-			log.Errorf("Tried to update nonexistent pool with id: %d", ec2PoolId, stacktrace)
-		}
-
-		ec2VmPool, ok := vmPool.(ec2vm.Ec2VirtualMachinePool)
-		if !ok {
-			stacktrace := make([]byte, 4096)
-			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
-			log.Errorf("Pool with id: %d is not an EC2 pool", ec2PoolId, stacktrace)
-		}
-
-		ec2Pool := ec2VmPool.Ec2VirtualMachineLauncher.Ec2Pool
-
-		ec2VmPool.UpdateSettings(resources.Ec2Pool{ec2PoolId, ec2Pool.Name, accessKey, secretKey, username, baseAmiId,
-			securityGroupId, vpcSubnetId, instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData, ec2Pool.Created})
-	}
 	var err error
 
 	verificationRunner.verificationCreatedSubscriptionId, err = verificationRunner.resourcesConnection.Verifications.Subscription.SubscribeToCreatedEvents(onVerificationCreated)
-	if err != nil {
-		return err
-	}
 
-	verificationRunner.ec2PoolCreatedSubscriptionId, err = verificationRunner.resourcesConnection.Pools.Subscription.SubscribeToEc2CreatedEvents(onEc2PoolCreated)
-	if err != nil {
-		verificationRunner.unsubscribeFromEvents(true)
-		return err
-	}
-
-	verificationRunner.ec2PoolDeletedSubscriptionId, err = verificationRunner.resourcesConnection.Pools.Subscription.SubscribeToEc2DeletedEvents(onEc2PoolDeleted)
-	if err != nil {
-		verificationRunner.unsubscribeFromEvents(true)
-		return err
-	}
-
-	verificationRunner.ec2PoolSettingsUpdatedSubscriptionId, err = verificationRunner.resourcesConnection.Pools.Subscription.SubscribeToEc2SettingsUpdatedEvents(onEc2PoolSettingsUpdated)
-	if err != nil {
-		verificationRunner.unsubscribeFromEvents(true)
-		return err
-	}
-	return nil
+	return err
 }
 
 func (verificationRunner *VerificationRunner) UnsubscribeFromEvents() error {
-	return verificationRunner.unsubscribeFromEvents(false)
-}
-
-func (verificationRunner *VerificationRunner) unsubscribeFromEvents(allowPartial bool) error {
 	var err error
 
 	if verificationRunner.verificationCreatedSubscriptionId == 0 {
-		if !allowPartial {
-			return fmt.Errorf("Verification created events not subscribed to")
-		}
+		return fmt.Errorf("Verification created events not subscribed to")
 	} else {
 		unsubscribeError := verificationRunner.resourcesConnection.Verifications.Subscription.UnsubscribeFromCreatedEvents(verificationRunner.verificationCreatedSubscriptionId)
 		if unsubscribeError != nil {
 			err = unsubscribeError
-		}
-	}
-	if verificationRunner.ec2PoolCreatedSubscriptionId == 0 {
-		if !allowPartial {
-			return fmt.Errorf("Ec2 pool created events not subscribed to")
-		}
-	} else {
-		unsubscribeError := verificationRunner.resourcesConnection.Pools.Subscription.UnsubscribeFromEc2CreatedEvents(verificationRunner.ec2PoolCreatedSubscriptionId)
-		if unsubscribeError != nil {
-			err = unsubscribeError
-		}
-	}
-	if verificationRunner.ec2PoolDeletedSubscriptionId == 0 {
-		if !allowPartial {
-			return fmt.Errorf("Ec2 pool deleted events not subscribed to")
-		}
-	} else {
-		unsubscribeError := verificationRunner.resourcesConnection.Pools.Subscription.UnsubscribeFromEc2DeletedEvents(verificationRunner.ec2PoolDeletedSubscriptionId)
-		if unsubscribeError != nil {
-			err = unsubscribeError
-		}
-	}
-	if verificationRunner.ec2PoolSettingsUpdatedSubscriptionId == 0 {
-		if !allowPartial {
-			return fmt.Errorf("Ec2 pool settings updated events not subscribed to")
-		}
-	} else {
-		unsubscribeError := verificationRunner.resourcesConnection.Pools.Subscription.UnsubscribeFromEc2SettingsUpdatedEvents(verificationRunner.ec2PoolSettingsUpdatedSubscriptionId)
-		if unsubscribeError != nil {
-			err = unsubscribeError
+		} else {
+			verificationRunner.verificationCreatedSubscriptionId = 0
 		}
 	}
 	return err
@@ -187,12 +79,10 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		return false, err
 	}
 
-	verificationRunner.virtualMachinePoolMapLocker.Lock()
-	virtualMachinePool, ok := verificationRunner.virtualMachinePoolMap[verificationConfig.Params.PoolId]
-	verificationRunner.virtualMachinePoolMapLocker.Unlock()
-	if !ok {
+	virtualMachinePool, err := verificationRunner.poolManager.GetPool(verificationConfig.Params.PoolId)
+	if err != nil {
 		verificationRunner.failVerification(currentVerification)
-		return false, fmt.Errorf("No virtual machine pool found for repository: %d", currentVerification.RepositoryId)
+		return false, err
 	}
 
 	err = verificationRunner.createStages(currentVerification, verificationConfig.Sections, verificationConfig.FinalSections)
@@ -226,7 +116,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		}
 	}
 
-	newMachinesChan, errorChan := virtualMachinePool.Get(numNodes)
+	newMachinesChan, errorChan := virtualMachinePool.GetReady(numNodes)
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
 			if currentVerification.Status != "passed" && currentVerification.Status != "failed" && currentVerification.Status != "cancelled" {

@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"koality/internalapi"
+	"koality/resources"
 	"koality/resources/database"
 	"koality/resources/database/migrate"
 	verificationrunner "koality/verification/runner"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
 	"koality/vm/localmachine"
+	"koality/vm/poolmanager"
 	"koality/webserver"
 	"runtime"
 )
@@ -20,7 +22,7 @@ const (
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	if err = database.Migrate(migrate.Migrations); err != nil {
+	if err := database.Migrate(migrate.Migrations); err != nil {
 		panic(err)
 	}
 
@@ -32,9 +34,16 @@ func main() {
 	database.KeepClean(resourcesConnection)
 
 	// TODO (bbland): use a real pool instead of this bogus one (although this is nice and fast/free)
-	virtualMachinePool := vm.NewPool(0, localmachine.Launcher, 0, 3)
+	virtualMachinePool := vm.NewPool(0, localmachine.Manager, 0, 3)
+	poolManager := poolmanager.New([]vm.VirtualMachinePool{virtualMachinePool})
+
 	ec2Broker := ec2broker.New()
-	verificationRunner := verificationrunner.New(resourcesConnection, []vm.VirtualMachinePool{virtualMachinePool}, ec2Broker)
+	err = poolManager.SubscribeToEvents(resourcesConnection, ec2Broker)
+	if err != nil {
+		panic(err)
+	}
+
+	verificationRunner := verificationrunner.New(resourcesConnection, poolManager)
 	err = verificationRunner.SubscribeToEvents()
 	if err != nil {
 		panic(err)

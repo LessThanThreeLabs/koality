@@ -8,19 +8,19 @@ import (
 // TODO: use debug-level logging everywhere
 
 type virtualMachinePool struct {
-	id                     uint64
-	virtualMachineLauncher VirtualMachineLauncher
-	minReady               uint64
-	maxSize                uint64
-	startingCount          uint64
-	readyCount             int64 // This can be negative when overallocated
-	allocatedCount         uint64
-	readyChannel           chan VirtualMachine
-	waitingChannel         chan chan VirtualMachine
-	locker                 sync.Locker
+	id                    uint64
+	virtualMachineManager VirtualMachineManager
+	minReady              uint64
+	maxSize               uint64
+	startingCount         uint64
+	readyCount            int64 // This can be negative when overallocated
+	allocatedCount        uint64
+	readyChannel          chan VirtualMachine
+	waitingChannel        chan chan VirtualMachine
+	locker                sync.Locker
 }
 
-func NewPool(id uint64, virtualMachineLauncher VirtualMachineLauncher, minReady, maxSize uint64) *virtualMachinePool {
+func NewPool(id uint64, virtualMachineManager VirtualMachineManager, minReady, maxSize uint64) *virtualMachinePool {
 	if minReady > maxSize {
 		panic(fmt.Sprintf("minReady should not be larger than maxSize: (%d > %d)", minReady, maxSize))
 	}
@@ -29,12 +29,12 @@ func NewPool(id uint64, virtualMachineLauncher VirtualMachineLauncher, minReady,
 	}
 	pool := virtualMachinePool{
 		id: id,
-		virtualMachineLauncher: virtualMachineLauncher,
-		minReady:               minReady,
-		maxSize:                maxSize,
-		readyChannel:           make(chan VirtualMachine, 64),
-		waitingChannel:         make(chan chan VirtualMachine, 64),
-		locker:                 new(sync.Mutex),
+		virtualMachineManager: virtualMachineManager,
+		minReady:              minReady,
+		maxSize:               maxSize,
+		readyChannel:          make(chan VirtualMachine, 64),
+		waitingChannel:        make(chan chan VirtualMachine, 64),
+		locker:                new(sync.Mutex),
 	}
 	go pool.ensureReadyInstances()
 	go pool.transferReadyToWaiting()
@@ -109,7 +109,7 @@ func (pool *virtualMachinePool) ensureReadyInstances() error {
 	return nil
 }
 
-func (pool *virtualMachinePool) Get(numMachines uint64) (<-chan VirtualMachine, <-chan error) {
+func (pool *virtualMachinePool) GetReady(numMachines uint64) (<-chan VirtualMachine, <-chan error) {
 	machinesChan := make(chan VirtualMachine, numMachines)
 	returnChan := make(chan VirtualMachine, numMachines)
 	errorChan := make(chan error)
@@ -136,6 +136,10 @@ func (pool *virtualMachinePool) Get(numMachines uint64) (<-chan VirtualMachine, 
 	}()
 
 	return returnChan, errorChan
+}
+
+func (pool *virtualMachinePool) GetExisting(identifier string) (VirtualMachine, error) {
+	return pool.virtualMachineManager.GetVirtualMachine(identifier)
 }
 
 func (pool *virtualMachinePool) Free() {
@@ -214,7 +218,7 @@ func (pool *virtualMachinePool) SetMinReady(minReady uint64) error {
 
 func (pool *virtualMachinePool) newReadyInstance() error {
 	newVm, err := func() (VirtualMachine, error) {
-		newVm, err := pool.virtualMachineLauncher.LaunchVirtualMachine()
+		newVm, err := pool.virtualMachineManager.NewVirtualMachine()
 		if err != nil {
 			return nil, err
 		}

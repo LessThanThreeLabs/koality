@@ -14,11 +14,11 @@ type Ec2VirtualMachine struct {
 	sshExecutableMaker *vm.SshExecutableMaker
 	fileCopier         shell.FileCopier
 	patcher            vm.Patcher
-	instance           *ec2.Instance
+	instance           ec2.Instance
 	ec2Cache           *ec2broker.Ec2Cache
 }
 
-func New(instance *ec2.Instance, cache *ec2broker.Ec2Cache, username, privateKey string) (*Ec2VirtualMachine, error) {
+func New(instance ec2.Instance, cache *ec2broker.Ec2Cache, username, privateKey string) (*Ec2VirtualMachine, error) {
 	sshConfig := vm.SshConfig{
 		Username:   username,
 		Hostname:   instance.IPAddress,

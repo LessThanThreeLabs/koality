@@ -12,13 +12,15 @@ type VirtualMachine interface {
 	Terminate() error
 }
 
-type VirtualMachineLauncher interface {
-	LaunchVirtualMachine() (VirtualMachine, error)
+type VirtualMachineManager interface {
+	NewVirtualMachine() (VirtualMachine, error)
+	GetVirtualMachine(string) (VirtualMachine, error)
 }
 
 type VirtualMachinePool interface {
 	Id() uint64
-	Get(uint64) (<-chan VirtualMachine, <-chan error)
+	GetReady(uint64) (<-chan VirtualMachine, <-chan error)
+	GetExisting(string) (VirtualMachine, error)
 	Free()
 	Return(VirtualMachine)
 	MaxSize() uint64

@@ -18,14 +18,14 @@ import (
 	"time"
 )
 
-type Ec2VirtualMachineLauncher struct {
+type Ec2VirtualMachineManager struct {
 	ec2Broker           *ec2broker.Ec2Broker
 	Ec2Pool             *resources.Ec2Pool
 	ec2Cache            *ec2broker.Ec2Cache
 	resourcesConnection *resources.Connection
 }
 
-func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool, resourcesConnection *resources.Connection) (*Ec2VirtualMachineLauncher, error) {
+func NewManager(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool, resourcesConnection *resources.Connection) (*Ec2VirtualMachineManager, error) {
 	auth, err := aws.GetAuth(ec2Pool.AccessKey, ec2Pool.SecretKey, "", time.Time{})
 	if err != nil {
 		return nil, err
@@ -36,40 +36,40 @@ func NewLauncher(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool, res
 		return nil, err
 	}
 
-	return &Ec2VirtualMachineLauncher{ec2Broker, ec2Pool, ec2Cache, resourcesConnection}, nil
+	return &Ec2VirtualMachineManager{ec2Broker, ec2Pool, ec2Cache, resourcesConnection}, nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMachine, error) {
-	username := launcher.Ec2Pool.Username
-	activeImage, err := launcher.getActiveImage()
+func (manager *Ec2VirtualMachineManager) NewVirtualMachine() (vm.VirtualMachine, error) {
+	username := manager.Ec2Pool.Username
+	activeImage, err := manager.getActiveImage()
 	if err != nil {
 		return nil, err
 	}
 
-	securityGroups, err := launcher.getSecurityGroups()
+	securityGroups, err := manager.getSecurityGroups()
 	if err != nil {
 		return nil, err
 	}
 
-	keyPair, err := launcher.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+	keyPair, err := manager.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	userData, err := launcher.getUserData(username, keyPair)
+	userData, err := manager.getUserData(username, keyPair)
 	if err != nil {
 		return nil, err
 	}
 
 	runOptions := ec2.RunInstancesOptions{
 		ImageId:             activeImage.Id,
-		InstanceType:        launcher.Ec2Pool.InstanceType,
+		InstanceType:        manager.Ec2Pool.InstanceType,
 		SecurityGroups:      securityGroups,
-		SubnetId:            launcher.Ec2Pool.VpcSubnetId,
+		SubnetId:            manager.Ec2Pool.VpcSubnetId,
 		UserData:            userData,
-		BlockDeviceMappings: launcher.getBlockDeviceMappings(activeImage),
+		BlockDeviceMappings: manager.getBlockDeviceMappings(activeImage),
 	}
-	runResponse, err := launcher.ec2Cache.EC2.RunInstances(&runOptions)
+	runResponse, err := manager.ec2Cache.EC2.RunInstances(&runOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -83,38 +83,55 @@ func (launcher *Ec2VirtualMachineLauncher) LaunchVirtualMachine() (vm.VirtualMac
 		for i := 1; i < len(runResponse.Instances); i++ {
 			extraInstanceIds[i-1] = runResponse.Instances[i].InstanceId
 		}
-		_, err := launcher.ec2Cache.EC2.TerminateInstances(extraInstanceIds)
+		_, err := manager.ec2Cache.EC2.TerminateInstances(extraInstanceIds)
 		if err != nil {
-			launcher.ec2Cache.EC2.TerminateInstances([]string{runResponse.Instances[0].InstanceId})
+			manager.ec2Cache.EC2.TerminateInstances([]string{runResponse.Instances[0].InstanceId})
 			return nil, err
 		}
 	}
-	instance := &runResponse.Instances[0]
-	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker (%s)", launcher.ec2Broker.InstanceInfo().Name)}
-	_, err = launcher.ec2Cache.EC2.CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
+	instance := runResponse.Instances[0]
+	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker (%s)", manager.ec2Broker.InstanceInfo().Name)}
+	_, err = manager.ec2Cache.EC2.CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
 	if err != nil {
-		launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+		manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
 		return nil, err
 	}
 
-	err = launcher.waitForIpAddress(instance, 2*time.Minute)
+	err = manager.waitForIpAddress(&instance, 2*time.Minute)
 	if err != nil {
 		return nil, err
 	}
 
-	ec2Vm, err := launcher.waitForSsh(instance, username, keyPair, 5*time.Minute)
+	ec2Vm, err := manager.waitForSsh(instance, username, keyPair, 5*time.Minute)
 	if err != nil {
-		launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+		manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
 		return nil, err
 	}
 	return ec2Vm, nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instance, timeout time.Duration) error {
+func (manager *Ec2VirtualMachineManager) GetVirtualMachine(instanceId string) (vm.VirtualMachine, error) {
+	keyPair, err := manager.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+	if err != nil {
+		return nil, err
+	}
+
+	instancesResp, err := manager.ec2Cache.EC2.Instances([]string{instanceId}, nil)
+	if err != nil {
+		return nil, err
+	} else if len(instancesResp.Reservations) == 0 || len(instancesResp.Reservations[0].Instances) == 0 {
+		return nil, fmt.Errorf("No instances found for id %s", instanceId)
+	}
+
+	instance := instancesResp.Reservations[0].Instances[0]
+	return New(instance, manager.ec2Cache, manager.Ec2Pool.Username, keyPair.PrivateKey)
+}
+
+func (manager *Ec2VirtualMachineManager) waitForIpAddress(instance *ec2.Instance, timeout time.Duration) error {
 	for {
 		select {
 		case <-time.After(timeout):
-			_, err := launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+			_, err := manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
 			if err != nil {
 				return err
 			}
@@ -124,7 +141,7 @@ func (launcher *Ec2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instan
 				return nil
 			} else {
 				time.Sleep(5 * time.Second)
-				for _, reservation := range launcher.ec2Cache.Reservations() {
+				for _, reservation := range manager.ec2Cache.Reservations() {
 					for _, inst := range reservation.Instances {
 						if inst.InstanceId == instance.InstanceId {
 							*instance = inst
@@ -137,17 +154,17 @@ func (launcher *Ec2VirtualMachineLauncher) waitForIpAddress(instance *ec2.Instan
 	}
 }
 
-func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, username string, keyPair *resources.RepositoryKeyPair, timeout time.Duration) (*Ec2VirtualMachine, error) {
+func (manager *Ec2VirtualMachineManager) waitForSsh(instance ec2.Instance, username string, keyPair *resources.RepositoryKeyPair, timeout time.Duration) (*Ec2VirtualMachine, error) {
 	for {
 		select {
 		case <-time.After(timeout):
-			_, err := launcher.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+			_, err := manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
 			if err != nil {
 				return new(Ec2VirtualMachine), err
 			}
 			return nil, fmt.Errorf("Failed to ssh into the instance after %s", timeout.String())
 		default:
-			ec2Vm, err := New(instance, launcher.ec2Cache, username, keyPair.PrivateKey)
+			ec2Vm, err := New(instance, manager.ec2Cache, username, keyPair.PrivateKey)
 			if err != nil {
 				time.Sleep(3 * time.Second)
 				continue
@@ -164,19 +181,19 @@ func (launcher *Ec2VirtualMachineLauncher) waitForSsh(instance *ec2.Instance, us
 	}
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getActiveImage() (ec2.Image, error) {
-	baseImage, err := launcher.getBaseImage()
+func (manager *Ec2VirtualMachineManager) getActiveImage() (ec2.Image, error) {
+	baseImage, err := manager.getBaseImage()
 	if err != nil {
 		return ec2.Image{}, err
 	}
-	snapshots, err := launcher.getSnapshotsForImage(baseImage)
+	snapshots, err := manager.getSnapshotsForImage(baseImage)
 	if err != nil || len(snapshots) == 0 {
 		return baseImage, nil
 	}
 	newestSnapshot := snapshots[0]
-	newestSnapshotVersion, _ := launcher.getSnapshotVersion(newestSnapshot)
+	newestSnapshotVersion, _ := manager.getSnapshotVersion(newestSnapshot)
 	for _, snapshot := range snapshots {
-		snapshotVersion, err := launcher.getSnapshotVersion(snapshot)
+		snapshotVersion, err := manager.getSnapshotVersion(snapshot)
 		if err != nil && snapshotVersion > newestSnapshotVersion {
 			newestSnapshotVersion = snapshotVersion
 			newestSnapshot = snapshot
@@ -185,7 +202,7 @@ func (launcher *Ec2VirtualMachineLauncher) getActiveImage() (ec2.Image, error) {
 	return newestSnapshot, nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getSnapshotVersion(snapshot ec2.Image) (int, error) {
+func (manager *Ec2VirtualMachineManager) getSnapshotVersion(snapshot ec2.Image) (int, error) {
 	versionIndex := strings.LastIndex(snapshot.Name, "v") + 1
 	if versionIndex == 0 {
 		return -1, errors.New("Could not find version in snapshot name")
@@ -197,9 +214,9 @@ func (launcher *Ec2VirtualMachineLauncher) getSnapshotVersion(snapshot ec2.Image
 	return version, nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getBaseImage() (ec2.Image, error) {
-	if launcher.Ec2Pool.BaseAmiId != "" {
-		imagesResponse, err := launcher.ec2Cache.EC2.Images([]string{launcher.Ec2Pool.BaseAmiId}, nil)
+func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
+	if manager.Ec2Pool.BaseAmiId != "" {
+		imagesResponse, err := manager.ec2Cache.EC2.Images([]string{manager.Ec2Pool.BaseAmiId}, nil)
 		if err != nil {
 			return ec2.Image{}, err
 		}
@@ -212,36 +229,36 @@ func (launcher *Ec2VirtualMachineLauncher) getBaseImage() (ec2.Image, error) {
 	imageFilter.Add("owner-id", "600991114254") // must be changed if our ec2 info changes
 	imageFilter.Add("name", "koality_verification_precise_0.4")
 	imageFilter.Add("state", "available")
-	imagesResponse, err := launcher.ec2Cache.EC2.Images(nil, imageFilter)
+	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {
 		return ec2.Image{}, err
 	}
 	return imagesResponse.Images[0], nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getSnapshotsForImage(baseImage ec2.Image) ([]ec2.Image, error) {
+func (manager *Ec2VirtualMachineManager) getSnapshotsForImage(baseImage ec2.Image) ([]ec2.Image, error) {
 	imageFilter := ec2.NewFilter()
-	imageFilter.Add("name", fmt.Sprintf("koality-snapshot-(%s/%s)-v*", launcher.Ec2Pool.Name, baseImage.Name))
+	imageFilter.Add("name", fmt.Sprintf("koality-snapshot-(%s/%s)-v*", manager.Ec2Pool.Name, baseImage.Name))
 	imageFilter.Add("state", "available")
-	imagesResponse, err := launcher.ec2Cache.EC2.Images(nil, imageFilter)
+	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {
 		return nil, err
 	}
 	return imagesResponse.Images, nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGroup, error) {
+func (manager *Ec2VirtualMachineManager) getSecurityGroups() ([]ec2.SecurityGroup, error) {
 	var securityGroup ec2.SecurityGroup
 	var securityGroups []ec2.SecurityGroup
 	defaultSecurityGroup := ec2.SecurityGroup{
 		Name: "koality_verification",
 	}
-	if launcher.Ec2Pool.SecurityGroupId == "" {
+	if manager.Ec2Pool.SecurityGroupId == "" {
 		securityGroup = defaultSecurityGroup
 		securityGroups = []ec2.SecurityGroup{defaultSecurityGroup}
 	} else {
 		securityGroup = ec2.SecurityGroup{
-			Id: launcher.Ec2Pool.SecurityGroupId,
+			Id: manager.Ec2Pool.SecurityGroupId,
 		}
 		securityGroups = []ec2.SecurityGroup{
 			securityGroup,
@@ -249,7 +266,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		}
 	}
 
-	securityGroupsResp, err := launcher.ec2Cache.EC2.SecurityGroups(securityGroups, nil)
+	securityGroupsResp, err := manager.ec2Cache.EC2.SecurityGroups(securityGroups, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +275,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		securityGroup = ec2.SecurityGroup{
 			Name: "koality_verification",
 		}
-		_, err := launcher.ec2Cache.EC2.CreateSecurityGroup("koality_verification", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
+		_, err := manager.ec2Cache.EC2.CreateSecurityGroup("koality_verification", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
 		if err != nil {
 			return nil, err
 		}
@@ -275,7 +292,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		for _, ipPerm := range groupInfo.IPPerms {
 			if ipPerm.FromPort <= 22 && 22 <= ipPerm.ToPort {
 				for _, sourceGroup := range ipPerm.SourceGroups {
-					for _, ownGroup := range launcher.ec2Broker.InstanceInfo().SecurityGroups {
+					for _, ownGroup := range manager.ec2Broker.InstanceInfo().SecurityGroups {
 						if ownGroup.Id == sourceGroup.Id {
 							return []ec2.SecurityGroup{securityGroup}, nil
 						}
@@ -287,7 +304,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 						return nil, err
 					}
 
-					if ipNet.Contains(launcher.ec2Broker.InstanceInfo().PrivateIp) {
+					if ipNet.Contains(manager.ec2Broker.InstanceInfo().PrivateIp) {
 						return []ec2.SecurityGroup{securityGroup}, nil
 					}
 				}
@@ -295,7 +312,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		}
 	}
 
-	ownIp := launcher.ec2Broker.InstanceInfo().PrivateIp
+	ownIp := manager.ec2Broker.InstanceInfo().PrivateIp
 	ipNet := net.IPNet{ownIp, ownIp.DefaultMask()}
 	sshPerm := ec2.IPPerm{
 		Protocol:  "tcp",
@@ -303,7 +320,7 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 		ToPort:    22,
 		SourceIPs: []string{ipNet.String()},
 	}
-	_, err = launcher.ec2Cache.EC2.AuthorizeSecurityGroup(securityGroup, []ec2.IPPerm{sshPerm})
+	_, err = manager.ec2Cache.EC2.AuthorizeSecurityGroup(securityGroup, []ec2.IPPerm{sshPerm})
 	if err != nil {
 		return nil, err
 	}
@@ -311,8 +328,8 @@ func (launcher *Ec2VirtualMachineLauncher) getSecurityGroups() ([]ec2.SecurityGr
 	return []ec2.SecurityGroup{securityGroup}, nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getBlockDeviceMappings(image ec2.Image) []ec2.BlockDeviceMapping {
-	rootDriveSize := int64(launcher.Ec2Pool.RootDriveSize)
+func (manager *Ec2VirtualMachineManager) getBlockDeviceMappings(image ec2.Image) []ec2.BlockDeviceMapping {
+	rootDriveSize := int64(manager.Ec2Pool.RootDriveSize)
 
 	blockDeviceMappings := make([]ec2.BlockDeviceMapping, 0, len(image.BlockDevices))
 	for _, blockDeviceMapping := range image.BlockDevices {
@@ -334,17 +351,17 @@ func (launcher *Ec2VirtualMachineLauncher) getBlockDeviceMappings(image ec2.Imag
 	return blockDeviceMappings
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getUserData(username string, keyPair *resources.RepositoryKeyPair) ([]byte, error) {
+func (manager *Ec2VirtualMachineManager) getUserData(username string, keyPair *resources.RepositoryKeyPair) ([]byte, error) {
 	buffer := new(bytes.Buffer)
 	mimeMultipartWriter := cloudinit.NewMimeMultipartWriter(buffer)
 
-	defaultUserData := launcher.getDefaultUserData(username, keyPair)
+	defaultUserData := manager.getDefaultUserData(username, keyPair)
 
 	if err := mimeMultipartWriter.WriteMimePart("koality-default-data", defaultUserData); err != nil {
 		return nil, err
 	}
 
-	customUserData := strings.TrimSpace(launcher.Ec2Pool.UserData)
+	customUserData := strings.TrimSpace(manager.Ec2Pool.UserData)
 	if customUserData != "" {
 		if err := mimeMultipartWriter.WriteMimePart("koality-custom-data", customUserData); err != nil {
 			return nil, err
@@ -358,7 +375,7 @@ func (launcher *Ec2VirtualMachineLauncher) getUserData(username string, keyPair 
 	return buffer.Bytes(), nil
 }
 
-func (launcher *Ec2VirtualMachineLauncher) getDefaultUserData(username string, keyPair *resources.RepositoryKeyPair) string {
+func (manager *Ec2VirtualMachineManager) getDefaultUserData(username string, keyPair *resources.RepositoryKeyPair) string {
 	configureUserCommand := func(username string) shell.Command {
 		homeDir := "~" + username
 		sshDir := path.Join(homeDir, ".ssh")

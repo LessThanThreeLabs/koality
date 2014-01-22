@@ -9,6 +9,7 @@ import (
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/localmachine"
+	"koality/vm/poolmanager"
 	"os"
 	"os/exec"
 	"path"
@@ -86,9 +87,10 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	}
 	defer os.RemoveAll(path.Dir(pathgenerator.ToPath(repository)))
 
-	vmPool := vm.NewPool(0, localmachine.Launcher, 0, 3)
+	vmPool := vm.NewPool(0, localmachine.Manager, 0, 3)
+	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	verificationRunner := New(resourcesConnection, []vm.VirtualMachinePool{vmPool}, nil)
+	verificationRunner := New(resourcesConnection, poolManager)
 
 	verification, err := resourcesConnection.Verifications.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")
