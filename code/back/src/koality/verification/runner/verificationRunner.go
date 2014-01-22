@@ -266,7 +266,7 @@ func (verificationRunner *VerificationRunner) createStages(currentVerification *
 
 		exports := section.Exports()
 		if len(exports) > 0 {
-			_, err := verificationRunner.resourcesConnection.Stages.Create.Create(currentVerification, uint64(sectionNumber), section.Name()+".export", uint64(stageNumber))
+			_, err := verificationRunner.resourcesConnection.Stages.Create.Create(currentVerification.Id, uint64(sectionNumber), section.Name()+".export", uint64(stageNumber))
 			if err != nil {
 				return err
 			}
