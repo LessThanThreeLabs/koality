@@ -16,7 +16,7 @@ setup:
     echo '{ 
       "run_list": ["recipe[postgres]", "recipe[golang]"] 
     }' > chef-node.json
-  - gem install chef --no-ri --no-rdoc
+  - gem install chef --no-ri --no-rdoc -v 10.30.2
   - chef-solo -c chef-config.rb
 test:
   machines: 1
