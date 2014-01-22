@@ -23,15 +23,16 @@ const (
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	if err := database.Migrate(migrate.Migrations); err != nil {
-		panic(err)
-	}
-
 	resourcesConnection, err := database.New()
 	if err != nil {
 		panic(err)
 	}
 	defer resourcesConnection.Close()
+
+	if err := database.Migrate(migrate.Migrations); err != nil {
+		panic(err)
+	}
+
 	database.KeepClean(resourcesConnection)
 
 	// TODO (bbland): use a real pool instead of this bogus one (although this is nice and fast/free)
