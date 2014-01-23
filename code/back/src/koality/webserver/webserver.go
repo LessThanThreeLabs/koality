@@ -8,6 +8,7 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
+	"koality/webserver/repositories"
 	"koality/webserver/users"
 	"net/http"
 )
@@ -81,6 +82,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	repositoriesHandler, err := repositories.New(webserver.resourcesConnection)
+	if err != nil {
+		return nil, err
+	}
+
 	apiSubrouter := router.PathPrefix("/api").MatcherFunc(webserver.hasApiKey).Subrouter()
 	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
 
@@ -90,6 +96,9 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(webserver.isLoggedIn).Subrouter()
 	usersHandler.WireSubroutes(usersSubrouter)
+
+	repositoriesSubrouter := appSubrouter.PathPrefix("/repositories").MatcherFunc(webserver.isLoggedIn).Subrouter()
+	repositoriesHandler.WireSubroutes(repositoriesSubrouter)
 
 	return router, nil
 }

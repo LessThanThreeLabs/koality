@@ -43,7 +43,7 @@ func (usersHandler *UsersHandler) GetAll(writer http.ResponseWriter, request *ht
 		return
 	}
 
-	sanitizedUsers := make([]sanitizedUser, 0, 10)
+	sanitizedUsers := make([]sanitizedUser, 0, len(users))
 	for _, user := range users {
 		sanitizedUsers = append(sanitizedUsers, *getSanitizedUser(&user))
 	}
@@ -86,7 +86,7 @@ func (usersHandler *UsersHandler) GetKeys(writer http.ResponseWriter, request *h
 		return
 	}
 
-	sanitizedSshKeys := make([]sanitizedSshKey, 0, 10)
+	sanitizedSshKeys := make([]sanitizedSshKey, 0, len(sshKeys))
 	for _, sshKey := range sshKeys {
 		sanitizedSshKeys = append(sanitizedSshKeys, *getSanitizedSshKey(&sshKey))
 	}

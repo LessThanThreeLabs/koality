@@ -38,7 +38,7 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 	repository.IsDeleted = repository.Id == deletedId
 
 	if gitHubOwner.Valid && gitHubName.Valid {
-		repository.GitHub = new(resources.GitHubMetadata)
+		repository.GitHub = new(resources.RepositoryGitHubMetadata)
 	}
 
 	if gitHubOwner.Valid {

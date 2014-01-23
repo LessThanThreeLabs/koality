@@ -12,11 +12,11 @@ type Repository struct {
 	LocalUri  string
 	RemoteUri string
 	Created   *time.Time
-	GitHub    *GitHubMetadata
+	GitHub    *RepositoryGitHubMetadata
 	IsDeleted bool
 }
 
-type GitHubMetadata struct {
+type RepositoryGitHubMetadata struct {
 	Owner      string
 	Name       string
 	HookId     int64
