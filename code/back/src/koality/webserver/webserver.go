@@ -2,7 +2,7 @@ package webserver
 
 import (
 	"fmt"
-	"github.com/gorilla/context"
+	// "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"koality/repositorymanager"
@@ -36,10 +36,10 @@ func (webserver *Webserver) Start() error {
 	}
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		session, _ := sessionStore.Get(request, webserver.sessionName)
+		// session, _ := sessionStore.Get(request, webserver.sessionName)
 		// context.Set(request, "userId", session.Values["userId"])
-		var _ = session
-		context.Set(request, "userId", uint64(1000))
+		// var _ = session
+		// context.Set(request, "userId", uint64(1000))
 		router.ServeHTTP(writer, request)
 	})
 
@@ -54,12 +54,12 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 	}
 
 	sessionStore := sessions.NewCookieStore(cookieStoreKeys.Authentication, cookieStoreKeys.Encryption)
-	sessionStore.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   2592000,
-		HttpOnly: true,
-		Secure:   true,
-	}
+	// sessionStore.Options = &sessions.Options{
+	// 	Path:     "/",
+	// 	MaxAge:   2592000,
+	// 	HttpOnly: true,
+	// 	Secure:   true,
+	// }
 	return sessionStore, nil
 }
 
@@ -87,7 +87,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	accountsSubrouter := appSubrouter.PathPrefix("/users").Subrouter()
+	accountsSubrouter := appSubrouter.PathPrefix("/accounts").Subrouter()
 	accountsHandler.WireSubroutes(accountsSubrouter)
 
 	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(webserver.isLoggedIn).Subrouter()
