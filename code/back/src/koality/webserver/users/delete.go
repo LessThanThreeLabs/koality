@@ -30,14 +30,14 @@ func (usersHandler *UsersHandler) Delete(writer http.ResponseWriter, request *ht
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
-	} else if !user.IsAdmin {
+	} else if !user.IsAdmin || user.IsDeleted {
 		writer.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(writer, "Forbidden request, must be an admin")
 		return
 	}
 
 	// Even though we will mark the user as deleted, the user is still retrievable.
-	// We disable admin just to be safe
+	// We disable admin just to be extra safe
 	err = usersHandler.resourcesConnection.Users.Update.SetAdmin(userToDeleteId, false)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

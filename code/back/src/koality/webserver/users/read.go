@@ -72,7 +72,7 @@ func (usersHandler *UsersHandler) GetKeys(writer http.ResponseWriter, request *h
 			writer.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(writer, err)
 			return
-		} else if !currentUser.IsAdmin {
+		} else if !currentUser.IsAdmin || currentUser.IsDeleted {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprintf(writer, "Forbidden request for user %d", userId)
 			return

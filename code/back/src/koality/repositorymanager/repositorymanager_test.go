@@ -32,14 +32,12 @@ func getTopRef(remoteRepository Repository) (ref string) {
 	} else {
 		ref = "tip"
 	}
-
 	return
 }
 
 func writeAdd(repository Repository, filename, filechange string) {
 	ioutil.WriteFile(filepath.Join(repository.getPath(), filename), []byte(filechange), 0644)
 	RunCommand(Command(repository, nil, "add", filename))
-
 }
 
 func repositoryTestSetup(repository StoredRepository, remoteRepository Repository, testing *testing.T) {
