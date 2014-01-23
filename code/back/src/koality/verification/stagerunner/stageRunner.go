@@ -107,9 +107,70 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	return commandsSuccess || section.ContinueOnFailure(), nil
 }
 
+func (stageRunner *StageRunner) resolveBinaryPath(binaryName string) (string, error) {
+	binaryPath, err := stageRunner.resolveBinaryPathFromCurrentExecutable(binaryName)
+	if err != nil {
+		binaryPath, err = stageRunner.resolveBinaryPathFromGoEnvironment(binaryName)
+		if err != nil {
+			return "", err
+		}
+	}
+	return binaryPath, nil
+}
+
+func (stageRunner *StageRunner) resolveBinaryPathFromCurrentExecutable(binaryName string) (string, error) {
+	currentBinaryPath, err := exec.LookPath(os.Args[0])
+	if err != nil {
+		return "", err
+	}
+
+	resolvedPath := path.Join(path.Dir(currentBinaryPath), binaryName)
+	if err := stageRunner.checkExecutable(resolvedPath); err != nil {
+		return "", err
+	}
+
+	return resolvedPath, nil
+}
+
+func (stageRunner *StageRunner) resolveBinaryPathFromGoEnvironment(binaryName string) (string, error) {
+	resolvedPath := path.Join(os.Getenv("GOPATH"), "bin", binaryName)
+	if err := stageRunner.checkExecutable(resolvedPath); err != nil {
+		return "", err
+	}
+
+	return resolvedPath, nil
+}
+
+func (stageRunner *StageRunner) checkExecutable(binaryPath string) error {
+	file, err := os.Open(binaryPath)
+	if err != nil {
+		return err
+	}
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return err
+	}
+
+	fileMode := fileInfo.Mode()
+	if !fileMode.IsRegular() {
+		return fmt.Errorf("File found at %s is not a regular file", binaryPath)
+	}
+
+	if fileMode.Perm()&0500 == 0 {
+		return fmt.Errorf("File found at %s does not have read and execute permissions", binaryPath)
+	}
+
+	return nil
+}
+
 func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
-	localPath := path.Join(os.Getenv("GOPATH"), "bin", execName)
-	copyExec, err := stageRunner.virtualMachine.FileCopy(localPath, execName)
+	binaryPath, err := stageRunner.resolveBinaryPath(execName)
+	if err != nil {
+		return nil, err
+	}
+
+	copyExec, err := stageRunner.virtualMachine.FileCopy(binaryPath, execName)
 	if err != nil {
 		return nil, err
 	}
