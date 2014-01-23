@@ -2,7 +2,7 @@ package webserver
 
 import (
 	"fmt"
-	// "github.com/gorilla/context"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"koality/repositorymanager"
@@ -36,10 +36,10 @@ func (webserver *Webserver) Start() error {
 	}
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		// session, _ := sessionStore.Get(request, webserver.sessionName)
+		session, _ := sessionStore.Get(request, webserver.sessionName)
+		var _ = session
 		// context.Set(request, "userId", session.Values["userId"])
-		// var _ = session
-		// context.Set(request, "userId", uint64(1000))
+		context.Set(request, "userId", uint64(1000))
 		router.ServeHTTP(writer, request)
 	})
 
@@ -64,13 +64,7 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 }
 
 func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Router, error) {
-	// In accounts need way to reset password!!
-
 	router := mux.NewRouter()
-	apiSubrouter := router.PathPrefix("/api").MatcherFunc(webserver.hasApiKey).Subrouter()
-	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
-
-	appSubrouter := router.PathPrefix("/app").Subrouter()
 
 	passwordHasher, err := resources.NewPasswordHasher()
 	if err != nil {
@@ -87,6 +81,10 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	apiSubrouter := router.PathPrefix("/api").MatcherFunc(webserver.hasApiKey).Subrouter()
+	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
+
+	appSubrouter := router.PathPrefix("/app").Subrouter()
 	accountsSubrouter := appSubrouter.PathPrefix("/accounts").Subrouter()
 	accountsHandler.WireSubroutes(accountsSubrouter)
 
@@ -97,14 +95,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 }
 
 func (webserver *Webserver) isLoggedIn(request *http.Request, match *mux.RouteMatch) bool {
-	fmt.Println("Temporarily assuming logged in")
-	return true
-
-	// userId, ok := context.Get(request, "userId").(uint64)
-	// if !ok {
-	// 	return false
-	// }
-	// return userId != 0
+	userId, ok := context.Get(request, "userId").(uint64)
+	if !ok {
+		return false
+	}
+	return userId != 0
 }
 
 func (webserver *Webserver) hasApiKey(request *http.Request, match *mux.RouteMatch) bool {

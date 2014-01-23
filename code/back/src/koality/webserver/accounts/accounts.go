@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"koality/resources"
@@ -22,5 +23,7 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 }
 
 func (accountsHandler *AccountsHandler) WireSubroutes(subrouter *mux.Router) {
+	fmt.Println("...need to add functionality to reset password")
 	subrouter.HandleFunc("/login", accountsHandler.Login).Methods("POST")
+	subrouter.HandleFunc("/logout", accountsHandler.Logout).Methods("POST")
 }

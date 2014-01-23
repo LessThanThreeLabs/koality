@@ -9,6 +9,14 @@ import (
 	"strconv"
 )
 
+func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
+	if rememberMe {
+		return rememberMeDuration
+	} else {
+		return 0
+	}
+}
+
 func (accountsHandler *AccountsHandler) Login(writer http.ResponseWriter, request *http.Request) {
 	_, ok := context.Get(request, "userId").(uint64)
 	if ok {
@@ -47,7 +55,7 @@ func (accountsHandler *AccountsHandler) Login(writer http.ResponseWriter, reques
 		return
 	}
 
-	session, err := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
+	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
 	session.Values["userId"] = user.Id
 	session.Options = &sessions.Options{
 		Path:     "/",
@@ -57,13 +65,22 @@ func (accountsHandler *AccountsHandler) Login(writer http.ResponseWriter, reques
 	}
 	session.Save(request, writer)
 
-	fmt.Fprint(writer, "ok")
+	http.Redirect(writer, request, "/", http.StatusFound)
 }
 
-func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
-	if rememberMe {
-		return rememberMeDuration
-	} else {
-		return 0
+func (accountsHandler *AccountsHandler) Logout(writer http.ResponseWriter, request *http.Request) {
+	_, ok := context.Get(request, "userId").(uint64)
+	if !ok {
+		writer.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(writer, "Must be logged in")
+		return
 	}
+
+	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
+	session.Options = &sessions.Options{
+		MaxAge: -1,
+	}
+	session.Save(request, writer)
+
+	http.Redirect(writer, request, "/", http.StatusFound)
 }
