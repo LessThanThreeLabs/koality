@@ -25,12 +25,12 @@ func TestCreateInvalidSnapshot(test *testing.T) {
 	firstPool := pools[0]
 	imageType := "ec2"
 
-	_, err = connection.Snapshots.Create.Create(0, imageType)
+	_, err = connection.Snapshots.Create.Create(0, imageType, nil)
 	if _, ok := err.(resources.NoSuchPoolError); !ok {
 		test.Fatal("Expected NoSuchPoolError when providing invalid repository id")
 	}
 
-	_, err = connection.Snapshots.Create.Create(firstPool.Id, "hpcloud (lol)")
+	_, err = connection.Snapshots.Create.Create(firstPool.Id, "hpcloud (lol)", nil)
 	if err == nil {
 		test.Fatal("Expected error after providing an incorrect image type")
 	}
@@ -76,7 +76,7 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 
 	firstPool := pools[0]
 	imageType := "ec2"
-	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType)
+	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType, nil)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -194,7 +194,7 @@ func TestSnapshotStatuses(test *testing.T) {
 	firstPool := pools[0]
 	imageType := "ec2"
 
-	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType)
+	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType, nil)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func TestSnapshotTimes(test *testing.T) {
 	firstPool := pools[0]
 	imageType := "ec2"
 
-	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType)
+	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType, nil)
 	if err != nil {
 		test.Fatal(err)
 	}

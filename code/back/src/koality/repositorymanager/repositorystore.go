@@ -6,8 +6,8 @@ import (
 )
 
 type PostPushRepository interface {
-	getYamlFile(ref string) (string, error)
-	getCommitAttributes(ref string) (string, string, string, error)
+	getYamlFile(ref string) (yamlFile string, err error)
+	getCommitAttributes(ref string) (message, username, email string, err error)
 }
 
 type PrePushRepository interface {
@@ -20,6 +20,7 @@ type PrePushRepository interface {
 type StoredRepository interface {
 	PostPushRepository
 
+	getTopRef(branchOrRef string) (ref string, err error)
 	createRepository() error
 	deleteRepository() error
 }

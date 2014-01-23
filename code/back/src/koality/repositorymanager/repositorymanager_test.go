@@ -26,7 +26,7 @@ var (
 	hgRemoteRepository   = &hgRepository{remoteRepositoryPath, ""}
 )
 
-func getTopRef(remoteRepository Repository) (ref string) {
+func getTop(remoteRepository Repository) (ref string) {
 	if remoteRepository.getVcsBaseCommand() == "git" {
 		ref = "HEAD"
 	} else {
@@ -76,7 +76,8 @@ func testCreateGetYamlDelete(repository StoredRepository, remoteRepository Repos
 
 	repositoryTestSetup(repository, remoteRepository, testing)
 
-	yamlFile, err := repository.getYamlFile(getTopRef(remoteRepository))
+	topRef, _ := repository.getTopRef(getTop(remoteRepository))
+	yamlFile, err := repository.getYamlFile(topRef)
 	if err != nil {
 		testing.Fatal("Upon creation, repository did not clone properly, giving err=", err)
 	} else if yamlFile != "example yaml file contents" {
@@ -88,7 +89,8 @@ func testGetCommitAttributes(repository StoredRepository, remoteRepository Repos
 	defer repositoryTestTeardown(repository, testing)
 	repositoryTestSetup(repository, remoteRepository, testing)
 
-	message, username, email, err := repository.getCommitAttributes(getTopRef(remoteRepository))
+	topRef, _ := repository.getTopRef(getTop(remoteRepository))
+	message, username, email, err := repository.getCommitAttributes(topRef)
 
 	if err != nil {
 		testing.Fatal(err)
@@ -101,7 +103,7 @@ func TestGitStorePending(testing *testing.T) {
 	defer repositoryTestTeardown(gitRepo, testing)
 	repositoryTestSetup(gitRepo, gitRemoteRepository, testing)
 
-	headSha, _ := gitRemoteRepository.getHeadSha()
+	headSha, _ := gitRemoteRepository.getTopRefForSubrepository("HEAD")
 
 	if err := gitRepo.storePending(headSha, remoteRepositoryPath); err != nil {
 		testing.Fatal(err)
@@ -126,12 +128,12 @@ func TestGitMergePass(testing *testing.T) {
 	os.MkdirAll(clonedRepositoryPath, 0700)
 	RunCommand(Command(clonedRepository, nil, "clone", gitRepo.bare.path, clonedRepositoryPath))
 
-	oldHeadSha, _ := clonedRepository.getHeadSha()
+	oldHeadSha, _ := clonedRepository.getTopRefForSubrepository("HEAD")
 
 	writeAdd(clonedRepository, "newfile", "test changeset")
 	RunCommand(Command(clonedRepository, nil, "commit", "-m", "New commit", "--author=<chicken chickenson <cchickenson@chicken.com>>"))
 
-	headSha, _ := clonedRepository.getHeadSha()
+	headSha, _ := clonedRepository.getTopRefForSubrepository("HEAD")
 
 	if err := RunCommand(Command(clonedRepository, nil, "push", "origin", fmt.Sprintf("HEAD:refs/for/%s", headSha))); err != nil {
 		fmt.Println(err)

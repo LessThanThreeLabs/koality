@@ -2,6 +2,7 @@ package snapshots
 
 import (
 	"database/sql"
+	"fmt"
 	"koality/resources"
 )
 
@@ -23,7 +24,8 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(poolId uint64, imageType string) (*resources.Snapshot, error) {
+func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repositoryInformation []*resources.SnapshotRepositoryInformation) (*resources.Snapshot, error) {
+	fmt.Println("TODO, need to use ", repositoryInformation)
 	err := createHandler.getSnapshotParamsError(poolId, imageType)
 	if err != nil {
 		return nil, err

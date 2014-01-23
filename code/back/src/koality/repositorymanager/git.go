@@ -176,7 +176,7 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 		return
 	}
 
-	refSha, err := repository.slave.getHeadSha()
+	refSha, err := repository.slave.getTopRefForSubrepository("HEAD")
 	if err != nil {
 		return
 	}
@@ -189,7 +189,7 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 		return
 	}
 
-	if originalHead, err = repository.slave.getHeadSha(); err != nil {
+	if originalHead, err = repository.slave.getTopRefForSubrepository("HEAD"); err != nil {
 		return
 	}
 
@@ -204,8 +204,8 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 	return
 }
 
-func (repository *gitSubRepository) getHeadSha() (headSha string, err error) {
-	showCommand := Command(repository, nil, "show", "HEAD")
+func (repository *gitSubRepository) getTopRefForSubrepository(branchOrRef string) (ref string, err error) {
+	showCommand := Command(repository, nil, "show", branchOrRef)
 	if err = RunCommand(showCommand); err != nil {
 		return
 	}
@@ -216,12 +216,16 @@ func (repository *gitSubRepository) getHeadSha() (headSha string, err error) {
 	}
 
 	if !strings.HasPrefix(shaLine, "commit ") {
-		err = fmt.Errorf("git show HEAD output data for repository at %s was not formatted as expected.", repository.path)
+		err = fmt.Errorf("git show %s output data for repository at %s was not formatted as expected.", ref, repository.path)
 		return
 	}
 
-	headSha = strings.TrimSpace(strings.TrimPrefix(shaLine, "commit "))
+	ref = strings.TrimSpace(strings.TrimPrefix(shaLine, "commit "))
 	return
+}
+
+func (repository *gitRepository) getTopRef(branchOrRef string) (ref string, err error) {
+	return repository.slave.getTopRefForSubrepository(branchOrRef)
 }
 
 func (repository *gitSubRepository) resetRepositoryHead(refToReset, originalHead string) error {
@@ -239,7 +243,7 @@ func (repository *gitSubRepository) updateBranchFromForwardUrl(remoteUri, refToU
 		return
 	}
 
-	if headSha, err = repository.getHeadSha(); err != nil {
+	if headSha, err = repository.getTopRefForSubrepository("HEAD"); err != nil {
 		return
 	}
 

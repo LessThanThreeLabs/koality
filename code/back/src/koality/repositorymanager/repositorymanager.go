@@ -11,6 +11,7 @@ var lockMapMutex sync.Mutex
 
 type RepositoryManager interface {
 	ToPath(repo *resources.Repository) string
+	GetTopRef(repository *resources.Repository, branchOrRef string) (ref string, err error)
 	GetYamlFile(repository *resources.Repository, ref string) (yamlFile string, err error)
 	GetCommitAttributes(repository *resources.Repository, ref string) (message, username, email string, err error)
 	CreateRepository(repository *resources.Repository) (err error)
@@ -93,6 +94,15 @@ func (repositoryManager *repositoryManager) DeleteRepository(repository *resourc
 	}
 
 	return openedRepository.deleteRepository()
+}
+
+func (repositoryManager *repositoryManager) GetTopRef(repository *resources.Repository, branchOrRef string) (ref string, err error) {
+	openedRepository, err := repositoryManager.openStoredRepository(repository)
+	if err != nil {
+		return
+	}
+
+	return openedRepository.getTopRef(branchOrRef)
 }
 
 func (repositoryManager *repositoryManager) StorePending(repository *resources.Repository, ref string, args ...string) (err error) {

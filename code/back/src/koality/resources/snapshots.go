@@ -24,8 +24,13 @@ type SnapshotsHandler struct {
 	Subscription SnapshotsSubscriptionHandler
 }
 
+type SnapshotRepositoryInformation struct {
+	RepositoryId uint64
+	Branch       string //Can be empty, in which case we will auto-infer the most used branch
+}
+
 type SnapshotsCreateHandler interface {
-	Create(poolId uint64, imageType string) (*Snapshot, error)
+	Create(poolId uint64, imageType string, repositoryInformation []*SnapshotRepositoryInformation) (*Snapshot, error)
 }
 
 type SnapshotsReadHandler interface {

@@ -62,6 +62,26 @@ func (repository *hgRepository) deleteRepository() (err error) {
 	return os.RemoveAll(repository.path)
 }
 
+func (repository *hgRepository) getTopRef(branchOrRef string) (ref string, err error) {
+	showCommand := Command(repository, nil, "log", "-r", branchOrRef)
+	if err = RunCommand(showCommand); err != nil {
+		return
+	}
+
+	shaLine, err := showCommand.Stdout.ReadString('\n')
+	if err != nil {
+		return
+	}
+
+	if !strings.HasPrefix(shaLine, "changeset:") {
+		err = fmt.Errorf("git show %s output data for repository at %s was not formatted as expected.", ref, repository.path)
+		return
+	}
+
+	ref = strings.TrimSpace(strings.TrimPrefix(shaLine, "changeset:"))
+	return
+}
+
 func (repository *hgRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
 	command := Command(repository, nil, "log", "-r", ref)
 	if err = RunCommand(command); err != nil {
