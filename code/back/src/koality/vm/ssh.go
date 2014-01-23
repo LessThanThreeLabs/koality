@@ -3,6 +3,7 @@ package vm
 import (
 	"bytes"
 	"code.google.com/p/go.crypto/ssh"
+	"code.google.com/p/go.crypto/ssh/terminal"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -55,6 +56,22 @@ func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Comma
 	session.Stdin = stdin
 	session.Stdout = stdout
 	session.Stderr = stderr
+
+	terminalHeight, terminalWidth, err := terminal.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		terminalHeight, terminalWidth = 80, 40
+	}
+
+	terminalModes := ssh.TerminalModes{
+		ssh.ECHO:          0,
+		ssh.TTY_OP_ISPEED: 14400,
+		ssh.TTY_OP_OSPEED: 14400,
+	}
+
+	if err = session.RequestPty("xterm", terminalHeight, terminalWidth, terminalModes); err != nil {
+		session.Close()
+		return nil, err
+	}
 
 	envCommands := make([]shell.Command, 0, len(environment))
 	for key, value := range environment {
