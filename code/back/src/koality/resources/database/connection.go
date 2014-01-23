@@ -75,7 +75,7 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	snapshotsHandler, err := snapshots.New(database)
+	snapshotsHandler, err := snapshots.New(database, verificationsHandler)
 	if err != nil {
 		return nil, err
 	}

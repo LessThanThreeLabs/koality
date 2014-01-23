@@ -5,7 +5,7 @@ import (
 	"koality/resources"
 )
 
-func New(database *sql.DB) (*resources.SnapshotsHandler, error) {
+func New(database *sql.DB, verificationsHandler *resources.VerificationsHandler) (*resources.SnapshotsHandler, error) {
 	verifier, err := NewVerifier(database)
 	if err != nil {
 		return nil, err
@@ -21,7 +21,7 @@ func New(database *sql.DB) (*resources.SnapshotsHandler, error) {
 		return nil, err
 	}
 
-	createHandler, err := NewCreateHandler(database, verifier, readHandler, internalSubscriptionHandler)
+	createHandler, err := NewCreateHandler(database, verifier, readHandler, verificationsHandler, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
