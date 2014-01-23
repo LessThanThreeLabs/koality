@@ -63,7 +63,7 @@ func TestCreateInvalidRepository(test *testing.T) {
 	}
 }
 
-func TestCreateRepository(test *testing.T) {
+func TestCreateAndDeleteRepository(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -189,6 +189,13 @@ func TestCreateRepository(test *testing.T) {
 	err = connection.Repositories.Delete.Delete(repository.Id)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when trying to delete same repository twice")
+	}
+
+	deletedRepository, err := connection.Repositories.Read.Get(repository.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !deletedRepository.IsDeleted {
+		test.Fatal("Expected repository to be marked as deleted")
 	}
 }
 

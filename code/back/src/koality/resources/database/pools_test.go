@@ -323,6 +323,13 @@ func TestCreateAndDeleteEc2Pool(test *testing.T) {
 	if len(pools) != 2 {
 		test.Fatal("Expected there to be two pools")
 	}
+
+	deletedPool, err := connection.Pools.Read.GetEc2Pool(pool1.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !deletedPool.IsDeleted {
+		test.Fatal("Expected pool to be marked as deleted")
+	}
 }
 
 func TestUsersEc2Settings(test *testing.T) {

@@ -153,6 +153,13 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 	if _, ok := err.(resources.NoSuchSnapshotError); !ok {
 		test.Fatal("Expected NoSuchSnapshotError when trying to delete same snapshot twice")
 	}
+
+	deletedSnapshot, err := connection.Snapshots.Read.Get(snapshot.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !deletedSnapshot.IsDeleted {
+		test.Fatal("Expected snapshot to be marked as deleted")
+	}
 }
 
 func TestSnapshotStatuses(test *testing.T) {

@@ -175,6 +175,13 @@ func TestCreateAndDeleteUser(test *testing.T) {
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to delete same user twice")
 	}
+
+	deletedUser, err := connection.Users.Read.Get(user.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !deletedUser.IsDeleted {
+		test.Fatal("Expected user to be marked as deleted")
+	}
 }
 
 func TestUsersRead(test *testing.T) {
