@@ -127,7 +127,7 @@ func createRepositories(connection *resources.Connection) error {
 			if index%2 == 0 {
 				localUri := fmt.Sprintf("hg/test-data.koalitycode.com/koality-%d", index)
 				remoteUri := fmt.Sprintf("ssh://hg@hghub.com/koality-%d.hg", index)
-				repository, err = connection.Repositories.Create.Create(name, "git", localUri, remoteUri)
+				repository, err = connection.Repositories.Create.Create(name, "hg", localUri, remoteUri)
 			} else {
 				localUri := fmt.Sprintf("git/test-data.koalitycode.com/koality-%d.git", index)
 				remoteUri := fmt.Sprintf("git@github.com:KoalityCode/koality-%d.git", index)
