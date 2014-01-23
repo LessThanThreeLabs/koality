@@ -1,8 +1,8 @@
 package main
 
 import (
-  "koality/util/xunit"
-  "os"
+	"koality/util/xunit"
+	"os"
 )
 
 func main() {

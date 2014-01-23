@@ -108,7 +108,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 }
 
 func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
-	localPath := path.Join(os.Getenv("GOPATH"), "src", "koality", "util", execName)
+	localPath := path.Join(os.Getenv("GOPATH"), "bin", execName)
 	copyExec, err := stageRunner.virtualMachine.FileCopy(localPath, execName)
 	if err != nil {
 		return nil, err
