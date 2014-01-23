@@ -39,7 +39,7 @@ func (repositoriesHandler *RepositoriesHandler) WireSubroutes(subrouter *mux.Rou
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook", repositoriesHandler.SetGitHubHookTypes).Methods("PUT")
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/clearHook", repositoriesHandler.ClearGitHubHook).Methods("PUT")
 
-	// subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Delete).Methods("DELETE")
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Delete).Methods("DELETE")
 }
 
 func getSanitizedRepository(repository *resources.Repository) *sanitizedRepository {
