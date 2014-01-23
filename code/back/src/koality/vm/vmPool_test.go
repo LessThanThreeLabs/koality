@@ -43,7 +43,7 @@ func TestPoolSizeAssertions(test *testing.T) {
 func TestPoolReachesCap(test *testing.T) {
 	testPoolReachesCap := func(poolSize uint64) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, poolSize)
-		timeout := time.After(time.Duration(poolSize*timeoutMultiplier) * time.Millisecond)
+		timeout := time.After(poolSize * timeoutMultiplier * time.Millisecond)
 
 		vmChan, _ := pool.GetReady(poolSize)
 
@@ -69,7 +69,7 @@ func TestPoolReachesCap(test *testing.T) {
 func TestPoolEnforcesCap(test *testing.T) {
 	testPoolEnforcesCap := func(poolSize uint64) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, poolSize)
-		timeout := time.After(time.Duration(poolSize*timeoutMultiplier) * time.Millisecond)
+		timeout := time.After(poolSize * timeoutMultiplier * time.Millisecond)
 
 		vmChan, _ := pool.GetReady(poolSize + 1)
 
@@ -103,7 +103,7 @@ func TestPoolEnforcesCap(test *testing.T) {
 func TestPoolMaxSizeIncrease(test *testing.T) {
 	testPoolMaxSizeIncrease := func(startingPoolSize, endingPoolSize uint64) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, startingPoolSize)
-		timeout := time.After(time.Duration(startingPoolSize*timeoutMultiplier) * time.Millisecond)
+		timeout := time.After(startingPoolSize * timeoutMultiplier * time.Millisecond)
 
 		vmChan, _ := pool.GetReady(startingPoolSize)
 
@@ -122,7 +122,7 @@ func TestPoolMaxSizeIncrease(test *testing.T) {
 
 		pool.SetMaxSize(endingPoolSize)
 
-		timeout = time.After(time.Duration((endingPoolSize-startingPoolSize)*timeoutMultiplier) * time.Millisecond)
+		timeout = time.After((endingPoolSize - startingPoolSize) * timeoutMultiplier * time.Millisecond)
 		vmChan, _ = pool.GetReady(endingPoolSize - startingPoolSize)
 
 		for x := startingPoolSize; x < endingPoolSize+1; x++ {
@@ -156,7 +156,7 @@ func TestPoolMaxSizeIncrease(test *testing.T) {
 func TestPoolMaxSizeDecrease(test *testing.T) {
 	testPoolMaxSizeDecrease := func(startingPoolSize, endingPoolSize, amountToRequest uint64) {
 		pool := vm.NewPool(0, localmachine.Manager, 0, startingPoolSize)
-		timeout := time.After(time.Duration(startingPoolSize*timeoutMultiplier) * time.Millisecond)
+		timeout := time.After(startingPoolSize * timeoutMultiplier * time.Millisecond)
 
 		vmChan, _ := pool.GetReady(amountToRequest)
 
@@ -176,7 +176,7 @@ func TestPoolMaxSizeDecrease(test *testing.T) {
 		pool.SetMaxSize(endingPoolSize)
 
 		if amountToRequest <= endingPoolSize {
-			timeout = time.After(time.Duration((endingPoolSize-amountToRequest)*timeoutMultiplier) * time.Millisecond)
+			timeout = time.After((endingPoolSize - amountToRequest) * timeoutMultiplier * time.Millisecond)
 			vmChan, _ = pool.GetReady(endingPoolSize - amountToRequest)
 
 			for x := amountToRequest; x < endingPoolSize+1; x++ {
