@@ -38,7 +38,7 @@ func (webserver *Webserver) Start() error {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
 		// context.Set(request, "userId", session.Values["userId"])
 		var _ = session
-		context.Set(request, "userId", uint64(1001))
+		context.Set(request, "userId", uint64(1000))
 		router.ServeHTTP(writer, request)
 	})
 
@@ -63,13 +63,20 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 }
 
 func (webserver *Webserver) createRouter() (*mux.Router, error) {
+	fmt.Println("In login need way to reset password!!")
+
 	router := mux.NewRouter()
 	apiSubrouter := router.PathPrefix("/api").Subrouter()
 	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
 
 	appSubrouter := router.PathPrefix("/app").Subrouter()
 
-	usersHandler, err := users.New(webserver.resourcesConnection, webserver.repositoryManager)
+	passwordHasher, err := resources.NewPasswordHasher()
+	if err != nil {
+		return nil, err
+	}
+
+	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher)
 	if err != nil {
 		return nil, err
 	}

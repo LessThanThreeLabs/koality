@@ -69,26 +69,56 @@ func makeSureDumpExists() error {
 }
 
 func createUsers(connection *resources.Connection) error {
-	userPasswordHash := []byte("password-hash")
-	userPasswordSalt := []byte("password-salt")
+	passwordHash := []byte("password-hash")
+	passwordSalt := []byte("password-salt")
+	publicKey := "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCxvvK4FBlsGzexbr" +
+		"5IMEfvp0LfaPg2LHJlrHPqawe66136PrXPQHDJUN5rUb8LEulVVMsW6fRjG5oAy" +
+		"tmOZ/DCGlxLN7vN65c8adw67lLjHVpQ8uHJteRkq0EuL/rZSPBLm2fP/yAeJYRi" +
+		"JP6fob24PpklwIz5cr9tGHH7DJmzk69PzU3AdL7DbUZ/vIay9cPFV5sQ3BGTpHS" +
+		"QlKunWWtN+m6Lp5ZAwY6+bvdw9E/8PYp7+aBRpbPDJ4f3uiMzcmzSxPqcoz+PuC" +
+		"zljHeYmm/vYF2XmeB66cAzPSig3xAz5YVgTFBW9FWvg6W5DcdPsUQGqeyJta7pp" +
+		"IQW88HOpNk5"
 
-	_, err := connection.Users.Create.Create("admin@koalitycode.com", "Mister", "Admin", userPasswordHash, userPasswordSalt, true)
+	user, err := connection.Users.Create.Create("admin@koalitycode.com", "Mister", "Admin", passwordHash, passwordSalt, true)
 	if err != nil {
 		return err
 	}
 
-	_, err = connection.Users.Create.Create("jchu@koalitycode.com", "Jonathan", "Chu", userPasswordHash, userPasswordSalt, false)
+	_, err = connection.Users.Update.AddKey(user.Id, "my key", publicKey+" "+user.Email)
 	if err != nil {
 		return err
 	}
 
-	_, err = connection.Users.Create.Create("jpotter@koalitycode.com", "Jordan", "Potter", userPasswordHash, userPasswordSalt, false)
+	user, err = connection.Users.Create.Create("jchu@koalitycode.com", "Jonathan", "Chu", passwordHash, passwordSalt, false)
 	if err != nil {
 		return err
 	}
 
-	_, err = connection.Users.Create.Create("bbland@koalitycode.com", "Brian", "Bland", userPasswordHash, userPasswordSalt, false)
-	return err
+	_, err = connection.Users.Update.AddKey(user.Id, "my key", publicKey+" "+user.Email)
+	if err != nil {
+		return err
+	}
+
+	user, err = connection.Users.Create.Create("jpotter@koalitycode.com", "Jordan", "Potter", passwordHash, passwordSalt, false)
+	if err != nil {
+		return err
+	}
+
+	_, err = connection.Users.Update.AddKey(user.Id, "my key", publicKey+" "+user.Email)
+	if err != nil {
+		return err
+	}
+
+	user, err = connection.Users.Create.Create("bbland@koalitycode.com", "Brian", "Bland", passwordHash, passwordSalt, false)
+	if err != nil {
+		return err
+	}
+
+	_, err = connection.Users.Update.AddKey(user.Id, "my key", publicKey+" "+user.Email)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func createRepositories(connection *resources.Connection) error {
