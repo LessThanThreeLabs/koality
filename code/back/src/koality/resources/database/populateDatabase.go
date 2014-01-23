@@ -127,7 +127,7 @@ func createRepositories(connection *resources.Connection) error {
 			var repository *resources.Repository
 			var err error
 			if index%2 == 0 {
-				repository, err = connection.Repositories.Create.Create(name, "hg", localUri, remoteUri)
+				repository, err = connection.Repositories.Create.Create(name, "git", localUri, remoteUri)
 			} else {
 				repository, err = connection.Repositories.Create.CreateWithGitHub(name, "git", localUri, remoteUri, "github-owner", name)
 				if err == nil {
