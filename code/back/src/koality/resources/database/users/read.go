@@ -23,13 +23,16 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	user := new(resources.User)
 
 	var gitHubOAuth sql.NullString
+	var deletedId uint64
 	err := scannable.Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.PasswordHash, &user.PasswordSalt,
-		&gitHubOAuth, &user.IsAdmin, &user.Created)
+		&gitHubOAuth, &user.IsAdmin, &user.Created, &deletedId)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchUserError{"Unable to find user"}
 	} else if err != nil {
 		return nil, err
 	}
+
+	user.IsDeleted = user.Id == deletedId
 
 	if gitHubOAuth.Valid {
 		user.GitHubOauth = gitHubOAuth.String
@@ -39,14 +42,14 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 
 func (readHandler *ReadHandler) Get(userId uint64) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, is_admin, created FROM users WHERE id=$1"
+		" github_oauth, is_admin, created, deleted FROM users WHERE id=$1"
 	row := readHandler.database.QueryRow(query, userId)
 	return readHandler.scanUser(row)
 }
 
 func (readHandler *ReadHandler) GetByEmail(email string) (*resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, is_admin, created FROM users WHERE email=$1 AND id != deleted"
+		" github_oauth, is_admin, created, deleted FROM users WHERE email=$1 AND id != deleted"
 	row := readHandler.database.QueryRow(query, email)
 	return readHandler.scanUser(row)
 }
@@ -66,7 +69,7 @@ func (readHandler *ReadHandler) GetIdByPublicKey(publicKey string) (uint64, erro
 
 func (readHandler *ReadHandler) GetAll() ([]resources.User, error) {
 	query := "SELECT id, email, first_name, last_name, password_hash, password_salt," +
-		" github_oauth, is_admin, created FROM users WHERE id >= 1000 AND id != deleted"
+		" github_oauth, is_admin, created, deleted FROM users WHERE id >= 1000 AND id != deleted"
 	rows, err := readHandler.database.Query(query)
 	if err != nil {
 		return nil, err

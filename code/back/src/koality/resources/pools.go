@@ -19,6 +19,7 @@ type Ec2Pool struct {
 	RootDriveSize     uint64
 	UserData          string
 	Created           *time.Time
+	IsDeleted         bool
 }
 
 type PoolsHandler struct {

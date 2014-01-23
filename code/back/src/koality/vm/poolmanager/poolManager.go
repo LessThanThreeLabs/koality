@@ -94,7 +94,7 @@ func (poolManager *PoolManager) SubscribeToEvents(resourcesConnection *resources
 		ec2Pool := ec2VmPool.Ec2VirtualMachineManager.Ec2Pool
 
 		ec2VmPool.UpdateSettings(resources.Ec2Pool{ec2PoolId, ec2Pool.Name, accessKey, secretKey, username, baseAmiId,
-			securityGroupId, vpcSubnetId, instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData, ec2Pool.Created})
+			securityGroupId, vpcSubnetId, instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData, ec2Pool.Created, ec2Pool.IsDeleted})
 	}
 	var err error
 

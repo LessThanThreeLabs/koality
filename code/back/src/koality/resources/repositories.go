@@ -13,6 +13,7 @@ type Repository struct {
 	RemoteUri string
 	Created   *time.Time
 	GitHub    *GitHubMetadata
+	IsDeleted bool
 }
 
 type GitHubMetadata struct {

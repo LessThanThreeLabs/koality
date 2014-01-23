@@ -13,6 +13,7 @@ type sanitizedUser struct {
 	LastName  string     `json:"lastName"`
 	IsAdmin   bool       `json:"isAdmin"`
 	Created   *time.Time `json:"created"`
+	IsDeleted bool       `json:"isDeleted"`
 }
 
 type sanitizedSshKey struct {
@@ -53,6 +54,7 @@ func getSanitizedUser(user *resources.User) *sanitizedUser {
 		LastName:  user.LastName,
 		IsAdmin:   user.IsAdmin,
 		Created:   user.Created,
+		IsDeleted: user.IsDeleted,
 	}
 }
 

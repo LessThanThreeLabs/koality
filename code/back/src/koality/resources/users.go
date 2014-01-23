@@ -14,6 +14,7 @@ type User struct {
 	GitHubOauth  string
 	IsAdmin      bool
 	Created      *time.Time
+	IsDeleted    bool
 }
 
 type SshKey struct {

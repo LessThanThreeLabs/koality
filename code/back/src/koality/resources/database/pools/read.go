@@ -23,15 +23,18 @@ func (readHandler *ReadHandler) scanEc2Pool(scannable Scannable) (*resources.Ec2
 	ec2Pool := new(resources.Ec2Pool)
 
 	var baseAmiId, securityGroupId, vpcSubnetId, userData sql.NullString
+	var deletedId uint64
 	err := scannable.Scan(&ec2Pool.Id, &ec2Pool.Name, &ec2Pool.AccessKey, &ec2Pool.SecretKey,
 		&ec2Pool.Username, &baseAmiId, &securityGroupId, &vpcSubnetId,
 		&ec2Pool.InstanceType, &ec2Pool.NumReadyInstances, &ec2Pool.NumMaxInstances,
-		&ec2Pool.RootDriveSize, &userData, &ec2Pool.Created)
+		&ec2Pool.RootDriveSize, &userData, &ec2Pool.Created, &deletedId)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchPoolError{"Unable to find ec2 pool"}
 	} else if err != nil {
 		return nil, err
 	}
+
+	ec2Pool.IsDeleted = ec2Pool.Id == deletedId
 
 	if baseAmiId.Valid {
 		ec2Pool.BaseAmiId = baseAmiId.String
@@ -45,13 +48,12 @@ func (readHandler *ReadHandler) scanEc2Pool(scannable Scannable) (*resources.Ec2
 	if userData.Valid {
 		ec2Pool.UserData = userData.String
 	}
-
 	return ec2Pool, nil
 }
 
 func (readHandler *ReadHandler) GetEc2Pool(ec2PoolId uint64) (*resources.Ec2Pool, error) {
 	query := "SELECT id, name, access_key, secret_key, username, base_ami_id, security_group_id, vpc_subnet_id," +
-		" instance_type, num_ready_instances, num_max_instances, root_drive_size, user_data, created" +
+		" instance_type, num_ready_instances, num_max_instances, root_drive_size, user_data, created, deleted" +
 		" FROM ec2_pools WHERE id=$1"
 	row := readHandler.database.QueryRow(query, ec2PoolId)
 	return readHandler.scanEc2Pool(row)
@@ -59,7 +61,7 @@ func (readHandler *ReadHandler) GetEc2Pool(ec2PoolId uint64) (*resources.Ec2Pool
 
 func (readHandler *ReadHandler) GetAllEc2Pools() ([]resources.Ec2Pool, error) {
 	query := "SELECT id, name, access_key, secret_key, username, base_ami_id, security_group_id, vpc_subnet_id," +
-		" instance_type, num_ready_instances, num_max_instances, root_drive_size, user_data, created" +
+		" instance_type, num_ready_instances, num_max_instances, root_drive_size, user_data, created, deleted" +
 		" FROM ec2_pools WHERE id != deleted"
 	rows, err := readHandler.database.Query(query)
 	if err != nil {

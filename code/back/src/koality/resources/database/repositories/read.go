@@ -24,15 +24,18 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 	repository := new(resources.Repository)
 
 	var gitHubHookId sql.NullInt64
+	var deletedId uint64
 	var gitHubOwner, gitHubName, gitHubHookSecret, gitHubHookTypes sql.NullString
 	err := scannable.Scan(&repository.Id, &repository.Name, &repository.Status, &repository.VcsType,
-		&repository.LocalUri, &repository.RemoteUri, &repository.Created,
+		&repository.LocalUri, &repository.RemoteUri, &repository.Created, &deletedId,
 		&gitHubOwner, &gitHubName, &gitHubHookId, &gitHubHookSecret, &gitHubHookTypes)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchRepositoryError{"Unable to find repository"}
 	} else if err != nil {
 		return nil, err
 	}
+
+	repository.IsDeleted = repository.Id == deletedId
 
 	if gitHubOwner.Valid && gitHubName.Valid {
 		repository.GitHub = new(resources.GitHubMetadata)
@@ -53,12 +56,11 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 	if gitHubHookTypes.Valid {
 		repository.GitHub.HookTypes = strings.Split(gitHubHookTypes.String, ",")
 	}
-
 	return repository, nil
 }
 
 func (readHandler *ReadHandler) Get(repositoryId uint64) (*resources.Repository, error) {
-	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created," +
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created, R.deleted," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
 		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
 		" ON R.id=RGM.repository_id WHERE R.id=$1"
@@ -67,7 +69,7 @@ func (readHandler *ReadHandler) Get(repositoryId uint64) (*resources.Repository,
 }
 
 func (readHandler *ReadHandler) GetAll() ([]resources.Repository, error) {
-	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created," +
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created, R.deleted," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
 		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
 		" ON R.id=RGM.repository_id WHERE R.id != R.deleted"

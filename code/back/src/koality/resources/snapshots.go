@@ -10,10 +10,10 @@ type Snapshot struct {
 	ImageId   string
 	ImageType string
 	Status    string
-	Deleted   bool
 	Created   *time.Time
 	Started   *time.Time
 	Ended     *time.Time
+	IsDeleted bool
 }
 
 type SnapshotsHandler struct {
