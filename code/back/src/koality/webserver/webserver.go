@@ -63,7 +63,7 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 }
 
 func (webserver *Webserver) createRouter() (*mux.Router, error) {
-	fmt.Println("In login need way to reset password!!")
+	// In login need way to reset password!!
 
 	router := mux.NewRouter()
 	apiSubrouter := router.PathPrefix("/api").Subrouter()

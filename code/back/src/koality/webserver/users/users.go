@@ -33,13 +33,16 @@ func New(resourcesConnection *resources.Connection, passwordHasher *resources.Pa
 func (usersHandler *UsersHandler) WireSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Get).Methods("GET")
 	subrouter.HandleFunc("/{userId:[0-9]+}/keys", usersHandler.GetKeys).Methods("GET")
-	subrouter.HandleFunc("/all", usersHandler.GetAll).Methods("GET")
+	subrouter.HandleFunc("/", usersHandler.GetAll).Methods("GET")
 
 	subrouter.HandleFunc("/name", usersHandler.SetName).Methods("POST")
 	subrouter.HandleFunc("/password", usersHandler.SetPassword).Methods("POST")
-	subrouter.HandleFunc("/{userId:[0-9]+}/admin", usersHandler.SetAdmin).Methods("POST")
 	subrouter.HandleFunc("/addKey", usersHandler.AddKey).Methods("POST")
 	subrouter.HandleFunc("/removeKey", usersHandler.RemoveKey).Methods("POST")
+
+	subrouter.HandleFunc("/{userId:[0-9]+}/admin", usersHandler.SetAdmin).Methods("PUT")
+
+	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Delete).Methods("DELETE")
 }
 
 func getSanitizedUser(user *resources.User) *sanitizedUser {
