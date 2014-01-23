@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/sessions"
 	"koality/repositorymanager"
 	"koality/resources"
+	"koality/webserver/accounts"
 	"koality/webserver/users"
 	"net/http"
 )
@@ -29,7 +30,7 @@ func (webserver *Webserver) Start() error {
 		return err
 	}
 
-	router, err := webserver.createRouter()
+	router, err := webserver.createRouter(sessionStore)
 	if err != nil {
 		return err
 	}
@@ -62,11 +63,11 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 	return sessionStore, nil
 }
 
-func (webserver *Webserver) createRouter() (*mux.Router, error) {
-	// In login need way to reset password!!
+func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Router, error) {
+	// In accounts need way to reset password!!
 
 	router := mux.NewRouter()
-	apiSubrouter := router.PathPrefix("/api").Subrouter()
+	apiSubrouter := router.PathPrefix("/api").MatcherFunc(webserver.hasApiKey).Subrouter()
 	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
 
 	appSubrouter := router.PathPrefix("/app").Subrouter()
@@ -76,20 +77,26 @@ func (webserver *Webserver) createRouter() (*mux.Router, error) {
 		return nil, err
 	}
 
+	accountsHandler, err := accounts.New(webserver.resourcesConnection, sessionStore, webserver.sessionName, passwordHasher)
+	if err != nil {
+		return nil, err
+	}
+
 	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher)
 	if err != nil {
 		return nil, err
 	}
 
-	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(isLoggedIn).Subrouter()
-	usersHandler.WireSubroutes(usersSubrouter)
+	accountsSubrouter := appSubrouter.PathPrefix("/users").Subrouter()
+	accountsHandler.WireSubroutes(accountsSubrouter)
 
-	// TODO: create and handle more subroutes
+	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(webserver.isLoggedIn).Subrouter()
+	usersHandler.WireSubroutes(usersSubrouter)
 
 	return router, nil
 }
 
-func isLoggedIn(request *http.Request, match *mux.RouteMatch) bool {
+func (webserver *Webserver) isLoggedIn(request *http.Request, match *mux.RouteMatch) bool {
 	fmt.Println("Temporarily assuming logged in")
 	return true
 
@@ -98,4 +105,15 @@ func isLoggedIn(request *http.Request, match *mux.RouteMatch) bool {
 	// 	return false
 	// }
 	// return userId != 0
+}
+
+func (webserver *Webserver) hasApiKey(request *http.Request, match *mux.RouteMatch) bool {
+	apiKeyToCheck := request.FormValue("key")
+	apiKey := "need-to-actually-get-this-from-the-database"
+	// apiKey, err := webserver.resourcesConnection.Settings.Read.GetApiKey()
+	// if err != nil {
+	// 	fmt.Println("webserver - hasApiKey: NEED TO LOG THIS")
+	// 	return false
+	// }
+	return apiKey == apiKeyToCheck
 }
