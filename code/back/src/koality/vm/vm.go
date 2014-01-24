@@ -2,6 +2,7 @@ package vm
 
 import (
 	"koality/shell"
+        "syscall"
 )
 
 type VirtualMachine interface {
@@ -13,8 +14,9 @@ type VirtualMachine interface {
 	Terminate() error
 }
 
-type Command interface {
-	Exec() error
+type Command struct {
+	Argv []string
+	Envv []string
 }
 
 type VirtualMachineManager interface {
@@ -32,4 +34,8 @@ type VirtualMachinePool interface {
 	SetMaxSize(uint64) error
 	MinReady() uint64
 	SetMinReady(uint64) error
+}
+
+func (command Command) Exec() error {
+	return syscall.Exec(command.Argv[0], command.Argv, command.Envv)
 }
