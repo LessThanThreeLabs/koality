@@ -233,7 +233,7 @@ func (readHandler *ReadHandler) GetAllXunitResults(stageRunId uint64) ([]resourc
 	return xunitResults, nil
 }
 
-func (readHandler *ReadHandler) GetExports(stageRunId uint64) ([]resources.Export, error) {
+func (readHandler *ReadHandler) GetAllExports(stageRunId uint64) ([]resources.Export, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}

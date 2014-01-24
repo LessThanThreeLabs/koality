@@ -730,7 +730,7 @@ func TestExport(test *testing.T) {
 		test.Fatal("Bad exports in expots added event")
 	}
 
-	returnedExports, err := connection.Stages.Read.GetExports(stageRun.Id)
+	returnedExports, err := connection.Stages.Read.GetAllExports(stageRun.Id)
 	if err != nil {
 		test.Fatal(err)
 	}

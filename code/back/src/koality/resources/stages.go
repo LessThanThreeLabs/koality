@@ -60,7 +60,7 @@ type StagesReadHandler interface {
 	GetConsoleLinesTail(stageRunId uint64, offset, results uint32) (map[uint64]string, error)
 	GetAllConsoleLines(stageRunId uint64) (map[uint64]string, error)
 	GetAllXunitResults(stageRunId uint64) ([]XunitResult, error)
-	GetExports(stageRunId uint64) ([]Export, error)
+	GetAllExports(stageRunId uint64) ([]Export, error)
 }
 
 type StagesUpdateHandler interface {

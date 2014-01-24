@@ -149,14 +149,24 @@ func (stagesHandler *StagesHandler) GetConsoleLines(writer http.ResponseWriter, 
 		return
 	}
 
-	sanitizedConsoleLines := getSanitizedConsoleLines(consoleLines)
-	jsonedConsoleLines, err := json.Marshal(sanitizedConsoleLines)
+	cleanedConsoleLines := cleanConsoleLines(consoleLines)
+	jsonedConsoleLines, err := json.Marshal(cleanedConsoleLines)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Print(writer, err)
 		return
 	}
 	fmt.Fprintf(writer, "%s", jsonedConsoleLines)
+}
+
+// The json marshaller (and json standard) only supports strings for keys
+func cleanConsoleLines(consoleLines map[uint64]string) map[string]string {
+	cleanedConsoleLines := make(map[string]string, len(consoleLines))
+	for number, line := range consoleLines {
+		numberAsString := strconv.FormatUint(number, 10)
+		cleanedConsoleLines[numberAsString] = line
+	}
+	return cleanedConsoleLines
 }
 
 func (stagesHandler *StagesHandler) getConsoleLinesForDirection(stageRunId uint64, from, offsetString, resultsString string) (map[uint64]string, error) {
@@ -177,4 +187,64 @@ func (stagesHandler *StagesHandler) getConsoleLinesForDirection(stageRunId uint6
 	} else {
 		return map[uint64]string{}, errors.New("From must be \"head\" or \"tail\"")
 	}
+}
+
+func (stagesHandler *StagesHandler) GetXunitResults(writer http.ResponseWriter, request *http.Request) {
+	stageRunIdString := mux.Vars(request)["stageRunId"]
+	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	xunitResults, err := stagesHandler.resourcesConnection.Stages.Read.GetAllXunitResults(stageRunId)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedXunitResults := make([]sanitizedXunitResult, 0, len(xunitResults))
+	for _, xunitResult := range xunitResults {
+		sanitizedXunitResults = append(sanitizedXunitResults, *getSanitizedXunitResult(&xunitResult))
+	}
+
+	jsonedXunitResults, err := json.Marshal(sanitizedXunitResults)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Print(writer, err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", jsonedXunitResults)
+}
+
+func (stagesHandler *StagesHandler) GetExports(writer http.ResponseWriter, request *http.Request) {
+	stageRunIdString := mux.Vars(request)["stageRunId"]
+	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	exports, err := stagesHandler.resourcesConnection.Stages.Read.GetAllExports(stageRunId)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedExports := make([]sanitizedExport, 0, len(exports))
+	for _, export := range exports {
+		sanitizedExports = append(sanitizedExports, *getSanitizedExport(&export))
+	}
+
+	jsonedExports, err := json.Marshal(sanitizedExports)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Print(writer, err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", jsonedExports)
 }

@@ -3,7 +3,6 @@ package stages
 import (
 	"github.com/gorilla/mux"
 	"koality/resources"
-	"strconv"
 	"time"
 )
 
@@ -57,7 +56,9 @@ func (stagesHandler *StagesHandler) WireStagesSubroutes(subrouter *mux.Router) {
 func (stagesHandler *StagesHandler) WireStageRunsSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{stageRunId:[0-9]+}", stagesHandler.GetRun).Methods("GET")
 	subrouter.HandleFunc("/", stagesHandler.GetAllRuns).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/consoleLines", stagesHandler.GetConsoleLines).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/lines", stagesHandler.GetConsoleLines).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/xunits", stagesHandler.GetXunitResults).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/exports", stagesHandler.GetXunitResults).Methods("GET")
 }
 
 func getSanitizedStage(stage *resources.Stage) *sanitizedStage {
@@ -88,16 +89,6 @@ func getSanitizedStageRun(stageRun *resources.StageRun) *sanitizedStageRun {
 		Started:    stageRun.Started,
 		Ended:      stageRun.Ended,
 	}
-}
-
-func getSanitizedConsoleLines(consoleLines map[uint64]string) map[string]string {
-	// The json marshaller (and json standard) only supports strings for keys
-	modifiedConsoleLines := make(map[string]string, len(consoleLines))
-	for number, line := range consoleLines {
-		numberAsString := strconv.FormatUint(number, 10)
-		modifiedConsoleLines[numberAsString] = line
-	}
-	return modifiedConsoleLines
 }
 
 func getSanitizedXunitResult(xunitResult *resources.XunitResult) *sanitizedXunitResult {
