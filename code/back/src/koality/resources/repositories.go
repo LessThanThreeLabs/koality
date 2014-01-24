@@ -34,7 +34,7 @@ type RepositoriesHandler struct {
 
 type RepositoriesCreateHandler interface {
 	Create(name, vcsType, localUri, remoteUri string) (*Repository, error)
-	CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (*Repository, error)
+	CreateWithGitHub(name, localUri, remoteUri, gitHubOwner, gitHubName string) (*Repository, error)
 }
 
 type RepositoriesReadHandler interface {

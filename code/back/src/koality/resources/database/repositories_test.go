@@ -238,7 +238,7 @@ func TestCreateGitHubRepository(test *testing.T) {
 	remoteUri := "git@remote_uri:name"
 	gitHubOwner := "jordanpotter"
 	gitHubName := "repository-github-name"
-	repository, err := connection.Repositories.Create.CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName)
+	repository, err := connection.Repositories.Create.CreateWithGitHub(name, localUri, remoteUri, gitHubOwner, gitHubName)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -300,7 +300,7 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Name mismatch")
 	}
 
-	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
+	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.LocalUri, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
 	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
@@ -432,7 +432,7 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git", "git/local_uri/name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git/local_uri/name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
 	if err != nil {
 		test.Fatal(err)
 	}

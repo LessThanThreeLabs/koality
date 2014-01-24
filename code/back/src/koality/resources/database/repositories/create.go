@@ -44,8 +44,8 @@ func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri st
 	return repository, nil
 }
 
-func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, remoteUri, gitHubOwner, gitHubName string) (*resources.Repository, error) {
-	err := createHandler.getRepositoryParamsError(name, vcsType, localUri, remoteUri)
+func (createHandler *CreateHandler) CreateWithGitHub(name, localUri, remoteUri, gitHubOwner, gitHubName string) (*resources.Repository, error) {
+	err := createHandler.getRepositoryParamsError(name, "git", localUri, remoteUri)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, vcsType, localUri, re
 
 	id := uint64(0)
 	repositoryQuery := "INSERT INTO repositories (name, status, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4, $5) RETURNING id"
-	err = transaction.QueryRow(repositoryQuery, name, initialRepositoryStatus, vcsType, localUri, remoteUri).Scan(&id)
+	err = transaction.QueryRow(repositoryQuery, name, initialRepositoryStatus, "git", localUri, remoteUri).Scan(&id)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err

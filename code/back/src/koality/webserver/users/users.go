@@ -3,6 +3,7 @@ package users
 import (
 	"github.com/gorilla/mux"
 	"koality/resources"
+	"koality/webserver/middleware"
 	"time"
 )
 
@@ -41,7 +42,9 @@ func (usersHandler *UsersHandler) WireSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/addKey", usersHandler.AddKey).Methods("POST")
 	subrouter.HandleFunc("/removeKey", usersHandler.RemoveKey).Methods("POST")
 
-	subrouter.HandleFunc("/{userId:[0-9]+}/admin", usersHandler.SetAdmin).Methods("PUT")
+	subrouter.HandleFunc("/{userId:[0-9]+}/admin",
+		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.SetAdmin)).
+		Methods("PUT")
 
 	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Delete).Methods("DELETE")
 }

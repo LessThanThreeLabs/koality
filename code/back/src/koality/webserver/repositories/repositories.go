@@ -3,6 +3,7 @@ package repositories
 import (
 	"github.com/gorilla/mux"
 	"koality/resources"
+	"koality/webserver/middleware"
 	"time"
 )
 
@@ -36,10 +37,24 @@ func (repositoriesHandler *RepositoriesHandler) WireSubroutes(subrouter *mux.Rou
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Get).Methods("GET")
 	subrouter.HandleFunc("/", repositoriesHandler.GetAll).Methods("GET")
 
-	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook", repositoriesHandler.SetGitHubHookTypes).Methods("PUT")
-	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/clearHook", repositoriesHandler.ClearGitHubHook).Methods("PUT")
+	subrouter.HandleFunc("/create",
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.Create)).
+		Methods("POST")
 
-	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Delete).Methods("DELETE")
+	subrouter.HandleFunc("/createWithGitHub",
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.CreateWithGitHub)).
+		Methods("POST")
+
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook",
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.SetGitHubHookTypes)).
+		Methods("PUT")
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook",
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.ClearGitHubHook)).
+		Methods("PUT")
+
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}",
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.Delete)).
+		Methods("DELETE")
 }
 
 func getSanitizedRepository(repository *resources.Repository) *sanitizedRepository {

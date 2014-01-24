@@ -65,17 +65,6 @@ func (usersHandler *UsersHandler) SetAdmin(writer http.ResponseWriter, request *
 		return
 	}
 
-	user, err := usersHandler.resourcesConnection.Users.Read.Get(userId)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
-		return
-	} else if !user.IsAdmin || user.IsDeleted {
-		writer.WriteHeader(http.StatusForbidden)
-		fmt.Fprint(writer, "Forbidden request, must be an admin")
-		return
-	}
-
 	err = usersHandler.resourcesConnection.Users.Update.SetAdmin(userToModifyId, adminStatus)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
