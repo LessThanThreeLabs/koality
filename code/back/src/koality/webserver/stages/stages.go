@@ -3,6 +3,7 @@ package stages
 import (
 	"github.com/gorilla/mux"
 	"koality/resources"
+	"strconv"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type sanitizedStage struct {
 
 type sanitizedStageRun struct {
 	Id         uint64     `json:"id"`
+	StageId    uint64     `json:"stageId"`
 	ReturnCode int        `json:"returnCode"`
 	Created    *time.Time `json:"created"`
 	Started    *time.Time `json:"started"`
@@ -47,11 +49,15 @@ func New(resourcesConnection *resources.Connection) (*StagesHandler, error) {
 	return &StagesHandler{resourcesConnection}, nil
 }
 
-func (verificationsHandler *StagesHandler) WireSubroutes(subrouter *mux.Router) {
-	// subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
-	// subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
+func (stagesHandler *StagesHandler) WireStagesSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{stageId:[0-9]+}", stagesHandler.Get).Methods("GET")
+	subrouter.HandleFunc("/", stagesHandler.GetAll).Queries("verificationId", "").Methods("GET")
+}
 
-	// subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.Retrigger).Methods("POST")
+func (stagesHandler *StagesHandler) WireStageRunsSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}", stagesHandler.GetRun).Methods("GET")
+	subrouter.HandleFunc("/", stagesHandler.GetAllRuns).Queries("stageId", "").Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/consoleLines", stagesHandler.GetAllConsoleLines).Methods("GET")
 }
 
 func getSanitizedStage(stage *resources.Stage) *sanitizedStage {
@@ -76,11 +82,22 @@ func getSanitizedStageRuns(stageRuns []resources.StageRun) []sanitizedStageRun {
 func getSanitizedStageRun(stageRun *resources.StageRun) *sanitizedStageRun {
 	return &sanitizedStageRun{
 		Id:         stageRun.Id,
+		StageId:    stageRun.StageId,
 		ReturnCode: stageRun.ReturnCode,
 		Created:    stageRun.Created,
 		Started:    stageRun.Started,
 		Ended:      stageRun.Ended,
 	}
+}
+
+func getSanitizedConsoleLines(consoleLines map[uint64]string) map[string]string {
+	// The json marshaller (and json standard) only supports strings for keys
+	modifiedConsoleLines := make(map[string]string, len(consoleLines))
+	for number, line := range consoleLines {
+		numberAsString := strconv.FormatUint(number, 10)
+		modifiedConsoleLines[numberAsString] = line
+	}
+	return modifiedConsoleLines
 }
 
 func getSanitizedXunitResult(xunitResult *resources.XunitResult) *sanitizedXunitResult {

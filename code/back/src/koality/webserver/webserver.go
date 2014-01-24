@@ -116,7 +116,10 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	verificationsHandler.WireSubroutes(verificationsSubrouter)
 
 	stagesSubrouter := appSubrouter.PathPrefix("/stages").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	stagesHandler.WireSubroutes(stagesSubrouter)
+	stagesHandler.WireStagesSubroutes(stagesSubrouter)
+
+	stageRunsSubrouter := appSubrouter.PathPrefix("/stageRuns").MatcherFunc(webserver.isLoggedIn).Subrouter()
+	stagesHandler.WireStageRunsSubroutes(stageRunsSubrouter)
 
 	return router, nil
 }

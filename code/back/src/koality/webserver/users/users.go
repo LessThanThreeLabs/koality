@@ -13,14 +13,14 @@ type sanitizedUser struct {
 	FirstName string     `json:"firstName"`
 	LastName  string     `json:"lastName"`
 	IsAdmin   bool       `json:"isAdmin"`
-	Created   *time.Time `json:"created"`
+	Created   *time.Time `json:"created,omitempty"`
 	IsDeleted bool       `json:"isDeleted"`
 }
 
 type sanitizedSshKey struct {
 	Name      string     `json:"name"`
 	PublicKey string     `json:"publicKey"`
-	Created   *time.Time `json:"created"`
+	Created   *time.Time `json:"created,omitempty"`
 }
 
 type UsersHandler struct {

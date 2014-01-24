@@ -40,7 +40,7 @@ func New(resourcesConnection *resources.Connection) (*VerificationsHandler, erro
 
 func (verificationsHandler *VerificationsHandler) WireSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
+	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Queries("repositoryId", "").Methods("GET")
 
 	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.Retrigger).Methods("POST")
 }

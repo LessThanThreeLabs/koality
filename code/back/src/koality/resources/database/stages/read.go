@@ -86,9 +86,9 @@ func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage
 
 func (readHandler *ReadHandler) GetRun(stageRunId uint64) (*resources.StageRun, error) {
 	stageRun := new(resources.StageRun)
-	query := "SELECT id, return_code, created, started, ended FROM stage_runs WHERE id=$1"
+	query := "SELECT id, stage_id, return_code, created, started, ended FROM stage_runs WHERE id=$1"
 	row := readHandler.database.QueryRow(query, stageRunId)
-	err := row.Scan(&stageRun.Id, &stageRun.ReturnCode, &stageRun.Created, &stageRun.Started, &stageRun.Ended)
+	err := row.Scan(&stageRun.Id, &stageRun.StageId, &stageRun.ReturnCode, &stageRun.Created, &stageRun.Started, &stageRun.Ended)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage run with id: %d", stageRunId)
 		return nil, resources.NoSuchStageRunError{errorText}

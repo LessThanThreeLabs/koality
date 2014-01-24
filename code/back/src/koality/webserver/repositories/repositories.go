@@ -15,7 +15,7 @@ type sanitizedRepository struct {
 	VcsType   string                             `json:"vcsType"`
 	LocalUri  string                             `json:"localUri"`
 	RemoteUri string                             `json:"remoteUri"`
-	GitHub    *sanitizedRepositoryGitHubMetadata `json:"gitHub"`
+	GitHub    *sanitizedRepositoryGitHubMetadata `json:"gitHub,omitempty"`
 	Created   *time.Time                         `json:"created"`
 	IsDeleted bool                               `json:"isDeleted"`
 }
