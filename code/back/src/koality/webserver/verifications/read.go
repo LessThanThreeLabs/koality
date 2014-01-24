@@ -53,15 +53,15 @@ func (verificationsHandler *VerificationsHandler) GetTail(writer http.ResponseWr
 		return
 	}
 
-	numResultsString := queryValues.Get("numResults")
-	numResults, err := strconv.ParseUint(numResultsString, 10, 32)
+	resultsString := queryValues.Get("results")
+	results, err := strconv.ParseUint(resultsString, 10, 32)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	verifications, err := verificationsHandler.resourcesConnection.Verifications.Read.GetTail(repositoryId, uint32(offset), uint32(numResults))
+	verifications, err := verificationsHandler.resourcesConnection.Verifications.Read.GetTail(repositoryId, uint32(offset), uint32(results))
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

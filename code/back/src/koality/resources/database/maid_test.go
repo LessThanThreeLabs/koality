@@ -62,7 +62,7 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 	verificationCount := 0
 	errorChannel := make(chan error)
 	for _, repository := range repositories {
-		verifications, err := connection.Verifications.Read.GetTail(repository.Id, 0, 100000)
+		verifications, err := connection.Verifications.Read.GetTail(repository.Id, 0, 1000000)
 		if err != nil {
 			return err
 		}

@@ -51,13 +51,13 @@ func New(resourcesConnection *resources.Connection) (*StagesHandler, error) {
 
 func (stagesHandler *StagesHandler) WireStagesSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{stageId:[0-9]+}", stagesHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/", stagesHandler.GetAll).Queries("verificationId", "").Methods("GET")
+	subrouter.HandleFunc("/", stagesHandler.GetAll).Methods("GET")
 }
 
 func (stagesHandler *StagesHandler) WireStageRunsSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{stageRunId:[0-9]+}", stagesHandler.GetRun).Methods("GET")
-	subrouter.HandleFunc("/", stagesHandler.GetAllRuns).Queries("stageId", "").Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/consoleLines", stagesHandler.GetAllConsoleLines).Methods("GET")
+	subrouter.HandleFunc("/", stagesHandler.GetAllRuns).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/consoleLines", stagesHandler.GetConsoleLines).Methods("GET")
 }
 
 func getSanitizedStage(stage *resources.Stage) *sanitizedStage {

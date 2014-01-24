@@ -2,6 +2,7 @@ package stages
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -122,7 +123,7 @@ func (stagesHandler *StagesHandler) GetAllRuns(writer http.ResponseWriter, reque
 	fmt.Fprintf(writer, "%s", jsonedStageRuns)
 }
 
-func (stagesHandler *StagesHandler) GetAllConsoleLines(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) GetConsoleLines(writer http.ResponseWriter, request *http.Request) {
 	stageRunIdString := mux.Vars(request)["stageRunId"]
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
@@ -131,7 +132,17 @@ func (stagesHandler *StagesHandler) GetAllConsoleLines(writer http.ResponseWrite
 		return
 	}
 
-	consoleLines, err := stagesHandler.resourcesConnection.Stages.Read.GetAllConsoleLines(stageRunId)
+	queryValues := request.URL.Query()
+	from := queryValues.Get("from")
+	offsetString := queryValues.Get("offset")
+	resultsString := queryValues.Get("results")
+
+	var consoleLines map[uint64]string
+	if from == "" {
+		consoleLines, err = stagesHandler.resourcesConnection.Stages.Read.GetAllConsoleLines(stageRunId)
+	} else {
+		consoleLines, err = stagesHandler.getConsoleLinesForDirection(stageRunId, from, offsetString, resultsString)
+	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -146,4 +157,24 @@ func (stagesHandler *StagesHandler) GetAllConsoleLines(writer http.ResponseWrite
 		return
 	}
 	fmt.Fprintf(writer, "%s", jsonedConsoleLines)
+}
+
+func (stagesHandler *StagesHandler) getConsoleLinesForDirection(stageRunId uint64, from, offsetString, resultsString string) (map[uint64]string, error) {
+	offset, err := strconv.ParseUint(offsetString, 10, 32)
+	if err != nil {
+		return map[uint64]string{}, err
+	}
+
+	results, err := strconv.ParseUint(resultsString, 10, 32)
+	if err != nil {
+		return map[uint64]string{}, err
+	}
+
+	if from == "head" {
+		return stagesHandler.resourcesConnection.Stages.Read.GetConsoleLinesHead(stageRunId, uint32(offset), uint32(results))
+	} else if from == "tail" {
+		return stagesHandler.resourcesConnection.Stages.Read.GetConsoleLinesTail(stageRunId, uint32(offset), uint32(results))
+	} else {
+		return map[uint64]string{}, errors.New("From must be \"head\" or \"tail\"")
+	}
 }

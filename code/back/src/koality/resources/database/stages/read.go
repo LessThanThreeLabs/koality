@@ -142,7 +142,7 @@ func (readHandler *ReadHandler) getConsoleLines(query string, params ...interfac
 	return consoleText, nil
 }
 
-func (readHandler *ReadHandler) GetConsoleLinesHead(stageRunId uint64, offset, results int) (map[uint64]string, error) {
+func (readHandler *ReadHandler) GetConsoleLinesHead(stageRunId uint64, offset, results uint32) (map[uint64]string, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}
@@ -153,12 +153,12 @@ func (readHandler *ReadHandler) GetConsoleLinesHead(stageRunId uint64, offset, r
 	return readHandler.getConsoleLines(query, stageRunId, lowerBound, upperBound)
 }
 
-func (readHandler *ReadHandler) GetConsoleLinesTail(stageRunId uint64, offset, results int) (map[uint64]string, error) {
+func (readHandler *ReadHandler) GetConsoleLinesTail(stageRunId uint64, offset, results uint32) (map[uint64]string, error) {
 	if err := readHandler.verifier.verifyStageRunExists(stageRunId); err != nil {
 		return nil, err
 	}
 
-	var maxLineNumber int
+	var maxLineNumber uint32
 	maxLineNumberQuery := "SELECT number FROM console_lines WHERE run_id=$1 ORDER BY number DESC LIMIT 1"
 	row := readHandler.database.QueryRow(maxLineNumberQuery, stageRunId)
 	err := row.Scan(&maxLineNumber)
