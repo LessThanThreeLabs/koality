@@ -29,10 +29,14 @@ func Command(repository Repository, Env []string, cmd string, args ...string) *V
 	return &VcsCommand{command, stdout, stderr}
 }
 
-func RunCommand(vcsCommand *VcsCommand) (err error) {
-	err = vcsCommand.Command.Run()
+func RunCommand(vcsCommand *VcsCommand) error {
+	err := vcsCommand.Command.Run()
+	if err != nil {
+		return err
+	}
+
 	if success := vcsCommand.Command.ProcessState.Success(); !success {
 		return fmt.Errorf("Attempting to run command %v resulted in a non-zero return state.", vcsCommand.Command)
 	}
-	return
+	return nil
 }
