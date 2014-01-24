@@ -36,7 +36,7 @@ test:
         cd code/back/src/koality
         ls -d */ | while read testDirectory; do
           echo - ${testDirectory%?}:
-          echo "    script: go test koality/$testDirectory..."
+          echo "    script: go test -v koality/$testDirectory..."
         done
   scripts:
-  - go build koality/...
+  - go build -v koality/...
