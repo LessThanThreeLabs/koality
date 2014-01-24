@@ -151,7 +151,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	// check.Assert(stageRuns, gocheck.HasLen, 1)
 	check.Assert(len(stageRuns), gocheck.Equals, 1)
 
-	exports, err := suite.resourcesConnection.Stages.Read.GetExports(stageRuns[0].Id)
+	exports, err := suite.resourcesConnection.Stages.Read.GetAllExports(stageRuns[0].Id)
 	check.Assert(err, gocheck.IsNil)
 
 	// check.Assert(exports, gocheck.HasLen, 1)
