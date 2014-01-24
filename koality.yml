@@ -25,7 +25,7 @@ setup:
       }
     }' > chef-node.json
   - gem install chef --no-ri --no-rdoc -v 10.30.2
-  - mkdir /home/lt3/koality-v1/chef-cache
+  - mkdir -p /home/lt3/koality-v1/chef-cache
   - chef-solo -c chef-config.rb
 test:
   machines: 2
