@@ -284,6 +284,7 @@ func addXunitResults(connection *resources.Connection, stageRunId uint64) error 
 	createXunitResult := func(resultNum int) resources.XunitResult {
 		xunitResult := resources.XunitResult{
 			Name:    fmt.Sprintf("result-%d", resultNum),
+			Path:    "some/path",
 			Seconds: rand.Float64(),
 		}
 
