@@ -8,15 +8,15 @@ import (
 )
 
 type sanitizedRepository struct {
-	Id        uint64 `json:"id"`
-	Name      string `json:"name"`
-	Status    string `json:"status"`
-	VcsType   string `json:"vcsType"`
-	LocalUri  string `json:"localUri"`
-	RemoteUri string `json:"remoteUri"`
-	GitHub    *sanitizedRepositoryGitHubMetadata
-	Created   *time.Time `json:"created"`
-	IsDeleted bool       `json:"isDeleted"`
+	Id        uint64                             `json:"id"`
+	Name      string                             `json:"name"`
+	Status    string                             `json:"status"`
+	VcsType   string                             `json:"vcsType"`
+	LocalUri  string                             `json:"localUri"`
+	RemoteUri string                             `json:"remoteUri"`
+	GitHub    *sanitizedRepositoryGitHubMetadata `json:"gitHub"`
+	Created   *time.Time                         `json:"created"`
+	IsDeleted bool                               `json:"isDeleted"`
 }
 
 type sanitizedRepositoryGitHubMetadata struct {

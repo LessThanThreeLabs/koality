@@ -88,7 +88,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	verificationsHandler, err := verifications.New(webserver.resourcesConnection, webserver.repositoryManager)
+	verificationsHandler, err := verifications.New(webserver.resourcesConnection)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	repositoriesSubrouter := appSubrouter.PathPrefix("/repositories").MatcherFunc(webserver.isLoggedIn).Subrouter()
 	repositoriesHandler.WireSubroutes(repositoriesSubrouter)
 
-	verificationsSubrouter := appSubrouter.PathPrefix("/repositories/{repositoryId:[0-9]+}/verifications").MatcherFunc(webserver.isLoggedIn).Subrouter()
+	verificationsSubrouter := appSubrouter.PathPrefix("/verifications").MatcherFunc(webserver.isLoggedIn).Subrouter()
 	verificationsHandler.WireSubroutes(verificationsSubrouter)
 
 	return router, nil

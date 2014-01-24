@@ -2,22 +2,21 @@ package verifications
 
 import (
 	"github.com/gorilla/mux"
-	"koality/repositorymanager"
 	"koality/resources"
 	"time"
 )
 
 type sanitizedVerification struct {
-	Id           uint64     `json:"id"`
-	RepositoryId uint64     `json:"verificationId"`
-	SnapshotId   uint64     `json:"snapshotId"`
-	MergeTarget  string     `json:"mergeTarget"`
-	Status       string     `json:"status"`
-	MergeStatus  string     `json:"mergeStatus"`
-	Created      *time.Time `json:"created"`
-	Started      *time.Time `json:"started"`
-	Ended        *time.Time `json:"ended"`
-	Changeset    sanitizedChangeset
+	Id           uint64             `json:"id"`
+	RepositoryId uint64             `json:"verificationId"`
+	SnapshotId   uint64             `json:"snapshotId"`
+	MergeTarget  string             `json:"mergeTarget"`
+	Status       string             `json:"status"`
+	MergeStatus  string             `json:"mergeStatus"`
+	Created      *time.Time         `json:"created"`
+	Started      *time.Time         `json:"started"`
+	Ended        *time.Time         `json:"ended"`
+	Changeset    sanitizedChangeset `json:"changeset"`
 }
 
 type sanitizedChangeset struct {
@@ -33,16 +32,15 @@ type sanitizedChangeset struct {
 
 type VerificationsHandler struct {
 	resourcesConnection *resources.Connection
-	repositoryManager   repositorymanager.RepositoryManager
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*VerificationsHandler, error) {
-	return &VerificationsHandler{resourcesConnection, repositoryManager}, nil
+func New(resourcesConnection *resources.Connection) (*VerificationsHandler, error) {
+	return &VerificationsHandler{resourcesConnection}, nil
 }
 
 func (verificationsHandler *VerificationsHandler) WireSubroutes(subrouter *mux.Router) {
-	// subrouter.HandleFunc("/{verificationId:[0-9]+", verificationsHandler.Get).Methods("GET")
-	// subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
+	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
+	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
 
 	// subrouter.HandleFunc("/{verificationId:[0-9]+/retrigger",
 	// 	middleware.IsAdminWrapper(verificationsHandler.resourcesConnection, verificationsHandler.Retrigger)).
