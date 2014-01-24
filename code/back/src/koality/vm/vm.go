@@ -9,7 +9,12 @@ type VirtualMachine interface {
 	Patcher
 	shell.FileCopier
 
+	GetStartShellCommand() Command
 	Terminate() error
+}
+
+type Command interface {
+	Exec() error
 }
 
 type VirtualMachineManager interface {

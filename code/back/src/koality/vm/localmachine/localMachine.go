@@ -3,6 +3,7 @@ package localmachine
 import (
 	"io"
 	"io/ioutil"
+        "syscall"
 	"koality/shell"
 	"koality/vm"
 	"os"
@@ -48,6 +49,10 @@ func FromDir(rootDir string) (*LocalMachine, error) {
 	return &localMachine, nil
 }
 
+func (localMachine LocalMachine) GetStartShellCommand() vm.Command {
+	return command([]string{"/bin/bash"})
+}
+
 func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {
 	fullCommand := shell.And(
 		shell.Commandf("cd %s", localMachine.rootDir),
@@ -84,4 +89,10 @@ func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.
 	command := shell.Advertised(shell.And(shell.Commandf("mkdir -p %s", path.Dir(destFilePath)),
 		shell.Commandf("cp %s %s", sourceFilePath, destFilePath)))
 	return copier.executableMaker.MakeExecutable(command, nil, nil, nil, nil)
+}
+
+type command []string
+
+func (command command) Exec() error {
+	return syscall.Exec(command[0], command, nil)
 }

@@ -8,10 +8,12 @@ import (
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
+	"syscall"
 )
 
 type Ec2VirtualMachine struct {
 	sshExecutableMaker *vm.SshExecutableMaker
+	sshConfig          vm.SshConfig
 	fileCopier         shell.FileCopier
 	patcher            vm.Patcher
 	instance           ec2.Instance
@@ -43,12 +45,20 @@ func New(instance ec2.Instance, cache *ec2broker.Ec2Cache, username, privateKey 
 	patcher := vm.NewPatcher(fileCopier, sshExecutableMaker)
 	ec2Vm := Ec2VirtualMachine{
 		sshExecutableMaker: sshExecutableMaker,
+		sshConfig:          sshConfig,
 		fileCopier:         fileCopier,
 		patcher:            patcher,
 		instance:           instance,
 		ec2Cache:           cache,
 	}
 	return &ec2Vm, nil
+}
+
+func (ec2vm Ec2VirtualMachine) GetStartShellCommand() vm.Command {
+	return commandWithEnv{
+		Argv: ec2vm.sshConfig.SshArgs(""),
+		Envv: []string{"PRIVATE_KEY=" + ec2vm.sshConfig.PrivateKey},
+	}
 }
 
 func (ec2Vm *Ec2VirtualMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {
@@ -76,4 +86,13 @@ func (ec2Vm *Ec2VirtualMachine) Terminate() error {
 		return errors.New(fmt.Sprintf("Expected new state to be \"shutting-down\" or \"terminated\", was %q instead", stateChange.CurrentState.Name))
 	}
 	return nil
+}
+
+type commandWithEnv struct {
+	Argv []string
+	Envv []string
+}
+
+func (commandWithEnv commandWithEnv) Exec() error {
+	return syscall.Exec(commandWithEnv.Argv[0], commandWithEnv.Argv, commandWithEnv.Envv)
 }
