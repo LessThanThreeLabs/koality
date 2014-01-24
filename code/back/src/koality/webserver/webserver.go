@@ -83,7 +83,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	repositoriesHandler, err := repositories.New(webserver.resourcesConnection)
+	repositoriesHandler, err := repositories.New(webserver.resourcesConnection, webserver.repositoryManager)
 	if err != nil {
 		return nil, err
 	}

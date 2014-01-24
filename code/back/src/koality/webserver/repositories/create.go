@@ -20,6 +20,18 @@ func (repositoriesHandler *RepositoriesHandler) Create(writer http.ResponseWrite
 		fmt.Fprint(writer, err)
 		return
 	}
+
+	err = repositoriesHandler.repositoryManager.CreateRepository(repository)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+
+		err = repositoriesHandler.resourcesConnection.Repositories.Delete.Delete(repository.Id)
+		if err != nil {
+			fmt.Fprint(writer, "\n", err)
+		}
+		return
+	}
 	fmt.Fprintf(writer, "{id:%d}", repository.Id)
 }
 
@@ -29,7 +41,7 @@ func (repositoriesHandler *RepositoriesHandler) CreateWithGitHub(writer http.Res
 	if err != nil {
 		fmt.Fprint(writer, err)
 		return
-	} else if user.GitHubOauth == "" {
+	} else if user.GitHubOauth == "" && false {
 		writer.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(writer, "Forbidden request, must be connected to GitHub")
 		return
@@ -46,6 +58,18 @@ func (repositoriesHandler *RepositoriesHandler) CreateWithGitHub(writer http.Res
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
+		return
+	}
+
+	err = repositoriesHandler.repositoryManager.CreateRepository(repository)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+
+		err = repositoriesHandler.resourcesConnection.Repositories.Delete.Delete(repository.Id)
+		if err != nil {
+			fmt.Fprint(writer, "\n", err)
+		}
 		return
 	}
 	fmt.Fprintf(writer, "{id:%d}", repository.Id)
