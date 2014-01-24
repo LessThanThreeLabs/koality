@@ -8,7 +8,7 @@ import (
 
 type sanitizedVerification struct {
 	Id           uint64             `json:"id"`
-	RepositoryId uint64             `json:"verificationId"`
+	RepositoryId uint64             `json:"repositoryId"`
 	SnapshotId   uint64             `json:"snapshotId"`
 	MergeTarget  string             `json:"mergeTarget"`
 	Status       string             `json:"status"`
