@@ -29,6 +29,9 @@ setup:
   - chef-solo -c chef-config.rb
 test:
   machines: 2
+  scripts:
+  - go build:
+      script: go build -v koality/...
   factories:
   - koality test factory:
       script:
@@ -38,5 +41,3 @@ test:
           echo - ${testDirectory%?}:
           echo "    script: go test -v koality/$testDirectory..."
         done
-  scripts:
-  - go build -v koality/...
