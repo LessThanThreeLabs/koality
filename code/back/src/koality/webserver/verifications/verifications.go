@@ -42,9 +42,7 @@ func (verificationsHandler *VerificationsHandler) WireSubroutes(subrouter *mux.R
 	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
 	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
 
-	// subrouter.HandleFunc("/{verificationId:[0-9]+/retrigger",
-	// 	middleware.IsAdminWrapper(verificationsHandler.resourcesConnection, verificationsHandler.Retrigger)).
-	// 	Methods("POST")
+	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.Retrigger).Methods("POST")
 }
 
 func getSanitizedVerification(verification *resources.Verification) *sanitizedVerification {
