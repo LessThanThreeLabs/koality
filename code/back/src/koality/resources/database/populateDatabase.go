@@ -237,9 +237,16 @@ func createStageRuns(connection *resources.Connection, stageId uint64) error {
 			return err
 		}
 
-		err = addConsoleText(connection, stageRun.Id)
+		err = addConsoleLines(connection, stageRun.Id)
 		if err != nil {
 			return err
+		}
+
+		if rand.Intn(2) == 0 {
+			err = addXunitResults(connection, stageRun.Id)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = connection.Stages.Update.SetReturnCode(stageRun.Id, getReturnCode())
@@ -256,7 +263,7 @@ func createStageRuns(connection *resources.Connection, stageId uint64) error {
 	return nil
 }
 
-func addConsoleText(connection *resources.Connection, stageRunId uint64) error {
+func addConsoleLines(connection *resources.Connection, stageRunId uint64) error {
 	books := [][]string{textsamples.IRobot, textsamples.AliceInWonderland, textsamples.GreatExpectations}
 
 	textToTextMap := func(text []string) map[uint64]string {
@@ -270,8 +277,30 @@ func addConsoleText(connection *resources.Connection, stageRunId uint64) error {
 	text := books[rand.Intn(len(books))]
 	maxLines := rand.Intn(len(text)-750) + 200
 	textToAdd := text[0:maxLines]
-	err := connection.Stages.Update.AddConsoleLines(stageRunId, textToTextMap(textToAdd))
-	return err
+	return connection.Stages.Update.AddConsoleLines(stageRunId, textToTextMap(textToAdd))
+}
+
+func addXunitResults(connection *resources.Connection, stageRunId uint64) error {
+	createXunitResult := func(resultNum int) resources.XunitResult {
+		xunitResult := resources.XunitResult{
+			Name:    fmt.Sprintf("result-%d", resultNum),
+			Seconds: rand.Float64(),
+		}
+
+		if rand.Intn(2) == 0 {
+			xunitResult.Sysout = fmt.Sprintf("Test %d passed", resultNum)
+		} else {
+			xunitResult.FailureText = fmt.Sprintf("Test %d failed!", resultNum)
+		}
+		return xunitResult
+	}
+
+	numXunitResults := rand.Intn(100) + 1
+	xunitResults := make([]resources.XunitResult, 0, numXunitResults)
+	for index := 0; index < numXunitResults; index++ {
+		xunitResults = append(xunitResults, createXunitResult(index))
+	}
+	return connection.Stages.Update.AddXunitResults(stageRunId, xunitResults)
 }
 
 func createPools(connection *resources.Connection) error {
