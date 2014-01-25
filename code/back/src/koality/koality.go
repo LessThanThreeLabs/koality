@@ -45,7 +45,8 @@ func main() {
 		panic(err)
 	}
 
-	repositoryManager := repositorymanager.New("/etc/koality/repositories")
+	repositoriesPath := "/etc/koality/repositories"
+	repositoryManager := repositorymanager.New(repositoriesPath)
 
 	verificationRunner := verificationrunner.New(resourcesConnection, poolManager, repositoryManager)
 	err = verificationRunner.SubscribeToEvents()
@@ -54,7 +55,7 @@ func main() {
 	}
 
 	// TODO: initialize more components here
-	internalapi.Start(resourcesConnection, internalapi.RpcSocket)
+	internalapi.Start(resourcesConnection, poolManager, repositoriesPath, internalapi.RpcSocket)
 
 	webserver, err := webserver.New(resourcesConnection, repositoryManager, webserverPort)
 	if err != nil {
