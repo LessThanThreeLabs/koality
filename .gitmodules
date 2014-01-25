@@ -55,6 +55,6 @@
 [submodule "code/back/src/github.com/gorilla/securecookie"]
 	path = code/back/src/github.com/gorilla/securecookie
 	url = git@github.com:gorilla/securecookie.git
-[submodule "code/back/src/github.com/ashokgelal/gocheck"]
-	path = code/back/src/github.com/ashokgelal/gocheck
-	url = git@github.com:ashokgelal/gocheck.git
+[submodule "code/back/src/github.com/LessThanThreeLabs/gocheck"]
+	path = code/back/src/github.com/LessThanThreeLabs/gocheck
+	url = git@github.com:LessThanThreeLabs/gocheck.git

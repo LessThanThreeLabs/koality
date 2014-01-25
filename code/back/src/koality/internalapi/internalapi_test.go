@@ -1,7 +1,7 @@
 package internalapi
 
 import (
-	"github.com/ashokgelal/gocheck"
+	"github.com/LessThanThreeLabs/gocheck"
 	"koality/resources"
 	"koality/resources/database"
 	"net/rpc"

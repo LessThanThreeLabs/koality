@@ -3,7 +3,7 @@ package stagerunner
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ashokgelal/gocheck"
+	"github.com/LessThanThreeLabs/gocheck"
 	"io/ioutil"
 	"koality/resources"
 	"koality/resources/database"
@@ -79,9 +79,8 @@ func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
 
 	go func(doneChan chan error) {
 		for result := range suite.stageRunner.ResultsChan {
-			// check.Check(result.Passed, gocheck.Equals, true,
-			// 	check.Commentf("Failed section %s", result.Section))
-			check.Check(result.Passed, gocheck.Equals, true)
+			check.Check(result.Passed, gocheck.Equals, true,
+				gocheck.Commentf("Failed section %s", result.Section))
 		}
 
 		doneChan <- err
@@ -132,8 +131,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 
 	go func(doneChan chan error) {
 		for result := range suite.stageRunner.ResultsChan {
-			// check.Check(result.Passed, gocheck.Equals, true, gocheck.Commentf("Failed section %s", result.Section))
-			check.Check(result.Passed, gocheck.Equals, true)
+			check.Check(result.Passed, gocheck.Equals, true, gocheck.Commentf("Failed section %s", result.Section))
 		}
 
 		doneChan <- err
@@ -148,14 +146,12 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	stageRuns, err := suite.resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
 	check.Assert(err, gocheck.IsNil)
 
-	// check.Assert(stageRuns, gocheck.HasLen, 1)
-	check.Assert(len(stageRuns), gocheck.Equals, 1)
+	check.Assert(stageRuns, gocheck.HasLen, 1)
 
 	exports, err := suite.resourcesConnection.Stages.Read.GetAllExports(stageRuns[0].Id)
 	check.Assert(err, gocheck.IsNil)
 
-	// check.Assert(exports, gocheck.HasLen, 1)
-	check.Assert(len(exports), gocheck.Equals, 1)
+	check.Assert(exports, gocheck.HasLen, 1)
 	expectedBucket := "koality-whim"
 	expectedPath := path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "sample1.xml")
 	expectedKey :=
@@ -199,8 +195,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 
 	go func(doneChan chan error) {
 		for result := range suite.stageRunner.ResultsChan {
-			// check.Check(result.Passed, gocheck.Equals, true, gocheck.Commentf("Failed section %s", result.Section))
-			check.Check(result.Passed, gocheck.Equals, true)
+			check.Check(result.Passed, gocheck.Equals, true, gocheck.Commentf("Failed section %s", result.Section))
 		}
 
 		doneChan <- err
@@ -214,8 +209,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 
 	stageRuns, err := suite.resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
 	check.Assert(err, gocheck.IsNil)
-	// check.Assert(stageRuns, gocheck.HasLen, 1)
-	check.Assert(len(stageRuns), gocheck.Equals, 1)
+	check.Assert(stageRuns, gocheck.HasLen, 1)
 
 	xunitResults, err := suite.resourcesConnection.Stages.Read.GetAllXunitResults(stageRuns[0].Id)
 	check.Assert(err, gocheck.IsNil)
@@ -235,7 +229,10 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	for i := range expectedXunitResults {
 		expectedXunitResults[i].Path = path.Base(expectedXunitResults[i].Path)
 	}
-	check.Assert(xunitResults, gocheck.Equals, expectedXunitResults)
+	check.Assert(len(xunitResults), gocheck.Equals, len(expectedXunitResults))
+	for i := range xunitResults {
+		check.Assert(xunitResults[i], gocheck.Equals, expectedXunitResults[i])
+	}
 
 	close(suite.stageRunner.ResultsChan)
 	os.Remove(getXunitResultsBinPath)
@@ -256,8 +253,7 @@ func (suite *StageRunnerSuite) TestSimpleFailingStages(check *gocheck.C) {
 
 	go func(doneChan chan error) {
 		for result := range suite.stageRunner.ResultsChan {
-			// check.Check(result.Passed, gocheck.Equals, false, gocheck.Commentf("Passed section %s", result.Section))
-			check.Check(result.Passed, gocheck.Equals, false)
+			check.Check(result.Passed, gocheck.Equals, false, gocheck.Commentf("Passed section %s", result.Section))
 		}
 
 		doneChan <- nil

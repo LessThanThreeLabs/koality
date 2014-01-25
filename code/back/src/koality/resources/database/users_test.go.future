@@ -3,7 +3,7 @@ package database
 import (
 	"time"
 	// "bytes"
-	"github.com/ashokgelal/gocheck"
+	"github.com/LessThanThreeLabs/gocheck"
 	"koality/resources"
 	"testing"
 	// "time"
