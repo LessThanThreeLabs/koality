@@ -104,10 +104,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	err = copyExec.Run()
 	check.Assert(err, gocheck.IsNil)
 
-	exportPathsBinPath := path.Join(os.Getenv("GOPATH"), "bin", "exportPaths")
-	compileCmd := exec.Command("go", "build", "-o", exportPathsBinPath,
-		path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "export", "exportPaths", "main.go"),
-	)
+	compileCmd := exec.Command("go", "install", path.Join("koality", "util", "export", "exportPaths"))
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
 
@@ -162,7 +159,6 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	check.Assert(exports[0], gocheck.Equals, expectedExport)
 
 	close(suite.stageRunner.ResultsChan)
-	os.Remove(exportPathsBinPath)
 }
 
 func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
@@ -172,10 +168,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	err = copyExec.Run()
 	check.Assert(err, gocheck.IsNil)
 
-	getXunitResultsBinPath := path.Join(os.Getenv("GOPATH"), "bin", "getXunitResults")
-	compileCmd := exec.Command("go", "build", "-o", getXunitResultsBinPath,
-		path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunit", "getXunitResults", "main.go"),
-	)
+	compileCmd := exec.Command("go", "install", path.Join("koality", "util", "xunit", "getXunitResults"))
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
 
@@ -235,7 +228,6 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	}
 
 	close(suite.stageRunner.ResultsChan)
-	os.Remove(getXunitResultsBinPath)
 }
 
 func (suite *StageRunnerSuite) TestSimpleFailingStages(check *gocheck.C) {
