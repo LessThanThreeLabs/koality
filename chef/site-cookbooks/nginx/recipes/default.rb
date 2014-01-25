@@ -19,21 +19,9 @@ apt_package "nginx" do
 	action		:install
 end
 
-file "/etc/nginx/nginx.conf" do
-	action		:delete
-end
-
-link "/etc/nginx/nginx.conf" do
-	to			node["nginx"]["conf_path"]
-	owner		"nginx"
-	group		"nginx"
-	action		:create
-	notifies	:restart, "service[nginx]", :delayed
-end
-
-cookbook_file "/etc/init/nginx-run.conf" do
-	source		"upstart/nginx-run.conf"
-	action	 	:create_if_missing
+cookbook_file "/etc/nginx/nginx.conf" do
+	source		"nginx.conf"
+	action	 	:create
 end
 
 service "nginx" do

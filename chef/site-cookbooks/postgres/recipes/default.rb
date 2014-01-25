@@ -18,21 +18,9 @@ package 'postgresql-' + node["postgres"]["version"] do
 	action		:install
 end
 
-file "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
-	action		:delete
-end
-
-link "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
-	to			node["postgres"]["conf_path"]
-	owner		"postgres"
-	group		"postgres"
-	action		:create
-	notifies 	:restart, "service[postgresql]", :delayed
-end
-
-cookbook_file "/etc/init/postgresql-run.conf" do
-	source		"upstart/postgresql-run.conf"
-	action	 	:create_if_missing
+cookbook_file "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
+	source		"postgresql.conf"
+	action	 	:create
 end
 
 service "postgresql" do
