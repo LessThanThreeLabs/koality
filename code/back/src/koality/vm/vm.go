@@ -2,7 +2,9 @@ package vm
 
 import (
 	"koality/shell"
-        "syscall"
+	"os/exec"
+	"path/filepath"
+	"syscall"
 )
 
 type VirtualMachine interface {
@@ -37,5 +39,15 @@ type VirtualMachinePool interface {
 }
 
 func (command Command) Exec() error {
-	return syscall.Exec(command.Argv[0], command.Argv, command.Envv)
+	execPath, err := exec.LookPath(command.Argv[0])
+	if err != nil {
+		return err
+	}
+
+	absExecPath, err := filepath.Abs(execPath)
+	if err != nil {
+		return err
+	}
+
+	return syscall.Exec(absExecPath, command.Argv, command.Envv)
 }

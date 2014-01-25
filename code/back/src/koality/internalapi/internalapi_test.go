@@ -4,6 +4,9 @@ import (
 	"github.com/LessThanThreeLabs/gocheck"
 	"koality/resources"
 	"koality/resources/database"
+	"koality/vm"
+	"koality/vm/localmachine"
+	"koality/vm/poolmanager"
 	"net/rpc"
 	"os"
 	"testing"
@@ -11,10 +14,6 @@ import (
 )
 
 func Test(t *testing.T) { gocheck.TestingT(t) }
-
-const (
-	rpcSocket = "/tmp/koality-test-rpc.sock"
-)
 
 type InternalAPISuite struct {
 	resourcesConnection *resources.Connection
@@ -30,13 +29,17 @@ func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
 	suite.resourcesConnection, err = database.New()
 	check.Assert(err, gocheck.IsNil)
 
-	err = Start(suite.resourcesConnection, rpcSocket)
+	virtualMachinePool := vm.NewPool(0, localmachine.Manager, 0, 3)
+	poolManager := poolmanager.New([]vm.VirtualMachinePool{virtualMachinePool})
+	repositoriesPath := "/etc/koality/repositories"
+
+	err = Start(suite.resourcesConnection, poolManager, repositoriesPath, RpcSocket)
 	check.Assert(err, gocheck.IsNil)
 
 	// REVIEW(dhuang) is there a better way to do this?
 	socketOpen := false
 	for i := 0; i < 42 && !socketOpen; i++ {
-		_, err = os.Stat(rpcSocket)
+		_, err = os.Stat(RpcSocket)
 		if err == nil {
 			socketOpen = true
 		}
@@ -46,7 +49,7 @@ func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
 		check.Fatalf("socket took too long to exist")
 	}
 
-	suite.client, err = rpc.Dial("unix", rpcSocket)
+	suite.client, err = rpc.Dial("unix", RpcSocket)
 }
 func (suite *InternalAPISuite) TearDownTest(check *gocheck.C) {
 	suite.resourcesConnection.Close()
@@ -55,7 +58,7 @@ func (suite *InternalAPISuite) TearDownTest(check *gocheck.C) {
 		suite.client.Close()
 	}
 
-	os.Remove(rpcSocket)
+	os.Remove(RpcSocket)
 }
 
 func (suite *InternalAPISuite) TestSetup(check *gocheck.C) {
