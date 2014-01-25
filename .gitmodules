@@ -58,3 +58,6 @@
 [submodule "code/back/src/github.com/LessThanThreeLabs/gocheck"]
 	path = code/back/src/github.com/LessThanThreeLabs/gocheck
 	url = git@github.com:LessThanThreeLabs/gocheck.git
+[submodule "code/back/src/github.com/pwaller/goupx"]
+	path = code/back/src/github.com/pwaller/goupx
+	url = git@github.com:pwaller/goupx
