@@ -6,12 +6,12 @@ import (
 )
 
 // Default file check method, used by TranslatePath
-func FileExists(filePath string) error {
+func CheckExists(filePath string) error {
 	_, err := os.Stat(filePath)
 	return err
 }
 
-func FileIsExecutable(filePath string) error {
+func CheckExecutable(filePath string) error {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return err

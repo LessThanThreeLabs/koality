@@ -108,7 +108,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 }
 
 func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
-	binaryPath, err := pathtranslator.TranslatePathWithCheckFunc(pathtranslator.BinaryPath(execName), pathtranslator.FileIsExecutable)
+	binaryPath, err := pathtranslator.TranslatePathWithCheckFunc(pathtranslator.BinaryPath(execName), pathtranslator.CheckExecutable)
 	if err != nil {
 		return nil, err
 	}

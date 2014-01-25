@@ -5,10 +5,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func TranslatePath(relativePath string) (string, error) {
-	return TranslatePathWithCheckFunc(relativePath, FileExists)
+	return TranslatePathWithCheckFunc(relativePath, CheckExists)
 }
 
 func TranslatePathWithCheckFunc(relativePath string, checkFunc func(filePath string) error) (string, error) {
@@ -26,6 +27,10 @@ func translatePathFromCurrentExecutable(relativePath string, checkFunc func(file
 	currentBinaryPath, err := exec.LookPath(os.Args[0])
 	if err != nil {
 		return "", err
+	}
+
+	if strings.HasPrefix(currentBinaryPath, "/tmp/go-build") {
+		return "", errors.New("The current binary is invoked through \"go run\"")
 	}
 
 	// koality/code/back/bin/executable
