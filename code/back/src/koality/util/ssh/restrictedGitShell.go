@@ -67,7 +67,7 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 			return
 		}
 
-		repositoryManager := repositorymanager.New(repositoryInfo.RepositoriesPath)
+		repositoryManager := repositorymanager.New(repositoryInfo.RepositoriesPath, nil)
 		repoPath := repositoryManager.ToPath(repository)
 		command.Argv = []string{"jgit", "receive-pack", repoPath, string(shell.userId)}
 	case "git-upload-pack":

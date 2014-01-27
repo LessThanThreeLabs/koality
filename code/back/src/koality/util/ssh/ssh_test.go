@@ -82,7 +82,7 @@ func (suite *SshSuite) TestGetForcedCommand(check *gocheck.C) {
 func (suite *SshSuite) TestGitShell(check *gocheck.C) {
 	userId := uint64(69)
 	localUri := "koality-v1"
-	repositoryManager := repositorymanager.New(test.RepositoriesPath)
+	repositoryManager := repositorymanager.New(test.RepositoriesPath, nil)
 
 	command := []string{"git-receive-pack", localUri, string(userId)}
 	shell := restrictedGitShell{userId, command, suite.client}

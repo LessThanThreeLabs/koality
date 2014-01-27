@@ -12,7 +12,7 @@ import (
 var buf []byte
 
 var remoteRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", "remote")
-var RM = repositoryManager{filepath.Join("/", "etc", "koality")}
+var RM = repositoryManager{filepath.Join("/", "etc", "koality"), nil}
 
 var (
 	gitRepositoryResource = &resources.Repository{0, "gitRepository", "", "git", "", remoteRepositoryPath, nil, nil, false}

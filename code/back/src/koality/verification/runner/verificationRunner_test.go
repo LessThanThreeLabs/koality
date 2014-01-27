@@ -80,7 +80,7 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 		test.Fatal(err)
 	}
 
-	repositoryManager := repositorymanager.New("/tmp/repositoryManager")
+	repositoryManager := repositorymanager.New("/tmp/repositoryManager", resourcesConnection)
 
 	err = repositoryManager.CreateRepository(repository)
 	if err != nil {
