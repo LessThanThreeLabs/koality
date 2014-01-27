@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	webserverPort = 8080
+	webserverPort    = 8080
+	repositoriesPath = "/etc/koality/repositories"
 )
 
 func main() {
@@ -45,8 +46,7 @@ func main() {
 		panic(err)
 	}
 
-	repositoriesPath := "/etc/koality/repositories"
-	repositoryManager := repositorymanager.New(repositoriesPath)
+	repositoryManager := repositorymanager.New(repositoriesPath, resourcesConnection)
 
 	verificationRunner := verificationrunner.New(resourcesConnection, poolManager, repositoryManager)
 	err = verificationRunner.SubscribeToEvents()

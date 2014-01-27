@@ -21,11 +21,12 @@ type RepositoryManager interface {
 }
 
 type repositoryManager struct {
-	path string
+	path                string
+	resourcesConnection *resources.Connection
 }
 
-func New(path string) RepositoryManager {
-	return &repositoryManager{path}
+func New(path string, resourcesConnection *resources.Connection) RepositoryManager {
+	return &repositoryManager{path, resourcesConnection}
 }
 
 func (repositoryManager *repositoryManager) openPostPushRepository(repository *resources.Repository) (PostPushRepository, error) {
