@@ -104,7 +104,9 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		defer virtualMachinePool.Free()
 		defer virtualMachine.Terminate()
 
-		stageRunner := stagerunner.New(verificationRunner.resourcesConnection, virtualMachine, currentVerification)
+		stageRunner := stagerunner.New(
+                  verificationRunner.resourcesConnection, virtualMachine, currentVerification,
+                  new(stagerunner.S3Exporter))
 		defer close(stageRunner.ResultsChan)
 
 		newStageRunnersChan <- stageRunner

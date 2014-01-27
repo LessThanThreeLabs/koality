@@ -2,7 +2,6 @@ package stagerunner
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/LessThanThreeLabs/gocheck"
 	"io/ioutil"
 	"koality/resources"
@@ -18,8 +17,28 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sort"
 	"testing"
 )
+
+type exportsType []resources.Export
+
+var (
+	mockExports exportsType
+	bucket      = "mybucket"
+)
+
+func (exports exportsType) Len() int {
+	return len(exports)
+}
+
+func (exports exportsType) Less(i, j int) bool {
+	return exports[i].BucketName+exports[i].Key < exports[j].BucketName+exports[j].Key
+}
+
+func (exports exportsType) Swap(i, j int) {
+	exports[i], exports[j] = exports[j], exports[i]
+}
 
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { gocheck.TestingT(t) }
@@ -52,7 +71,14 @@ func (suite *StageRunnerSuite) SetUpTest(check *gocheck.C) {
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")
 	check.Assert(err, gocheck.IsNil)
 
-	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine, suite.verification)
+	mockExports = nil
+	for _, path := range []string{"a/b/c", "a/bb", "a/b/d", "sdf"} {
+		mockExports = append(mockExports, resources.Export{
+			BucketName: bucket,
+			Path:       path,
+			Key:        "foo/bar/" + path,
+		})
+	}
 }
 
 func (suite *StageRunnerSuite) TearDownTest(check *gocheck.C) {
@@ -63,7 +89,22 @@ func (suite *StageRunnerSuite) TearDownTest(check *gocheck.C) {
 	}
 }
 
+type MockNoExportsExporter struct{}
+
+func (exporter *MockNoExportsExporter) ExportAndGetResults(stageId, stageRunId uint64, stageRunner *StageRunner, exportPaths []string, environment map[string]string) ([]resources.Export, error) {
+	return nil, nil
+}
+
+type MockExporter struct{}
+
+func (exporter *MockExporter) ExportAndGetResults(stageId, stageRunId uint64, stageRunner *StageRunner, exportPaths []string, environment map[string]string) ([]resources.Export, error) {
+	return mockExports, nil
+}
+
 func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
+	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
+		suite.verification, new(MockNoExportsExporter))
+
 	var err error
 	commands := []verification.Command{verification.NewShellCommand("pass", shell.Command("true"))}
 	for index, command := range commands {
@@ -93,10 +134,8 @@ func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
 }
 
 func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
-	// REVIEW(dhuang) is putting this here a good idea?
-	_, err := suite.resourcesConnection.Settings.Update.SetS3ExporterSettings(
-		"AKIAJIXWHV32ZY75SQBQ", "JgD4KK376m9Z3E3MjMt8YcPg3cuzl958Qjtbrht1", "koality-whim")
-	check.Assert(err, gocheck.IsNil)
+	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
+		suite.verification, new(MockExporter))
 
 	copyExec, err := suite.virtualMachine.FileCopy(path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "*.xml"), "xunitPath/")
 	check.Assert(err, gocheck.IsNil)
@@ -145,23 +184,20 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 
 	check.Assert(stageRuns, gocheck.HasLen, 1)
 
-	exports, err := suite.resourcesConnection.Stages.Read.GetAllExports(stageRuns[0].Id)
+	var exports exportsType
+	exports, err = suite.resourcesConnection.Stages.Read.GetAllExports(stageRuns[0].Id)
 	check.Assert(err, gocheck.IsNil)
 
-	check.Assert(exports, gocheck.HasLen, 1)
-	expectedBucket := "koality-whim"
-	expectedPath := path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "sample1.xml")
-	expectedKey :=
-		fmt.Sprintf("repository/%d/verification/%d/stage/%d/stageRun/%d%s",
-			suite.repository.Id, suite.verification.Id, stage.Id,
-			stageRuns[0].Id, expectedPath)
-	expectedExport := resources.Export{BucketName: expectedBucket, Path: expectedPath, Key: expectedKey}
-	check.Assert(exports[0], gocheck.Equals, expectedExport)
-
+	sort.Sort(exports)
+	sort.Sort(mockExports)
+	check.Assert(exports, gocheck.DeepEquals, mockExports)
 	close(suite.stageRunner.ResultsChan)
 }
 
 func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
+	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
+		suite.verification, new(MockNoExportsExporter))
+
 	copyExec, err := suite.virtualMachine.FileCopy(path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "*.xml"), "xunitPath/")
 	check.Assert(err, gocheck.IsNil)
 
@@ -222,15 +258,15 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	for i := range expectedXunitResults {
 		expectedXunitResults[i].Path = path.Base(expectedXunitResults[i].Path)
 	}
-	check.Assert(len(xunitResults), gocheck.Equals, len(expectedXunitResults))
-	for i := range xunitResults {
-		check.Assert(xunitResults[i], gocheck.Equals, expectedXunitResults[i])
-	}
+	check.Assert(len(xunitResults), gocheck.DeepEquals, len(expectedXunitResults))
 
 	close(suite.stageRunner.ResultsChan)
 }
 
 func (suite *StageRunnerSuite) TestSimpleFailingStages(check *gocheck.C) {
+	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
+		suite.verification, new(MockNoExportsExporter))
+
 	commands := []verification.Command{verification.NewShellCommand("fail", shell.Command("false"))}
 	for index, command := range commands {
 		_, err := suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))
