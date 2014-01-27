@@ -14,7 +14,8 @@ const (
 )
 
 type gitSubRepository struct {
-	path string
+	path                string
+	resourcesConnection *resources.Connection
 }
 
 func (repository *gitSubRepository) getVcsBaseCommand() string {
@@ -34,13 +35,18 @@ type gitRepository struct {
 
 func (repositoryManager *repositoryManager) openGitRepository(repository *resources.Repository) *gitRepository {
 	path := repositoryManager.ToPath(repository)
-	return &gitRepository{&gitSubRepository{path}, &gitSubRepository{path + ".slave"}, repository.RemoteUri}
+	return &gitRepository{&gitSubRepository{path, repositoryManager.resourcesConnection}, &gitSubRepository{path + ".slave", repositoryManager.resourcesConnection}, repository.RemoteUri}
 }
 
 func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
+	keyPair, err := repository.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+	if err != nil {
+		return
+	}
+
 	env := []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
+		fmt.Sprintf("GIT_PRIVATE_KEY=%s", keyPair.PrivateKey),
 		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
 	}
 
@@ -56,9 +62,14 @@ func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args .
 }
 
 func (repository *gitSubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
+	keyPair, err := repository.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+	if err != nil {
+		return
+	}
+
 	env := []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("GIT_PRIVATE_KEY_PATH=%s", defaultPrivateKeyPath),
+		fmt.Sprintf("GIT_PRIVATE_KEY=%s", keyPair.PrivateKey),
 		fmt.Sprintf("GIT_SSH_TIMEOUT=%s", defaultTimeout),
 	}
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"koality/resources"
+	"koality/resources/database"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,19 +12,22 @@ import (
 
 var buf []byte
 
+//TODO(akostov) when using gocheck, close this and fix setup/teardown for this test
+var connection, _ = database.New()
+
 var remoteRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", "remote")
-var RM = repositoryManager{filepath.Join("/", "etc", "koality"), nil}
+var RM = repositoryManager{filepath.Join("/", "etc", "koality"), connection}
 
 var (
 	gitRepositoryResource = &resources.Repository{0, "gitRepository", "", "git", "", remoteRepositoryPath, nil, nil, false}
 	gitRepo               = RM.openGitRepository(gitRepositoryResource)
-	gitRemoteRepository   = &gitSubRepository{remoteRepositoryPath}
+	gitRemoteRepository   = &gitSubRepository{remoteRepositoryPath, nil}
 )
 
 var (
 	hgRepositoryResource = &resources.Repository{1, "hgRepository", "", "hg", "", remoteRepositoryPath, nil, nil, false}
 	hgRepo               = RM.openHgRepository(hgRepositoryResource)
-	hgRemoteRepository   = &hgRepository{remoteRepositoryPath, ""}
+	hgRemoteRepository   = &hgRepository{remoteRepositoryPath, "", nil}
 )
 
 func getTop(remoteRepository Repository) (ref string) {
@@ -41,6 +45,10 @@ func writeAdd(repository Repository, filename, filechange string) {
 }
 
 func repositoryTestSetup(repository StoredRepository, remoteRepository Repository, testing *testing.T) {
+	if err := database.PopulateDatabase(); err != nil {
+		testing.Fatal(err)
+	}
+
 	os.MkdirAll(remoteRepositoryPath, 0700)
 	RunCommand(Command(remoteRepository, nil, "init"))
 
@@ -117,7 +125,7 @@ func TestGitStorePending(testing *testing.T) {
 var (
 	//The cloned repository is the repository that would be pushing to the local bare repository
 	clonedRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", "clone")
-	clonedRepository     = &gitSubRepository{clonedRepositoryPath}
+	clonedRepository     = &gitSubRepository{clonedRepositoryPath, nil}
 )
 
 func TestGitMergePass(testing *testing.T) {

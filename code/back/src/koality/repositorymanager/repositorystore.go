@@ -26,10 +26,8 @@ type StoredRepository interface {
 }
 
 const (
-	//TODO(akostov or bbland) hook these up.
-	defaultTimeout        = 120
-	defaultSshScript      = ""
-	defaultPrivateKeyPath = ""
+	defaultTimeout   = 120
+	defaultSshScript = ""
 )
 
 func checkRepositoryExists(path string) (err error) {
