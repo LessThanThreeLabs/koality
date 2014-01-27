@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-func (settingsHandler *SettingsHandler) GetApiKey(writer http.ResponseWriter, request *http.Request) {
-	apiKey, err := settingsHandler.resourcesConnection.Settings.Read.GetApiKey()
+func (settingsHandler *SettingsHandler) ResetApiKey(writer http.ResponseWriter, request *http.Request) {
+	apiKey, err := settingsHandler.resourcesConnection.Settings.Update.ResetApiKey()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -24,8 +24,8 @@ func (settingsHandler *SettingsHandler) GetApiKey(writer http.ResponseWriter, re
 	fmt.Fprintf(writer, "%s", jsonedApiKey)
 }
 
-func (settingsHandler *SettingsHandler) GetRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
-	repositoryKeyPair, err := settingsHandler.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+func (settingsHandler *SettingsHandler) ResetRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
+	repositoryKeyPair, err := settingsHandler.resourcesConnection.Settings.Update.ResetRepositoryKeyPair()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -42,8 +42,11 @@ func (settingsHandler *SettingsHandler) GetRepositoryKeyPair(writer http.Respons
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
 }
 
-func (settingsHandler *SettingsHandler) GetS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
-	s3ExporterSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetS3ExporterSettings()
+func (settingsHandler *SettingsHandler) SetS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
+	accessKey := request.PostFormValue("accessKey")
+	secretKey := request.PostFormValue("secretKey")
+	bucketName := request.PostFormValue("bucketName")
+	s3ExporterSettings, err := settingsHandler.resourcesConnection.Settings.Update.SetS3ExporterSettings(accessKey, secretKey, bucketName)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

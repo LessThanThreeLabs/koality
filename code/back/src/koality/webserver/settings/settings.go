@@ -29,15 +29,26 @@ func New(resourcesConnection *resources.Connection) (*SettingsHandler, error) {
 }
 
 func (settingsHandler *SettingsHandler) WireSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/apiKey",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetApiKey)).
+		Methods("GET")
 	subrouter.HandleFunc("/repositoryKeyPair",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetRepositoryKeyPair)).
 		Methods("GET")
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetS3ExporterSettings)).
 		Methods("GET")
-	subrouter.HandleFunc("/apiKey",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetApiKey)).
-		Methods("GET")
+
+	subrouter.HandleFunc("/apiKey/reset",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.ResetApiKey)).
+		Methods("POST")
+	subrouter.HandleFunc("/repositoryKeyPair/reset",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.ResetRepositoryKeyPair)).
+		Methods("POST")
+
+	subrouter.HandleFunc("/s3Exporter",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.SetS3ExporterSettings)).
+		Methods("PUT")
 }
 
 func getSanitizedRepositoryKeyPair(repositoryKeyPair *resources.RepositoryKeyPair) *sanitizedRepositoryKeyPair {
