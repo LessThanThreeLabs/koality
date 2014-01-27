@@ -16,6 +16,10 @@ type CookieStoreKeys struct {
 	Encryption     []byte `json:"encryption"`
 }
 
+type ApiKey struct {
+	Key string `json:"key"`
+}
+
 type SettingsHandler struct {
 	Read         SettingsReadHandler
 	Update       SettingsUpdateHandler
@@ -27,12 +31,14 @@ type SettingsReadHandler interface {
 	GetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	GetS3ExporterSettings() (*S3ExporterSettings, error)
 	GetCookieStoreKeys() (*CookieStoreKeys, error)
+	GetApiKey() (*ApiKey, error)
 }
 
 type SettingsUpdateHandler interface {
 	ResetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	SetS3ExporterSettings(accessKey, secretKey, bucketName string) (*S3ExporterSettings, error)
 	ResetCookieStoreKeys() (*CookieStoreKeys, error)
+	ResetApiKey() (*ApiKey, error)
 }
 
 type SettingsDeleteHandler interface {
@@ -43,6 +49,7 @@ type RepositoryKeyPairUpdatedHandler func(keyPair *RepositoryKeyPair)
 type S3ExporterSettingsUpdatedHandler func(s3Settings *S3ExporterSettings)
 type S3ExporterSettingsClearedHandler func()
 type CookieStoreKeysUpdatedHandler func(keys *CookieStoreKeys)
+type ApiKeyUpdatedHandler func(key *ApiKey)
 
 type SettingsSubscriptionHandler interface {
 	SubscribeToRepositoryKeyPairUpdatedEvents(updateHandler RepositoryKeyPairUpdatedHandler) (SubscriptionId, error)
@@ -53,6 +60,8 @@ type SettingsSubscriptionHandler interface {
 	UnsubscribeFromS3ExporterSettingsClearedEvents(subscriptionId SubscriptionId) error
 	SubscribeToCookieStoreKeysUpdatedEvents(updateHandler CookieStoreKeysUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromCookieStoreKeysUpdatedEvents(subscriptionId SubscriptionId) error
+	SubscribeToApiKeyUpdatedEvents(updateHandler ApiKeyUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromApiKeyUpdatedEvents(subscriptionId SubscriptionId) error
 }
 
 type InternalSettingsSubscriptionHandler interface {
@@ -60,5 +69,6 @@ type InternalSettingsSubscriptionHandler interface {
 	FireS3ExporterSettingsUpdatedEvent(s3ExporterSettings *S3ExporterSettings)
 	FireS3ExporterSettingsClearedEvent()
 	FireCookieStoreKeysUpdatedEvent(keys *CookieStoreKeys)
+	FireApiKeyUpdatedEvent(key *ApiKey)
 	SettingsSubscriptionHandler
 }

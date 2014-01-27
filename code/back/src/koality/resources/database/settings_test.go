@@ -235,3 +235,66 @@ func TestSettingsResetCookieStoreKeys(test *testing.T) {
 		test.Fatal("Expected new Encryption")
 	}
 }
+
+func TestSettingsApiKey(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	apiKey, err := connection.Settings.Read.GetApiKey()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		test.Fatal("Expected api key to have default")
+	} else if err != nil {
+		test.Fatal(err)
+	}
+
+	keyUpdatedEventReceived := make(chan bool, 1)
+	var keyUpdatedEventKey *resources.ApiKey
+	keyUpdatedHandler := func(key *resources.ApiKey) {
+		keyUpdatedEventKey = key
+		keyUpdatedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToApiKeyUpdatedEvents(keyUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	apiKey, err = connection.Settings.Update.ResetApiKey()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-keyUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear api key updated event")
+	}
+
+	if keyUpdatedEventKey.Key != apiKey.Key {
+		test.Fatal("Bad apiKey.Key in api key updated event")
+	}
+
+	apiKey2, err := connection.Settings.Read.GetApiKey()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if apiKey.Key != apiKey2.Key {
+		test.Fatal("Key mismatch")
+	}
+
+	apiKey3, err := connection.Settings.Update.ResetApiKey()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if apiKey.Key == apiKey3.Key {
+		test.Fatal("Expected new Key")
+	}
+}

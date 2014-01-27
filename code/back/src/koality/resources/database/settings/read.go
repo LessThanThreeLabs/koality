@@ -64,3 +64,12 @@ func (readHandler *ReadHandler) GetCookieStoreKeys() (*resources.CookieStoreKeys
 	}
 	return storeKeys, nil
 }
+
+func (readHandler *ReadHandler) GetApiKey() (*resources.ApiKey, error) {
+	apiKey := new(resources.ApiKey)
+	err := readHandler.getSetting(apiKeyLocator, apiKey)
+	if err != nil {
+		return nil, err
+	}
+	return apiKey, nil
+}

@@ -109,6 +109,13 @@ func checkSettingsInitialized(connection *resources.Connection) error {
 		return err
 	}
 
+	_, err = connection.Settings.Read.GetApiKey()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		connection.Settings.Update.ResetApiKey()
+	} else if err != nil {
+		return err
+	}
+
 	return nil
 }
 

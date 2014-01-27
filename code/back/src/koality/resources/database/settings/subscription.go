@@ -5,10 +5,11 @@ import (
 )
 
 type SubscriptionHandler struct {
-	repositoryKeyPairUpdatedSubscriptionManager         resources.SubscriptionManager
-	s3ExporterSettingsUpdatedSubscriptionManager        resources.SubscriptionManager
-	s3ExporterSettingsClearedSubscriptionManager        resources.SubscriptionManager
-	s3ExporterCookieStoreKeysUpdatedSubscriptionManager resources.SubscriptionManager
+	repositoryKeyPairUpdatedSubscriptionManager  resources.SubscriptionManager
+	s3ExporterSettingsUpdatedSubscriptionManager resources.SubscriptionManager
+	s3ExporterSettingsClearedSubscriptionManager resources.SubscriptionManager
+	cookieStoreKeysUpdatedSubscriptionManager    resources.SubscriptionManager
+	apiKeyUpdatedSubscriptionManager             resources.SubscriptionManager
 }
 
 func NewInternalSubscriptionHandler() (resources.InternalSettingsSubscriptionHandler, error) {
@@ -52,13 +53,25 @@ func (subscriptionHandler *SubscriptionHandler) FireS3ExporterSettingsClearedEve
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToCookieStoreKeysUpdatedEvents(updateHandler resources.CookieStoreKeysUpdatedHandler) (resources.SubscriptionId, error) {
-	return subscriptionHandler.s3ExporterCookieStoreKeysUpdatedSubscriptionManager.Add(updateHandler)
+	return subscriptionHandler.cookieStoreKeysUpdatedSubscriptionManager.Add(updateHandler)
 }
 
 func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCookieStoreKeysUpdatedEvents(subscriptionId resources.SubscriptionId) error {
-	return subscriptionHandler.s3ExporterCookieStoreKeysUpdatedSubscriptionManager.Remove(subscriptionId)
+	return subscriptionHandler.cookieStoreKeysUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
 func (subscriptionHandler *SubscriptionHandler) FireCookieStoreKeysUpdatedEvent(keys *resources.CookieStoreKeys) {
-	subscriptionHandler.s3ExporterCookieStoreKeysUpdatedSubscriptionManager.Fire(keys)
+	subscriptionHandler.cookieStoreKeysUpdatedSubscriptionManager.Fire(keys)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToApiKeyUpdatedEvents(updateHandler resources.ApiKeyUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromApiKeyUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireApiKeyUpdatedEvent(key *resources.ApiKey) {
+	subscriptionHandler.apiKeyUpdatedSubscriptionManager.Fire(key)
 }

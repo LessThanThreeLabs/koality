@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"database/sql"
+	"encoding/base32"
 	"encoding/json"
 	"io"
 	"koality/resources"
@@ -123,4 +124,23 @@ func (updateHandler *UpdateHandler) ResetCookieStoreKeys() (*resources.CookieSto
 
 	updateHandler.subscriptionHandler.FireCookieStoreKeysUpdatedEvent(cookieStoreKeys)
 	return cookieStoreKeys, nil
+}
+
+func (updateHandler *UpdateHandler) ResetApiKey() (*resources.ApiKey, error) {
+	apiKey := new(resources.ApiKey)
+
+	var apiKeyBuffer bytes.Buffer
+	_, err := io.CopyN(&apiKeyBuffer, rand.Reader, 15)
+	if err != nil {
+		return nil, err
+	}
+	apiKey.Key = base32.StdEncoding.EncodeToString(apiKeyBuffer.Bytes())
+
+	err = updateHandler.setSetting(apiKeyLocator, apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	updateHandler.subscriptionHandler.FireApiKeyUpdatedEvent(apiKey)
+	return apiKey, nil
 }

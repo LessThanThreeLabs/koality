@@ -18,6 +18,7 @@ var (
 	repositoryKeyPairLocator  SettingLocator = SettingLocator{"Repository", "KeyPair"}
 	s3ExporterSettingsLocator SettingLocator = SettingLocator{"Exporter", "S3Settings"}
 	cookieStoreKeysLocator    SettingLocator = SettingLocator{"CookieStore", "Keys"}
+	apiKeyLocator             SettingLocator = SettingLocator{"Api", "Key"}
 )
 
 func New(database *sql.DB) (*resources.SettingsHandler, error) {
