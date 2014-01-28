@@ -36,7 +36,7 @@ func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{userId:[0-9]+}",
 		middleware.IsLoggedInWrapper(usersHandler.Get)).
 		Methods("GET")
-	subrouter.HandleFunc("/{userId:[0-9]+}/keys",
+	subrouter.HandleFunc("/keys",
 		middleware.IsLoggedInWrapper(usersHandler.GetKeys)).
 		Methods("GET")
 	subrouter.HandleFunc("/",

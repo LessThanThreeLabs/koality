@@ -12,7 +12,7 @@ func (repositoriesHandler *RepositoriesHandler) Delete(writer http.ResponseWrite
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse repositoryId: %v", err)
 		return
 	}
 

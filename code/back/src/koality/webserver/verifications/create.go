@@ -13,7 +13,7 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse repositoryId: %v", err)
 		return
 	}
 
@@ -45,7 +45,7 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 	jsonedVerification, err := json.Marshal(sanitizedVerification)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
 	fmt.Fprintf(writer, "%s", jsonedVerification)
@@ -56,7 +56,7 @@ func (verificationsHandler *VerificationsHandler) Retrigger(writer http.Response
 	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse verificationId: %v", err)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (verificationsHandler *VerificationsHandler) Retrigger(writer http.Response
 	jsonedVerification, err := json.Marshal(sanitizedVerification)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
 	fmt.Fprintf(writer, "%s", jsonedVerification)

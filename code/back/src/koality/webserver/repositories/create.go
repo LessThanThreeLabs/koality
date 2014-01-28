@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/context"
 	"net/http"
@@ -32,7 +33,15 @@ func (repositoriesHandler *RepositoriesHandler) Create(writer http.ResponseWrite
 		}
 		return
 	}
-	fmt.Fprintf(writer, "{id:%d}", repository.Id)
+
+	sanitizedRepository := getSanitizedRepository(repository)
+	jsonedRepository, err := json.Marshal(sanitizedRepository)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
 
 func (repositoriesHandler *RepositoriesHandler) CreateWithGitHub(writer http.ResponseWriter, request *http.Request) {
@@ -72,5 +81,13 @@ func (repositoriesHandler *RepositoriesHandler) CreateWithGitHub(writer http.Res
 		}
 		return
 	}
-	fmt.Fprintf(writer, "{id:%d}", repository.Id)
+
+	sanitizedRepository := getSanitizedRepository(repository)
+	jsonedRepository, err := json.Marshal(sanitizedRepository)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", jsonedRepository)
 }

@@ -13,7 +13,7 @@ func (verificationsHandler *VerificationsHandler) Get(writer http.ResponseWriter
 	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse verificationId: %v", err)
 		return
 	}
 
@@ -28,7 +28,7 @@ func (verificationsHandler *VerificationsHandler) Get(writer http.ResponseWriter
 	jsonedVerification, err := json.Marshal(sanitizedVerification)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
 	fmt.Fprintf(writer, "%s", jsonedVerification)
@@ -41,7 +41,7 @@ func (verificationsHandler *VerificationsHandler) GetTail(writer http.ResponseWr
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse repositoryId: %v", err)
 		return
 	}
 
@@ -49,7 +49,7 @@ func (verificationsHandler *VerificationsHandler) GetTail(writer http.ResponseWr
 	offset, err := strconv.ParseUint(offsetString, 10, 32)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse offset: %v", err)
 		return
 	}
 
@@ -57,7 +57,7 @@ func (verificationsHandler *VerificationsHandler) GetTail(writer http.ResponseWr
 	results, err := strconv.ParseUint(resultsString, 10, 32)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse results: %v", err)
 		return
 	}
 
@@ -76,7 +76,7 @@ func (verificationsHandler *VerificationsHandler) GetTail(writer http.ResponseWr
 	jsonedVerifications, err := json.Marshal(sanitizedVerifications)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
 	fmt.Fprintf(writer, "%s", jsonedVerifications)
