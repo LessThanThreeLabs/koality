@@ -3,6 +3,7 @@ package ssh
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"koality/internalapi"
@@ -22,8 +23,8 @@ type restrictedGitShell struct {
 
 var (
 	gitCommandArgNums = map[string]int{
-		"git-receive-pack": 3,
-		"git-upload-pack":  3,
+		"git-receive-pack": 2,
+		"git-upload-pack":  2,
 		// "git-show":         4,
 	}
 	validGitCommands = map[string]bool{
@@ -69,7 +70,7 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 
 		repositoryManager := repositorymanager.New(repositoryInfo.RepositoriesPath, nil)
 		repoPath := repositoryManager.ToPath(repository)
-		command.Argv = []string{"jgit", "receive-pack", repoPath, string(shell.userId)}
+		command.Argv = []string{"jgit", "receive-pack", repoPath, fmt.Sprint(shell.userId)}
 	case "git-upload-pack":
 		var privateKey string
 		var emptyInput interface{}

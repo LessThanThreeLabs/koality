@@ -30,6 +30,9 @@ func GetForcedCommand(shellPath, publicKey string) (cmd string, err error) {
 	var userId uint64
 	if err = client.Call("PublicKeyVerifier.GetUserIdForKey", &publicKey, &userId); err != nil {
 		return
+	} else if userId == 0 {
+		err = errors.New("no user with the provided public key \"" + publicKey + "\" exists")
+		return
 	}
 
 	cmd = fmt.Sprintf(forcedCommand, shellPath, userId)
