@@ -3,6 +3,7 @@ package verifications
 import (
 	"github.com/gorilla/mux"
 	"koality/resources"
+	"koality/webserver/middleware"
 	"time"
 )
 
@@ -38,11 +39,17 @@ func New(resourcesConnection *resources.Connection) (*VerificationsHandler, erro
 	return &VerificationsHandler{resourcesConnection}, nil
 }
 
-func (verificationsHandler *VerificationsHandler) WireSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
+func (verificationsHandler *VerificationsHandler) WireAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{verificationId:[0-9]+}",
+		middleware.IsLoggedInWrapper(verificationsHandler.Get)).
+		Methods("GET")
+	subrouter.HandleFunc("/tail",
+		middleware.IsLoggedInWrapper(verificationsHandler.GetTail)).
+		Methods("GET")
 
-	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.Retrigger).Methods("POST")
+	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger",
+		middleware.IsLoggedInWrapper(verificationsHandler.Retrigger)).
+		Methods("POST")
 }
 
 func getSanitizedVerification(verification *resources.Verification) *sanitizedVerification {

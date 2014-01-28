@@ -35,22 +35,26 @@ func New(resourcesConnection *resources.Connection, repositoryManager repository
 	return &RepositoriesHandler{resourcesConnection, repositoryManager}, nil
 }
 
-func (repositoriesHandler *RepositoriesHandler) WireSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/", repositoriesHandler.GetAll).Methods("GET")
+func (repositoriesHandler *RepositoriesHandler) WireAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}",
+		middleware.IsLoggedInWrapper(repositoriesHandler.Get)).
+		Methods("GET")
+	subrouter.HandleFunc("/",
+		middleware.IsLoggedInWrapper(repositoriesHandler.GetAll)).
+		Methods("GET")
 
 	subrouter.HandleFunc("/create",
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.Create)).
 		Methods("POST")
 
-	subrouter.HandleFunc("/createWithGitHub",
+	subrouter.HandleFunc("/gitHub/create",
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.CreateWithGitHub)).
 		Methods("POST")
 
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook",
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.SetGitHubHookTypes)).
 		Methods("PUT")
-	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook",
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/clearHook",
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.ClearGitHubHook)).
 		Methods("PUT")
 

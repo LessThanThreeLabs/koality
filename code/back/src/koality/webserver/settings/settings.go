@@ -28,7 +28,7 @@ func New(resourcesConnection *resources.Connection) (*SettingsHandler, error) {
 	return &SettingsHandler{resourcesConnection}, nil
 }
 
-func (settingsHandler *SettingsHandler) WireSubroutes(subrouter *mux.Router) {
+func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/apiKey",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetApiKey)).
 		Methods("GET")

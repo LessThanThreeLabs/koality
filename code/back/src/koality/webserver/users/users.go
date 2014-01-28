@@ -32,21 +32,49 @@ func New(resourcesConnection *resources.Connection, passwordHasher *resources.Pa
 	return &UsersHandler{resourcesConnection, passwordHasher}, nil
 }
 
-func (usersHandler *UsersHandler) WireSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/{userId:[0-9]+}/keys", usersHandler.GetKeys).Methods("GET")
-	subrouter.HandleFunc("/", usersHandler.GetAll).Methods("GET")
+func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{userId:[0-9]+}",
+		middleware.IsLoggedInWrapper(usersHandler.Get)).
+		Methods("GET")
+	subrouter.HandleFunc("/{userId:[0-9]+}/keys",
+		middleware.IsLoggedInWrapper(usersHandler.GetKeys)).
+		Methods("GET")
+	subrouter.HandleFunc("/",
+		middleware.IsLoggedInWrapper(usersHandler.GetAll)).
+		Methods("GET")
 
-	subrouter.HandleFunc("/name", usersHandler.SetName).Methods("POST")
-	subrouter.HandleFunc("/password", usersHandler.SetPassword).Methods("POST")
-	subrouter.HandleFunc("/addKey", usersHandler.AddKey).Methods("POST")
-	subrouter.HandleFunc("/removeKey", usersHandler.RemoveKey).Methods("POST")
+	subrouter.HandleFunc("/name",
+		middleware.IsLoggedInWrapper(usersHandler.SetName)).
+		Methods("POST")
+	subrouter.HandleFunc("/password",
+		middleware.IsLoggedInWrapper(usersHandler.SetPassword)).
+		Methods("POST")
+	subrouter.HandleFunc("/addKey",
+		middleware.IsLoggedInWrapper(usersHandler.AddKey)).
+		Methods("POST")
+	subrouter.HandleFunc("/removeKey",
+		middleware.IsLoggedInWrapper(usersHandler.RemoveKey)).
+		Methods("POST")
 
 	subrouter.HandleFunc("/{userId:[0-9]+}/admin",
 		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.SetAdmin)).
 		Methods("PUT")
 
-	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Delete).Methods("DELETE")
+	subrouter.HandleFunc("/{userId:[0-9]+}",
+		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.Delete)).
+		Methods("DELETE")
+}
+
+func (usersHandler *UsersHandler) WireApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{userId:[0-9]+}",
+		middleware.HasApiKeyWrapper(usersHandler.resourcesConnection, usersHandler.Get)).
+		Methods("GET")
+	subrouter.HandleFunc("/{userId:[0-9]+}/keys",
+		middleware.HasApiKeyWrapper(usersHandler.resourcesConnection, usersHandler.GetKeys)).
+		Methods("GET")
+	subrouter.HandleFunc("/",
+		middleware.HasApiKeyWrapper(usersHandler.resourcesConnection, usersHandler.GetAll)).
+		Methods("GET")
 }
 
 func getSanitizedUser(user *resources.User) *sanitizedUser {

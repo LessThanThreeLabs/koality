@@ -105,49 +105,41 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	apiSubrouter := router.PathPrefix("/api").MatcherFunc(webserver.hasApiKey).Subrouter()
-	handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
+	wireAppSubroutes := func() {
+		appSubrouter := router.PathPrefix("/app").Subrouter()
+		accountsSubrouter := appSubrouter.PathPrefix("/accounts").Subrouter()
+		accountsHandler.WireAppSubroutes(accountsSubrouter)
 
-	appSubrouter := router.PathPrefix("/app").Subrouter()
-	accountsSubrouter := appSubrouter.PathPrefix("/accounts").Subrouter()
-	accountsHandler.WireSubroutes(accountsSubrouter)
+		usersSubrouter := appSubrouter.PathPrefix("/users").Subrouter()
+		usersHandler.WireAppSubroutes(usersSubrouter)
 
-	usersSubrouter := appSubrouter.PathPrefix("/users").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	usersHandler.WireSubroutes(usersSubrouter)
+		repositoriesSubrouter := appSubrouter.PathPrefix("/repositories").Subrouter()
+		repositoriesHandler.WireAppSubroutes(repositoriesSubrouter)
 
-	repositoriesSubrouter := appSubrouter.PathPrefix("/repositories").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	repositoriesHandler.WireSubroutes(repositoriesSubrouter)
+		verificationsSubrouter := appSubrouter.PathPrefix("/verifications").Subrouter()
+		verificationsHandler.WireAppSubroutes(verificationsSubrouter)
 
-	verificationsSubrouter := appSubrouter.PathPrefix("/verifications").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	verificationsHandler.WireSubroutes(verificationsSubrouter)
+		stagesSubrouter := appSubrouter.PathPrefix("/stages").Subrouter()
+		stagesHandler.WireStagesAppSubroutes(stagesSubrouter)
 
-	stagesSubrouter := appSubrouter.PathPrefix("/stages").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	stagesHandler.WireStagesSubroutes(stagesSubrouter)
+		stageRunsSubrouter := appSubrouter.PathPrefix("/stageRuns").Subrouter()
+		stagesHandler.WireStageRunsAppSubroutes(stageRunsSubrouter)
 
-	stageRunsSubrouter := appSubrouter.PathPrefix("/stageRuns").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	stagesHandler.WireStageRunsSubroutes(stageRunsSubrouter)
+		settingsSubrouter := appSubrouter.PathPrefix("/settings").Subrouter()
+		settingsHandler.WireAppSubroutes(settingsSubrouter)
+	}
 
-	settingsSubrouter := appSubrouter.PathPrefix("/settings").MatcherFunc(webserver.isLoggedIn).Subrouter()
-	settingsHandler.WireSubroutes(settingsSubrouter)
+	wireApiSubroutes := func() {
+		apiSubrouter := router.PathPrefix("/api").Subrouter()
+
+		userSubrouter := apiSubrouter.PathPrefix("/users").Subrouter()
+		usersHandler.WireApiSubroutes(userSubrouter)
+
+		handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
+	}
+
+	wireAppSubroutes()
+	wireApiSubroutes()
 
 	return router, nil
-}
-
-func (webserver *Webserver) isLoggedIn(request *http.Request, match *mux.RouteMatch) bool {
-	userId, ok := context.Get(request, "userId").(uint64)
-	if !ok {
-		return false
-	}
-	return userId != 0
-}
-
-func (webserver *Webserver) hasApiKey(request *http.Request, match *mux.RouteMatch) bool {
-	apiKeyToCheck := request.FormValue("key")
-	apiKey := "need-to-actually-get-this-from-the-database"
-	// apiKey, err := webserver.resourcesConnection.Settings.Read.GetApiKey()
-	// if err != nil {
-	// 	fmt.Println("webserver - hasApiKey: NEED TO LOG THIS")
-	// 	return false
-	// }
-	return apiKey == apiKeyToCheck
 }

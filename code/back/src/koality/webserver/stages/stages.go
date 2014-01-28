@@ -3,6 +3,7 @@ package stages
 import (
 	"github.com/gorilla/mux"
 	"koality/resources"
+	"koality/webserver/middleware"
 	"time"
 )
 
@@ -48,17 +49,31 @@ func New(resourcesConnection *resources.Connection) (*StagesHandler, error) {
 	return &StagesHandler{resourcesConnection}, nil
 }
 
-func (stagesHandler *StagesHandler) WireStagesSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{stageId:[0-9]+}", stagesHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/", stagesHandler.GetAll).Methods("GET")
+func (stagesHandler *StagesHandler) WireStagesAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{stageId:[0-9]+}",
+		middleware.IsLoggedInWrapper(stagesHandler.Get)).
+		Methods("GET")
+	subrouter.HandleFunc("/",
+		middleware.IsLoggedInWrapper(stagesHandler.GetAll)).
+		Methods("GET")
 }
 
-func (stagesHandler *StagesHandler) WireStageRunsSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}", stagesHandler.GetRun).Methods("GET")
-	subrouter.HandleFunc("/", stagesHandler.GetAllRuns).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/lines", stagesHandler.GetConsoleLines).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/xunits", stagesHandler.GetXunitResults).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/exports", stagesHandler.GetXunitResults).Methods("GET")
+func (stagesHandler *StagesHandler) WireStageRunsAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}",
+		middleware.IsLoggedInWrapper(stagesHandler.GetRun)).
+		Methods("GET")
+	subrouter.HandleFunc("/",
+		middleware.IsLoggedInWrapper(stagesHandler.GetAllRuns)).
+		Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/lines",
+		middleware.IsLoggedInWrapper(stagesHandler.GetConsoleLines)).
+		Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/xunits",
+		middleware.IsLoggedInWrapper(stagesHandler.GetXunitResults)).
+		Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/exports",
+		middleware.IsLoggedInWrapper(stagesHandler.GetExports)).
+		Methods("GET")
 }
 
 func getSanitizedStage(stage *resources.Stage) *sanitizedStage {
