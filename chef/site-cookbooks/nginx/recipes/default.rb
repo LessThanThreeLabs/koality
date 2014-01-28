@@ -20,6 +20,8 @@ apt_package "nginx" do
 end
 
 cookbook_file "/etc/nginx/nginx.conf" do
+	owner 		"nginx"
+	group 		"nginx"
 	source		"nginx.conf"
 	action	 	:create
 end

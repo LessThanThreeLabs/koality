@@ -19,6 +19,8 @@ package 'postgresql-' + node["postgres"]["version"] do
 end
 
 cookbook_file "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.conf" do
+	owner 		"postgres"
+	group 		"postgres"
 	source		"postgresql.conf"
 	action	 	:create
 end
