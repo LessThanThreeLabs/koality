@@ -1,10 +1,11 @@
 package internalapi
 
 import (
-	"koality/vm/poolmanager"
 	"koality/resources"
+	"koality/vm/poolmanager"
 	"net"
 	"net/rpc"
+	"os"
 )
 
 const (
@@ -26,6 +27,8 @@ func Start(resourcesConnection *resources.Connection, poolManager *poolmanager.P
 	}
 	listener, err := net.Listen("unix", rpcSocket)
 	if err != nil {
+		return err
+	} else if err = os.Chmod(rpcSocket, 0777); err != nil {
 		return err
 	}
 
