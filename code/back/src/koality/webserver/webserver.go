@@ -102,7 +102,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	verificationsHandler, err := verifications.New(webserver.resourcesConnection)
+	verificationsHandler, err := verifications.New(webserver.resourcesConnection, webserver.repositoryManager)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,20 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		userSubrouter := apiSubrouter.PathPrefix("/users").Subrouter()
 		usersHandler.WireApiSubroutes(userSubrouter)
 
-		handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
+		repositoriesSubrouter := apiSubrouter.PathPrefix("/repositories").Subrouter()
+		repositoriesHandler.WireApiSubroutes(repositoriesSubrouter)
+
+		verificationsSubrouter := apiSubrouter.PathPrefix("/verifications").Subrouter()
+		verificationsHandler.WireApiSubroutes(verificationsSubrouter)
+
+		stagesSubrouter := apiSubrouter.PathPrefix("/stages").Subrouter()
+		stagesHandler.WireStagesApiSubroutes(stagesSubrouter)
+
+		stageRunsSubrouter := apiSubrouter.PathPrefix("/stageRuns").Subrouter()
+		stagesHandler.WireStageRunsApiSubroutes(stageRunsSubrouter)
+
+		settingsSubrouter := apiSubrouter.PathPrefix("/settings").Subrouter()
+		settingsHandler.WireApiSubroutes(settingsSubrouter)
 	}
 
 	wireAppSubroutes()

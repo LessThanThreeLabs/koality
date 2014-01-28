@@ -51,6 +51,17 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		Methods("PUT")
 }
 
+func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/apiKey", settingsHandler.GetApiKey).Methods("GET")
+	subrouter.HandleFunc("/repositoryKeyPair", settingsHandler.GetRepositoryKeyPair).Methods("GET")
+	subrouter.HandleFunc("/s3Exporter", settingsHandler.GetS3ExporterSettings).Methods("GET")
+
+	subrouter.HandleFunc("/apiKey/reset", settingsHandler.ResetApiKey).Methods("POST")
+	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.ResetRepositoryKeyPair).Methods("POST")
+
+	subrouter.HandleFunc("/s3Exporter", settingsHandler.SetS3ExporterSettings).Methods("PUT")
+}
+
 func getSanitizedRepositoryKeyPair(repositoryKeyPair *resources.RepositoryKeyPair) *sanitizedRepositoryKeyPair {
 	return &sanitizedRepositoryKeyPair{
 		PublicKey: repositoryKeyPair.PublicKey,
