@@ -18,7 +18,7 @@ import (
 
 const (
 	webserverPort    = 8080
-	repositoriesPath = "/etc/koality/repositories"
+	repositoriesPath = "/etc/koality"
 )
 
 func main() {

@@ -313,7 +313,7 @@ func parseSection(config interface{}, final bool) (newSection section.Section, e
 
 	singletonMap, ok := config.(map[interface{}]interface{})
 	if !ok || len(singletonMap) != 1 {
-		err = BadConfigurationError{"Each section should be a map from its name to its parameters."}
+		err = BadConfigurationError{fmt.Sprintf("Each section should be a map from its name to its parameters.\n%v", singletonMap)}
 		return
 	}
 
