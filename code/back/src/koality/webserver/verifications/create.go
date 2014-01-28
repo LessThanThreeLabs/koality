@@ -27,14 +27,13 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 	}
 
 	verificationsHandler.repositoryManager.StorePending(repository, ref)
-	headMessage, headUsername, headEmail, err := verificationsHandler.repositoryManager.GetCommitAttributes(repository, ref)
+	headSha, headMessage, headUsername, headEmail, err := verificationsHandler.repositoryManager.GetCommitAttributes(repository, ref)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	headSha := "this-is-a-bad-sha"
 	verification, err := verificationsHandler.resourcesConnection.Verifications.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, "", headEmail)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
