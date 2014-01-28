@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"koality/resources"
+	"strings"
 )
 
 type UpdateHandler struct {
@@ -77,9 +78,11 @@ func (updateHandler *UpdateHandler) AddKey(userId uint64, name, publicKey string
 		return 0, err
 	}
 
-	id := uint64(0)
+	sanitizedPublicKey := strings.Join(strings.Fields(publicKey)[:2], " ")
+
+	var id uint64
 	query := "INSERT INTO ssh_keys (user_id, name, public_key) VALUES ($1, $2, $3) RETURNING id"
-	err := updateHandler.database.QueryRow(query, userId, name, publicKey).Scan(&id)
+	err := updateHandler.database.QueryRow(query, userId, name, sanitizedPublicKey).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
