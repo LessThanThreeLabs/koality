@@ -1,6 +1,7 @@
 package verifications
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -40,7 +41,15 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 		fmt.Fprint(writer, err)
 		return
 	}
-	fmt.Fprintf(writer, "{id:%d}", verification.Id)
+
+	sanitizedVerification := getSanitizedVerification(verification)
+	jsonedVerification, err := json.Marshal(sanitizedVerification)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Print(writer, err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", jsonedVerification)
 }
 
 func (verificationsHandler *VerificationsHandler) Retrigger(writer http.ResponseWriter, request *http.Request) {
@@ -66,5 +75,13 @@ func (verificationsHandler *VerificationsHandler) Retrigger(writer http.Response
 		fmt.Fprint(writer, err)
 		return
 	}
-	fmt.Fprintf(writer, "{id:%d}", newVerification.Id)
+
+	sanitizedVerification := getSanitizedVerification(newVerification)
+	jsonedVerification, err := json.Marshal(sanitizedVerification)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Print(writer, err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", jsonedVerification)
 }
