@@ -183,7 +183,7 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 		return
 	}
 
-	refSha, err := repository.slave.getTopRefForSubrepository("HEAD")
+	refSha, err := repository.slave.getTopShaForSubrepository("HEAD")
 	if err != nil {
 		return
 	}
@@ -196,7 +196,7 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 		return
 	}
 
-	if originalHead, err = repository.slave.getTopRefForSubrepository("HEAD"); err != nil {
+	if originalHead, err = repository.slave.getTopShaForSubrepository("HEAD"); err != nil {
 		return
 	}
 
@@ -211,8 +211,8 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 	return
 }
 
-func (repository *gitSubRepository) getTopRefForSubrepository(branchOrRef string) (ref string, err error) {
-	showCommand := Command(repository, nil, "show", branchOrRef)
+func (repository *gitSubRepository) getTopShaForSubrepository(ref string) (topSha string, err error) {
+	showCommand := Command(repository, nil, "show", ref)
 	if err = RunCommand(showCommand); err != nil {
 		return
 	}
@@ -227,12 +227,12 @@ func (repository *gitSubRepository) getTopRefForSubrepository(branchOrRef string
 		return
 	}
 
-	ref = strings.TrimSpace(strings.TrimPrefix(shaLine, "commit "))
+	topSha = strings.TrimSpace(strings.TrimPrefix(shaLine, "commit "))
 	return
 }
 
-func (repository *gitRepository) getTopRef(branchOrRef string) (ref string, err error) {
-	return repository.slave.getTopRefForSubrepository(branchOrRef)
+func (repository *gitRepository) getTopSha(ref string) (topSha string, err error) {
+	return repository.slave.getTopShaForSubrepository(ref)
 }
 
 func (repository *gitSubRepository) resetRepositoryHead(refToReset, originalHead string) error {
@@ -250,7 +250,7 @@ func (repository *gitSubRepository) updateBranchFromForwardUrl(remoteUri, refToU
 		return
 	}
 
-	if headSha, err = repository.getTopRefForSubrepository("HEAD"); err != nil {
+	if headSha, err = repository.getTopShaForSubrepository("HEAD"); err != nil {
 		return
 	}
 
@@ -324,7 +324,7 @@ func (repository *gitRepository) pushMergeRetry(remoteUri, refToMergeInto, origi
 	return
 }
 
-func (repository *gitRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
+func (repository *gitRepository) getCommitAttributes(ref string) (headSha, message, username, email string, err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
@@ -341,9 +341,11 @@ func (repository *gitRepository) getCommitAttributes(ref string) (message, usern
 	}
 
 	if !strings.HasPrefix(shaLine, "commit ") {
-		err = fmt.Errorf("git show %s output data for repository at %v was not formatted as expected.", ref, repository)
+		err = fmt.Errorf("git show %s output data for repository at %s was not formatted as expected.", ref, repository)
 		return
 	}
+
+	headSha = strings.TrimSpace(strings.TrimPrefix(shaLine, "commit "))
 
 	authorLine, err := command.Stdout.ReadString('\n')
 

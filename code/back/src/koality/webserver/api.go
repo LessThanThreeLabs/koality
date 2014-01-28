@@ -23,7 +23,8 @@ func CreateChangeHandler(resourcesConnection *resources.Connection, repositoryMa
 			return
 		}
 
-		headSha := queryValues.Get("headSha")
+		//TODO(jpotter) rename headSha to topRef or something like that (can be a branch, a tag or a sha)
+		topRef := queryValues.Get("headSha")
 
 		repository, err := resourcesConnection.Repositories.Read.Get(repositoryId)
 		if err != nil {
@@ -31,9 +32,9 @@ func CreateChangeHandler(resourcesConnection *resources.Connection, repositoryMa
 			return
 		}
 
-		repositoryManager.StorePending(repository, headSha)
+		repositoryManager.StorePending(repository, topRef)
 
-		headMessage, headUsername, headEmail, err := repositoryManager.GetCommitAttributes(repository, headSha)
+		headSha, headMessage, headUsername, headEmail, err := repositoryManager.GetCommitAttributes(repository, topRef)
 		if err != nil {
 			fmt.Fprint(writer, err)
 			return
