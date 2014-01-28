@@ -19,7 +19,7 @@ func CreateChangeHandler(resourcesConnection *resources.Connection, repositoryMa
 
 		repositoryId, err := strconv.ParseUint(queryValues.Get("repository"), 10, 64)
 		if err != nil {
-			fmt.Fprintf(writer, "Unable to parse query parameters")
+			fmt.Fprint(writer, err)
 			return
 		}
 
@@ -27,16 +27,23 @@ func CreateChangeHandler(resourcesConnection *resources.Connection, repositoryMa
 
 		repository, err := resourcesConnection.Repositories.Read.Get(repositoryId)
 		if err != nil {
-			fmt.Fprintf(writer, "I shit my pants")
+			fmt.Fprint(writer, err)
+			return
 		}
 
 		repositoryManager.StorePending(repository, headSha)
 
-		message, username, email, err := repositoryManager.GetCommitAttributes(repository, headSha)
+		headMessage, headUsername, headEmail, err := repositoryManager.GetCommitAttributes(repository, headSha)
 		if err != nil {
-			fmt.Fprintf(writer, "I shit my pants")
+			fmt.Fprint(writer, err)
+			return
 		}
 
-		fmt.Fprintf(writer, "Need to create a change with repository %v, message %s, username %s and email %s ", repository, message, username, email)
+		verification, err := resourcesConnection.Verifications.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, "", headEmail)
+		if err != nil {
+			fmt.Fprint(writer, err)
+			return
+		}
+		fmt.Fprint(writer, verification.Id)
 	}
 }
