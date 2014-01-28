@@ -1,4 +1,5 @@
 --- #Koality: 1337
+pool: v1
 setup:
 - scripts:
   #  pull down missing submodules
