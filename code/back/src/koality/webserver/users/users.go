@@ -66,15 +66,9 @@ func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
 }
 
 func (usersHandler *UsersHandler) WireApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{userId:[0-9]+}",
-		middleware.HasApiKeyWrapper(usersHandler.resourcesConnection, usersHandler.Get)).
-		Methods("GET")
-	subrouter.HandleFunc("/{userId:[0-9]+}/keys",
-		middleware.HasApiKeyWrapper(usersHandler.resourcesConnection, usersHandler.GetKeys)).
-		Methods("GET")
-	subrouter.HandleFunc("/",
-		middleware.HasApiKeyWrapper(usersHandler.resourcesConnection, usersHandler.GetAll)).
-		Methods("GET")
+	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Get).Methods("GET")
+	subrouter.HandleFunc("/{userId:[0-9]+}/keys", usersHandler.GetKeys).Methods("GET")
+	subrouter.HandleFunc("/", usersHandler.GetAll).Methods("GET")
 }
 
 func getSanitizedUser(user *resources.User) *sanitizedUser {

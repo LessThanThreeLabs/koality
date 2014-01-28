@@ -8,12 +8,14 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
+	"koality/webserver/middleware"
 	"koality/webserver/repositories"
 	"koality/webserver/settings"
 	"koality/webserver/stages"
 	"koality/webserver/users"
 	"koality/webserver/verifications"
 	"net/http"
+	"strings"
 )
 
 type Webserver struct {
@@ -39,12 +41,22 @@ func (webserver *Webserver) Start() error {
 		return err
 	}
 
+	hasCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(webserver.resourcesConnection, router)
+	hasApiKeyWrapper := middleware.HasApiKeyWrapper(webserver.resourcesConnection, router)
+
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
-		var _ = session
 		// context.Set(request, "userId", session.Values["userId"])
+		var _ = session
 		context.Set(request, "userId", uint64(1000))
-		router.ServeHTTP(writer, request)
+
+		if strings.HasPrefix(request.URL.Path, "/app") {
+			hasCsrfTokenWrapper(writer, request)
+		} else if strings.HasPrefix(request.URL.Path, "/api") {
+			hasApiKeyWrapper(writer, request)
+		} else {
+			panic("Unexpected path: " + request.URL.Path)
+		}
 	})
 
 	http.Handle("/", loadUserIdRouter)
