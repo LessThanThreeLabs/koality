@@ -31,10 +31,11 @@ func main() {
 		panic(err)
 	}
 
-	sshPath, err := exec.LookPath("ssh")
-	if err != nil {
-		panic(err)
-	}
+	sshPath := path.Join("/", "usr", "bin", "ssh")
+	// sshPath, err := exec.LookPath("ssh")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	if sshPath, err = filepath.Abs(sshPath); err != nil {
 		panic(err)

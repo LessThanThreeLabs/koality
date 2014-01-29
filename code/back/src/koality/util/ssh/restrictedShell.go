@@ -1,7 +1,6 @@
 package ssh
 
 import (
-	"fmt"
 	"koality/internalapi"
 	"koality/resources"
 	"koality/vm"
@@ -50,7 +49,5 @@ func HandleSSHCommand(userId uint64, origCommand string) error {
 		return err
 	}
 
-        // TODO(dhuang) remove this later
-	fmt.Println("command:\n", shellCommand)
 	return shellCommand.Exec()
 }
