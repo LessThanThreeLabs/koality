@@ -50,7 +50,9 @@ func (webserver *Webserver) Start() error {
 		var _ = session
 		context.Set(request, "userId", uint64(1000))
 
-		if strings.HasPrefix(request.URL.Path, "/app") {
+		if request.URL.Path == "/" {
+			fmt.Fprint(writer, "need to return templated index")
+		} else if strings.HasPrefix(request.URL.Path, "/app") {
 			hasCsrfTokenWrapper(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/api") {
 			hasApiKeyWrapper(writer, request)
