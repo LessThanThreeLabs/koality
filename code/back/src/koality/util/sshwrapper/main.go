@@ -40,6 +40,6 @@ func main() {
 		panic(err)
 	}
 
-	argv := append(append([]string{sshPath}, "-i", filename), os.Args[1:]...)
+	argv := append(append([]string{sshPath}, "-oStrictHostKeyChecking=no", "-oUserKnownHostsFile=/dev/null", "-i", filename), os.Args[1:]...)
 	panic(syscall.Exec(argv[0], argv, nil))
 }
