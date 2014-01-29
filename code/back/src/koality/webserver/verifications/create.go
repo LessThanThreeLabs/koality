@@ -37,7 +37,7 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 	baseSha := headSha
 
 	changeset, err := verificationsHandler.resourcesConnection.Verifications.Read.GetChangesetFromShas(headSha, baseSha)
-	if _, ok := err.(resources.NoSuchChangesetError); !ok {
+	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
