@@ -157,6 +157,10 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 			}
 
 			verificationConfig.Params = params
+
+			// TODO(akostov): handle pool id/name (defaults to 1, should be default pool)
+			params.PoolId = 1
+
 			provisionShellCommand := verification.NewShellCommand("provision", provisionCommand)
 			provisionSection := section.New(
 				"provision",
@@ -216,7 +220,6 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 				if err != nil {
 					return
 				}
-			// TODO: handle pool id/name (defaults to 0 which is ok for now)
 			case "nodes":
 				intVal, err := strconv.Atoi(fmt.Sprint(option))
 				if err != nil || intVal < 0 {
