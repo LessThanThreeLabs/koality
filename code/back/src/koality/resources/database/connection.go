@@ -90,28 +90,38 @@ func New() (*resources.Connection, error) {
 		Snapshots:     snapshotsHandler,
 		Closer:        database,
 	}
-	checkSettingsInitialized(connection)
+
+	if err = checkSettingsInitialized(connection); err != nil {
+		return nil, err
+	}
+
 	return connection, nil
 }
 
 func checkSettingsInitialized(connection *resources.Connection) error {
 	_, err := connection.Settings.Read.GetRepositoryKeyPair()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
-		connection.Settings.Update.ResetRepositoryKeyPair()
+		if _, err = connection.Settings.Update.ResetRepositoryKeyPair(); err != nil {
+			return err
+		}
 	} else if err != nil {
 		return err
 	}
 
 	_, err = connection.Settings.Read.GetCookieStoreKeys()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
-		connection.Settings.Update.ResetCookieStoreKeys()
+		if _, err = connection.Settings.Update.ResetCookieStoreKeys(); err != nil {
+			return err
+		}
 	} else if err != nil {
 		return err
 	}
 
 	_, err = connection.Settings.Read.GetApiKey()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
-		connection.Settings.Update.ResetApiKey()
+		if _, err = connection.Settings.Update.ResetApiKey(); err != nil {
+			return err
+		}
 	} else if err != nil {
 		return err
 	}
