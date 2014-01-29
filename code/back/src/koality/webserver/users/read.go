@@ -32,6 +32,8 @@ func (usersHandler *UsersHandler) Get(writer http.ResponseWriter, request *http.
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedUser)
 }
 
@@ -54,6 +56,8 @@ func (usersHandler *UsersHandler) GetAll(writer http.ResponseWriter, request *ht
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedUsers)
 }
 
@@ -77,5 +81,7 @@ func (usersHandler *UsersHandler) GetKeys(writer http.ResponseWriter, request *h
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedSshKeys)
 }

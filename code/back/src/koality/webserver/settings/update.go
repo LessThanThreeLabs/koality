@@ -21,6 +21,8 @@ func (settingsHandler *SettingsHandler) ResetApiKey(writer http.ResponseWriter, 
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedApiKey)
 }
 
@@ -39,6 +41,8 @@ func (settingsHandler *SettingsHandler) ResetRepositoryKeyPair(writer http.Respo
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
 }
 
@@ -60,5 +64,7 @@ func (settingsHandler *SettingsHandler) SetS3ExporterSettings(writer http.Respon
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedS3ExporterSettings)
 }

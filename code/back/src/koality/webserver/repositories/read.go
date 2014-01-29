@@ -31,6 +31,8 @@ func (repositoriesHandler *RepositoriesHandler) Get(writer http.ResponseWriter, 
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
 
@@ -53,5 +55,7 @@ func (repositoriesHandler *RepositoriesHandler) GetAll(writer http.ResponseWrite
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepositories)
 }

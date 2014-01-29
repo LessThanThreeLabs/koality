@@ -32,6 +32,8 @@ func (stagesHandler *StagesHandler) Get(writer http.ResponseWriter, request *htt
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStage)
 }
 
@@ -63,6 +65,8 @@ func (stagesHandler *StagesHandler) GetAll(writer http.ResponseWriter, request *
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStages)
 }
 
@@ -89,6 +93,8 @@ func (stagesHandler *StagesHandler) GetRun(writer http.ResponseWriter, request *
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStageRun)
 }
 
@@ -120,6 +126,8 @@ func (stagesHandler *StagesHandler) GetAllRuns(writer http.ResponseWriter, reque
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStageRuns)
 }
 
@@ -170,6 +178,8 @@ func (stagesHandler *StagesHandler) GetConsoleLines(writer http.ResponseWriter, 
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedConsoleLines)
 }
 
@@ -220,6 +230,8 @@ func (stagesHandler *StagesHandler) GetXunitResults(writer http.ResponseWriter, 
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedXunitResults)
 }
 
@@ -250,5 +262,7 @@ func (stagesHandler *StagesHandler) GetExports(writer http.ResponseWriter, reque
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedExports)
 }

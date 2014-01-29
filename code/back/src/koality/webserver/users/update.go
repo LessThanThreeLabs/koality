@@ -84,6 +84,8 @@ func (usersHandler *UsersHandler) AddKey(writer http.ResponseWriter, request *ht
 		fmt.Fprint(writer, err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "{id:%d}", keyId)
 }
 

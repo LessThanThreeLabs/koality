@@ -69,6 +69,8 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedVerification)
 }
 
@@ -103,5 +105,7 @@ func (verificationsHandler *VerificationsHandler) Retrigger(writer http.Response
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedVerification)
 }

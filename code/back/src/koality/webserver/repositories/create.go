@@ -41,6 +41,8 @@ func (repositoriesHandler *RepositoriesHandler) Create(writer http.ResponseWrite
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
 
@@ -89,5 +91,7 @@ func (repositoriesHandler *RepositoriesHandler) CreateWithGitHub(writer http.Res
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
