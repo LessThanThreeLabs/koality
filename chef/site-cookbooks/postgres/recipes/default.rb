@@ -26,8 +26,8 @@ cookbook_file "/etc/postgresql/#{node['postgres']['version']}/main/postgresql.co
 end
 
 service "postgresql" do
-	action 		[:enable, :start]
-	supports 	:status=>true, :restart=>true, :start => true, :stop => true, :reload=>true
+	action 		[:enable, :restart]
+	supports :status=>true, :restart=>true, :start=>true, :stop=>true, :reload=>true
 end
 
 execute "create-role" do

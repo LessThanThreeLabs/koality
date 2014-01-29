@@ -27,6 +27,6 @@ cookbook_file "/etc/nginx/nginx.conf" do
 end
 
 service "nginx" do
-	action [:enable, :start]
-	supports :status=>true, :restart=>true, :start => true, :stop => true, :reload=>true
+	action [:enable, :restart]
+	supports :status=>true, :restart=>true, :start=>true, :stop=>true, :reload=>true
 end
