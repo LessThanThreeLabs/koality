@@ -395,6 +395,7 @@ func (manager *Ec2VirtualMachineManager) getDefaultUserData(username string, key
 				shell.Append(shell.Commandf("echo %s", shell.Quote(sshConfigContents)), shell.Command(sshConfigPath), false),
 			),
 			shell.Commandf("chmod -R 0400 %s", sshDir),
+			shell.Commandf("chmod 0700 %s", sshDir),
 			shell.Commandf("chown -R %s:%s %s", username, username, sshDir),
 		)
 	}
