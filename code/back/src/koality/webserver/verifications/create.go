@@ -27,13 +27,20 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 		return
 	}
 
-	verificationsHandler.repositoryManager.StorePending(repository, ref)
 	headSha, headMessage, headUsername, headEmail, err := verificationsHandler.repositoryManager.GetCommitAttributes(repository, ref)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
+
+	if err = verificationsHandler.repositoryManager.StorePending(repository, headSha); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+
+	}
+
 	baseSha := headSha
 
 	changeset, err := verificationsHandler.resourcesConnection.Verifications.Read.GetChangesetFromShas(headSha, baseSha)
