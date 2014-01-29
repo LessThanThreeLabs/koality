@@ -12,6 +12,7 @@ import (
 	"koality/webserver/repositories"
 	"koality/webserver/settings"
 	"koality/webserver/stages"
+	"koality/webserver/templates"
 	"koality/webserver/users"
 	"koality/webserver/verifications"
 	"net/http"
@@ -51,7 +52,7 @@ func (webserver *Webserver) Start() error {
 		context.Set(request, "userId", uint64(1000))
 
 		if request.URL.Path == "/" {
-			fmt.Fprint(writer, "need to return templated index")
+			router.ServeHTTP(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/app") {
 			hasCsrfTokenWrapper(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/api") {
@@ -72,12 +73,11 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 	}
 
 	sessionStore := sessions.NewCookieStore(cookieStoreKeys.Authentication, cookieStoreKeys.Encryption)
-	// sessionStore.Options = &sessions.Options{
-	// 	Path:     "/",
-	// 	MaxAge:   2592000,
-	// 	HttpOnly: true,
-	// 	Secure:   true,
-	// }
+	sessionStore.Options = &sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+	}
 	return sessionStore, nil
 }
 
@@ -85,6 +85,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	router := mux.NewRouter()
 
 	passwordHasher, err := resources.NewPasswordHasher()
+	if err != nil {
+		return nil, err
+	}
+
+	templatesHandler, err := templates.New(webserver.resourcesConnection, sessionStore, webserver.sessionName)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +122,10 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	settingsHandler, err := settings.New(webserver.resourcesConnection)
 	if err != nil {
 		return nil, err
+	}
+
+	wireRootSubroutes := func() {
+		templatesHandler.WireRootSubroutes(router)
 	}
 
 	wireAppSubroutes := func() {
@@ -165,6 +174,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		settingsHandler.WireApiSubroutes(settingsSubrouter)
 	}
 
+	wireRootSubroutes()
 	wireAppSubroutes()
 	wireApiSubroutes()
 

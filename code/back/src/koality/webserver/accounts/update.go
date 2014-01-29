@@ -50,10 +50,10 @@ func (accountsHandler *AccountsHandler) Login(writer http.ResponseWriter, reques
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
 	session.Values["userId"] = user.Id
 	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   accountsHandler.getMaxSessionAge(rememberMe),
-		HttpOnly: true,
-		Secure:   true,
+		// Path:   "/",
+		MaxAge: accountsHandler.getMaxSessionAge(rememberMe),
+		// HttpOnly: true,
+		// Secure:   true,
 	}
 	session.Save(request, writer)
 
