@@ -34,14 +34,13 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 		return
 	}
 
+	baseSha := headSha
+
 	if err = verificationsHandler.repositoryManager.StorePending(repository, headSha); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
-
 	}
-
-	baseSha := headSha
 
 	changeset, err := verificationsHandler.resourcesConnection.Verifications.Read.GetChangesetFromShas(headSha, baseSha)
 	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
