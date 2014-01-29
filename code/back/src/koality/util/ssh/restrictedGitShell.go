@@ -1,17 +1,13 @@
 package ssh
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"koality/internalapi"
 	"koality/repositorymanager"
 	"koality/resources"
+	"koality/util/pathtranslator"
 	"koality/vm"
 	"net/rpc"
-	"path"
 	"strings"
 )
 
@@ -77,17 +73,6 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 		if err = shell.client.Call("UserInfoReader.GetRepoPrivateKey", &emptyInput, &privateKey); err != nil {
 			return
 		}
-		hash := sha1.New()
-		_, err = io.WriteString(hash, privateKey)
-		if err != nil {
-			return
-		}
-
-		privateKeyPath := path.Join("/tmp", hex.EncodeToString(hash.Sum(nil)))
-		err = ioutil.WriteFile(privateKeyPath, []byte(privateKey), 0600)
-		if err != nil {
-			return
-		}
 
 		<-repoCall.Done
 		if err = checkRepoCallError(repoCall); err != nil {
@@ -97,8 +82,14 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 		remoteUriParts := strings.Split(repository.RemoteUri, ":")
 		uri := remoteUriParts[0]
 		path := remoteUriParts[1]
-		command.Argv = []string{"ssh", "-oStrictHostKeyChecking=no",
-			"-i", privateKeyPath, uri, "git-upload-pack " + path}
+		var sshwrapperPath string
+		sshwrapperPath, err = pathtranslator.TranslatePath(pathtranslator.BinaryPath("sshwrapper"))
+		if err != nil {
+			return
+		}
+
+		command.Argv = []string{sshwrapperPath, uri, "git-upload-pack " + path}
+		command.Envv = []string{"PRIVATE_KEY=" + privateKey}
 		// case "git-show":
 		// 	show_ref_file := shell.command[2]
 		// 	command = []string{"sh", "-c",
