@@ -1,5 +1,7 @@
 --- #Koality: 1337
 pool: v1
+languages:
+  ruby: 1.9
 setup:
 - scripts:
   #  pull down missing submodules
