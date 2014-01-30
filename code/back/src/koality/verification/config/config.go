@@ -37,7 +37,7 @@ const defaultTimeout = 600
 
 var environmentVariableNameRegexp = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
-func ParseRemoteCommands(config interface{}, advertised bool) (commands []verification.Command, err error) {
+func ParseRemoteCommands(config interface{}, advertised bool, directory string) (commands []verification.Command, err error) {
 	scripts, ok := config.([]interface{})
 	if !ok {
 		err = BadConfigurationError{"The scripts subsection should always be a list of either strings or parameter maps."}
@@ -47,7 +47,7 @@ func ParseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 	for _, script := range scripts {
 		switch script.(type) {
 		case string:
-			commands = append(commands, remotecommand.NewRemoteCommand(advertised, script.(string), defaultTimeout, nil, []string{script.(string)}))
+			commands = append(commands, remotecommand.NewRemoteCommand(advertised, directory, script.(string), defaultTimeout, nil, []string{script.(string)}))
 		case map[interface{}]interface{}:
 			script := script.(map[interface{}]interface{})
 			for name, parameters := range script {
@@ -110,7 +110,7 @@ func ParseRemoteCommands(config interface{}, advertised bool) (commands []verifi
 					command = name
 				}
 
-				commands = append(commands, remotecommand.NewRemoteCommand(advertised, name, timeout, xunitPaths, []string{command}))
+				commands = append(commands, remotecommand.NewRemoteCommand(advertised, directory, name, timeout, xunitPaths, []string{command}))
 			}
 		default:
 			return commands, BadConfigurationError{"The script subsection should contain a list of shell scripts or a map from script names to script parameters."}
@@ -128,7 +128,7 @@ func parseBool(option interface{}) (val bool, err error) {
 	return
 }
 
-func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err error) {
+func FromYaml(yamlContents, directory string) (verificationConfig VerificationConfig, err error) {
 	var parsedConfig interface{}
 
 	err = goyaml.Unmarshal([]byte(yamlContents), &parsedConfig)
@@ -158,9 +158,6 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 
 			verificationConfig.Params = params
 
-			// TODO(akostov): handle pool id/name (defaults to 1, should be default pool)
-			params.PoolId = 1
-
 			provisionShellCommand := verification.NewShellCommand("provision", provisionCommand)
 			provisionSection := section.New(
 				"provision",
@@ -175,14 +172,14 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 			provisionShellCommand = provisionShellCommand
 			verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
 		case "sections":
-			sections, err := parseSections(config, false)
+			sections, err := parseSections(config, directory, false)
 			if err != nil {
 				return verificationConfig, err
 			}
 
 			verificationConfig.Sections = append(verificationConfig.Sections, sections...)
 		case "final":
-			finalSections, err := parseSections(config, true)
+			finalSections, err := parseSections(config, directory, true)
 			if err != nil {
 				return verificationConfig, err
 			}
@@ -198,6 +195,9 @@ func FromYaml(yamlContents string) (verificationConfig VerificationConfig, err e
 }
 
 func convertParameters(config interface{}) (provisionCommand shell.Command, params Params, err error) {
+	// TODO(akostov): handle pool id/name defaults to 1, should be default pool
+	params.PoolId = 1
+
 	switch config.(type) {
 	case map[interface{}]interface{}:
 		config := config.(map[interface{}]interface{})
@@ -287,7 +287,7 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 	return
 }
 
-func parseSections(config interface{}, final bool) (sections []section.Section, err error) {
+func parseSections(config interface{}, directory string, final bool) (sections []section.Section, err error) {
 	parsedSections, ok := config.([]interface{})
 	if !ok {
 		err = BadConfigurationError{"Sections should contain a list of sections"}
@@ -295,7 +295,7 @@ func parseSections(config interface{}, final bool) (sections []section.Section, 
 	}
 
 	for _, section := range parsedSections {
-		section, err := parseSection(section, final)
+		section, err := parseSection(section, directory, final)
 		if err != nil {
 			return sections, err
 		}
@@ -305,7 +305,7 @@ func parseSections(config interface{}, final bool) (sections []section.Section, 
 	return
 }
 
-func parseSection(config interface{}, final bool) (newSection section.Section, err error) {
+func parseSection(config interface{}, directory string, final bool) (newSection section.Section, err error) {
 	var (
 		name, runOn, failOn string
 		continueOnFailure   bool
@@ -336,7 +336,7 @@ func parseSection(config interface{}, final bool) (newSection section.Section, e
 	for subsection, content := range sectionMap {
 		switch subsection {
 		case "scripts":
-			commands, err := ParseRemoteCommands(content, true)
+			commands, err := ParseRemoteCommands(content, true, directory)
 			if err != nil {
 				return newSection, err
 			}
@@ -348,7 +348,7 @@ func parseSection(config interface{}, final bool) (newSection section.Section, e
 
 			regularCommands = commandgroup.New(commands)
 		case "factories":
-			commands, err := ParseRemoteCommands(content, false)
+			commands, err := ParseRemoteCommands(content, false, directory)
 			if err != nil {
 				return newSection, err
 			}

@@ -105,8 +105,8 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		defer virtualMachine.Terminate()
 
 		stageRunner := stagerunner.New(
-                  verificationRunner.resourcesConnection, virtualMachine, currentVerification,
-                  new(stagerunner.S3Exporter))
+			verificationRunner.resourcesConnection, virtualMachine, currentVerification,
+			new(stagerunner.S3Exporter))
 		defer close(stageRunner.ResultsChan)
 
 		newStageRunnersChan <- stageRunner
@@ -224,7 +224,7 @@ func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerif
 		return emptyConfig, err
 	}
 
-	verificationConfig, err := config.FromYaml(configYaml)
+	verificationConfig, err := config.FromYaml(configYaml, repository.Name)
 	if err != nil {
 		return emptyConfig, err
 	}
