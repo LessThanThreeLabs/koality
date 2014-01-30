@@ -1,0 +1,46 @@
+<div id="login">
+
+	<panel id="defaultLoginPanel" ng-show="loginConfig.type == 'default'">
+		<panel-header>
+			<div class="left">Login</div>
+			<div class="right">
+				<a ng-click="loginConfig.type = 'google'" ng-show="loginConfig.defaultType == 'google'">Google Login</a>
+			</div>
+		</panel-header>
+
+		<panel-body no-scroll>
+			<form name="loginForm" novalidate>
+				<input ng-model="account.email" name="email" type="email" placeholder="Email" autocomplete="on" focused required>
+				<input ng-model="account.password" name="password" type="password" placeholder="Password" auto-fillable-field required>
+				<busy-button full-width busy="makingRequest" click="login()" disabled="loginForm.$invalid">Log In</busy-button>
+
+				<table>
+					<tr>
+						<td><input ng-model="account.rememberMe" ng-true-value="yes" ng-false-value="no" name="rememberMe" type="checkbox"></td>
+						<td>Stay Logged In</td>
+						<td><a href="/resetPassword">Forgot your password?</a></td>
+					</tr>
+				</table>
+			</form>
+		</panel-body>
+	</panel>
+
+	<panel id="googleLoginPanel" ng-show="loginConfig.type == 'google'">
+		<panel-header>
+			<div class="left">Login</div>
+			<div class="right">
+				<a ng-click="loginConfig.type = 'default'">Manual Login</a>
+			</div>
+		</panel-header>
+
+		<panel-body no-scroll>
+			<busy-button full-width busy="makingRequest" click="googleLogin()">Login with Google</busy-button>
+
+			<input ng-model="account.rememberMe" ng-true-value="yes" ng-false-value="no" name="rememberMe" type="checkbox"><span>Stay Logged In</span>
+		</panel-body>
+	</panel>
+
+	<div id="createAccountLink">
+		Don't have an account? <a href="/create/account">Create one here</a>
+	</div>
+</div>

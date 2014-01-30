@@ -1,0 +1,78 @@
+@import '../constants';
+
+.triangle {
+	@triangleSize: 6px;
+
+	display: inline-block;
+	width: 0;
+	height: 0;
+
+	&.right {
+		margin-right: 11px;
+		border-top: @triangleSize solid transparent;
+		border-bottom: @triangleSize solid transparent;
+		border-left: @triangleSize solid @koalityGreen;
+
+		&.white {
+			border-left: @triangleSize solid @koalityWhite;
+		}
+
+		&.green {
+			border-left: @triangleSize solid @koalityGreen;
+		}
+
+		&.red {
+			border-left: @triangleSize solid @koalityRed;
+		}
+
+		&.gray {
+			border-left: @triangleSize solid @koalityGray;
+		}
+	}
+
+	&.up {
+		margin-right: 5px;
+		border-left: @triangleSize solid transparent;
+		border-right: @triangleSize solid transparent;
+		border-bottom: @triangleSize solid @koalityGreen;
+
+		&.white {
+			border-bottom: @triangleSize solid @koalityWhite;
+		}
+
+		&.green {
+			border-bottom: @triangleSize solid @koalityGreen;
+		}
+
+		&.red {
+			border-bottom: @triangleSize solid @koalityRed;
+		}
+
+		&.gray {
+			border-bottom: @triangleSize solid @koalityGray;
+		}
+	}
+
+	&.down {
+		margin-right: 5px;
+		border-top: @triangleSize solid @koalityGreen;
+		border-left: @triangleSize solid transparent;
+		border-right: @triangleSize solid transparent;
+
+		&.white {
+			border-top: @triangleSize solid @koalityWhite;
+		}
+
+		&.green {
+			border-top: @triangleSize solid @koalityGreen;
+		}
+
+		&.red {
+			border-top: @triangleSize solid @koalityRed;
+		}
+
+		&.gray {
+			border-top: @triangleSize solid @koalityGray;
+		}
+	}
+}

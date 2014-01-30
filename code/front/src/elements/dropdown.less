@@ -1,0 +1,140 @@
+@import '../constants';
+
+
+.dropdownContainer {
+	cursor: hand;
+	cursor: pointer;
+	display: inline-block;
+	position: relative;
+	height: 100%;
+	vertical-align: top;
+
+	&:hover {
+		background-color: @koalityDarkGray;
+
+		.dropdownOptions { display: block; }
+
+		&.dropdownLight {
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+		}
+	}
+
+	.dropdownOptions {
+		cursor: default;
+		display: none;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		min-width: 100%;
+		max-height: 595px;
+		z-index: 9001;
+		overflow-x: hidden;
+		overflow-y: auto;
+		text-align: left;
+
+		// used in dropdown directive
+		&.temporaryHide {
+			display: none !important;
+		}
+
+		a.dropdownOption {
+			@dropdownHeight: 40px;
+
+			display: block;
+			margin: 0;
+			padding: 0 20px 0 20px;
+			height: @dropdownHeight;
+			line-height: @dropdownHeight;
+			white-space: nowrap;
+			color: @koalityGreen;
+			background-color: @koalityDarkGray;
+			border-top: 1px solid @platformBackground;
+
+			&.disabled { color: @koalityWhite !important; }
+
+			&:last-child { 
+				border-bottom-left-radius: @borderRadius;
+				border-bottom-right-radius: @borderRadius;
+			}
+
+			&:link, &:visited, &:hover, &:active { text-decoration: none; }
+
+			&:hover {
+				background-color: @koalityGray;
+			}
+
+			&:active {
+				color: @koalityWhite;
+				background-color: @koalityGreen;
+			}
+		}
+	}
+
+	&.dropdownLeft {
+		.dropdownOptions {
+			left: 0;
+			right: auto;
+		}
+
+		&.dropdownLight {
+			a.dropdownOption:first-child {
+				border-top-left-radius: 0;
+				border-top-right-radius: @borderRadius;
+			}
+		}
+	}
+
+	&.dropdownRight {
+		.dropdownOptions {
+			left: auto;
+			right: 0;
+		}
+
+		&.dropdownLight {
+			a.dropdownOption:first-child {
+				border-top-left-radius: @borderRadius;
+				border-top-right-radius: 0;
+			}
+		}
+	}
+
+	&.dropdownLight {
+		padding: 5px 10px 5px 10px;
+		height: auto;
+		font-size: 15px;
+		font-weight: 500;
+		line-height: normal;
+		background-color: @platformBackground;
+		border-radius: @borderRadius;
+		vertical-align: baseline;
+
+		.dropdownOptions {
+			min-width: 110%;
+
+			a.dropdownOption {
+				color: @koalityGray;
+				font-size: 14px;
+				font-weight: 500;
+				border-top-width: 0;
+				background-color: @platformBackground;
+
+				&.disabled { color: @koalityWhite !important; }
+
+				&:first-child {
+					border-top-left-radius: @borderRadius;
+				}
+
+				&:hover {
+					color: @koalityLightGray;
+					background-color: @platformBackground;
+				}
+
+				&:active {
+					color: @koalityLightGray;
+					background-color: @platformBackground;
+				}			
+			}
+		}
+	}
+}

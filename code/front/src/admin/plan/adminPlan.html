@@ -1,0 +1,30 @@
+<div id="adminPlan" ng-controller="AdminPlan">
+	<panel-header>Plan</panel-header>
+
+	<panel-body no-scroll>
+		<form name="updateForm" novalidate>
+			<div class="formContainer centered">
+				<div id="licenseKey">
+					<label>License Key</label>
+					<div>{{license.key}}</div>
+				</div>
+
+				<div id="planType">
+					<label>Plan Type</label>
+					<div>{{license.type}}</div>
+				</div>
+
+				<div id="numUsers">
+					<label>User Count</label>
+					<div>{{license.numUsers}}</div>
+				</div>
+			</div>
+
+			<div class="bottomContanier">
+				<div class="formDivider"></div>
+
+				<div>Login to <a href="https://koalitycode.com/account">KoalityCode.com</a> to edit your plan</div>
+			</div>
+		</form>
+	</panel-body>
+</div>

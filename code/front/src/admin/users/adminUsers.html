@@ -1,0 +1,86 @@
+<div id="adminUsers" ng-controller="AdminUsers">
+	<panel-header>
+		<div class="left">
+			Users
+		</div>
+		<div class="right">
+			<button ng-click="toggleDrawer('addUsers')">Add New Users</button>
+		</div>
+	</panel-header>
+
+	<panel-body no-padding open-drawer="currentlyOpenDrawer">
+		<panel-drawer drawer-name="addUsers">
+			<form id="addUsersForm" name="addUsersForm" novalidate>
+				<table id="addUsersTable">
+					<tr>
+						<td id="addUsersLinkColumn">
+							<label>Link to Send New Users</label>
+							<div ng-show="addUsers.domainName != null">
+								<a ng-href="https://{{addUsers.domainName}}/create/account">{{addUsers.domainName}}/create/account</a>
+							</div>
+						</td>
+						<td id="addUsersLoginTypeColumn">
+							<label>Users Login With</label>
+							<select ng-model="addUsers.newConnectionType" required>
+								<option value="default">Default</option>
+								<option value="google">Google OAuth</option>
+							</select>
+						</td>
+						<td id="addUsersDomainsColumn">
+							<label>Authorized Email Domains &nbsp;<a href="https://koalitycode.com/documentation?view=adminUsers">[?]</a></label>
+							<input type="text" ng-model="addUsers.newEmailDomains" name="emailDomains" ng-maxlength="256">
+						</td>
+						<td id="addUsersSaveColumn">
+							<busy-button busy="addUsers.makingRequest" click="saveAddUsersConfig()" disabled="addUsersForm.$invalid">Save</busy-button>
+						</td>
+						<td id="addUsersCancelColumn">
+							<a ng-click="clearAddUserConfig()" ng-show="!addUsers.makingRequest">Cancel</a>
+						</td>
+					</tr>
+				</table>
+			</form>
+		</panel-drawer>
+
+		<div id="usersList" fading-content>
+			<table class="delineated">
+				<tr>
+					<th class="nameColumn sortableColumn unselectable" ng-click="orderByPredicate = 'lastName'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'lastName', up: orderByPredicate == 'lastName' && !orderByReverse, down: orderByPredicate == 'lastName' && orderByReverse}"></div>
+						Name
+					</th>
+					<th class="emailColumn sortableColumn unselectable" ng-click="orderByPredicate = 'email'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'email', up: orderByPredicate == 'email' && !orderByReverse, down: orderByPredicate == 'email' && orderByReverse}"></div>
+						Email
+					</th>
+					<th class="privilegesColumn sortableColumn unselectable" ng-click="orderByPredicate = 'privilege'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'privilege', up: orderByPredicate == 'privilege' && !orderByReverse, down: orderByPredicate == 'privilege' && orderByReverse}"></div>
+						Privileges
+					</th>
+					<th class="editColumn unselectable">Actions</th>
+				</tr>
+
+				<tr ng-repeat="user in users | orderBy:orderByPredicate:orderByReverse" ng-class="{editing: user.id == currentlyEditingUserId}">
+					<td class="nameColumn">
+						{{user.firstName}} {{user.lastName}}
+					</td>
+					<td class="emailColumn">
+						<a href="mailto:{{user.email}}?subject=Koality" target="_blank" ng-class="{disabled: user.id == currentlyEditingUserId}">{{user.email}}</a>
+					</td>
+					<td class="privilegesColumn">
+						<span ng-show="user.id != currentlyEditingUserId">{{user.privilege}}</span>
+						<select ng-model="user.newPrivilege" ng-show="user.id == currentlyEditingUserId">
+							<option value="Admin">Admin</option>
+							<option value="User">User</option>
+						</select>
+					</td>
+					<td class="editColumn">
+						<a ng-click="editUser(user)" ng-show="user.id != userId && user.id != currentlyEditingUserId">Edit</a>
+						<a ng-click="saveUser(user)" ng-show="user.id == currentlyEditingUserId">Save</a>
+						<a class="red" ng-click="deleteUser(user)" ng-show="user.id == currentlyEditingUserId">Delete</a>
+						<a class="gray" ng-click="editUser(null)" ng-show="user.id == currentlyEditingUserId">Cancel</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</panel-body>
+</div>

@@ -1,0 +1,67 @@
+@import '../constants';
+
+
+.fadingContentContainer {
+	@bufferHeight: 35px;
+	@scrollbarHideWidth: 50px;
+
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+
+	.fadingContentTopBuffer, .fadingContentBottomBuffer {
+		pointer-events: none;
+	}
+
+	.fadingContentTopBuffer {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 2;
+		height: @bufferHeight;
+
+		background: linear-gradient(to bottom, fade(@panelBackground, 100%) 0%, fade(@panelBackground, 0%) 100%);
+		background: -moz-linear-gradient(top, fade(@panelBackground, 100%) 0%, fade(@panelBackground, 0%) 100%);
+		background: -webkit-linear-gradient(top, fade(@panelBackground, 100%) 0%, fade(@panelBackground, 0%) 100%);
+		background: -o-linear-gradient(top, fade(@panelBackground, 100%) 0%, fade(@panelBackground, 0%) 100%);
+		background: -ms-linear-gradient(top, fade(@panelBackground, 100%) 0%, fade(@panelBackground, 0%) 100%);
+	}
+
+	.fadingContentScrollWrapper {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: -@scrollbarHideWidth;
+		bottom: 0;
+		z-index: 1;
+		overflow-x: hidden;
+		overflow-y: auto;
+
+		.fadingContent {
+			position: relative;
+			padding-top: @bufferHeight;
+			padding-bottom: @bufferHeight;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			// width dynamically set in directive
+		}
+	}
+
+	.fadingContentBottomBuffer {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		right: 0;
+		z-index: 2;
+		height: @bufferHeight;
+
+		background: linear-gradient(to bottom, fade(@panelBackground, 0%) 0%, fade(@panelBackground, 100%) 100%);
+		background: -moz-linear-gradient(top, fade(@panelBackground, 0%) 0%, fade(@panelBackground, 100%) 100%);
+		background: -webkit-linear-gradient(top, fade(@panelBackground, 0%) 0%, fade(@panelBackground, 100%) 100%);
+		background: -o-linear-gradient(top, fade(@panelBackground, 0%) 0%, fade(@panelBackground, 100%) 100%);
+		background: -ms-linear-gradient(top, fade(@panelBackground, 0%) 0%, fade(@panelBackground, 100%) 100%);
+	}
+}

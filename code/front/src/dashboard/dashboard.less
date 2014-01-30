@@ -1,0 +1,167 @@
+@import '../constants';
+
+
+#dashboard {
+	position: absolute;
+	top: 20px;
+	left: 0;
+	right: 0;
+	bottom: 25px;
+
+	#search {
+		margin-top: 8px;
+		line-height: normal;
+
+		&.searchOn {
+			#searchQuery { width: 150px; }
+		}
+
+		#searchAll,
+		#searchMe,
+		#searchQuery {
+			@colorTransitionTime: 0.25s;
+			@backgroundColorTransitionTime: 0.25s;
+			@widthTransitionTime: 0.25s;
+
+			transition: color @colorTransitionTime ease-in-out,
+				background-color @backgroundColorTransitionTime ease-in-out,
+				width @widthTransitionTime ease-in-out;
+			-moz-transition: color @colorTransitionTime ease-in-out,
+				background-color @backgroundColorTransitionTime ease-in-out,
+				width @widthTransitionTime ease-in-out;
+			-webkit-transition: color @colorTransitionTime ease-in-out,
+				background-color @backgroundColorTransitionTime ease-in-out,
+				width @widthTransitionTime ease-in-out;
+			-o-transition: color @colorTransitionTime ease-in-out,
+				background-color @backgroundColorTransitionTime ease-in-out,
+				width @widthTransitionTime ease-in-out;
+
+			cursor: hand;
+			cursor: pointer;
+			display: inline-block;
+			padding: 10px 20px 10px 20px;
+			color: #a9a9a9;
+			font-size: 12px;
+			font-weight: 900;
+			text-align: center;
+			background-color: @platformBackground;
+			vertical-align: middle;
+			border-radius: @borderRadius;
+
+			&:hover {
+				color: @platformBackground;
+				background-color: @koalityWhite;
+			}
+
+			&.selected {
+				color: @platformBackground;
+				background-color: @koalityWhite;
+			}
+		}
+
+		#searchQuery {
+			width: 60px;
+			padding: 10px 0 10px 0;
+
+			#searchImageAndInputContainer {
+				@leftPadding: 8px;
+				@imageWidth: 12px;
+
+				position: relative;
+				width: 100%;
+				height: 15px;
+				text-align: left;
+
+				img {
+					margin-top: 1px;
+					padding-left: @leftPadding;
+					width: @imageWidth;
+					vertical-align: top;
+				}
+
+				input {
+					position: absolute;
+					top: 0;
+					left: @imageWidth + @leftPadding + 3;
+					right: 0;
+					bottom: 0;
+					margin: 0;
+					padding: 0;
+					width: auto;
+					height: auto;
+					border: none;
+					background-color: rgba(0, 0, 0, 0.0);
+
+					&:focus {
+						outline: none;
+					}
+				}
+			}
+		}
+	}
+
+	table {
+		width: 100%;
+		table-layout: fixed;
+
+		.statusColumn {
+			padding-left: 30px;
+			width: 100px;
+		}
+
+		.repositoryColumn {
+			width: 140px;
+		}
+
+		.branchColumn {
+			width: 120px;
+		}
+
+		.changeColumn {
+			width: 125px;
+		}
+
+		.commitMessageColumn {
+
+		}
+
+		.userColumn {
+			width: 180px;
+		}
+
+		.timeColumn {
+			width: 150px;
+		}
+
+		.retrievingMoreColumn {
+			@keyframes dashboardRetrievingMoreFadeIn {
+				0% { opacity: 0.0; }
+				50% { opacity: 0.0; }
+				100% { opacity: 1.0; }
+			}
+
+			@-webkit-keyframes dashboardRetrievingMoreFadeIn {
+				0% { opacity: 0.0; }
+				50% { opacity: 0.0; }
+				100% { opacity: 1.0; }
+			}
+
+			animation: dashboardRetrievingMoreFadeIn 1s linear;
+			-webkit-animation: dashboardRetrievingMoreFadeIn 1s linear;
+
+			.retrievingMoreMessage {
+				margin: 0 auto;
+				width: 190px;
+
+				#retrievingMoreSpinner {
+					float: left;
+					margin-top: 7px;
+				}
+
+				span {
+					float: right;
+				}
+			}
+		}
+	}
+}

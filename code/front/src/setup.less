@@ -1,0 +1,362 @@
+@import 'constants';
+
+body {
+	margin: 0px;
+	padding: 0px;
+	background-color: @platformBackground;
+	color: @koalityWhite;
+	font-family: 'Din', sans-serif;
+	font-weight: 500;
+	font-size: @baseFont;
+
+	a {
+		cursor: hand;
+		cursor: pointer;
+		color: @koalityGreen;
+
+		&.gray { color: @koalityGray !important; }
+		&.red { color: @koalityRed !important; }
+		&.orange { color: @koalityOrange !important; }
+
+		&:link { text-decoration: none; }
+		&:visited { text-decoration: none; }
+		&:hover { text-decoration: underline; }
+		&:active { text-decoration: underline; }
+
+		&.disabled {
+			cursor: default;
+			pointer-events: none;
+			color: @koalityGray !important;
+		}
+	}
+
+	strong {
+		font-weight: 500;
+	}
+
+	pre {
+		font-family: 'Din', sans-serif;
+	}
+
+	label {
+		display: block;
+		padding-bottom: 8px;
+		font-size: 12px;
+		font-weight: 500;
+		color: #929497;
+		text-transform: uppercase;
+
+		&.red {
+			color: @koalityRed;
+		}
+
+		.sublabel {
+			display: inline-block;
+			float: right;
+			font-weight: 300;
+			text-transform: none;
+		}
+	}
+
+	input,
+	select,
+	textarea {
+		margin: 0 0 15px 0;
+		padding: 6px;
+		width: 100%;
+		box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		font-family: inherit;
+		font-weight: 300;
+		border: 1px solid @koalityLightGray;
+		border-radius: @borderRadius;
+
+		&:focus {
+			box-shadow: none;
+			outline: none;
+		}
+
+		&.disabled {
+			background-color: @koalityGray;
+		}
+	}
+
+	input[type="checkbox"] {
+		width: auto;
+		margin-right: 5px;
+	}
+
+	input[type="text"],
+	input[type="email"],
+	input[type="password"],
+	input[type="checkbox"] {
+		font-size: 1.0em;
+		
+		&:focus {
+			box-shadow: none;
+			outline: none;
+		}
+	}
+
+	select {
+		height: 30px;
+		font-size: 1.2em;
+	}
+
+	textarea {
+		box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		height: 80px;
+		font-size: 1.0em;
+		resize: none;
+	}
+
+	button {
+		display: inline-block;
+		margin: 0;
+		padding: 10px 18px;
+		color: @koalityWhite;
+		font-size: @baseFont;
+		line-height: normal;
+		font-weight: 300;
+		min-width: 100px;
+
+		background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(@koalityDarkGreen), to(@koalityGreen)); /* Safari 4-5, Chrome 1-9 */
+		background: -webkit-linear-gradient(top, @koalityGreen, @koalityDarkGreen); /* Safari 5.1, Chrome 10+ */
+		background: -moz-linear-gradient(top, @koalityGreen, @koalityDarkGreen); /* Firefox 3.6+ */
+		background: -ms-linear-gradient(top, @koalityGreen, @koalityDarkGreen); /* IE 10 */
+		background: -o-linear-gradient(top, @koalityGreen, @koalityDarkGreen); /* Opera 11.10+ */
+
+		border: 1px solid @koalityDarkGreen;
+		border-radius: @borderRadius;
+
+		&.red {
+			background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(@koalityDarkRed), to(@koalityRed)); /* Safari 4-5, Chrome 1-9 */
+			background: -webkit-linear-gradient(top, @koalityRed, @koalityDarkRed); /* Safari 5.1, Chrome 10+ */
+			background: -moz-linear-gradient(top, @koalityRed, @koalityDarkRed); /* Firefox 3.6+ */
+			background: -ms-linear-gradient(top, @koalityRed, @koalityDarkRed); /* IE 10 */
+			background: -o-linear-gradient(top, @koalityRed, @koalityDarkRed); /* Opera 11.10+ */
+
+			border: 1px solid @koalityDarkRed;
+
+			&:hover {
+				cursor: hand;
+				cursor: pointer;
+				color: @koalityWhite;
+				background: @koalityRed;
+			}
+
+			&:disabled {
+				// NEEDS TO BE IMPLEMENTED
+			}
+		}
+
+		&.centered {
+			display: block;
+			margin: 0 auto;
+		}
+
+		&.fullWidth {
+			width: 100%;
+		}
+
+		&:hover {
+			cursor: hand;
+			cursor: pointer;
+			color: @koalityWhite;
+			background: @koalityGreen;
+		}
+
+		&:active {
+			position:relative;
+			top: 1px;
+		}
+
+		&:disabled {
+			background-color: red;
+			border: 1px solid #bbbdbf;
+  			background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#929497), to(#f1f1f2)); /* Safari 4-5, Chrome 1-9 */
+  			background: -webkit-linear-gradient(top, #f1f1f2, #929497); /* Safari 5.1, Chrome 10+ */
+			background: -moz-linear-gradient(top, #f1f1f2, #929497); /* Firefox 3.6+ */
+			background: -ms-linear-gradient(top, #f1f1f2, #929497); /* IE 10 */
+			background: -o-linear-gradient(top, #f1f1f2, #929497); /* Opera 11.10+ */
+			cursor: pointer;
+			color: #4e4e50;
+
+			&:active {
+				top: 0px;
+			}
+		}
+	}
+
+	form {
+		.formContainer {
+			display: inline-block;
+			margin: 0 15px;
+			padding: 30px;
+			width: 350px;
+			vertical-align: top;
+			background-color: @platformBackground;
+			border-radius: @borderRadius;
+
+			&.centered {
+				display: block;
+				margin: 0 auto;
+			}
+		}
+
+		.formDivider {
+			margin: 40px 0 25px 0;
+			width: 100%;
+			height: 0;
+			border-top: 1px solid @platformBackground;
+			border-bottom: 1px solid @koalityDarkGray;
+		}
+
+		.bottomContanier {
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			margin-bottom: 30px;
+			text-align: center;
+		}
+	}
+
+	table {
+		border-spacing: 0;
+		border-collapse: collapse;
+
+		td, th {
+			padding: 5px 0 5px 0;
+			vertical-align: top;
+		}
+
+		th {
+			padding-right: 30px;
+			color: @koalityGray;
+			font-weight: 300;
+			text-align: left;
+		}
+
+		&.delineated {
+			border-collapse: separate;
+
+			tbody, tr, th, td {
+				&.gray { color: @koalityGray; }
+				&.green { color: @koalityGreen; }
+				&.orange { color: @koalityOrange; }
+				&.red { color: @koalityRed; }
+			}
+
+			th, td {
+				overflow: hidden;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				border-top: 1px solid @koalityDarkGray;
+				border-bottom: 1px solid @platformBackground;
+			}
+
+			th {
+				padding: 0 0 16px 0;
+				text-transform: uppercase;
+
+				&.sortableColumn {
+					cursor: hand;
+					cursor: pointer;
+				}
+			}
+
+			td {
+				padding: 16px 16px 16px 0;
+			}
+
+			tr {
+				&.editing {
+					td { background-color: darken(@panelBackground, 3%); }
+
+					&:hover {
+						td { background-color: darken(@panelBackground, 3%); }
+					}
+				}
+
+				&.combineWithNext {
+					th, td { border-bottom-width: 0; }
+				}
+
+				&.combineWithPrevious {
+					th, td { border-top-width: 0; }
+				}
+
+				&:first-child {
+					th, td { border-top-width: 0; }
+				}
+
+				&:last-child { 
+					th, td { border-bottom-width: 0; }
+				}
+
+				&:hover {
+					td { background-color: @koalityDarkGray; }
+				}
+			}
+
+			// Until Angular supports ng-repeat across multiple
+			// DOM elements, we have to use <tbody>...
+			// THIS WILL BE AVAILABLE IN ANGULAR 1.2.0
+			&.tbodyHack {
+				tr {
+					&:first-child {
+						th, td { border-top-width: 1px; }
+					}
+
+					&:last-child { 
+						th, td { border-bottom-width: 1px; }
+					}
+				}
+
+				tbody:first-child {
+					tr:first-child {
+						th, td { border-top-width: 0; }
+					}
+				}
+
+				tbody:last-child {
+					tr {
+						th, td { border-bottom-width: 0; }
+					}
+				}
+
+				tbody:hover {
+					td { background-color: @koalityDarkGray; }
+				}
+			}
+		}
+	}
+}
+
+.unselectable {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.textSelectable {
+	-webkit-touch-callout: default;
+	-webkit-user-select: text;
+	-khtml-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+}
+
+.growingCentered {
+	margin-left: auto;
+	margin-right: auto;
+	min-width: @contentMinWidth;
+	width: @contentWidth;
+	max-width: @contentMaxWidth;
+}

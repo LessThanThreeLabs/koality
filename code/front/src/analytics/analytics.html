@@ -1,0 +1,42 @@
+<div id="analytics">
+	<panel>
+		<panel-header>Analytics</panel-header>
+		<panel-body no-scroll>
+			<div id="analyticsOptions">
+				<div class="analyticsOptionTitle">Graph</div>
+				<select ng-model="options.graph" ng-options="graph as graph.title for graph in allowedGraphs"></select>
+
+				<div class="analyticsOptionTitle">Repository</div>
+				<select ng-model="options.repository" ng-options="repository as repository.name for repository in options.repositories"></select>
+
+				<div class="analyticsOptionTitle">Duration</div>
+				<select ng-model="options.duration" ng-options="duration as duration.title for duration in allowedDurations"></select>
+
+				<div class="analyticsOptionTitle">Interval</div>
+				<select ng-model="options.interval" ng-options="interval as interval.title for interval in options.intervals"></select>
+			</div>
+
+			<div id="analyticsVisual">
+				<div id="analyticsVisualHeader">
+					<div id="headerGraphAndRepository">
+						{{options.graph.title}}<span class="weakHeaderText"> of </span>{{options.repository.name}}
+					</div>
+					<div id="headerDuration">
+						<span ng-show="options.duration.value == 'last365'">
+							<span class="weakHeaderText">Duration: </span>{{graphOptions.start | date:'MM/dd/yyyy'}}<span class="weakHeaderText"> to </span>{{graphOptions.end | date:'MM/dd/yyyy'}}</span>
+						</span>
+						<span ng-show="options.duration.value != 'last365'">
+							<span class="weakHeaderText">Duration: </span>{{graphOptions.start | date:'EEE MM/dd'}}
+							<span ng-show="options.duration.value != 'today'"><span class="weakHeaderText"> to </span>{{graphOptions.end | date:'EEE MM/dd'}}</span>
+						</span>
+					</div>
+					<div id="headerInterval">
+						<span class="weakHeaderText">Interval: </span>{{options.interval.title}}
+					</div>
+				</div>
+
+				<change-analytics id="analyticsVisualGraph" changes="graphOptions.changes" graph-type="graphOptions.graphType" start-time="graphOptions.start" end-time="graphOptions.end" interval="graphOptions.interval"></change-analytics>
+			</div>
+		</panel-body>
+	</panel>
+</div>

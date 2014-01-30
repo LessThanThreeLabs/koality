@@ -1,0 +1,191 @@
+@import '../constants';
+
+
+.panel {
+	@optionsHeight: 40px;
+	@headerHeight: 50px;
+	@footerHeight: 8px;
+	
+	position: relative;
+	min-width: 100px;
+	width: 100%;
+	min-height: 200px;
+	height: 100%;
+	overflow: hidden;
+	font-size: @baseFont;
+	font-weight: 300;
+
+	&.optionsVisible {
+		.panelHeader { 
+			top: @optionsHeight;
+			border-top-left-radius: 0;
+		}
+
+		.panelBody {
+			top: @optionsHeight + @headerHeight;
+		}
+	}
+
+	.panelOptions {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: @optionsHeight;
+
+		.panelOption {
+			@transitionTime: 0.25s;
+			transition: color @transitionTime ease-in-out,
+				background-color @transitionTime ease-in-out;
+			-moz-transition: color @transitionTime ease-in-out,
+				background-color @transitionTime ease-in-out;
+			-webkit-transition: color @transitionTime ease-in-out,
+				background-color @transitionTime ease-in-out;
+			-o-transition: color @transitionTime ease-in-out,
+				background-color @transitionTime ease-in-out;
+
+			cursor: hand;
+			cursor: pointer;
+			display: inline-block;
+			margin-right: 2px;
+			padding: 0 15px 0 15px;
+			min-width: 100px;
+			height: 100%;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			vertical-align: top;
+			font-size: 13px;
+			color: @koalityGreen;
+			text-align: center;
+			line-height: @optionsHeight;
+			background-color: @panelBackground;
+			border-top-left-radius: @borderRadius;
+			border-top-right-radius: @borderRadius;
+
+			&:hover {
+				color: @koalityWhite;
+				background-color: @panelHeaderBackground;
+			}
+
+			&.selected {
+				color: @koalityWhite;
+				background-color: @panelHeaderBackground;
+			}
+		}
+	}
+
+	.panelHeader {
+		position: absolute;
+		top: 0;
+		left: 0; 
+		right: 0;
+		padding-left: 12px;
+		padding-right: 12px;
+		height: @headerHeight;
+		color: @koalityWhite;
+		font-size: 18px;
+		font-weight: 500;
+		line-height: @headerHeight;
+		background-color: @panelHeaderBackground;
+		border-bottom: 1px solid @platformBackground;
+		border-top-left-radius: @borderRadius;
+		border-top-right-radius: @borderRadius;
+
+		.left {
+			float: left;
+			height: 100%;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.right {
+			float: right;
+			height: 100%;
+
+			a, button, .busyButton {
+				margin-left: 12px;
+
+				&:first-child {
+					margin-left: 0;
+				}
+			}
+		}
+
+		a {
+			vertical-align: top;
+			font-size: 16px;
+			font-weight: 300;
+		}
+
+		button, .busyButton {
+			display: inline-block;
+			margin-top: 6px;
+			vertical-align: top;
+			font-size: 12px;
+		}
+
+		.busyButton button { margin: 0; }
+	}
+
+	.panelBody {
+		position: absolute;
+		top: @headerHeight;
+		left: 0;
+		right: 0;
+		bottom: @footerHeight;
+
+		&.noScroll {
+			.panelBodyContents {
+				overflow-y: hidden;
+			}
+		}
+
+		.panelDrawer, .panelBodyContents {
+			display: table-row;
+			padding: 30px;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+		}
+
+		.panelDrawer {
+			display: none;
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 1;
+			min-height: 100px;
+			background-color: darken(@panelBackground, 3%);
+		}
+
+		.panelBodyContents {
+			@topTransitionTime: 0.5s;
+			transition: top @topTransitionTime ease-in-out;
+			-moz-transition: top @topTransitionTime ease-in-out;
+			-webkit-transition: top @topTransitionTime ease-in-out;
+			-o-transition: top @topTransitionTime ease-in-out;
+
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 2;
+			overflow-x: hidden;
+			overflow-y: auto;
+			background-color: @panelBackground;
+		}
+	}
+
+	.panelFooter {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: @footerHeight;
+		background-color: @panelFooterBackground;
+		border-bottom-left-radius: @borderRadius;
+		border-bottom-right-radius: @borderRadius;
+	}
+}

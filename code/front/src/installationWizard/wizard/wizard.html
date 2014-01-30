@@ -1,0 +1,119 @@
+<div id="wizard" unselectable>
+	<div id="wizardTitle">Welcome to Koality</div>
+
+	<div id="wizardSubtitle">This wizard helps you quickly set up your account</div>
+
+	<div id="wizardBreadcrumbs">
+		<div class="wizardBreadcrumb" ng-class="{green: stage == 'licenseKey'}">Enter License Key
+		</div><!-- Don't remove this space --><div class="wizardBreadcrumb" ng-class="{green: stage == 'admin'}">Create your account
+		</div><!-- Don't remove this space --><div class="wizardBreadcrumb" ng-class="{green: stage == 'verifyAdmin'}">Confirm email
+		</div><!-- Don't remove this space --><div class="wizardBreadcrumb" ng-class="{green: stage == 'website'}">Configure website
+		</div><!-- Don't remove this space --><div class="wizardBreadcrumb" ng-class="{green: stage == 'aws'}">Connect EC2
+		</div><!-- Don't remove this space --><div class="wizardBreadcrumb" ng-class="{green: stage == 'complete'}">Complete</div>
+	</div>
+
+	<div id="wizardContent">
+		<div class="wizardStage" ng-show="stage == 'licenseKey'">
+			<div class="stageInstructions">Enter your License Key to continue</div>
+			<div class="stageSubInstructions">This license key was emailed to you from KoalityCode.com</div>
+
+			<form name="licenseKeyForm" novalidate>
+				<input type="text" ng-model="license.licenseKey" name="licenseKey" placeholder="1111-2222-3333-4444" ng-pattern="/^[-a-zA-Z0-9]+$/" license-key required focused>
+				<busy-button centered busy="waitingOnRequest" click="completeLicenseKey()" disabled="licenseKeyForm.$invalid">Continue</busy-button>
+			</form>
+
+			<div class="stageFooter">
+				<divider />
+				Don't have a license key? <a href="https://koalitycode.com/pricing" target="_blank">Get one here</a>
+			</div>
+		</div>
+
+		<div class="wizardStage" ng-show="stage == 'admin'">
+			<div class="stageInstructions">Add your account details</div>
+
+			<form name="adminForm" novalidate>
+				<label>First Name</label>
+				<input type="text" ng-model="admin.firstName" name="firstName" ng-maxlength="64" autocomplete="on" required>
+				<form-field-error tooltip="Invalid first name" error-visible="adminForm.firstName.$dirty && adminForm.firstName.$invalid"></form-field-error>
+				<br>
+
+				<label>Last Name</label>
+				<input type="text" ng-model="admin.lastName" name="lastName" ng-maxlength="64" autocomplete="on" required>
+				<form-field-error tooltip="Invalid last name" error-visible="adminForm.lastName.$dirty && adminForm.lastName.$invalid"></form-field-error>
+				<br>
+
+				<label>Password<span class="sublabel">Min 8 characters, one letter, one number</span></label>
+				<input type="password" ng-model="admin.password" name="password" auto-fillable-field required>
+				<form-field-error tooltip="Password must contain at least 8 characters, a letter, and a number" error-visible="adminForm.password.$dirty && adminForm.password.$invalid"></form-field-error>
+				<br>
+
+				<label>Email</label>
+				<input type="email" ng-model="admin.email" name="email" ng-maxlength=256 required>
+				<form-field-error tooltip="Invalid email address" error-visible="adminForm.email.$dirty && adminForm.email.$invalid"></form-field-error>
+
+				<busy-button centered busy="waitingOnRequest" click="completeAdminInformation()" disabled="adminForm.$invalid">Confirm Email</busy-button>
+			</form>
+		</div>
+
+		<div class="wizardStage" ng-show="stage == 'verifyAdmin'">
+			<div class="stageInstructions">Check your email</div>
+			<div class="stageSubInstructions">A token has been sent to <a>{{admin.email}}</a>. Enter the token below to continue. The email may take a few minutes to appear.</div>
+			<divider />
+
+			<form name="verifyAdminForm" novalidate>
+				<label>Token</label>
+				<input type="text" ng-model="admin.verifyToken" name="verifyToken" required>
+
+				<busy-button centered busy="waitingOnRequest" click="completeVerifyAdmin()" disabled="verifyAdminForm.$invalid">Continue</busy-button>
+			</form>
+		</div>
+
+		<div class="wizardStage" ng-show="stage == 'website'">
+			<div class="stageInstructions">Where will Koality be deployed?</div>
+			<div class="stageSubInstructions">This is the domain name where users will connect to Koality. Your DNS information should be updated to reflect this. This can be updated in the future.</div>
+
+			<form name="websiteForm" novalidate>
+				<label>Domain Name</label>
+				<input type="text" ng-model="website.domainName" name="domainName" placeholder="koality.companyname.com" ng-maxlength="256" required>
+				<form-field-error tooltip="Invalid domain name. Do not include any modifiers, such as https:// or /path" error-visible="websiteForm.domainName.$dirty && websiteForm.domainName.$invalid"></form-field-error>
+
+				<busy-button centered busy="waitingOnRequest" click="completeWebsiteInformation()" disabled="websiteForm.$invalid">Continue</busy-button>
+			</form>
+		</div>
+
+		<div class="wizardStage" ng-show="stage == 'aws'">
+			<div class="stageInstructions">Add your AWS credentials</div>
+			<div class="stageSubInstructions">These credentials must have access to the EC2 API and the S3 API.</div>
+
+			<form name="awsForm" novalidate>
+				<label>AWS Access Key Id</label>
+				<input type="text" ng-model="aws.accessKey" name="accessKey" ng-pattern="/^[\w]+$/" ng-minlength="16" ng-maxlength="32" required>
+				<form-field-error tooltip="Invalid AWS Access Key" error-visible="awsForm.accessKey.$dirty && awsForm.accessKey.$invalid"></form-field-error>
+
+				<label>AWS Secret Access Key</label>
+				<input type="text" ng-model="aws.secretKey" name="secretKey" ng-maxlength="128" required>
+				<form-field-error tooltip="Invalid AWS Secret Access Key" error-visible="awsForm.secretKey.$dirty && awsForm.secretKey.$invalid"></form-field-error>
+
+				<busy-button centered busy="waitingOnRequest" click="completeAwsInformation()" disabled="awsForm.$invalid">Continue</busy-button>
+			</form>
+
+			<divider />
+
+			<a href="https://koalitycode.com/documentation?view=adminAws" target="_blank">Help me find my Aws Credentials</a>
+		</div>
+
+		<div class="wizardStage" ng-show="stage == 'complete'">
+			<div class="stageInstructions">All done!</div>
+			<div class="stageSubInstructions">Continue to the admin panel to create your first repository.</div>
+
+			<button class="centered" ng-click="goToCreateRepository()">Continue</button>
+
+			<divider />
+			<a ng-click="goToKoality()">Continue to Koality, I'll set up my repository later</a>
+		</div>
+	</div>
+
+	<div id="wizardFooter">
+		Questions? Email <a href="mailto:support@koalitycode.com?subject=Koality%20Support" target="_blank">support@koalitycode.com</a>
+	</div>
+</div>

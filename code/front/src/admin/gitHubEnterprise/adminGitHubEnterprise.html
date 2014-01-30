@@ -1,0 +1,28 @@
+<div id="adminGitHubEnterprise" ng-controller="AdminGitHubEnterprise">
+	<panel-header>GitHub Enterprise</panel-header>
+
+	<panel-body no-scroll>
+		<form name="gitHubEnterpriseForm" novalidate>
+			<div class="formContainer centered">
+				<label>Enabled</label>
+				<input type="radio" ng-model="settings.enabled" name="enabled" value="yes" required>Yes
+				<input class="bufferLeft" type="radio" ng-model="settings.enabled" name="enabled" value="no" required>No
+
+				<label>GitHub Enterprise URL</label>
+				<input type="text" ng-model="settings.uri" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" focused required>
+
+				<label>Client ID</label>
+				<input type="text" ng-model="settings.clientId" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" required>
+
+				<label>Client Secret</label>
+				<input type="text" ng-model="settings.clientSecret" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" required>
+			</div>
+
+			<div class="bottomContanier">
+				<div class="formDivider"></div>
+
+				<busy-button centered busy="makingRequest" click="submit()" disabled="settings.enabled == 'yes' && gitHubEnterpriseForm.$invalid">Save Changes</busy-button>
+			</div>
+		</form>
+	</panel-body>
+</div>

@@ -1,0 +1,80 @@
+@import '../constants';
+
+@maxTooltipWidth: 200px;
+
+.prettyTooltipContainer {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+
+	.prettyTooltipCenterAnchor {
+		pointer-events: none;
+
+		display: inline-block;
+		position: absolute;
+		z-index: 1000000;
+		left: 50%;
+		bottom: 100%;
+		width: 0px;
+		height: 0px;
+
+		.prettyTooltipCenterContainer {
+			@width: @maxTooltipWidth + 100px;
+			
+			display: block;
+			position: absolute;
+			bottom: 50px;  // going to animate from here
+			left: -@width / 2;
+			width: @width;
+			text-align: center;
+			opacity: 0.0;
+
+			@allTransitionTime: 0.3s;
+			transition: all @allTransitionTime ease-in-out;
+			-moz-transition: all @allTransitionTime ease-in-out;
+			-webkit-transition: all @allTransitionTime ease-in-out;
+			-o-transition: all @allTransitionTime ease-in-out;
+		}
+	}
+
+	&:hover {
+		.prettyTooltipCenterContainer {
+			opacity: 0.95;
+			bottom: 0px;
+		}
+	}
+}
+
+.prettyTooltip {
+	@backgroundColor: rgba(40, 40, 40, 1.0);
+
+	display: inline-block;
+	padding: 10px;
+	margin-bottom: 10px;
+	max-width: @maxTooltipWidth;
+	background-color: @platformBackground;
+	border: 1px solid lighten(@platformBackground, 15%);
+	border-radius: 8px;
+
+	@boxShadowBlur: 2px;
+	@boxShadowSpread: 2px;
+	@boxShadowColor: #101010;
+	box-shadow: 0 0 @boxShadowBlur @boxShadowSpread @boxShadowColor;
+	-moz-box-shadow: 0 0 @boxShadowBlur @boxShadowSpread @boxShadowColor;
+	-webkit-box-shadow: 0 0 @boxShadowBlur @boxShadowSpread @boxShadowColor;
+
+	&:after{
+		content: '';
+		position: absolute;
+		left: 50%;
+		bottom: 0px;
+		margin-left: -10px;
+		width: 0;
+		height: 0;
+		border-left: 10px solid transparent;
+		border-right: 10px solid transparent;
+		border-top: 10px solid lighten(@platformBackground, 15%);
+	}
+}

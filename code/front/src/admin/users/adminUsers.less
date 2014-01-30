@@ -1,0 +1,83 @@
+@import '../../constants';
+
+
+#adminUsers {
+
+	#addUsersForm {
+
+		table {
+			width: 100%;
+			table-layout: fixed;
+
+			td {
+				padding: 0 15px 0 15px;
+
+				&:first-child { padding-left: 0; }
+				&:last-child { padding-right: 0; }
+			}
+
+			#addUsersLinkColumn {
+				width: 300px;
+
+				div { margin-top: 10px; }
+			}
+
+			#addUsersLoginTypeColumn {
+				width: 150px;
+			}
+
+			#addUsersDomainsColumn {
+
+				input { margin: 0; }
+			}
+
+			#addUsersSaveColumn {
+				width: 100px;
+				padding-top: 23px;
+			}
+
+			#addUsersCancelColumn {
+				width: 100px;
+				padding-top: 23px;
+			}
+		}
+	}
+
+	#usersList {
+		table {
+			width: 100%;
+			table-layout: fixed;
+
+			tr.editing {
+				color: @koalityGray;
+			}
+
+			.nameColumn {
+				padding-left: 30px;
+				width: 350px;
+			}
+
+			.emailColumn {
+
+			}
+
+			.privilegesColumn {
+				width: 150px;
+
+				select {
+					width: 120px;
+				}
+			}
+
+			.editColumn {
+				padding-right: 30px;
+				width: 150px;
+
+				a {
+					display: inline-block;
+					margin-right: 10px;
+				}
+			}
+		}
+	}
+}

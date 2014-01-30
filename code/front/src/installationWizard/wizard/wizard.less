@@ -1,0 +1,247 @@
+@import '../../constants';
+
+
+#wizard {
+	padding: 10px 0 80px 0;
+	height: 100%;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	overflow-y: auto;
+
+	#wizardTitle {
+		font-size: 2.0em;
+		text-align: center;
+	}
+
+	#wizardSubtitle {
+		margin-top: 15px;
+		color: @koalityGray;
+		font-size: 1.2em;
+		text-align: center;
+	}
+
+	#wizardBreadcrumbs {
+		margin: 30px auto 0 auto;
+		width: @contentMinWidth;
+		text-align: center;
+
+		.wizardBreadcrumb {
+			@height: 60px;
+
+			position: relative;
+			display: inline-block;
+			margin: 0;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			width: 180px;
+			height: @height;
+			line-height: @height;
+			vertical-align: top;
+			background-color: @panelBackground;
+			border: 2px solid darken(@panelBackground, 3%);
+
+			&.green {
+				color: @koalityWhite;
+				background-color: @koalityGreen;
+			}
+
+			&:first-child {
+				border-top-left-radius: @borderRadius;
+				border-bottom-left-radius: @borderRadius;
+			}
+
+			&:last-child {
+				border-top-right-radius: @borderRadius;
+				border-bottom-right-radius: @borderRadius;
+			}
+
+			.wizardBreadcrumbSpinner {
+				position: absolute;
+				z-index: 1;
+				top: 0px;
+				left: 0px;
+				right: 0px;
+				bottom: 0px;
+			}
+		}
+	}
+
+	#wizardContent {
+		margin: 40px auto 0 auto;
+		padding: 80px;
+		width: @contentMinWidth;
+		box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		text-align: center;
+		background-color: @panelBackground;
+		border: 2px solid darken(@panelBackground, 3%);
+		border-radius: @borderRadius;
+
+		.wizardStage {
+			display: inline-block;
+			text-align: left;
+
+			.stageInstructions {
+				margin-bottom: 20px;
+				font-size: 1.2em;
+				font-weight: 500;
+			}
+
+			.stageSubInstructions {
+				margin-bottom: 30px;
+				font-size: 1.0em;
+				font-weight: 400;
+				width: 300px;
+			}
+
+			.stageFooter {
+				margin-top: 120px;
+				text-align: center;
+			}
+
+			label {
+				width: 300px;
+			}
+
+			input {
+				margin-bottom: 20px;
+				width: 300px;
+			}
+
+			textarea {
+				margin-bottom: 20px;
+				width: 300px;
+				height: 80px;
+			}
+
+			button {
+
+			}
+		}
+	}
+
+	#wizardFooter {
+		margin-top: 30px;
+		text-align: center;
+	}
+}
+
+// #wizard {
+// 	width: 800px;
+// 	min-height: 600px;
+
+// 	#wizardStepZero {
+// 		text-align: center;
+
+// 		#wizardStepZeroWelcome {
+// 			margin-top: 150px;
+// 			font-size: 1.2em;
+// 		}
+
+// 		button {
+// 			margin-top: 25px;
+// 		}
+// 	}
+
+// 	#wizardStepOne {
+
+// 		#wizardStepOneIntroduction {
+// 			margin-top: 80px;
+// 			text-align: center;
+// 			font-size: 1.2em;
+// 		}
+
+// 		#wizardStepOneInstructions {
+// 			margin-top: 5px;
+// 			text-align: center;
+// 		}
+
+// 		#wizardStepOneForm {
+// 			margin-top: 30px;
+
+// 			button {
+// 				float: right;
+// 			}
+// 		}
+// 	}
+
+// 	#wizardStepTwo {
+
+// 		#wizardStepTwoIntroduction {
+// 			margin-top: 80px;
+// 			text-align: center;
+// 			font-size: 1.2em;
+// 		}
+
+// 		#wizardStepTwoInstructions {
+// 			margin-top: 5px;
+// 			text-align: center;
+// 		}
+
+// 		#wizardStepTwoForm {
+// 			margin-top: 30px;
+
+// 			button {
+// 				float: right;
+// 				margin-right: 30px;
+// 			}
+// 		}
+// 	}
+
+// 	#wizardStepThree {
+
+// 		#wizardStepThreeIntroduction {
+// 			text-align: center;
+// 			margin-top: 80px;
+// 			font-size: 1.2em;
+// 		}
+
+// 		#wizardStepThreeInstructions {
+// 			margin-top: 5px;
+// 			text-align: center;
+// 		}
+
+// 		#wizardStepThreeForm {
+// 			margin-top: 30px;
+
+// 			button {
+// 				float: right;
+// 			}	
+// 		}
+// 	}
+
+// 	#wizardStepFour {
+
+// 		#wizardStepFourIntroduction {
+// 			text-align: center;
+// 			margin-top: 80px;
+// 			font-size: 1.2em;
+// 		}
+
+// 		#wizardStepFourInstructions {
+// 			margin-top: 5px;
+// 			text-align: center;
+// 		}
+
+// 		#wizardStepFourForm {
+// 			margin-top: 30px;
+
+// 			button {
+// 				float: right;
+// 			}	
+// 		}
+// 	}
+
+// 	#wizardStepFive {
+// 		text-align: center;
+
+// 		#wizardStepFiveMessage {
+// 			margin-top: 150px;
+// 			font-size: 1.2em;
+// 		}
+
+// 		button {
+// 			margin-top: 25px;
+// 		}
+// 	}
+// }

@@ -1,0 +1,83 @@
+<div id="dashboard">
+	<panel>
+		<panel-header>
+			<div class="left">
+				Dashboard
+			</div>
+			<div class="right">
+				<div id="search" ng-class="{searchOn: search.mode == 'search'}">
+					<div id="searchAll" ng-class="{selected: search.mode == 'all'}" ng-click="search.mode ='all'">All</div>
+					<div id="searchMe" ng-class="{selected: search.mode == 'me'}" ng-click="search.mode ='me'">Me</div>
+					<div id="searchQuery" ng-class="{selected: search.mode == 'search'}" ng-click="search.mode ='search'" input-focus-on-click>
+						<div id="searchImageAndInputContainer">
+							<img ng-src="{{'/img/icons/search.png' | fileSuffix}}">
+							<input type="text" ng-model="search.query" placeholder="User">
+						</div>
+					</div>
+				</div>
+			</div>
+		</panel-header>
+		<panel-body>
+			<div fading-content on-scroll-to-bottom="changesManager.retrieveMoreChanges()">
+				<table class="delineated">
+					<tr>
+						<th class="statusColumn">Status</th>
+						<th class="repositoryColumn">Repository</th>
+						<th class="branchColumn">Branch</th>
+						<th class="changeColumn">Change</th>
+						<th class="commitMessageColumn">Commit Message</th>
+						<th class="userColumn">User</th>
+						<th class="timeColumn">Submit Time</th>
+					</tr>
+
+					<tr ng-repeat="change in changesManager.getChanges() | orderBy:'createTime':true">
+						<td class="statusColumn gray" ng-class="{green: change.aggregateStatus == 'passed', orange: change.aggregateStatus == 'skipped', red: change.aggregateStatus == 'failed'}">
+							{{change.aggregateStatus}}
+						</td>
+
+						<td class="repositoryColumn">
+							{{change.repository.name}}
+						</td>
+
+						<td class="branchColumn">
+							{{change.target}}
+						</td>
+
+						<td class="changeColumn">
+							<a ng-href="/repository/{{change.repository.id}}?change={{change.id}}">
+								{{change.headCommit.sha | limitTo:12}}
+							</a>
+						</td>
+
+						<td class="commitMessageColumn">
+							{{change.headCommit.message | onlyFirstLine}}
+						</td>
+
+						<td class="userColumn">
+							<a ng-href="mailto:{{change.user.email}}?subject=Koality%3A%20{{change.repository.name}}%20-%20change%20%23{{change.headCommit.sha | limitTo:4}}" target="_blank" ng-show="change.user.id >= 1000">
+								{{change.user.name.first}} {{change.user.name.last}}
+							</a>
+
+							<a ng-href="mailto:{{change.headCommit.user.email}}?subject=Koality%3A%20{{change.repository.name}}%20-%20change%20%23{{change.headCommit.sha | limitTo:4}}" target="_blank" ng-show="change.user.id < 1000">
+								{{change.headCommit.user.name}}
+							</a>
+						</td>
+
+						<td class="timeColumn">
+							{{change.createTime | date:'MM/dd hh:mm:ss a'}}
+						</td>
+					</tr>
+
+					<tr ng-if="changesManager.isRetrievingChanges()">
+						<td class="retrievingMoreColumn" colspan="6">
+							<div class="retrievingMoreMessage">
+								<spinner id="retrievingMoreSpinner" running="changesManager.isRetrievingChanges()"></spinner>
+								<span>Retrieving more changes...</span>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</panel-body>
+	</panel>
+</div>

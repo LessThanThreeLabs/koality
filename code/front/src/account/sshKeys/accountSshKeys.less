@@ -1,0 +1,66 @@
+@import '../../constants';
+
+
+#accountSshKeys {
+
+	#addKeyForm {
+
+		table {
+			width: 100%;
+			table-layout: fixed;
+
+			td {
+				padding: 0 15px 0 15px;
+
+				&:first-child { padding-left: 0; }
+				&:last-child { padding-right: 0; }
+			}
+
+			.addKeyAliasColumn {
+				width: 300px;
+
+				input {
+					margin: 0;
+				}
+			}
+
+			.addKeyValueColumn {
+
+				textarea {
+					margin: 0;
+					height: 40px;
+				}
+			}
+
+			.addKeySubmitColumn {
+				width: 100px;
+				padding-top: 23px;
+			}
+
+			.addKeyCancelColumn {
+				width: 100px;
+				padding-top: 23px;
+			}
+		}
+	}
+
+	#sshKeys {
+		table {
+			width: 100%;
+			table-layout: fixed;
+
+			.aliasColumn {
+				padding-left: 30px;
+			}
+
+			.createdColumn {
+				width: 180px;
+			}
+
+			.removeColumn {
+				padding-right: 30px;
+				width: 80px;
+			}
+		}
+	}
+}

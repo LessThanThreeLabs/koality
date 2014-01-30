@@ -1,0 +1,46 @@
+@import 'constants';
+
+#main {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	overflow-x: auto;
+	overflow-y: hidden;
+
+	#headerContainer,
+	#notificationsContainer,
+	#contentContainer {
+		min-width: @contentMinWidth + 100px;
+	}	
+
+	#headerContainer {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: @headerHeight;
+		background-color: @headerBackground;
+	}
+
+	#notificationsContainer {
+		position: absolute;
+		top: @headerHeight;
+		left: 0;
+		right: 0;
+		height: @notificationHeight;
+		overflow: hidden;
+	}
+
+	#contentContainer {
+		position: absolute;
+		top: @headerHeight + @notificationHeight;
+		left: 0;
+		right: 0;
+		bottom: 0;
+
+		#contentCenterContainer {
+			position: relative;
+			height: 100%;
+		}
+	}
+}

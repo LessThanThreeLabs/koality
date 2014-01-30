@@ -1,0 +1,21 @@
+@import '../constants';
+
+.prettyTable {
+	border-spacing: 0px;
+
+	.title {
+		color: @koalityGray;
+		font-weight: 500;
+	}
+
+	tr {
+		td {
+			padding: 14px 0px;
+			border-bottom: 1px solid @platformBackground;
+
+			&:first-child {
+				padding-left: 10px;
+			}
+		}
+	}
+}

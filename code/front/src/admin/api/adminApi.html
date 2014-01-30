@@ -1,0 +1,28 @@
+<div id="adminApi" ng-controller="AdminApi">
+	<panel-header>API</panel-header>
+
+	<panel-body no-scroll>
+		<form name="websiteForm" novalidate>
+			<div class="formContainer centered">
+				<label>Rest API Location</label>
+				<div id="adminApiUrl">https://{{domainName}}/api/v/0/...</div>
+
+				<label>API Key</label>
+				<div id="adminApiKey">{{apiKey}}</div>
+			</div>
+
+			<div class="bottomContanier">
+				<div class="formDivider"></div>
+
+				<button class="centered" ng-click="regenerateKey()" ng-show="!mustConfirmRegenerateKey">Regenerate Key</button>
+
+				<div id="adminApiConfirmRegenerate" ng-show="mustConfirmRegenerateKey">
+					<p>Are you sure? This <strong>cannot</strong> be undone.</p>
+
+					<busy-button busy="makingRequest" click="confirmRegenerateKey()">Continue</busy-button>
+					<button class="red" ng-click="cancelRegenerateKey()">Cancel</button>
+				</div>
+			</div>
+		</form>
+	</panel-body>
+</div>

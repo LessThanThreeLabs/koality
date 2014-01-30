@@ -1,0 +1,18 @@
+<div id="account">
+	<panel>
+		<panel-options>
+			<panel-option selected="view == 'basic'" ng-click="selectView('basic')">Settings</panel-option>
+			<panel-option selected="view == 'password'" ng-click="selectView('password')">Change Password</panel-option>
+			<panel-option selected="view == 'sshKeys'" ng-click="selectView('sshKeys')">SSH Keys</panel-option>
+		</panel-options>
+
+		<panel-header style="z-index: -1;"></panel-header>
+		<panel-body style="z-index: -1;"></panel-body>
+
+		<div ng-switch="view">
+			<div ng-switch-when="basic" ng-include="'html/account/basic/accountBasic.html' | fileSuffix"></div>
+			<div ng-switch-when="password" ng-include="'html/account/password/accountPassword.html' | fileSuffix"></div>
+			<div ng-switch-when="sshKeys" ng-include="'html/account/sshKeys/accountSshKeys.html' | fileSuffix"></div>
+		</div>
+	</panel>
+</div>

@@ -1,0 +1,18 @@
+<div id="adminExporter" ng-controller="AdminExporter">
+	<panel-header>Exporter</panel-header>
+
+	<panel-body no-scroll>
+		<form name="exporterForm" novalidate>
+			<div class="formContainer centered">
+				<label>S3 Bucket Name</label>
+				<input type="text" ng-model="exporter.s3BucketName" name="bucketName" ng-maxlength="64" focused>
+			</div>
+
+			<div class="bottomContanier">
+				<div class="formDivider"></div>
+
+				<busy-button centered busy="makingRequest" click="submit()" disabled="exporterForm.$invalid">Save Changes</busy-button>
+			</div>
+		</form>
+	</panel-body>
+</div>

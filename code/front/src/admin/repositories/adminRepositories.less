@@ -1,0 +1,193 @@
+@import '../../constants';
+
+
+#adminRepositories {
+
+	table#setupTypeTable {
+		width: 100%;
+		table-layout: fixed;
+
+		input {
+			margin: 0;
+		}
+
+		.setupTypeColumn {
+			padding-right: 15px;
+			width: 150px;
+		}
+
+		.setupColumn {
+
+			table#manualSetupTable, table#gitHubSetupTable {
+				table-layout: fixed;
+
+				td {
+					padding: 0 15px 0 15px;
+
+					&:first-child { padding-left: 0; }
+					&:last-child { padding-right: 0; }
+				}
+			}
+
+			#manualSetup {
+
+				table#manualSetupTable {
+					width: 100%;
+
+					.manualNameColumn {
+						width: 200px;
+					}
+
+					.manualForwardUrlColumn {
+
+					}
+
+					.manualTypeColumn {
+						width: 100px;
+					}
+
+					.manualAddRepositorySubmitColumn {
+						width: 90px;
+						padding-top: 23px;
+					}
+
+					.manualAddRepositoryCancelColumn {
+						width: 60px;
+						padding-top: 23px;
+					}
+				}
+			}
+
+			#gitHubSetup {
+
+				#gitHubInformationSpinner {
+					display: block;
+					margin-top: 35px;
+				}
+
+				#connectToGitHub {
+					margin-top: 30px;
+					margin-left: 15px;
+				}
+
+				table#gitHubSetupTable {
+
+					.gitHubNameColumn {
+						width: 400px;
+					}
+
+					.gitHubAddRepositorySubmitColumn {
+						width: 90px;
+						padding-top: 23px;
+					}
+
+					.gitHubAddRepositoryCancelColumn {
+						width: 60px;
+						padding-top: 23px;
+					}
+				}
+			}
+		}
+	}
+
+	table#publicKeyTable {
+		width: 100%;
+		table-layout: fixed;
+
+		td {
+			padding: 0 15px 0 15px;
+
+			&:first-child { padding-left: 0; }
+			&:last-child { padding-right: 0; }
+		}
+
+		.sshKeyColumn {
+
+			input {
+				margin: 0;
+			}
+		}
+
+		.closePublicKeyColumn {
+			width: 100px;
+			padding-top: 23px;
+		}
+	}
+
+	#repositoriesList {
+		table {
+			width: 100%;
+			table-layout: fixed;
+
+			tr.editing {
+				color: @koalityGray;
+
+				.createdColumn, .verificationColumn, .editColumn {
+					padding-top: 46px;
+				}
+			}
+
+			.nameColumn {
+				padding-left: 30px;
+				width: 300px;
+
+				div {
+					margin-right: 30px;
+				}
+			}
+
+			.forwardUrlColumn {
+				div {
+					margin-right: 30px;
+				}
+			}
+
+			.verificationColumn {
+				width: 265px;
+
+				.preVerification, .postVerification, .pullRequestVerification {
+					display: inline-block;
+					padding-right: 15px;
+				}
+
+				.white { color: @koalityWhite; }
+				.gray { color: @koalityGray; }
+				.check { color: @koalityGreen; }
+				.cross { color: @koalityGray; }
+			}
+
+			.editColumn {
+				padding-right: 30px;
+				width: 150px;
+
+				a {
+					display: inline-block;
+					margin-right: 10px;
+				}
+
+				.repositorySavingSpinner {
+					margin-top: 8px;
+				}
+			}
+
+			.deleteColumn {
+
+				.deleteRepositoryActions {
+					height: 50px;
+
+					input {
+						display: inline-block;
+						width: 150px;
+						vertical-align: top;
+					}
+
+					a {
+						display: inline-block;
+						margin: 8px 0 0 15px;
+						vertical-align: top;
+					}
+				}
+			}
+		}
+	}
+}

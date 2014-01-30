@@ -1,0 +1,23 @@
+<div id="accountBasic" ng-controller="AccountBasic">
+	<panel-header>Settings</panel-header>
+	<panel-body no-scroll>
+		<form name="accountBasicForm" novalidate>
+			<div class="formContainer centered">
+				<label>First Name</label>
+				<input type="text" ng-model="account.firstName" name="firstName" placeholder="First" ng-pattern="/^[-'a-zA-Z]+$/" ng-maxlength="64" autocomplete="on" required focused>
+
+				<label>Last Name</label>
+				<input type="text" ng-model="account.lastName" name="lastName" placeholder="Last" ng-pattern="/^[-'a-zA-Z]+$/" ng-maxlength="64" autocomplete="on" required>
+
+				<label>Email<span class="sublabel">Unmodifiable</span></label>
+				<input ng-model="account.email" name="email" type="text" placeholder="Email" maxlength=256 readonly>
+			</div>
+
+			<div class="bottomContanier">
+				<div class="formDivider"></div>
+
+				<busy-button centered busy="makingRequest" click="submit()" disabled="accountBasicForm.$invalid || (account.firstName == account.oldFirstName && account.lastName == account.oldLastName)">Save Changes</busy-button>
+			</div>
+		</form>
+	</panel-body>
+</div>

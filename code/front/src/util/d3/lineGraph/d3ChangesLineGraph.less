@@ -1,0 +1,117 @@
+@import '../../../constants';
+
+.d3ChangesLineGraph {
+	position: relative;
+
+	.allLine, .passedLine, .failedLine {
+		fill: none;
+		stroke-width: 1px;
+	}
+
+	.allLine { stroke: @koalityWhite; }
+	.passedLine { stroke: @koalityGreen; }
+	.failedLine { stroke: @koalityRed; }
+
+	.allLineDots { fill: @koalityWhite; }
+	.passedLineDots { fill: @koalityGreen; }
+	.failedLineDots { fill: @koalityRed; }
+
+	.allLineDots, .passedLineDots, .failedLineDots {
+		circle {
+			&.smallDot {
+				@initialFadeInOpacity: 0.0;
+				@finalFadeInOpacity: 1.0;
+				@keyframes fadeIn { 
+					0% { opacity: @initialFadeInOpacity; }
+					50% { opacity: @initialFadeInOpacity; }
+					100% { opacity: @finalFadeInOpacity; }
+				}
+				@-moz-keyframes fadeIn {
+					0% { opacity: @initialFadeInOpacity; }
+					50% { opacity: @initialFadeInOpacity; }
+					100% { opacity: @finalFadeInOpacity; }
+				}
+				@-webkit-keyframes fadeIn {
+					0% { opacity: @initialFadeInOpacity; }
+					50% { opacity: @initialFadeInOpacity; }
+					100% { opacity: @finalFadeInOpacity; }
+				}
+				@-o-keyframes fadeIn {
+					0% { opacity: @initialFadeInOpacity; }
+					50% { opacity: @initialFadeInOpacity; }
+					100% { opacity: @finalFadeInOpacity; }
+				}
+
+				opacity: 1.0;
+
+				@fadeInDuration: 2.0s;
+				animation: fadeIn @fadeInDuration ease-in;
+				-moz-animation: fadeIn @fadeInDuration ease-in;
+				-webkit-animation: fadeIn @fadeInDuration ease-in;
+				-o-animation: fadeIn @fadeInDuration ease-in;
+			}
+
+			&.largeDot {
+				cursor: hand;
+				cursor: pointer;
+				opacity: 0.0;
+
+				&:hover {
+					@opacityTransitionTime: 0.5s;
+
+					transition: opacity @opacityTransitionTime ease-in-out;
+					-moz-transition: opacity @opacityTransitionTime ease-in-out;
+					-webkit-transition: opacity @opacityTransitionTime ease-in-out;
+					-o-transition: opacity @opacityTransitionTime ease-in-out;
+
+					opacity: 1.0;
+				}
+			}
+		}
+	}
+
+	.xAxis, .yAxis {
+		fill: @koalityGray;
+
+		path, line {
+			fill: none;
+			stroke: @koalityGray;
+			shape-rendering: crispEdges;
+		}
+
+		text {
+			font-size: 11px;
+		}
+
+		.tick {
+			&.minor {
+				stroke: darken(@koalityGray, 18%);
+			}
+		}
+	}
+
+	.xReferenceLines, .yReferenceLines {
+		stroke: darken(@koalityGray, 22%);
+	}
+
+	.xReferenceLines {
+		stroke-dasharray: 4, 4;
+	}
+
+	.allTooltip, .passedTooltip, .failedTooltip {
+		display: none;
+		position: absolute;
+		z-index: 1000000;
+		width: 300px;
+		text-align: center;
+		font-size: 11px;
+
+		&.visible {
+			display: block;
+		}
+	}
+
+	.allTooltip { color: @koalityWhite; }
+	.passedTooltip { color: @koalityGreen; }
+	.failedTooltip { color: @koalityRed; }
+}

@@ -1,0 +1,64 @@
+<div id="accountSshKeys" ng-controller="AccountSshKeys">
+	<panel-header>
+		<div class="left">
+			SSH Keys
+		</div>
+		<div class="right">
+			<busy-button busy="waitingOnGitHubImportRequest" click="importFromGitHub()">Import GitHub SSH Keys</busy-button>
+			<button ng-click="toggleDrawer('addKey')">Add a New SSH Key</button>
+		</div>
+	</panel-header>
+
+	<panel-body no-padding open-drawer="currentlyOpenDrawer">
+		<panel-drawer drawer-name="addKey">
+			<form id="addKeyForm" name="addKeyForm" novalidate>
+				<table>
+					<tr>
+						<td class="addKeyAliasColumn">
+							<label>Alias<span class="sublabel">Only letters and numbers</span></label>
+							<input type="text" ng-model="addKey.alias" name="alias" ng-maxlength="64" required>
+						</td>
+						<td class="addKeyValueColumn">
+							<label>SSH Key</label>
+							<textarea type="text" ng-model="addKey.key" name="key" ng-maxlength="8192" required></textarea>
+						</td>
+						<td class="addKeySubmitColumn">
+							<busy-button busy="addKey.makingRequest" click="submitKey()" disabled="addKeyForm.$invalid">Add Key</busy-button>
+						</td>
+						<td class="addKeyCancelColumn">
+							<a ng-click="clearAddKey()">Cancel</a>
+						</td>
+					</tr>
+				</table>
+			</form>
+		</panel-drawer>
+
+		<div id="sshKeys" fading-content>
+			<table class="delineated">
+				<tr>
+					<th class="aliasColumn sortableColumn unselectable" ng-click="orderByPredicate = 'alias'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'alias', up: orderByPredicate == 'alias' && !orderByReverse, down: orderByPredicate == 'alias' && orderByReverse}"></div>
+						Alias
+					</th>
+					<th class="createdColumn sortableColumn unselectable" ng-click="orderByPredicate = 'timestamp'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'timestamp', up: orderByPredicate == 'timestamp' && !orderByReverse, down: orderByPredicate == 'timestamp' && orderByReverse}"></div>
+						Date Created
+					</th>
+					<th class="removeColumn unselectable">Actions</th>
+				</tr>
+
+				<tr ng-show="keys.length == 0">
+					<td class="aliasColumn" text-selectable>You don't have any SSH keys for this account</td>
+					<td class="createdColumn"></td>
+					<td class="removeColumn"></td>
+				</tr>
+
+				<tr ng-repeat="key in keys | orderBy:orderByPredicate:orderByReverse">
+					<td class="aliasColumn" text-selectable>{{key.alias}}</td>
+					<td class="createdColumn" text-selectable>{{key.timestamp | date:'MM/dd/yyyy'}}</td>
+					<td class="removeColumn"><a class="red" ng-click="removeKey(key)">Delete</a></td>
+				</tr>
+			</table>
+		</div>
+	</panel-body>
+</div>

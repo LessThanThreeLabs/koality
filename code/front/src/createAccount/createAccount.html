@@ -1,0 +1,43 @@
+<div id="createAccount">
+
+	<panel id="defaultCreateAccountPanel" ng-show="!showVerifyEmailSent && createAccountType == 'default'">
+		<panel-header>Create Account</panel-header>
+
+		<panel-body no-scroll>
+			<form name="createAccountForm" novalidate>
+				<label>Email</label>
+				<input ng-model="account.email" name="email" type="email" placeholder="Email" autocomplete="on" required focused>
+
+				<label>First Name</label>
+				<input type="text" ng-model="account.firstName" name="firstName" placeholder="First" ng-maxlength="64" autocomplete="on" required>
+
+				<label>Last Name</label>
+				<input type="text" ng-model="account.lastName" name="lastName" placeholder="Last" ng-maxlength="64" autocomplete="on" required>
+
+				<label>Password<span class="sublabel">Min 8 characters, one letter, one number</span></label>
+				<input type="password" ng-model="account.password" name="password" placeholder="Password" auto-fillable-field required>
+
+				<busy-button full-width busy="makingRequest" click="createAccount()" disabled="createAccountForm.$invalid">Create Account</busy-button>
+			</form>
+		</panel-body>
+	</panel>
+
+	<panel id="googleCreateAccountPanel" ng-show="!showVerifyEmailSent && createAccountType == 'google'">
+		<panel-header>Create Account</panel-header>
+
+		<panel-body no-scroll>
+			<busy-button full-width busy="makingRequest" click="googleCreateAccount()">Create Account with Google</busy-button>
+
+			<input ng-model="account.rememberMe" ng-true-value="yes" ng-false-value="no" name="rememberMe" type="checkbox"><span>Stay Logged In</span>
+		</panel-body>
+	</panel>
+
+	<panel id="verifyEmailSent" ng-show="showVerifyEmailSent">
+		<panel-header>Create Account</panel-header>
+
+		<panel-body no-scroll>
+			<div id="verifyEmailSentMessage">A verification email has been sent to {{account.email}}</div>
+		</panel-body>
+	</panel>
+
+</div>

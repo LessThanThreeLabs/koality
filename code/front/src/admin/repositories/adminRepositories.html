@@ -1,0 +1,202 @@
+<div id="adminRepositories" ng-controller="AdminRepositories">
+	<panel-header>
+		<div class="left">
+			Repositories
+		</div>
+		<div class="right">
+			<a ng-click="toggleDrawer('publicKey')">Show SSH Key</a>
+			<button ng-click="toggleDrawer('addRepository')" ng-disabled="exceededMaxRepositoryCount == null || exceededMaxRepositoryCount">Add a New Repository</button>
+		</div>
+	</panel-header>
+
+	<panel-body no-padding open-drawer="currentlyOpenDrawer">
+		<panel-drawer drawer-name="addRepository">
+			<table id="setupTypeTable">
+				<tr>
+					<td class="setupTypeColumn">
+						<label>Setup Type</label>
+						<select ng-model="addRepository.setupType" required>
+							<option value="manual">Manual Setup</option>
+							<option value="gitHub">GitHub Setup</option>
+						</select>
+					</td>
+
+					<td class="setupColumn">
+						<div id="manualSetup">
+							<form id="addRepositoryManualForm" name="addRepositoryManualForm" ng-show="addRepository.setupType == 'manual'" novalidate>
+								<table id="manualSetupTable">
+									<tr>
+										<td class="manualNameColumn">
+											<label>Name</label>
+											<input type="text" ng-model="addRepository.manual.name" name="name" ng-maxlength=64 focused required>
+										</td>
+										<td class="manualForwardUrlColumn">
+											<label>Forward Url</label>
+											<input type="text" ng-model="addRepository.manual.forwardUrl" name="forwardUrl" ng-maxlength=256 required>
+										</td>
+										<td class="manualTypeColumn">
+											<label>Type</label>
+											<select ng-model="addRepository.manual.type" required>
+												<option value="git">Git</option>
+												<option value="hg">Hg</option>
+											</select>
+										</td>
+										<td class="manualAddRepositorySubmitColumn">
+											<busy-button busy="addRepository.manual.makingRequest" click="createManualRepository()" disabled="addRepositoryManualForm.$invalid">Add</busy-button>
+										</td>
+										<td class="manualAddRepositoryCancelColumn">
+											<a ng-click="clearAddRepository()" ng-show="!addRepository.manual.makingRequest">Cancel</a>
+										</td>
+									</tr>
+								</table>
+							</form>
+						</div>
+
+						<div id="gitHubSetup">
+							<spinner id="gitHubInformationSpinner" running="addRepository.setupType == 'gitHub' && retrievingGitHubInformation" ng-if="addRepository.setupType == 'gitHub' && retrievingGitHubInformation"></spinner>
+
+							<div id="connectToGitHub" ng-show="addRepository.setupType == 'gitHub' && !isConnectedToGitHub && !retrievingGitHubInformation">
+								<span>Not yet connected to GitHub.</span>
+								<a ng-click="connectToGitHub()">Click here to connect</a>
+							</div>
+
+							<form id="addRepositoryGitHubForm" name="addRepositoryGitHubForm" ng-show="addRepository.setupType == 'gitHub' && isConnectedToGitHub && !retrievingGitHubInformation" novalidate>
+
+								<table id="gitHubSetupTable" ng-show="!retrievingGitHubInformation">
+									<tr>
+										<td class="gitHubNameColumn">
+											<label>Name</label>
+											<select ng-model="addRepository.gitHub.repository" ng-options="repository as repository.displayName for repository in gitHubRepositories | orderBy:'displayName'" required></select>
+										</td>
+										<td class="gitHubAddRepositorySubmitColumn">
+											<busy-button busy="addRepository.gitHub.makingRequest" click="createGitHubRepository()" disabled="addRepositoryGitHubForm.$invalid">Add</busy-button>
+										</td>
+										<td class="gitHubAddRepositoryCancelColumn">
+											<a ng-click="clearAddRepository()" ng-show="!addRepository.gitHub.makingRequest">Cancel</a>
+										</td>
+									</tr>
+								</table>
+							</form>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</panel-drawer>
+
+		<panel-drawer drawer-name="publicKey">
+			<table id="publicKeyTable">
+				<tr>
+					<td class="sshKeyColumn">
+						<label>SSH Key<span class="sublabel">Unmodifiable</span></label>
+						<input type="text" ng-model="publicKey.key" highlight-on-click readonly>
+					</td>
+					<td class="closePublicKeyColumn">
+						<a ng-click="toggleDrawer('publicKey')">Close</a>
+					</td>
+				</tr>
+			</table>
+		</panel-drawer>
+
+		<div id="repositoriesList" fading-content>
+			<table class="delineated">
+				<tr>
+					<th class="nameColumn sortableColumn unselectable" ng-click="orderByPredicate = 'name'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'name', up: orderByPredicate == 'name' && !orderByReverse, down: orderByPredicate == 'name' && orderByReverse}"></div>
+						Name
+					</th>
+					<th class="forwardUrlColumn sortableColumn unselectable" ng-click="orderByPredicate = 'forwardUrl'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'forwardUrl', up: orderByPredicate == 'forwardUrl' && !orderByReverse, down: orderByPredicate == 'forwardUrl' && orderByReverse}"></div>
+						Forward URL
+					</th>
+					<th class="verificationColumn unselectable">Verification Type &nbsp;<a href="https://koalitycode.com/documentation?view=adminRepositories">[?]</a></th>
+					<th class="editColumn unselectable">Actions</th>
+				</tr>
+
+				<tr ng-show="repositories.length == 0">
+					<td class="nameColumn" colspan="4">There are no repositories</td>
+				</tr>
+
+				<tr ng-repeat="repository in repositories | orderBy:orderByPredicate:orderByReverse" ng-class="{editing: repository.id == currentlyEditingRepositoryId}">
+					<td class="nameColumn">
+						<span ng-show="repository.id != currentlyEditingRepositoryId">{{repository.name}}</span>
+
+						<div ng-show="repository.id == currentlyEditingRepositoryId">
+							<label>Name<span class="sublabel">Unmodifiable</span></label>
+							<input type="text" ng-model="repository.name" readonly>
+						</div>
+					</td>
+
+					<td class="forwardUrlColumn">
+						<span ng-show="repository.id != currentlyEditingRepositoryId">{{repository.forwardUrl}}</span>
+
+						<div ng-show="repository.id == currentlyEditingRepositoryId">
+							<label>Forward Url</label>
+							<input type="text" ng-model="repository.newForwardUrl" ng-maxlength=256>
+						</div>
+					</td>
+
+					<td class="verificationColumn" ng-show="!repository.deleting">
+						<div class="preVerification" ng-show="repository.verification.preAllowed">
+							<div ng-show="repository.id != currentlyEditingRepositoryId">
+								<span class="check" ng-show="true">&#x2713;</span>
+								<span class="cross" ng-show="false">&#x2718;</span>
+								<span ng-class="{white: repository.verification.pre, gray: !repository.verification.pre}">Pre</span>
+							</div>
+
+							<div ng-show="repository.id == currentlyEditingRepositoryId">
+								<input type="checkbox" ng-checked="repository.verification.newPre" ng-disabled="true">
+								<span ng-class="{white: repository.verification.newPre, gray: !repository.verification.newPre}">Pre</span>
+							</div>
+						</div>
+
+						<div class="postVerification" ng-show="repository.verification.pushAllowed">
+							<div ng-show="repository.id != currentlyEditingRepositoryId">
+								<span class="check" ng-show="repository.verification.push">&#x2713;</span>
+								<span class="cross" ng-show="!repository.verification.push">&#x2718;</span>
+								<span ng-class="{white: repository.verification.push, gray: !repository.verification.push}">Push</span>
+							</div>
+
+							<div ng-show="repository.id == currentlyEditingRepositoryId" ng-click="repository.verification.newPush = !repository.verification.newPush">
+								<input type="checkbox" ng-checked="repository.verification.newPush">
+								<span ng-class="{white: repository.verification.newPush, gray: !repository.verification.newPush}">Push</span>
+							</div>
+						</div>
+
+						<div class="pullRequestVerification" ng-show="repository.verification.pullRequestAllowed">
+							<div ng-show="repository.id != currentlyEditingRepositoryId">
+								<span class="check" ng-show="repository.verification.pullRequest">&#x2713;</span>
+								<span class="cross" ng-show="!repository.verification.pullRequest">&#x2718;</span>
+								<span ng-class="{white: repository.verification.pullRequest, gray: !repository.verification.pullRequest}">Pull Request</span>
+							</div>
+
+							<div ng-show="repository.id == currentlyEditingRepositoryId" ng-click="repository.verification.newPullRequest = !repository.verification.newPullRequest">
+								<input type="checkbox" ng-checked="repository.verification.newPullRequest">
+								<span ng-class="{white: repository.verification.newPullRequest, gray: !repository.verification.newPullRequest}">Pull Request</span>
+							</div>
+						</div>
+					</td>
+
+					<td class="editColumn" ng-show="!repository.deleting">
+						<div ng-show="!repository.saving">
+							<a ng-click="editRepository(repository)" ng-show="repository.id != currentlyEditingRepositoryId">Edit</a>
+							<a ng-click="saveRepository(repository)" ng-show="repository.id == currentlyEditingRepositoryId">Save</a>
+							<a class="red" ng-click="repository.deleting = true" ng-show="repository.id == currentlyEditingRepositoryId">Delete</a>
+							<a class="gray" ng-click="editRepository(null)" ng-show="repository.id == currentlyEditingRepositoryId">Cancel</a>
+						</div>
+
+						<spinner class="repositorySavingSpinner" running="repository.saving" ng-if="repository.saving"></spinner>
+					</td>
+
+					<td class="deleteColumn" colspan="2" ng-show="repository.deleting">
+						<label class="red">Are you sure? Enter your password</label>
+						<div class="deleteRepositoryActions">
+							<input type="password" ng-model="repository.password">
+							<a class="red" ng-click="deleteRepository(repository)">Delete</a>
+							<a ng-click="repository.deleting = false">Cancel</a>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</panel-body>
+</div>

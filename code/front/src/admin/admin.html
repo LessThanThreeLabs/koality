@@ -1,0 +1,34 @@
+<div id="admin">
+	<panel>
+		<panel-options ng-show="cloudProvider != null && gitHubEnterpriseAllowed != null">
+			<panel-option selected="view == 'users'" ng-click="selectView('users')">Users</panel-option>
+			<panel-option selected="view == 'repositories'" ng-click="selectView('repositories')">Repositories</panel-option>
+			<panel-option selected="view == 'aws'" ng-click="selectView('aws')" ng-show="cloudProvider == 'aws'">AWS</panel-option>
+			<panel-option selected="view == 'hpCloud'" ng-click="selectView('hpCloud')" ng-show="cloudProvider == 'hpcloud'">HP Cloud</panel-option>
+			<panel-option selected="view == 'exporter'" ng-click="selectView('exporter')" ng-show="cloudProvider == 'aws'">Exporter</panel-option>
+			<panel-option selected="view == 'website'" ng-click="selectView('website')">Website</panel-option>
+			<panel-option selected="view == 'notifications'" ng-click="selectView('notifications')">Notifications</panel-option>
+			<panel-option selected="view == 'gitHubEnterprise'" ng-click="selectView('gitHubEnterprise')" ng-show="gitHubEnterpriseAllowed">GitHub Enterprise</panel-option>
+			<panel-option selected="view == 'api'" ng-click="selectView('api')">API</panel-option>
+			<panel-option selected="view == 'plan'" ng-click="selectView('plan')">Plan</panel-option>
+			<panel-option selected="view == 'upgrade'" ng-click="selectView('upgrade')">Upgrade</panel-option>
+		</panel-options>
+
+		<panel-header style="z-index: -1;"></panel-header>
+		<panel-body style="z-index: -1;"></panel-body>
+
+		<div ng-switch="view">
+			<div ng-switch-when="users" ng-include="'html/admin/users/adminUsers.html' | fileSuffix"></div>
+			<div ng-switch-when="repositories" ng-include="'html/admin/repositories/adminRepositories.html' | fileSuffix"></div>
+			<div ng-switch-when="aws" ng-include="'html/admin/aws/adminAws.html' | fileSuffix"></div>
+			<div ng-switch-when="hpCloud" ng-include="'html/admin/hpCloud/adminHpCloud.html' | fileSuffix"></div>
+			<div ng-switch-when="exporter" ng-include="'html/admin/exporter/adminExporter.html' | fileSuffix"></div>
+			<div ng-switch-when="website" ng-include="'html/admin/website/adminWebsite.html' | fileSuffix"></div>
+			<div ng-switch-when="notifications" ng-include="'html/admin/notifications/adminNotifications.html' | fileSuffix"></div>
+			<div ng-switch-when="gitHubEnterprise" ng-include="'html/admin/gitHubEnterprise/adminGitHubEnterprise.html' | fileSuffix"></div>
+			<div ng-switch-when="api" ng-include="'html/admin/api/adminApi.html' | fileSuffix"></div>
+			<div ng-switch-when="plan" ng-include="'html/admin/plan/adminPlan.html' | fileSuffix"></div>
+			<div ng-switch-when="upgrade" ng-include="'html/admin/upgrade/adminUpgrade.html' | fileSuffix"></div>
+		</div>
+	</panel>
+</div>

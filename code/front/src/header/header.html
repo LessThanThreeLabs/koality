@@ -1,0 +1,44 @@
+<div id="header" class="growingCentered unselectable">
+
+	<img id="title" ng-src="{{'/img/headerLogo.png' | fileSuffix}}" ng-click="goToDashboard()">
+
+	<div id="primaryNavigation" ng-show="loggedIn">
+		<a class="headerLink" href="/dashboard" ng-class="{disabled: rootPath == '/dashboard'}">Dashboard</a>
+		<a class="headerLink" href="/analytics" ng-class="{disabled: rootPath == '/analytics'}">Analytics</a>
+
+		<dropdown>
+			<a class="headerLink" ng-class="{disabled: rootPath == '/repository'}">Repositories</a>
+			<dropdown-options>
+				<dropdown-option
+					ng-repeat="repository in repositories | orderBy:'name'"
+					ng-href="/repository/{{repository.id}}"
+					ng-class="{disabled: fullPath == '/repository/{{repository.id}}'}">
+					{{repository.name}}
+				</dropdopwn-option>
+			</dropdown-options>
+		</dropdown>
+	</div>
+
+	<div id="secondaryNavigation" ng-show="loggedIn">
+		<div id="feedback">
+			<a class="headerLink" ng-click="feedback.open = !feedback.open">Feedback</a>
+
+			<div id="feedbackMessageContainer" ng-show="feedback.open" hide-on-external-click="feedback.open" hide-function="hideFeedback()">
+				<form name="feedbackForm" novalidate>
+					<textarea ng-model="feedback.message" placeholder="I found an issue with foo, where bar will baz from time to time. I was able to reproduce the baz behavior by first... and then..." required></textarea>
+
+					<div id="feedbackOptions">
+						<spinner running="feedback.makingRequest"></spinner>
+						<a class="gray" ng-click="feedback.open = false; feedback.message=''" ng-class="{disabled: feedback.makingRequest}">Cancel</a>
+						<a ng-click="sendFeedback()" ng-class="{disabled: feedback.makingRequest}">Send</a>
+					</div>
+				</form>
+			</div>
+		</div><!-- Do not add space here! --><div id="divider"></div><!-- Do not add space here! --><a class="headerLink" href="/admin" ng-class="{disabled: rootPath == '/admin'}" ng-show="isAdmin">Admin</a><!-- Do not add space here! --><dropdown>
+			<a class="headerLink" href="/account" ng-class="{disabled: rootPath == '/account'}">My Account</a>
+			<dropdown-options>
+				<dropdown-option ng-click="performLogout()">Logout</dropdownElement>
+			</dropdown-options>
+		</dropdown>
+	</div>
+</div>

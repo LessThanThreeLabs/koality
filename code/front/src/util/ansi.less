@@ -1,0 +1,121 @@
+@import '../constants';
+
+.ansi {
+	@black: rgb(0, 0, 0);
+	@brightBlack: rgb(127, 127, 127);
+
+	@red: rgb(230, 55, 37);
+	@brightRed: rgb(240, 94, 69);
+
+	@green: rgb(130, 188, 0);
+	@brightGreen: rgb(172, 208, 93);
+
+	@yellow: rgb(255, 239, 0);
+	@brightYellow: rgb(255, 246, 140);
+
+	@blue: rgb(64, 180, 229);
+	@brightBlue: rgb(146, 206, 238);
+
+	@magenta: rgb(236, 0, 137);
+	@brightMagenta: rgb(244, 102, 184);
+
+	@cyan: rgb(0, 205, 205);
+	@brightCyan: rgb(148, 255, 250);
+
+	@white: rgb(229, 229, 229);
+	@brightWhite: rgb(255, 255, 255);
+
+	@foregroundDefault: @white;
+	@foregroundBrightDefault: @brightWhite;
+	@backgroundDefault: rgba(0, 0, 0, 0);
+
+	.foregroundDefault {
+		color: @foregroundDefault;
+
+		&.bright { color: @foregroundBrightDefault; }
+	}
+
+	.backgroundDefault {
+		background-color: @backgroundDefault;
+	}
+
+	.foregroundBlack {
+		color: @black;
+
+		&.bright { color: @brightBlack; }
+	}
+
+	.backgroundBlack {
+		background-color: @backgroundDefault;
+	}
+
+	.foregroundRed {
+		color: @red;
+
+		&.bright { color: @brightRed; }
+	}
+
+	.backgroundRed {
+		background-color: @red;
+	}
+
+	.foregroundGreen {
+		color: @green;
+
+		&.bright { color: @brightGreen; }
+	}
+
+	.backgroundGreen {
+		background-color: @green;
+	}
+
+	.foregroundYellow {
+		color: @yellow;
+
+		&.bright { color: @brightYellow; }
+	}
+
+	.backgroundYellow {
+		background-color: @yellow;
+	}
+
+	.foregroundBlue {
+		color: @blue;
+
+		&.bright { color: @brightBlue; }
+	}
+
+	.backgroundBlue {
+		background-color: @blue;
+	}
+
+	.foregroundMagenta {
+		color: @magenta;
+
+		&.bright { color: @brightMagenta; }
+	}
+
+	.backgroundMagenta {
+		background-color: @magenta;
+	}
+
+	.foregroundCyan {
+		color: @cyan;
+
+		&.bright { color: @brightCyan; }
+	}
+
+	.backgroundCyan {
+		background-color: @cyan;
+	}
+
+	.foregroundWhite {
+		color: @white;
+
+		&.bright { color: @brightWhite; }
+	}
+
+	.backgroundWhite {
+		background-color: @white;
+	}
+}

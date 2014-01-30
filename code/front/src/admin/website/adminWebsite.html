@@ -1,0 +1,30 @@
+<div id="adminWebsite" ng-controller="AdminWebsite">
+	<panel-header>Website</panel-header>
+
+	<panel-body no-scroll>
+		<form name="websiteForm" novalidate>
+			<div class="formContainer domain">
+				<label>Domain</label>
+				<input type="text" ng-model="domain.domainName" name="domainName" ng-maxlength="256" required focused>
+			</div>
+
+			<div class="formContainer certificate">
+				<div class="halfWidthFormElement left">
+					<label>Certificate</label>
+					<textarea type="text" ng-model="ssl.certificate" name="certificate" placeholder="Hidden for security reasons" required></textarea>
+				</div>
+
+				<div class="halfWidthFormElement right">
+					<label>RSA Private Key</label>
+					<textarea type="text" ng-model="ssl.privateKey" name="privateKey" placeholder="Hidden for security reasons" required></textarea>
+				</div>
+			</div>
+
+			<div class="bottomContanier">
+				<div class="formDivider"></div>
+
+				<busy-button centered busy="makingRequest" click="submit()" disabled="(domain.domainName == null || domain.domainName == '') && (ssl.certificate == null || ssl.certificate == '' || ssl.privateKey == null || ssl.privateKey == '')">Save Changes</busy-button>
+			</div>
+		</form>
+	</panel-body>
+</div>

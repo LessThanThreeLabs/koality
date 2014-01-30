@@ -1,0 +1,387 @@
+@import '../constants';
+
+
+.changesMenu {
+	@headerHeight: 50px;
+	@footerHeight: 8px;
+	@optionHeight: 44px;
+	@toothWidth: @optionHeight * .35;
+
+	position: relative;
+	width: @menuWidth;
+	height: 100%;
+
+	.changesMenuBackgroundPanel {
+		position: absolute;
+		z-index: 1;
+		top: @headerHeight;
+		left: 0;
+		right: @toothWidth;
+		bottom: @footerHeight;
+		background-color: @panelBackground;
+	}
+
+	.changesMenuHeader {
+		position: absolute;
+		z-index: 100;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: @headerHeight;
+
+		&.noPadding {
+			.changesMenuHeaderContent {
+				padding-left: 0;
+				padding-right: 0;
+			}
+		}
+
+		.left {
+			float: left;
+			height: 100%;
+		}
+
+		.right {
+			float: right;
+			height: 100%;
+		}
+
+		.changesMenuHeaderContent {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: @toothWidth;
+			padding-left: 12px;
+			padding-right: 12px;
+			height: @headerHeight;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			background-color: @panelHeaderBackground;
+			border-bottom: 1px solid @platformBackground;
+			border-top-left-radius: @borderRadius;
+			border-top-right-radius: @borderRadius;
+			color: @koalityWhite;
+			font-size: 18px;
+			line-height: @headerHeight;
+		}
+
+		.changesMenuHeaderBuffer {
+			position: absolute;
+			top: 0;
+			right: 0;
+			width: @toothWidth;
+			height: @headerHeight + 1;
+
+			background: linear-gradient(to bottom, fade(@platformBackground, 100%) 0%, fade(@platformBackground, 0%) 100%);
+			background: -moz-linear-gradient(top, fade(@platformBackground, 100%) 0%, fade(@platformBackground, 0%) 100%);
+			background: -webkit-linear-gradient(top, fade(@platformBackground, 100%) 0%, fade(@platformBackground, 0%) 100%);
+			background: -o-linear-gradient(top, fade(@platformBackground, 100%) 0%, fade(@platformBackground, 0%) 100%);
+			background: -ms-linear-gradient(top, fade(@platformBackground, 100%) 0%, fade(@platformBackground, 0%) 100%);
+		}
+	}
+
+	.changesMenuOptions {
+		position: absolute;
+		z-index: 99;
+		top: @borderRadius;
+		left: 0;
+		right: 0;
+		bottom: @borderRadius;
+		overflow: hidden;
+
+		.changesMenuOptionsScrollWrapper {
+			@scrollbarHideWidth: 50px;
+
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: -@scrollbarHideWidth;
+			bottom: 0;
+			padding-top: @headerHeight - @borderRadius;
+			padding-bottom: @footerHeight - @borderRadius;
+			overflow-y: auto;
+
+			.changesMenuEmptyMessage {
+				display: block;
+				position: relative;
+				padding: 12px;
+				width: @menuWidth - @toothWidth;
+				min-height: @optionHeight;
+				box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+
+			.changesMenuOption {
+				cursor: hand; cursor: pointer;
+				display: block;
+				position: relative;
+				width: @menuWidth - @toothWidth;
+				height: @optionHeight;
+
+				.changesMenuOptionContents {
+					@transitionTime: 0.25s;
+					transition: all @transitionTime ease-in-out;
+					-moz-transition: all @transitionTime ease-in-out;
+					-webkit-transition: all @transitionTime ease-in-out;
+					-o-transition: all @transitionTime ease-in-out;
+
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+					color: @koalityGray;
+					background-color: @panelBackground;
+					border-bottom: 1px solid @platformBackground;
+
+					.changesMenuOptionTextContainer {
+						position: absolute;
+						top: 0;
+						left: 12px;
+						right: 22px;
+						bottom: 0;
+						overflow: hidden;
+						font-size: 14px;
+						font-weight: 300;
+						line-height: @optionHeight;
+						text-overflow: ellipsis;
+						white-space: nowrap;
+
+						&.spinnerTextPadding {
+							right: 58px;
+						}
+					}
+
+					.changesMenuOptionSpinner {
+						position: absolute;
+						top: 0;
+						right: 20px;
+						width: @optionHeight;
+						height: @optionHeight;
+					}
+
+					.changesMenuOptionArrow {
+						@rightTransitionTime: 0.25s;
+						@borderColorTransitionTime: 0.25s;
+						transition: right @rightTransitionTime ease-in-out,
+							border-color @borderColorTransitionTime ease-in-out;
+						-moz-transition: right @rightTransitionTime ease-in-out,
+							border-color @borderColorTransitionTime ease-in-out;
+						-webkit-transition: right @rightTransitionTime ease-in-out,
+							border-color @borderColorTransitionTime ease-in-out;
+						-o-transition: right @rightTransitionTime ease-in-out,
+							border-color @borderColorTransitionTime ease-in-out;
+
+						position: absolute;
+						top: 18px;
+						right: 10px;
+						width: 5px;
+						height: 5px;
+						border-top: 2px solid @koalityGray;
+						border-right: 2px solid @koalityGray;
+
+						transform: rotate(45deg);
+						-moz-transform: rotate(45deg);
+						-webkit-transform: rotate(45deg);
+						-ms-transform: rotate(45deg);
+						-o-transform: rotate(45deg);
+					}
+				}
+
+				.changesMenuOptionTooth {
+					@transitionTime: 0.25s;
+					transition: all @transitionTime ease-in-out;
+					-moz-transition: all @transitionTime ease-in-out;
+					-webkit-transition: all @transitionTime ease-in-out;
+					-o-transition: all @transitionTime ease-in-out;
+
+					position: absolute;
+					top: 0;
+					left: @menuWidth - @toothWidth;
+					bottom: 0;
+					width: 0;
+					height: 0;
+
+					border-left: 0 solid @panelBackground;
+					border-top: @optionHeight/2 solid transparent;
+					border-bottom: @optionHeight/2 solid transparent;
+				}
+
+				&.orange {
+					.changesMenuOptionContents {
+						color: @koalityOrange;
+
+						.changesMenuOptionArrow {
+							border-color: @koalityOrange;
+						}			
+					}
+				}
+
+				&.red {
+					.changesMenuOptionContents {
+						color: @koalityRed;
+
+						.changesMenuOptionArrow {
+							border-color: @koalityRed;
+						}			
+					}
+				}
+
+				&:hover {
+
+					.changesMenuOptionContents {
+						color: @koalityWhite;
+						background-color: @changeHover;
+
+						.changesMenuOptionArrow {
+							right: 2px;
+							border-color: @koalityWhite;
+						}
+					}
+
+					.changesMenuOptionTooth {
+						border-left: @toothWidth solid @changeHover;
+					}
+
+					&.green {
+						.changesMenuOptionContents {
+							color: @koalityGreen;
+
+							.changesMenuOptionArrow {
+								border-color: @koalityGreen;
+							}
+						}
+					}
+
+					&.orange {
+						.changesMenuOptionContents {
+							color: @koalityOrange;
+
+							.changesMenuOptionArrow {
+								border-color: @koalityOrange;
+							}
+						}
+					}
+
+					&.red {
+
+						.changesMenuOptionContents {
+							color: @koalityRed;
+
+							.changesMenuOptionArrow {
+								border-color: @koalityRed;
+							}			
+						}
+					}
+				}
+
+				&.selected {
+
+					.changesMenuOptionContents {
+						color: @koalityWhite;
+						background-color: @changeHover;
+
+						.changesMenuOptionArrow {
+							right: 2px;
+							border-color: @koalityWhite;
+						}
+					}
+
+					.changesMenuOptionTooth {
+						border-left: @toothWidth solid @changeHover;
+					}
+
+					&.green {
+
+						.changesMenuOptionContents {
+							color: @koalityWhite;
+							background-color: @koalityGreen;
+
+							.changesMenuOptionArrow {
+								border-color: @koalityWhite;
+							}
+						}
+
+						.changesMenuOptionTooth {
+							border-left-color: @koalityGreen;
+						}
+					}
+
+					&.orange {
+
+						.changesMenuOptionContents {
+							color: @koalityWhite;
+							background-color: @koalityOrange;
+
+							.changesMenuOptionArrow {
+								border-color: @koalityWhite;
+							}
+						}
+
+						.changesMenuOptionTooth {
+							border-left-color: @koalityOrange;
+						}
+					}
+
+					&.red {
+
+						.changesMenuOptionContents {
+							color: @koalityWhite;
+							background-color: @koalityRed;
+
+							.changesMenuOptionArrow {
+								border-color: @koalityWhite;
+							}
+						}
+
+						.changesMenuOptionTooth {
+							border-left-color: @koalityRed;
+						}
+					}
+				}
+			}
+
+			.changesMenuRetrievingMore {
+				@keyframes changesMenuRetrievingMoreFadeIn {
+					0% { opacity: 0.0; }
+					50% { opacity: 0.0; }
+					100% { opacity: 1.0; }
+				}
+
+				@-webkit-keyframes changesMenuRetrievingMoreFadeIn {
+					0% { opacity: 0.0; }
+					50% { opacity: 0.0; }
+					100% { opacity: 1.0; }
+				}
+
+				display: block;
+				position: relative;
+				width: @menuWidth - @toothWidth;
+				height: @optionHeight;
+
+				animation: changesMenuRetrievingMoreFadeIn 1s linear;
+				-webkit-animation: changesMenuRetrievingMoreFadeIn 1s linear;
+
+				#retrievingMoreSpinner {
+					position: absolute;
+					top: 0;
+					left: 0;
+					right: 0;
+					bottom: 0;
+				}
+			}
+		}
+	}
+
+	.changesMenuFooter {
+		position: absolute;
+		z-index: 100;
+		left: 0;
+		right: @toothWidth;
+		bottom: 0;
+		height: @footerHeight;
+		background-color: @panelFooterBackground;
+		border-bottom-left-radius: @borderRadius;
+		border-bottom-right-radius: @borderRadius;
+	}
+}

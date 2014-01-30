@@ -1,0 +1,237 @@
+<div id="repositoryStageDetails" ng-controller="RepositoryStageDetails">
+	<panel>
+		<panel-header>
+			<div class="left">
+				<span ng-show="selectedChange.getInformation() != null && selectedStage.isSummary()">summary</span>
+				<span ng-show="selectedStage.getInformation() != null">{{selectedStage.getInformation().name}}</span>
+				<span ng-show="selectedStage.isSkipped()">skipped</span>
+				<span ng-show="selectedStage.isMerge()">merge</span>
+				<span ng-show="selectedStage.isDebug()">debug</span>
+
+				<span id="loadingText" ng-show="consoleTextManager.isRetrievingLines() || xunit.makingRequest">loading...</span>
+			</div>
+
+			<div class="right" ng-show="selectedStage.isSummary()">
+				<a ng-show="selectedChange.getInformation().aggregateStatus == 'failed'" ng-click="toggleDrawer('retrigger')">Retrigger</a>
+				<a ng-click="toggleDrawer('launchDebugInstance')">Launch Debug Instance</a>
+			</div>
+
+			<div class="right" ng-show="selectedStage.getInformation().outputTypes.length > 1">
+				<dropdown right light>
+					<span ng-show="output.type == 'console'">Text</span>
+					<span ng-show="output.type == 'xunit'">XUnit</span>
+					<div class="triangle down white"></div>
+					<dropdown-options>
+						<dropdown-option ng-click="output.type = 'console'" ng-if="output.hasConsole" ng-class="{disabled: output.type == 'console'}">Text</dropdown-option>
+						<dropdown-option ng-click="output.type = 'xunit'" ng-if="output.hasXUnit" ng-class="{disabled: output.type == 'xunit'}">XUnit</dropdown-option>
+					</dropdown-options>
+				</dropdown>
+			</div>
+		</panel-header>
+
+		<panel-body open-drawer="currentlyOpenDrawer">
+			<panel-drawer drawer-name="retrigger">
+				<form id="retriggerForm" name="retriggerForm" novalidate>
+					<div id="retriggerDescription">
+						Koality will relaunch this change. Do this if you're confident this change should have passed.
+					</div>
+
+					<table>
+						<tr>
+							<td id="retriggerCreateColumn">
+								<busy-button busy="retrigger.makingRequest" click="retrigger()" disabled="retriggerForm.$invalid">Retrigger</busy-button>
+							</td>
+							<td id="retriggerCancelColumn">
+								<a ng-click="clearRetrigger()" ng-show="!retrigger.makingRequest">Cancel</a>
+							</td>
+						</tr>
+					</table>
+				</form>
+			</panel-drawer>
+
+			<panel-drawer drawer-name="launchDebugInstance">
+				<form id="launchDebugInstanceForm" name="launchDebugInstanceForm" novalidate>
+					<div id="debugInstanceDescription">
+						Koality will provision a virtual machine with the contents of this change and email you when it's ready. The machine will automatically spin down after the instance duration.
+					</div>
+
+					<table>
+						<tr>
+							<td id="debugInstanceDurationColumn">
+								<label>Instance Duration</label>
+								<input type="number" ng-model="debugInstance.durationInMinutes" name="durationInMinutes">
+								<span>minutes</span>
+							</td>
+							<td id="debugInstanceCreateColumn">
+								<busy-button busy="debugInstance.makingRequest" click="launchDebugInstance()" disabled="launchDebugInstanceForm.$invalid">Launch</busy-button>
+							</td>
+							<td id="debugInstanceCancelColumn">
+								<a ng-click="clearLaunchDebugInstance()" ng-show="!debugInstance.makingRequest">Cancel</a>
+							</td>
+						</tr>
+					</table>
+				</form>
+			</panel-drawer>
+
+			<div id="summary" ng-show="selectedStage.isSummary() && selectedChange.getInformation() != null">
+				<table>
+					<tr>
+						<th>Name</th>
+
+						<td>
+							<span ng-show="selectedChange.getInformation().user.id >= 1000">
+								{{selectedChange.getInformation().user.name.first}} {{selectedChange.getInformation().user.name.last}}
+							</span>
+
+							<span ng-show="selectedChange.getInformation().user.id < 1000">
+								{{selectedChange.getInformation().headCommit.user.name}}
+							</span>
+						</td>
+					</tr>
+					<tr>
+						<th>Email</th>
+
+						<td>
+							<a ng-href="mailto:{{selectedChange.getInformation().user.email}}?subject=Koality%3A%20{{selectedRepository.getInformation().name}}%20-%20change%20%23{{selectedChange.getInformation().headCommit.sha | limitTo:4}}&body=Link%20to%20change%3A%20{{currentUrl}}" target="_blank" ng-show="selectedChange.getInformation().user.id >= 1000">
+								{{selectedChange.getInformation().user.email}}
+							</a>
+
+							<a ng-href="mailto:{{selectedChange.getInformation().headCommit.user.email}}?subject=Koality%3A%20{{selectedRepository.getInformation().name}}%20-%20change%20%23{{selectedChange.getInformation().headCommit.sha | limitTo:4}}&body=Link%20to%20change%3A%20{{currentUrl}}" target="_blank" ng-show="selectedChange.getInformation().user.id < 1000">
+								{{selectedChange.getInformation().headCommit.user.email}}
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<th>Submit Time</th>
+						<td>{{selectedChange.getInformation().createTime | date:'EEEE, MM/dd hh:mm:ss a'}}</td>
+					</tr>
+					<tr ng-show="selectedChange.getInformation().startTime != null">
+						<th>Start Time</th>
+						<td>{{selectedChange.getInformation().startTime | date:'EEEE, MM/dd hh:mm:ss a'}}</td>
+					</tr>
+					<tr ng-show="selectedChange.getInformation().startTime != null && selectedChange.getInformation().endTime != null">
+						<th>Duration</th>
+						<td>{{(selectedChange.getInformation().endTime - selectedChange.getInformation().startTime) / 60000 | number:0}}m {{((selectedChange.getInformation().endTime - selectedChange.getInformation().startTime) % 60000) / 1000 | number:0}}s</td>
+					</tr>
+					<tr>
+						<th>Branch</th>
+						<td>{{selectedChange.getInformation().target}}</td>
+					</tr>
+					<tr>
+						<th>Head SHA</th>
+						<td>{{selectedChange.getInformation().headCommit.sha}}</td>
+					</tr>
+					<tr>
+						<th>Head Commit</th>
+						<td>
+							<pre ng-bind-html="selectedChange.getInformation().headCommit.message | linky"></pre>
+						</td>
+					</tr>
+					<tr ng-show="(selectedChange.getInformation().headCommit.sha | shaLink: selectedChange.getInformation().headCommit.baseSha:selectedRepository.getInformation()) != null">
+						<th>Diff</th>
+						<td ng-bind-html="selectedChange.getInformation().headCommit.sha | shaLink: selectedChange.getInformation().headCommit.baseSha:selectedRepository.getInformation()"></td>
+					</tr>
+					<tr ng-show="exportUris.length > 0">
+						<th>Exported Files</th>
+						<td class="exportUris">
+							<div ng-repeat="exportUri in exportUris">
+								<a ng-href="{{exportUri.uri}}" target="_blank">{{exportUri.uri}}</a>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="console" ng-show="output.type == 'console'">
+				<div auto-scroll-to-bottom="consoleTextManager.getNewLines()" auto-scroll-to-bottom-buffer="40" start-at-bottom on-scroll-to-top="consoleTextManager.retrieveMoreLines()" fading-content>
+					<console-text class="consoleText" new-lines="consoleTextManager.getNewLines()" old-lines="consoleTextManager.getOldLines()" remove-lines="consoleTextManager.removeLines(startIndex, numLines)" listener="contentTextManager.lastUpdateTime"></console-text>
+				</div>
+			</div>
+
+			<div id="xunit" ng-show="output.type == 'xunit'">
+				<div on-scroll-to-bottom="xunit.maxResults = xunit.maxResults + 100" fading-content>
+					<table class="delineated tbodyHack">
+						<tbody>
+							<tr>
+								<th class="nameColumn sortableColumn unselectable" ng-click="xunit.orderByPredicate = 'name'; xunit.orderByReverse = !xunit.orderByReverse">
+									<div class="triangle gray" ng-class="{right: xunit.orderByPredicate != 'name', up: xunit.orderByPredicate == 'name' && !xunit.orderByReverse, down: xunit.orderByPredicate == 'name' && xunit.orderByReverse}"></div>
+									Name
+								</th>
+								<th class="statusColumn sortableColumn unselectable" ng-click="xunit.orderByPredicate = 'status'; xunit.orderByReverse = !xunit.orderByReverse">
+									<div class="triangle gray" ng-class="{right: xunit.orderByPredicate != 'status', up: xunit.orderByPredicate == 'status' && !xunit.orderByReverse, down: xunit.orderByPredicate == 'status' && xunit.orderByReverse}"></div>
+									Status
+								</th>
+								<th class="timeColumn sortableColumn unselectable" ng-click="xunit.orderByPredicate = 'time'; xunit.orderByReverse = !xunit.orderByReverse">
+									<div class="triangle gray" ng-class="{right: xunit.orderByPredicate != 'time', up: xunit.orderByPredicate == 'time' && !xunit.orderByReverse, down: xunit.orderByPredicate == 'time' && xunit.orderByReverse}"></div>
+									Duration
+								</th>
+							</tr>
+						</tbody>
+
+						<tbody ng-repeat="testCase in xunit.testCases | orderBy:xunit.orderByPredicate:xunit.orderByReverse | limitTo:xunit.maxResults">
+							<tr ng-class="{red: testCase.status == 'failed', gray: testCase.status != 'failed', combineWithNext: testCase.showMore}">
+								<td class="nameColumn" ng-class="{selectable: testCase.failure != null || testCase.error != null || testCase.sysout != null || testCase.syserr != null}" ng-click="testCase.showMore = (testCase.failure != null || testCase.error != null || testCase.sysout != null || testCase.syserr != null) && !testCase.showMore">
+									<div class="triangleWrapper">
+										<div class="triangle" ng-class="{red: testCase.status == 'failed', gray: testCase.status != 'failed', right: !testCase.showMore, down: testCase.showMore}" ng-show="testCase.failure != null || testCase.error != null || testCase.sysout != null || testCase.syserr != null"></div>
+									</div>
+
+									<span ng-bind-html="testCase.name"></span>
+								</td>
+								<td class="statusColumn">{{testCase.status}}</td>
+								<td class="timeColumn">{{testCase.time | number: 6}}</td>
+							</tr>
+
+							<tr ng-show="testCase.showMore" ng-class="{combineWithPrevious: testCase.showMore}">
+								<td class="textColumn" colspan=3>
+									<div class="failureText" ng-if="testCase.failure != null">
+										<strong>Failure:</strong>
+										<pre ng-bind-html="testCase.failure"></pre>
+									</div>
+
+									<div class="errorText" ng-if="testCase.error != null">
+										<strong>Error:</strong>
+										<pre ng-bind-html="testCase.error"></pre>
+									</div>
+
+									<div class="sysoutText" ng-if="testCase.sysout != null">
+										<strong>System Out:</strong>
+										<pre ng-bind-html="testCase.sysout"></pre>
+									</div>
+
+									<div class="syserrText" ng-if="testCase.syserr != null">
+										<strong>System Error:</strong>
+										<pre ng-bind-html="testCase.syserr"></pre>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<div id="skipped" ng-show="selectedStage.isSkipped()">
+				<div id="skippedMessage">
+					This change was not verified.
+				</div>
+			</div>
+
+			<div id="merge" ng-show="selectedStage.isMerge()">
+				<div ng-show="selectedChange.getInformation().mergeStatus == 'passed'">
+					Change merged successfully.
+				</div>
+				<div ng-show="selectedChange.getInformation().mergeStatus == 'failed'">
+					Failed to merge. Try pulling before pushing again.
+				</div>
+			</div>
+
+			<div id="debug" ng-show="selectedStage.isDebug()">
+				<div id="debugMessage">
+					This change failed to create any output. This could be caused by invalid AWS credentials.
+				</div>
+				<div id="debugInstructions">
+					Contact your administrator to correct the issue.
+				</div>
+			</div>
+		</panel-body>
+	</panel>
+</div>

@@ -1,0 +1,112 @@
+@import '../constants';
+
+.notification {
+	@initialTop: -@notificationHeight;
+	@finalTop: 0;
+	
+	@keyframes notificationSlideIn { 
+		from { top: @initialTop; }
+		to { top: @finalTop; }
+	}
+	@-moz-keyframes notificationSlideIn {
+		from { top: @initialTop; }
+		to { top: @finalTop; }
+	}
+	@-webkit-keyframes notificationSlideIn {
+		from { top: @initialTop; }
+		to { top: @finalTop; }
+	}
+	@-o-keyframes notificationSlideIn {
+		from { top: @initialTop; }
+		to { top: @finalTop; }
+	}
+
+	@keyframes notificationSlideOut { 
+		from { top: @finalTop }
+		to { top: @initialTop; }
+	}
+	@-moz-keyframes notificationSlideOut {
+		from { top: @finalTop }
+		to { top: @initialTop; }
+	}
+	@-webkit-keyframes notificationSlideOut {
+		from { top: @finalTop }
+		to { top: @initialTop; }
+	}
+	@-o-keyframes notificationSlideOut {
+		from { top: @finalTop }
+		to { top: @initialTop; }
+	}
+
+	position: absolute;
+	top: @finalTop;
+	left: 0;
+	right: 0;
+	height: @notificationHeight;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+
+	@notificationSlideInTransitionTime: 0.5s;
+	animation: notificationSlideIn @notificationSlideInTransitionTime ease-in-out;
+	-moz-animation: notificationSlideIn @notificationSlideInTransitionTime ease-in-out;
+	-webkit-animation: notificationSlideIn @notificationSlideInTransitionTime ease-in-out;
+	-o-animation: notificationSlideIn @notificationSlideInTransitionTime ease-in-out;
+
+	&.hiding {
+		top: @initialTop;
+
+		@notificationSlideOutTransitionTime: 0.5s;
+		animation: notificationSlideOut @notificationSlideOutTransitionTime ease-in-out;
+		-moz-animation: notificationSlideOut @notificationSlideOutTransitionTime ease-in-out;
+		-webkit-animation: notificationSlideOut @notificationSlideOutTransitionTime ease-in-out;
+		-o-animation: notificationSlideOut @notificationSlideOutTransitionTime ease-in-out;
+	}
+
+	&.green {
+		background-color: @koalityGreen;
+		border-top: 1px solid @koalityDarkGreen;
+		border-bottom: 1px solid @koalityDarkGreen;
+	}
+
+	&.orange {
+		background-color: @koalityOrange;
+		border-top: 1px solid @koalityDarkOrange;
+		border-bottom: 1px solid @koalityDarkOrange;
+	}
+
+	&.red {
+		background-color: @koalityRed;
+		border-top: 1px solid @koalityDarkRed;
+		border-bottom: 1px solid @koalityDarkRed;
+	}
+
+	.notificationContent {
+		color: @koalityWhite;
+		height: 100%;
+		font-size: 16px;
+		font-weight: 500;
+		line-height: @notificationHeight;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		.notificationMessage {
+			float: left;
+
+			a {
+				color: @koalityWhite;
+
+				&:link { text-decoration: underline; }
+				&:visited { text-decoration: underline; }
+				&:hover { text-decoration: underline; }
+				&:active { text-decoration: underline; }
+			}
+		}
+
+		.notificationClose {
+			cursor: hand; cursor: pointer;
+			float: right;
+			padding: 0 20px;
+		}
+	}
+}

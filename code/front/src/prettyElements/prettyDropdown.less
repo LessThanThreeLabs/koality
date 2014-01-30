@@ -1,0 +1,79 @@
+@import '../constants';
+
+.prettyDropdownContainer {
+	@initialFadeInOpacity: 0.0;
+	@finalFadeInOpacity: 1.0;
+	@keyframes fadeIn { 
+		from { opacity: @initialFadeInOpacity; }
+		to { opacity: @finalFadeInOpacity; }
+	}
+	@-moz-keyframes fadeIn {
+		from { opacity: @initialFadeInOpacity; }
+		to { opacity: @finalFadeInOpacity; }
+	}
+	@-webkit-keyframes fadeIn {
+		from { opacity: @initialFadeInOpacity; }
+		to { opacity: @finalFadeInOpacity; }
+	}
+	@-o-keyframes fadeIn {
+		from { opacity: @initialFadeInOpacity; }
+		to { opacity: @finalFadeInOpacity; }
+	}
+
+	&:hover {
+		.prettyDropdown {
+			@fadeInTransitionTime: 0.25s;
+			animation: fadeIn @fadeInTransitionTime ease-in;
+			-moz-animation: fadeIn @fadeInTransitionTime ease-in;
+			-webkit-animation: fadeIn @fadeInTransitionTime ease-in;
+			-o-animation: fadeIn @fadeInTransitionTime ease-in;
+
+			display: block;
+		}
+	}
+
+	.prettyDropdown {
+		position: absolute;
+		top: 100%;
+		z-index: 9000;
+		display: none;
+		min-width: 100%;
+		background-color: @headerBackground;
+
+		// used in dropdown directive
+		&.temporaryHide {
+			display: none !important;
+		}
+
+		&.leftAligned {
+			left: 0px;
+			text-align: left;
+		}
+
+		&.rightAligned {
+			right: 0px;
+			text-align: right;
+		}
+
+		.prettyDropdownOption {
+			cursor: hand;
+			cursor: pointer;
+
+			@backgroundColorTransitionTime: 0.5s;
+			transition: background-color @backgroundColorTransitionTime ease-out;
+			-moz-transition: background-color @backgroundColorTransitionTime ease-out;
+			-webkit-transition: background-color @backgroundColorTransitionTime ease-out;
+			-o-transition: background-color @backgroundColorTransitionTime ease-out;
+
+			@height: 30px;
+			padding: 0px 20px 0px 20px;
+			height: @height;
+			line-height: @height;
+			white-space: nowrap;
+
+			&:hover {
+				background-color: @koalityGreen;
+			}
+		}
+	}
+}
