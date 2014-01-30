@@ -94,8 +94,8 @@ func (remoteCommand *RemoteCommand) toScript() shell.Command {
 		shell.Command("exit $_r"),
 	)
 
-	return shell.And(
+	return shell.Login(shell.And(
 		advertiseCommand(remoteCommand, fmt.Sprintf("cd %s", remoteCommand.directory)),
 		commandsWithTimeout,
-	)
+	))
 }
