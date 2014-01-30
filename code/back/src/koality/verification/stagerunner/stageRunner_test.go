@@ -193,7 +193,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 
 	commands := []verification.Command{
-		remotecommand.NewRemoteCommand(false, "command name!!", 1000, []string{"xunitPath"}, []string{"true"}),
+		remotecommand.NewRemoteCommand(false, ".", "command name!!", 1000, []string{"xunitPath"}, []string{"true"}),
 	}
 	for index, command := range commands {
 		_, err := suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))

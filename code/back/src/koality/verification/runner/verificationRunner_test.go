@@ -88,7 +88,7 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	}
 	defer os.RemoveAll(path.Dir(repositoryManager.ToPath(repository)))
 
-	vmPool := vm.NewPool(0, localmachine.Manager, 0, 3)
+	vmPool := vm.NewPool(1, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
 	verificationRunner := New(resourcesConnection, poolManager, repositoryManager)
