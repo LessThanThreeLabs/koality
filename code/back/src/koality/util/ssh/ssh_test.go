@@ -99,7 +99,7 @@ func (suite *SshSuite) TestGitShell(check *gocheck.C) {
 	shell.command = []string{"git-upload-pack", localUri}
 	commandToExec, err = shell.GetCommand()
 	check.Assert(err, gocheck.IsNil)
-	sshwrapperPath, err := pathtranslator.TranslatePath(pathtranslator.BinaryPath("sshwrapper"))
+	sshwrapperPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(commandToExec, gocheck.DeepEquals, vm.Command{
 		Argv: []string{sshwrapperPath, "git@github.com", "git-upload-pack KoalityCode/koality-v1.git"},

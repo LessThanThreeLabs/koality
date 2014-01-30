@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	shellPath, err := pathtranslator.TranslatePath(pathtranslator.BinaryPath("restrictedShell"))
+	shellPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("restrictedShell"))
 	if err != nil {
 		log.Fatal(err)
 	}

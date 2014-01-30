@@ -39,7 +39,7 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 
 func getIndexTemplate() (*template.Template, error) {
 	relativePath := path.Join("code", "front", "templates", "index.html")
-	filePath, err := pathtranslator.TranslatePath(relativePath)
+	filePath, err := pathtranslator.TranslatePathAndCheckExists(relativePath)
 	if err != nil {
 		return nil, err
 	}

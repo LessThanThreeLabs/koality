@@ -96,7 +96,7 @@ func New() (*resources.Connection, error) {
 
 func getSchemaLocation() (string, error) {
 	relativePath := path.Join("postgres", "schema.sql")
-	return pathtranslator.TranslatePath(relativePath)
+	return pathtranslator.TranslatePathAndCheckExists(relativePath)
 }
 
 func getDumpLocation() (string, error) {

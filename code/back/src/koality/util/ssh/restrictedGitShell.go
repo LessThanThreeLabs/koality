@@ -83,7 +83,7 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 		uri := remoteUriParts[0]
 		path := remoteUriParts[1]
 		var sshwrapperPath string
-		sshwrapperPath, err = pathtranslator.TranslatePath(pathtranslator.BinaryPath("sshwrapper"))
+		sshwrapperPath, err = pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
 		if err != nil {
 			return
 		}

@@ -9,6 +9,10 @@ import (
 )
 
 func TranslatePath(relativePath string) (string, error) {
+	return TranslatePathWithCheckFunc(relativePath, CheckIdentity)
+}
+
+func TranslatePathAndCheckExists(relativePath string) (string, error) {
 	return TranslatePathWithCheckFunc(relativePath, CheckExists)
 }
 
