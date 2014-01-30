@@ -5,6 +5,7 @@ sections:
     run on: all
     fail on: first
     scripts:
+    - false
     #  pull down missing submodules
     - git submodule update --init --recursive
     # create repositories directory
