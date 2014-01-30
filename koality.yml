@@ -40,6 +40,6 @@ sections:
       cd code/back/src/koality
       ls -d */ | while read testDirectory; do
         echo "- ${testDirectory%?}:"
-        echo "    scripts:"
+        echo "    command:"
         echo "    - go test -v koality/$testDirectory..."
       done
