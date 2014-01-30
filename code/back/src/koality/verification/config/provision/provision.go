@@ -122,17 +122,8 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionComman
 
 	for language, version := range languageConfig {
 		languageString, ok := language.(string)
-
 		if !ok {
 			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The language specifying variable %v is not a string.", language)}
-		}
-
-		_, okFloat := version.(float64)
-		_, okString := version.(string)
-		_, okInt := version.(int)
-
-		if !(okFloat || okString || okInt) {
-			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The version specifying variable %#v is not a recognizable format.", version)}
 		}
 
 		versionString := fmt.Sprintf("%v", version)
