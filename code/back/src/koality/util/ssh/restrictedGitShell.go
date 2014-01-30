@@ -1,16 +1,13 @@
 package ssh
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
-	"io"
-	"io/ioutil"
+	"fmt"
 	"koality/internalapi"
 	"koality/repositorymanager"
 	"koality/resources"
+	"koality/util/pathtranslator"
 	"koality/vm"
 	"net/rpc"
-	"path"
 	"strings"
 )
 
@@ -22,8 +19,8 @@ type restrictedGitShell struct {
 
 var (
 	gitCommandArgNums = map[string]int{
-		"git-receive-pack": 3,
-		"git-upload-pack":  3,
+		"git-receive-pack": 2,
+		"git-upload-pack":  2,
 		// "git-show":         4,
 	}
 	validGitCommands = map[string]bool{
@@ -69,22 +66,11 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 
 		repositoryManager := repositorymanager.New(repositoryInfo.RepositoriesPath, nil)
 		repoPath := repositoryManager.ToPath(repository)
-		command.Argv = []string{"jgit", "receive-pack", repoPath, string(shell.userId)}
+		command.Argv = []string{"jgit", "receive-pack", repoPath, fmt.Sprint(shell.userId)}
 	case "git-upload-pack":
 		var privateKey string
 		var emptyInput interface{}
 		if err = shell.client.Call("UserInfoReader.GetRepoPrivateKey", &emptyInput, &privateKey); err != nil {
-			return
-		}
-		hash := sha1.New()
-		_, err = io.WriteString(hash, privateKey)
-		if err != nil {
-			return
-		}
-
-		privateKeyPath := path.Join("/tmp", hex.EncodeToString(hash.Sum(nil)))
-		err = ioutil.WriteFile(privateKeyPath, []byte(privateKey), 0600)
-		if err != nil {
 			return
 		}
 
@@ -96,8 +82,14 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 		remoteUriParts := strings.Split(repository.RemoteUri, ":")
 		uri := remoteUriParts[0]
 		path := remoteUriParts[1]
-		command.Argv = []string{"ssh", "-oStrictHostKeyChecking=no",
-			"-i", privateKeyPath, uri, "git-upload-pack " + path}
+		var sshwrapperPath string
+		sshwrapperPath, err = pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
+		if err != nil {
+			return
+		}
+
+		command.Argv = []string{sshwrapperPath, uri, "git-upload-pack " + path}
+		command.Envv = []string{"PRIVATE_KEY=" + privateKey}
 		// case "git-show":
 		// 	show_ref_file := shell.command[2]
 		// 	command = []string{"sh", "-c",

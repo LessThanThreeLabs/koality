@@ -67,8 +67,16 @@ func (repository *hgRepository) deleteRepository() (err error) {
 	return os.RemoveAll(repository.path)
 }
 
-func (repository *hgRepository) getTopRef(branchOrRef string) (ref string, err error) {
-	showCommand := Command(repository, nil, "log", "-r", branchOrRef)
+func (repository *hgRepository) getTopSha(ref string) (topSha string, err error) {
+	if err = checkRepositoryExists(repository.path); err != nil {
+		return
+	}
+
+	if err = repository.fetchWithPrivateKey(); err != nil {
+		return
+	}
+
+	showCommand := Command(repository, nil, "log", "-r", ref)
 	if err = RunCommand(showCommand); err != nil {
 		return
 	}
@@ -83,11 +91,19 @@ func (repository *hgRepository) getTopRef(branchOrRef string) (ref string, err e
 		return
 	}
 
-	ref = strings.TrimSpace(strings.TrimPrefix(shaLine, "changeset:"))
+	topSha = strings.TrimSpace(strings.TrimPrefix(shaLine, "changeset:"))
 	return
 }
 
-func (repository *hgRepository) getCommitAttributes(ref string) (message, username, email string, err error) {
+func (repository *hgRepository) getCommitAttributes(ref string) (headSha, message, username, email string, err error) {
+	if err = checkRepositoryExists(repository.path); err != nil {
+		return
+	}
+
+	if err = repository.fetchWithPrivateKey(); err != nil {
+		return
+	}
+
 	command := Command(repository, nil, "log", "-r", ref)
 	if err = RunCommand(command); err != nil {
 		err = NoSuchCommitInRepositoryError{fmt.Sprintf(fmt.Sprintf("The repository %v does not contain commit %s", repository, ref))}
@@ -145,6 +161,10 @@ func (repository *hgRepository) getCommitAttributes(ref string) (message, userna
 }
 
 func (repository *hgRepository) getYamlFile(ref string) (yamlFile string, err error) {
+	if err = checkRepositoryExists(repository.path); err != nil {
+		return
+	}
+
 	command := Command(repository, nil, "cat", "-r", ref, "koality.yml")
 	if err = RunCommand(command); err != nil {
 		return

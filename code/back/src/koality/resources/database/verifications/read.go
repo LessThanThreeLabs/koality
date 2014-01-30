@@ -50,8 +50,21 @@ func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resource
 	if mergeStatus.Valid {
 		verification.MergeStatus = mergeStatus.String
 	}
-
 	return verification, nil
+}
+
+func (readHandler *ReadHandler) scanChangeset(scannable Scannable) (*resources.Changeset, error) {
+	changeset := new(resources.Changeset)
+
+	err := scannable.Scan(&changeset.Id, &changeset.RepositoryId, &changeset.HeadSha,
+		&changeset.BaseSha, &changeset.HeadMessage, &changeset.HeadUsername,
+		&changeset.HeadEmail, &changeset.Created)
+	if err == sql.ErrNoRows {
+		return nil, resources.NoSuchChangesetError{"Unable to find changeset"}
+	} else if err != nil {
+		return nil, err
+	}
+	return changeset, nil
 }
 
 func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verification, error) {
@@ -96,4 +109,11 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 		return nil, err
 	}
 	return verifications, nil
+}
+
+func (readHandler *ReadHandler) GetChangesetFromShas(headSha, baseSha string) (*resources.Changeset, error) {
+	query := "SELECT id, repository_id, head_sha, base_sha, head_message, head_username, head_email, created" +
+		" FROM changesets WHERE head_sha=$1 AND base_sha=$2"
+	row := readHandler.database.QueryRow(query, headSha, baseSha)
+	return readHandler.scanChangeset(row)
 }

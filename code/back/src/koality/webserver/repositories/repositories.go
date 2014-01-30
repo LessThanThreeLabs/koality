@@ -63,6 +63,11 @@ func (repositoriesHandler *RepositoriesHandler) WireAppSubroutes(subrouter *mux.
 		Methods("DELETE")
 }
 
+func (repositoriesHandler *RepositoriesHandler) WireApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Get).Methods("GET")
+	subrouter.HandleFunc("/", repositoriesHandler.GetAll).Methods("GET")
+}
+
 func getSanitizedRepository(repository *resources.Repository) *sanitizedRepository {
 	return &sanitizedRepository{
 		Id:        repository.Id,

@@ -27,7 +27,7 @@ func (writer *mimeMultipartWriter) WriteHeader() error {
 	}
 
 	writer.wroteHeader = true
-	_, err := io.WriteString(writer.writer, fmt.Sprintf("Content-Type: multipart/mixed; boundary=%s\nMIME-Version: 1.0\n\n", writer.multipartWriter.Boundary()))
+	_, err := fmt.Fprintf(writer.writer, "Content-Type: multipart/mixed; boundary=\"%s\"\nMIME-Version: 1.0\n\n", writer.multipartWriter.Boundary())
 	return err
 }
 

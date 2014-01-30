@@ -15,7 +15,7 @@ func (usersHandler *UsersHandler) Delete(writer http.ResponseWriter, request *ht
 	userToDeleteId, err := strconv.ParseUint(userToDeleteIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse userId: %v", err)
 		return
 	}
 

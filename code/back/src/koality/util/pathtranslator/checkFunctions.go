@@ -6,7 +6,11 @@ import (
 )
 
 // Default file check method, used by TranslatePath
-func CheckExists(filePath string) error {
+func checkIdentity(filePath string) error {
+	return nil
+}
+
+func checkExists(filePath string) error {
 	_, err := os.Stat(filePath)
 	return err
 }

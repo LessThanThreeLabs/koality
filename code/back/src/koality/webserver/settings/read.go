@@ -18,9 +18,11 @@ func (settingsHandler *SettingsHandler) GetApiKey(writer http.ResponseWriter, re
 	jsonedApiKey, err := json.Marshal(sanitizedApiKey)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedApiKey)
 }
 
@@ -36,9 +38,11 @@ func (settingsHandler *SettingsHandler) GetRepositoryKeyPair(writer http.Respons
 	jsonedRepositoryKeyPair, err := json.Marshal(sanitizedRepositoryKeyPair)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
 }
 
@@ -54,8 +58,10 @@ func (settingsHandler *SettingsHandler) GetS3ExporterSettings(writer http.Respon
 	jsonedS3ExporterSettings, err := json.Marshal(sanitizedS3ExporterSettings)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedS3ExporterSettings)
 }

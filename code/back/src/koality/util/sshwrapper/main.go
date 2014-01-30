@@ -31,15 +31,16 @@ func main() {
 		panic(err)
 	}
 
-	sshPath, err := exec.LookPath("ssh")
-	if err != nil {
-		panic(err)
-	}
+	sshPath := path.Join("/", "usr", "bin", "ssh")
+	// sshPath, err := exec.LookPath("ssh")
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	if sshPath, err = filepath.Abs(sshPath); err != nil {
 		panic(err)
 	}
 
-	argv := append(append([]string{sshPath}, "-i", filename), os.Args[1:]...)
+	argv := append(append([]string{sshPath}, "-oStrictHostKeyChecking=no", "-oUserKnownHostsFile=/dev/null", "-i", filename), os.Args[1:]...)
 	panic(syscall.Exec(argv[0], argv, nil))
 }

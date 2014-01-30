@@ -99,7 +99,11 @@ func Login(command Command) Command {
 }
 
 func Sudo(command Command) Command {
-	return Commandf("sudo -E HOME=\"$HOME\" PATH=\"$PATH\" bash -c %s", Quote(string(command)))
+	return AsUser("root", command)
+}
+
+func AsUser(user string, command Command) Command {
+	return Commandf("sudo -E HOME=\"$HOME\" PATH=\"$PATH\" -u %s bash -c %s", Quote(user), Quote(string(command)))
 }
 
 func Advertised(command Command) Command {

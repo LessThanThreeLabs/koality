@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"koality/util/pathtranslator"
 	"koality/util/ssh"
 	"log"
 	"os"
-	"os/exec"
 )
 
 func main() {
@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	shellPath, err := exec.LookPath("restrictedShell")
+	shellPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("restrictedShell"))
 	if err != nil {
 		log.Fatal(err)
 	}

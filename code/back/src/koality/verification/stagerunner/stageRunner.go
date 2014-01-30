@@ -247,7 +247,14 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			// TODO (bbland): display an error to the user
 			return false, err
 		}
-		newCommands, err := config.ParseRemoteCommands(yamlParsedCommands, true)
+
+		repository, err := stageRunner.resourcesConnection.Repositories.Read.Get(stageRunner.verification.RepositoryId)
+		if err != nil {
+			// TODO (bbland): this is a fatal error.
+			return false, err
+		}
+
+		newCommands, err := config.ParseRemoteCommands(yamlParsedCommands, true, repository.Name)
 		if err != nil {
 			// TODO (bbland): display the error to the user
 			return false, err

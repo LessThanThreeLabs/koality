@@ -20,11 +20,37 @@ apt_package "nginx" do
 end
 
 cookbook_file "/etc/nginx/nginx.conf" do
+	owner 		"nginx"
+	group 		"nginx"
 	source		"nginx.conf"
 	action	 	:create
 end
 
+directory node["nginx"]["certificate_location"] do
+	owner 		"nginx"
+	group 		"nginx"
+	recursive	true
+	mode 		0755
+	action		:create
+end
+
+cookbook_file "#{node["nginx"]["certificate_location"]}/certificate.pem" do
+	owner 		"nginx"
+	group 		"nginx"
+	source		"certificate/certificate.pem"
+	mode		0400
+	action	 	:create_if_missing
+end
+
+cookbook_file "#{node["nginx"]["certificate_location"]}/privatekey.pem" do
+	owner 		"nginx"
+	group 		"nginx"
+	source		"certificate/privatekey.pem"
+	mode		0400
+	action	 	:create_if_missing
+end
+
 service "nginx" do
-	action [:enable, :start]
-	supports :status=>true, :restart=>true, :start => true, :stop => true, :reload=>true
+	action [:enable, :restart]
+	supports :status=>true, :restart=>true, :start=>true, :stop=>true, :reload=>true
 end

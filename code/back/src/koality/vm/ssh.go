@@ -137,6 +137,8 @@ func (scper *sshScper) Scp(localFilePath, remoteFilePath string) (shell.Executab
 	if err != nil {
 		return nil, err
 	}
+	defer localFile.Close()
+
 	fileInfo, err := localFile.Stat()
 	if err != nil {
 		return nil, err

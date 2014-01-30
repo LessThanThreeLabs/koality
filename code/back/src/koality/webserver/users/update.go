@@ -47,7 +47,7 @@ func (usersHandler *UsersHandler) SetAdmin(writer http.ResponseWriter, request *
 	userToModifyId, err := strconv.ParseUint(userToModifyIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse userId: %v", err)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (usersHandler *UsersHandler) SetAdmin(writer http.ResponseWriter, request *
 	adminStatus, err := strconv.ParseBool(adminStatusString)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse admin: %v", err)
 		return
 	}
 
@@ -84,6 +84,8 @@ func (usersHandler *UsersHandler) AddKey(writer http.ResponseWriter, request *ht
 		fmt.Fprint(writer, err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "{id:%d}", keyId)
 }
 
@@ -93,7 +95,7 @@ func (usersHandler *UsersHandler) RemoveKey(writer http.ResponseWriter, request 
 	keyId, err := strconv.ParseUint(keyIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse id: %v", err)
 		return
 	}
 

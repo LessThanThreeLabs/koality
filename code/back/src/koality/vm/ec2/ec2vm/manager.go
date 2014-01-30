@@ -90,7 +90,7 @@ func (manager *Ec2VirtualMachineManager) NewVirtualMachine() (vm.VirtualMachine,
 		}
 	}
 	instance := runResponse.Instances[0]
-	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker (%s)", manager.ec2Broker.InstanceInfo().Name)}
+	nameTag := ec2.Tag{"Name", fmt.Sprintf("koality-worker:%s (%s)", manager.Ec2Pool.Name, manager.ec2Broker.InstanceInfo().Name)}
 	_, err = manager.ec2Cache.EC2.CreateTags([]string{instance.InstanceId}, []ec2.Tag{nameTag})
 	if err != nil {
 		manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
@@ -395,7 +395,8 @@ func (manager *Ec2VirtualMachineManager) getDefaultUserData(username string, key
 				shell.Append(shell.Commandf("echo %s", shell.Quote(sshConfigContents)), shell.Command(sshConfigPath), false),
 			),
 			shell.Commandf("chmod -R 0400 %s", sshDir),
-			shell.Commandf("chown -R %s:%s %s", username, username, username, sshDir),
+			shell.Commandf("chmod 0700 %s", sshDir),
+			shell.Commandf("chown -R %s:%s %s", username, username, sshDir),
 		)
 	}
 
