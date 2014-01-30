@@ -3,6 +3,7 @@
 
 VAGRANTFILE_API_VERSION = "2"
 KOALITY_HOME_DIRECTORY = "/home/koality"
+KOALITY_REPOSITORY_DIRECTORY = "#{KOALITY_HOME_DIRECTORY}/koality"
 
 Vagrant.require_version ">= 1.4.0"
 
@@ -25,15 +26,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.network :forwarded_port, guest: 443,   host: 10443 # Nginx
 	config.vm.network :forwarded_port, guest: 8080,  host: 8080  # Webserver
 
-	config.vm.synced_folder "code/", "#{KOALITY_HOME_DIRECTORY}/code", nfs: true
-	config.vm.synced_folder "nginx/", "#{KOALITY_HOME_DIRECTORY}/nginx", nfs: true
-	config.vm.synced_folder "postgres/", "#{KOALITY_HOME_DIRECTORY}/postgres", nfs: true
+	config.vm.synced_folder ".", KOALITY_REPOSITORY_DIRECTORY, nfs: true
 
 	config.vm.provision :chef_solo do |chef|
 		chefRoot = "chef"
 		chef.cookbooks_path = ["#{chefRoot}/cookbooks", "#{chefRoot}/site-cookbooks"]
 		chef.data_bags_path = "#{chefRoot}/databags"
 
+		chef.add_recipe "koality"
 		chef.add_recipe "apt"
 		chef.add_recipe "build-essential"
 		chef.add_recipe "gdb"
@@ -46,6 +46,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "postgres"
 
 		chef.json = {
+			:koality => {
+				:location => KOALITY_REPOSITORY_DIRECTORY
+			},
 			:oh_my_zsh => {
 				:users => [
 					{
@@ -57,11 +60,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			},
 			:go => {
 				:version => "1.2",
-				:gopath => "#{KOALITY_HOME_DIRECTORY}/code/back",
-				:gobin => "#{KOALITY_HOME_DIRECTORY}/code/back/bin"
-			},
-			:nginx => {
-				:conf_path => "#{KOALITY_HOME_DIRECTORY}/nginx/nginx.conf"
+				:gopath => "#{KOALITY_REPOSITORY_DIRECTORY}/code/back",
+				:gobin => "#{KOALITY_REPOSITORY_DIRECTORY}/code/back/bin"
 			}
 		}
 	end
