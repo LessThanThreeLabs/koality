@@ -2,6 +2,7 @@ package verifications
 
 import (
 	"github.com/gorilla/mux"
+	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/middleware"
 	"time"
@@ -33,10 +34,11 @@ type sanitizedChangeset struct {
 
 type VerificationsHandler struct {
 	resourcesConnection *resources.Connection
+	repositoryManager   repositorymanager.RepositoryManager
 }
 
-func New(resourcesConnection *resources.Connection) (*VerificationsHandler, error) {
-	return &VerificationsHandler{resourcesConnection}, nil
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*VerificationsHandler, error) {
+	return &VerificationsHandler{resourcesConnection, repositoryManager}, nil
 }
 
 func (verificationsHandler *VerificationsHandler) WireAppSubroutes(subrouter *mux.Router) {
@@ -50,6 +52,14 @@ func (verificationsHandler *VerificationsHandler) WireAppSubroutes(subrouter *mu
 	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger",
 		middleware.IsLoggedInWrapper(verificationsHandler.Retrigger)).
 		Methods("POST")
+}
+
+func (verificationsHandler *VerificationsHandler) WireApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
+	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
+
+	subrouter.HandleFunc("/", verificationsHandler.Create).Methods("POST")
+	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.Retrigger).Methods("POST")
 }
 
 func getSanitizedVerification(verification *resources.Verification) *sanitizedVerification {

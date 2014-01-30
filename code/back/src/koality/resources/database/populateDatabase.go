@@ -92,7 +92,7 @@ func createUsers(connection *resources.Connection) error {
 			return err
 		}
 
-		_, err = connection.Users.Update.AddKey(user.Id, "my key", publicKey+" "+user.Email)
+		_, err = connection.Users.Update.AddKey(user.Id, "my key", fmt.Sprintf("%s%d", publicKey, user.Id))
 		return err
 	}
 

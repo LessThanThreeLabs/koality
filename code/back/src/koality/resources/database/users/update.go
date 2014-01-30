@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"koality/resources"
+	"strings"
 )
 
 type UpdateHandler struct {
@@ -69,17 +70,23 @@ func (updateHandler *UpdateHandler) SetAdmin(userId uint64, admin bool) error {
 }
 
 func (updateHandler *UpdateHandler) AddKey(userId uint64, name, publicKey string) (uint64, error) {
+	publicKeyFields := strings.Fields(publicKey)
+	if len(publicKeyFields) < 2 {
+		return 0, fmt.Errorf("Public key must contain at least two fields")
+	}
+	sanitizedPublicKey := strings.Join(publicKeyFields[:2], " ")
+
 	if err := updateHandler.verifier.verifyKeyName(userId, name); err != nil {
 		return 0, err
-	} else if err := updateHandler.verifier.verifyPublicKey(publicKey); err != nil {
+	} else if err := updateHandler.verifier.verifyPublicKey(sanitizedPublicKey); err != nil {
 		return 0, err
 	} else if err := updateHandler.verifier.verifyUserExists(userId); err != nil {
 		return 0, err
 	}
 
-	id := uint64(0)
+	var id uint64
 	query := "INSERT INTO ssh_keys (user_id, name, public_key) VALUES ($1, $2, $3) RETURNING id"
-	err := updateHandler.database.QueryRow(query, userId, name, publicKey).Scan(&id)
+	err := updateHandler.database.QueryRow(query, userId, name, sanitizedPublicKey).Scan(&id)
 	if err != nil {
 		return 0, err
 	}

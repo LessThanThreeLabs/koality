@@ -16,7 +16,7 @@ type restrictedSSHForwardingShell struct {
 }
 
 func (shell *restrictedSSHForwardingShell) GetCommand() (command vm.Command, err error) {
-	if len(shell.command) != 4 {
+	if len(shell.command) != 3 {
 		err = InvalidCommandError{strings.Join(shell.command, " ")}
 		return
 	}

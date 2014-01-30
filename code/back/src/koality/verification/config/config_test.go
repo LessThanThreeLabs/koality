@@ -11,7 +11,7 @@ func TestErrorFree(test *testing.T) {
 	buf, _ = ioutil.ReadFile("example_koality.yml")
 	s := string(buf)
 
-	parsedConfig, err := FromYaml(s)
+	parsedConfig, err := FromYaml(s, ".")
 
 	if err != nil {
 		test.Error(err)

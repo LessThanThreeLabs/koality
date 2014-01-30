@@ -28,12 +28,7 @@ func (keyPairGenerator *KeyPairGenerator) GenerateRepositoryKeyPair() (*Reposito
 		return nil, err
 	}
 
-	publicKeyPem, err := keyPairGenerator.getPublicPem(&privateKey.PublicKey)
-	if err != nil {
-		return nil, err
-	}
-
-	publicSshKey, err := keyPairGenerator.getPublicSshKey(publicKeyPem)
+	publicSshKey, err := keyPairGenerator.getPublicSshKey(privateKeyPem)
 	if err != nil {
 		return nil, err
 	}
@@ -55,23 +50,9 @@ func (keyPairGenerator *KeyPairGenerator) getPrivatePem(privateKey *rsa.PrivateK
 	return string(pem.EncodeToMemory(&privateKeyBlock)), nil
 }
 
-func (keyPairGenerator *KeyPairGenerator) getPublicPem(publicKey *rsa.PublicKey) (string, error) {
-	publicKeyDer, err := x509.MarshalPKIXPublicKey(publicKey)
-	if err != nil {
-		return "", err
-	}
-
-	publicKeyBlock := pem.Block{
-		Type:    "PUBLIC KEY",
-		Headers: nil,
-		Bytes:   publicKeyDer,
-	}
-	return string(pem.EncodeToMemory(&publicKeyBlock)), nil
-}
-
-func (keyPairGenerator *KeyPairGenerator) getPublicSshKey(publicPem string) (string, error) {
-	command := exec.Command("ssh-keygen", "-m", "PKCS8", "-f", "/dev/stdin", "-i")
-	command.Stdin = strings.NewReader(publicPem)
+func (keyPairGenerator *KeyPairGenerator) getPublicSshKey(privateKeyPem string) (string, error) {
+	command := exec.Command("ssh-keygen", "-y", "-f", "/dev/stdin")
+	command.Stdin = strings.NewReader(privateKeyPem)
 	output, err := command.CombinedOutput()
 	if _, ok := err.(*exec.ExitError); ok {
 		return "", fmt.Errorf("%v: %s", err, output)

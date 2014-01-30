@@ -3,6 +3,8 @@ package middleware
 import (
 	"fmt"
 	"github.com/gorilla/context"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"koality/resources"
 	"net/http"
 )
@@ -13,6 +15,7 @@ func IsAdminWrapper(resourcesConnection *resources.Connection, next http.Handler
 		if !ok || userId == 0 {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(writer, "Forbidden request, must be logged in")
+			return
 		}
 
 		user, err := resourcesConnection.Users.Read.Get(userId)
@@ -52,12 +55,36 @@ func IsLoggedOutWrapper(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func HasApiKeyWrapper(resourcesConnection *resources.Connection, next http.HandlerFunc) http.HandlerFunc {
+func CheckCsrfTokenWraper(sessionStore sessions.Store, sessionName string, router *mux.Router) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		csrfTokenToVerify := request.Header.Get("X-XSRF-TOKEN")
+		if csrfTokenToVerify == "" {
+			writer.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(writer, "Forbidden request, must provide csrf token")
+			return
+		}
+
+		session, _ := sessionStore.Get(request, sessionName)
+		csrfToken := session.Values["csrfToken"]
+		if csrfToken == "" {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, "Expected csrf token to be set in session")
+		} else if csrfToken != csrfTokenToVerify {
+			writer.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(writer, "Forbidden request, invalid csrf token")
+		} else {
+			router.ServeHTTP(writer, request)
+		}
+	}
+}
+
+func HasApiKeyWrapper(resourcesConnection *resources.Connection, router *mux.Router) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		apiKeyToVerify := request.FormValue("apiKey")
 		if apiKeyToVerify == "" {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(writer, "Forbidden request, must provide api key")
+			return
 		}
 
 		apiKey, err := resourcesConnection.Settings.Read.GetApiKey()
@@ -68,7 +95,7 @@ func HasApiKeyWrapper(resourcesConnection *resources.Connection, next http.Handl
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(writer, "Forbidden request, invalid api key")
 		} else {
-			next(writer, request)
+			router.ServeHTTP(writer, request)
 		}
 	}
 }

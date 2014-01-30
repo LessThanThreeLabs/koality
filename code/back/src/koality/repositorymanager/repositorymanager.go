@@ -11,9 +11,9 @@ var lockMapMutex sync.Mutex
 
 type RepositoryManager interface {
 	ToPath(repo *resources.Repository) string
-	GetTopRef(repository *resources.Repository, branchOrRef string) (ref string, err error)
+	GetTopSha(repository *resources.Repository, ref string) (topSha string, err error)
 	GetYamlFile(repository *resources.Repository, ref string) (yamlFile string, err error)
-	GetCommitAttributes(repository *resources.Repository, ref string) (message, username, email string, err error)
+	GetCommitAttributes(repository *resources.Repository, ref string) (headSha, message, username, email string, err error)
 	CreateRepository(repository *resources.Repository) (err error)
 	DeleteRepository(repository *resources.Repository) (err error)
 	StorePending(repository *resources.Repository, ref string, args ...string) (err error)
@@ -70,7 +70,7 @@ func (repositoryManager *repositoryManager) GetYamlFile(repository *resources.Re
 	return openedRepository.getYamlFile(ref)
 }
 
-func (repositoryManager *repositoryManager) GetCommitAttributes(repository *resources.Repository, ref string) (message, username, email string, err error) {
+func (repositoryManager *repositoryManager) GetCommitAttributes(repository *resources.Repository, ref string) (headSha, message, username, email string, err error) {
 	openedRepository, err := repositoryManager.openPostPushRepository(repository)
 	if err != nil {
 		return
@@ -97,13 +97,13 @@ func (repositoryManager *repositoryManager) DeleteRepository(repository *resourc
 	return openedRepository.deleteRepository()
 }
 
-func (repositoryManager *repositoryManager) GetTopRef(repository *resources.Repository, branchOrRef string) (ref string, err error) {
+func (repositoryManager *repositoryManager) GetTopSha(repository *resources.Repository, ref string) (topSha string, err error) {
 	openedRepository, err := repositoryManager.openStoredRepository(repository)
 	if err != nil {
 		return
 	}
 
-	return openedRepository.getTopRef(branchOrRef)
+	return openedRepository.getTopSha(ref)
 }
 
 func (repositoryManager *repositoryManager) StorePending(repository *resources.Repository, ref string, args ...string) (err error) {

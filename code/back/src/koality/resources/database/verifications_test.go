@@ -490,3 +490,48 @@ func TestGetTail(test *testing.T) {
 		test.Fatal("Expected error when requesting 0 verifications")
 	}
 }
+
+func TestGetChangesetFromShas(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	repositories, err := connection.Repositories.Read.GetAll()
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstRepository := repositories[0]
+
+	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	if err != nil {
+		test.Fatal(err)
+	}
+	firstVerification := verifications[0]
+
+	changeset, err := connection.Verifications.Read.GetChangesetFromShas(firstVerification.Changeset.HeadSha, firstVerification.Changeset.BaseSha)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if changeset.HeadSha != firstVerification.Changeset.HeadSha {
+		test.Fatal("changeset.HeadSha mismatch")
+	} else if changeset.BaseSha != firstVerification.Changeset.BaseSha {
+		test.Fatal("changeset.BaseSha mismatch")
+	}
+
+	_, err = connection.Verifications.Read.GetChangesetFromShas("some-bad-head-sha", firstVerification.Changeset.BaseSha)
+	if _, ok := err.(resources.NoSuchChangesetError); !ok {
+		test.Fatal("Expected NoSuchChangesetError when providing invalid head sha")
+	}
+
+	_, err = connection.Verifications.Read.GetChangesetFromShas(firstVerification.Changeset.HeadSha, "some-bad-base-sha")
+	if _, ok := err.(resources.NoSuchChangesetError); !ok {
+		test.Fatal("Expected NoSuchChangesetError when providing invalid base sha")
+	}
+}

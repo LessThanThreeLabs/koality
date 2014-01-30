@@ -13,7 +13,7 @@ func (repositoriesHandler *RepositoriesHandler) Get(writer http.ResponseWriter, 
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse repositoryId: %v", err)
 		return
 	}
 
@@ -28,9 +28,11 @@ func (repositoriesHandler *RepositoriesHandler) Get(writer http.ResponseWriter, 
 	jsonedRepository, err := json.Marshal(sanitizedRepository)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
 
@@ -50,8 +52,10 @@ func (repositoriesHandler *RepositoriesHandler) GetAll(writer http.ResponseWrite
 	jsonedRepositories, err := json.Marshal(sanitizedRepositories)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepositories)
 }

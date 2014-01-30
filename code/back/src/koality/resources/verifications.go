@@ -45,6 +45,7 @@ type VerificationsCreateHandler interface {
 type VerificationsReadHandler interface {
 	Get(verificationId uint64) (*Verification, error)
 	GetTail(repositoryId uint64, offset, results uint32) ([]Verification, error)
+	GetChangesetFromShas(headSha, baseSha string) (*Changeset, error)
 }
 
 type VerificationsUpdateHandler interface {

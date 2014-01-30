@@ -8,12 +8,15 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
+	"koality/webserver/middleware"
 	"koality/webserver/repositories"
 	"koality/webserver/settings"
 	"koality/webserver/stages"
+	"koality/webserver/templates"
 	"koality/webserver/users"
 	"koality/webserver/verifications"
 	"net/http"
+	"strings"
 )
 
 type Webserver struct {
@@ -39,12 +42,24 @@ func (webserver *Webserver) Start() error {
 		return err
 	}
 
+	hasCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router)
+	hasApiKeyWrapper := middleware.HasApiKeyWrapper(webserver.resourcesConnection, router)
+
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
-		var _ = session
 		// context.Set(request, "userId", session.Values["userId"])
+		var _ = session
 		context.Set(request, "userId", uint64(1000))
-		router.ServeHTTP(writer, request)
+
+		if request.URL.Path == "/" {
+			router.ServeHTTP(writer, request)
+		} else if strings.HasPrefix(request.URL.Path, "/app") {
+			hasCsrfTokenWrapper(writer, request)
+		} else if strings.HasPrefix(request.URL.Path, "/api") {
+			hasApiKeyWrapper(writer, request)
+		} else {
+			panic("Unexpected path: " + request.URL.Path)
+		}
 	})
 
 	http.Handle("/", loadUserIdRouter)
@@ -58,12 +73,11 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 	}
 
 	sessionStore := sessions.NewCookieStore(cookieStoreKeys.Authentication, cookieStoreKeys.Encryption)
-	// sessionStore.Options = &sessions.Options{
-	// 	Path:     "/",
-	// 	MaxAge:   2592000,
-	// 	HttpOnly: true,
-	// 	Secure:   true,
-	// }
+	sessionStore.Options = &sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+	}
 	return sessionStore, nil
 }
 
@@ -71,6 +85,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	router := mux.NewRouter()
 
 	passwordHasher, err := resources.NewPasswordHasher()
+	if err != nil {
+		return nil, err
+	}
+
+	templatesHandler, err := templates.New(webserver.resourcesConnection, sessionStore, webserver.sessionName)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +109,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	verificationsHandler, err := verifications.New(webserver.resourcesConnection)
+	verificationsHandler, err := verifications.New(webserver.resourcesConnection, webserver.repositoryManager)
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +122,10 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	settingsHandler, err := settings.New(webserver.resourcesConnection)
 	if err != nil {
 		return nil, err
+	}
+
+	wireRootSubroutes := func() {
+		templatesHandler.WireRootSubroutes(router)
 	}
 
 	wireAppSubroutes := func() {
@@ -135,9 +158,23 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		userSubrouter := apiSubrouter.PathPrefix("/users").Subrouter()
 		usersHandler.WireApiSubroutes(userSubrouter)
 
-		handleApiSubroute(apiSubrouter, webserver.resourcesConnection, webserver.repositoryManager)
+		repositoriesSubrouter := apiSubrouter.PathPrefix("/repositories").Subrouter()
+		repositoriesHandler.WireApiSubroutes(repositoriesSubrouter)
+
+		verificationsSubrouter := apiSubrouter.PathPrefix("/verifications").Subrouter()
+		verificationsHandler.WireApiSubroutes(verificationsSubrouter)
+
+		stagesSubrouter := apiSubrouter.PathPrefix("/stages").Subrouter()
+		stagesHandler.WireStagesApiSubroutes(stagesSubrouter)
+
+		stageRunsSubrouter := apiSubrouter.PathPrefix("/stageRuns").Subrouter()
+		stagesHandler.WireStageRunsApiSubroutes(stageRunsSubrouter)
+
+		settingsSubrouter := apiSubrouter.PathPrefix("/settings").Subrouter()
+		settingsHandler.WireApiSubroutes(settingsSubrouter)
 	}
 
+	wireRootSubroutes()
 	wireAppSubroutes()
 	wireApiSubroutes()
 

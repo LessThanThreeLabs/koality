@@ -1,7 +1,6 @@
 package ssh
 
 import (
-	"fmt"
 	"koality/internalapi"
 	"koality/resources"
 	"koality/vm"
@@ -34,11 +33,15 @@ func HandleSSHCommand(userId uint64, origCommand string) error {
 	var shellCommand vm.Command
 	switch command[0] {
 	case "true":
+		// true
 		shellCommand = vm.Command{Argv: []string{"true"}}
 	case "ssh":
+		// ssh vmId poolId
 		shell := &restrictedSSHForwardingShell{userId, command, client}
 		shellCommand, err = shell.GetCommand()
 	default:
+		// git-receive-pack localuri.git
+		// git-upload-pack localuri.git
 		shell := &restrictedGitShell{userId, command, client}
 		shellCommand, err = shell.GetCommand()
 	}
@@ -46,7 +49,5 @@ func HandleSSHCommand(userId uint64, origCommand string) error {
 		return err
 	}
 
-        // TODO(dhuang) remove this later
-	fmt.Println("command:\n", shellCommand)
 	return shellCommand.Exec()
 }

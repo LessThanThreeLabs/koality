@@ -14,7 +14,7 @@ func (stagesHandler *StagesHandler) Get(writer http.ResponseWriter, request *htt
 	stageId, err := strconv.ParseUint(stageIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse stageId: %v", err)
 		return
 	}
 
@@ -29,9 +29,11 @@ func (stagesHandler *StagesHandler) Get(writer http.ResponseWriter, request *htt
 	jsonedStage, err := json.Marshal(sanitizedStage)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStage)
 }
 
@@ -41,7 +43,7 @@ func (stagesHandler *StagesHandler) GetAll(writer http.ResponseWriter, request *
 	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse verificationId: %v", err)
 		return
 	}
 
@@ -60,9 +62,11 @@ func (stagesHandler *StagesHandler) GetAll(writer http.ResponseWriter, request *
 	jsonedStages, err := json.Marshal(sanitizedStages)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStages)
 }
 
@@ -71,7 +75,7 @@ func (stagesHandler *StagesHandler) GetRun(writer http.ResponseWriter, request *
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse stageRunId: %v", err)
 		return
 	}
 
@@ -86,9 +90,11 @@ func (stagesHandler *StagesHandler) GetRun(writer http.ResponseWriter, request *
 	jsonedStageRun, err := json.Marshal(sanitizedStageRun)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStageRun)
 }
 
@@ -98,7 +104,7 @@ func (stagesHandler *StagesHandler) GetAllRuns(writer http.ResponseWriter, reque
 	stageId, err := strconv.ParseUint(stageIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse stageId: %v", err)
 		return
 	}
 
@@ -117,9 +123,11 @@ func (stagesHandler *StagesHandler) GetAllRuns(writer http.ResponseWriter, reque
 	jsonedStageRuns, err := json.Marshal(sanitizedStageRuns)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedStageRuns)
 }
 
@@ -128,20 +136,34 @@ func (stagesHandler *StagesHandler) GetConsoleLines(writer http.ResponseWriter, 
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse stageRunId: %v", err)
 		return
 	}
 
 	queryValues := request.URL.Query()
 	from := queryValues.Get("from")
+
 	offsetString := queryValues.Get("offset")
+	offset, err := strconv.ParseUint(offsetString, 10, 32)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to parse offset: %v", err)
+		return
+	}
+
 	resultsString := queryValues.Get("results")
+	results, err := strconv.ParseUint(resultsString, 10, 32)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to parse results: %v", err)
+		return
+	}
 
 	var consoleLines map[uint64]string
 	if from == "" {
 		consoleLines, err = stagesHandler.resourcesConnection.Stages.Read.GetAllConsoleLines(stageRunId)
 	} else {
-		consoleLines, err = stagesHandler.getConsoleLinesForDirection(stageRunId, from, offsetString, resultsString)
+		consoleLines, err = stagesHandler.getConsoleLinesForDirection(stageRunId, from, uint32(offset), uint32(results))
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -153,9 +175,11 @@ func (stagesHandler *StagesHandler) GetConsoleLines(writer http.ResponseWriter, 
 	jsonedConsoleLines, err := json.Marshal(cleanedConsoleLines)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedConsoleLines)
 }
 
@@ -169,21 +193,11 @@ func cleanConsoleLines(consoleLines map[uint64]string) map[string]string {
 	return cleanedConsoleLines
 }
 
-func (stagesHandler *StagesHandler) getConsoleLinesForDirection(stageRunId uint64, from, offsetString, resultsString string) (map[uint64]string, error) {
-	offset, err := strconv.ParseUint(offsetString, 10, 32)
-	if err != nil {
-		return map[uint64]string{}, err
-	}
-
-	results, err := strconv.ParseUint(resultsString, 10, 32)
-	if err != nil {
-		return map[uint64]string{}, err
-	}
-
+func (stagesHandler *StagesHandler) getConsoleLinesForDirection(stageRunId uint64, from string, offset, results uint32) (map[uint64]string, error) {
 	if from == "head" {
-		return stagesHandler.resourcesConnection.Stages.Read.GetConsoleLinesHead(stageRunId, uint32(offset), uint32(results))
+		return stagesHandler.resourcesConnection.Stages.Read.GetConsoleLinesHead(stageRunId, offset, results)
 	} else if from == "tail" {
-		return stagesHandler.resourcesConnection.Stages.Read.GetConsoleLinesTail(stageRunId, uint32(offset), uint32(results))
+		return stagesHandler.resourcesConnection.Stages.Read.GetConsoleLinesTail(stageRunId, offset, results)
 	} else {
 		return map[uint64]string{}, errors.New("From must be \"head\" or \"tail\"")
 	}
@@ -194,7 +208,7 @@ func (stagesHandler *StagesHandler) GetXunitResults(writer http.ResponseWriter, 
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse stageRunId: %v", err)
 		return
 	}
 
@@ -213,9 +227,11 @@ func (stagesHandler *StagesHandler) GetXunitResults(writer http.ResponseWriter, 
 	jsonedXunitResults, err := json.Marshal(sanitizedXunitResults)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedXunitResults)
 }
 
@@ -224,7 +240,7 @@ func (stagesHandler *StagesHandler) GetExports(writer http.ResponseWriter, reque
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
+		fmt.Fprintf(writer, "Unable to parse stageRunId: %v", err)
 		return
 	}
 
@@ -243,8 +259,10 @@ func (stagesHandler *StagesHandler) GetExports(writer http.ResponseWriter, reque
 	jsonedExports, err := json.Marshal(sanitizedExports)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Print(writer, err)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
 		return
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedExports)
 }

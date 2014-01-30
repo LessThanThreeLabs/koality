@@ -7,14 +7,16 @@ import (
 
 type RemoteCommand struct {
 	advertised bool
+	directory  string
 	name       string
 	timeout    int
 	xunit      []string
 	commands   []string
 }
 
-func NewRemoteCommand(advertised bool, name string, timeout int, xunit, commands []string) (remoteCommand RemoteCommand) {
+func NewRemoteCommand(advertised bool, directory, name string, timeout int, xunit, commands []string) (remoteCommand RemoteCommand) {
 	remoteCommand.advertised = advertised
+	remoteCommand.directory = directory
 	remoteCommand.name = name
 	remoteCommand.timeout = timeout
 	remoteCommand.xunit = xunit
@@ -34,15 +36,19 @@ func (remoteCommand RemoteCommand) XunitPaths() []string {
 	return remoteCommand.xunit
 }
 
+func advertiseCommand(remoteCommand *RemoteCommand, command string) shell.Command {
+	if remoteCommand.advertised {
+		return shell.Advertised(shell.Command(command))
+	} else {
+		return shell.Command(command)
+	}
+}
+
 func advertiseCommands(remoteCommand *RemoteCommand) shell.Command {
 	var commands []shell.Command
 
 	for _, command := range remoteCommand.commands {
-		if remoteCommand.advertised {
-			commands = append(commands, shell.Advertised(shell.Command(command)))
-		} else {
-			commands = append(commands, shell.Command(command))
-		}
+		commands = append(commands, advertiseCommand(remoteCommand, command))
 	}
 	return shell.And(commands...)
 }
@@ -88,5 +94,8 @@ func (remoteCommand *RemoteCommand) toScript() shell.Command {
 		shell.Command("exit $_r"),
 	)
 
-	return commandsWithTimeout
+	return shell.Login(shell.And(
+		advertiseCommand(remoteCommand, fmt.Sprintf("cd %s", remoteCommand.directory)),
+		commandsWithTimeout,
+	))
 }

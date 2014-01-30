@@ -1,18 +1,17 @@
 package ssh
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"github.com/LessThanThreeLabs/gocheck"
-	"io"
 	"koality/internalapi"
 	"koality/repositorymanager"
+	"koality/util/pathtranslator"
 	"koality/util/ssh/test"
 	"koality/vm"
 	"net"
 	"net/rpc"
 	"os"
+	"os/exec"
 	"path"
 	"testing"
 	"time"
@@ -58,9 +57,12 @@ func (suite *SshSuite) SetUpSuite(check *gocheck.C) {
 		check.Fatalf("socket took too long to exist")
 	}
 
-	client, err := rpc.Dial("unix", internalapi.RpcSocket)
+	compileCmd := exec.Command("go", "install", path.Join("koality", "util", "sshwrapper"))
+	err := compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
-	suite.client = client
+
+	suite.client, err = rpc.Dial("unix", internalapi.RpcSocket)
+	check.Assert(err, gocheck.IsNil)
 }
 func (suite *SshSuite) TearDownSuite(check *gocheck.C) {
 	if suite.client != nil {
@@ -84,34 +86,30 @@ func (suite *SshSuite) TestGitShell(check *gocheck.C) {
 	localUri := "koality-v1"
 	repositoryManager := repositorymanager.New(test.RepositoriesPath, nil)
 
-	command := []string{"git-receive-pack", localUri, string(userId)}
+	command := []string{"git-receive-pack", localUri}
 	shell := restrictedGitShell{userId, command, suite.client}
 	commandToExec, err := shell.GetCommand()
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(commandToExec, gocheck.DeepEquals, vm.Command{
 		Argv: []string{"jgit", "receive-pack",
 			repositoryManager.ToPath(&test.Repository),
-			string(userId)},
+			fmt.Sprint(userId)},
 	})
 
-	shell.command = []string{"git-upload-pack", localUri, string(userId)}
-	hash := sha1.New()
-	_, err = io.WriteString(hash, test.PrivateKey)
-	check.Assert(err, gocheck.IsNil)
-	privateKeyPath := path.Join("/tmp", hex.EncodeToString(hash.Sum(nil)))
+	shell.command = []string{"git-upload-pack", localUri}
 	commandToExec, err = shell.GetCommand()
 	check.Assert(err, gocheck.IsNil)
+	sshwrapperPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
+	check.Assert(err, gocheck.IsNil)
 	check.Assert(commandToExec, gocheck.DeepEquals, vm.Command{
-		Argv: []string{
-			"ssh", "-oStrictHostKeyChecking=no", "-i", privateKeyPath,
-			"git@github.com", "git-upload-pack KoalityCode/koality-v1.git",
-		},
+		Argv: []string{sshwrapperPath, "git@github.com", "git-upload-pack KoalityCode/koality-v1.git"},
+		Envv: append([]string{"PRIVATE_KEY=" + test.PrivateKey}),
 	})
 }
 
 func (suite *SshSuite) TestSSHForwardingShell(check *gocheck.C) {
 	userId := uint64(69)
-	command := []string{"ssh", "instanceid", "555", string(userId)}
+	command := []string{"ssh", "instanceid", "555"}
 	shell := restrictedSSHForwardingShell{userId, command, suite.client}
 	commandToExec, err := shell.GetCommand()
 	check.Assert(err, gocheck.IsNil)
