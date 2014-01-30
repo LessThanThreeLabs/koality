@@ -13,9 +13,10 @@ import (
 	"koality/resources/database/stages"
 	"koality/resources/database/users"
 	"koality/resources/database/verifications"
+	"koality/util/pathtranslator"
 	"os"
 	"os/exec"
-	"os/user"
+	"path"
 	"time"
 )
 
@@ -25,11 +26,6 @@ const (
 	password     = "lt3"
 	databaseName = "koality"
 	sslMode      = "disable"
-)
-
-const (
-	dumpLocation   = "/postgres/backup.tar"
-	schemaLocation = "/postgres/schema.sql"
 )
 
 func New() (*resources.Connection, error) {
@@ -98,6 +94,16 @@ func New() (*resources.Connection, error) {
 	return connection, nil
 }
 
+func getSchemaLocation() (string, error) {
+	relativePath := path.Join("postgres", "schema.sql")
+	return pathtranslator.TranslatePath(relativePath)
+}
+
+func getDumpLocation() (string, error) {
+	relativePath := path.Join("postgres", "backup.tar")
+	return pathtranslator.TranslatePath(relativePath)
+}
+
 func checkSettingsInitialized(connection *resources.Connection) error {
 	_, err := connection.Settings.Read.GetRepositoryKeyPair()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
@@ -146,12 +152,12 @@ func Reseed() error {
 }
 
 func DumpExistsAndNotStale(staleTime time.Time) (bool, error) {
-	currentUser, err := user.Current()
+	dumpLocation, err := getDumpLocation()
 	if err != nil {
 		return false, err
 	}
 
-	fileInfo, err := os.Stat(currentUser.HomeDir + dumpLocation)
+	fileInfo, err := os.Stat(dumpLocation)
 	if os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {
@@ -166,12 +172,12 @@ func DumpExistsAndNotStale(staleTime time.Time) (bool, error) {
 func CreateDump() error {
 	setEnvironment()
 
-	currentUser, err := user.Current()
+	dumpLocation, err := getDumpLocation()
 	if err != nil {
 		return err
 	}
 
-	command := exec.Command("pg_dump", "--file", currentUser.HomeDir+dumpLocation, "--format", "custom")
+	command := exec.Command("pg_dump", "--file", dumpLocation, "--format", "custom")
 	output, err := command.CombinedOutput()
 	if _, ok := err.(*exec.ExitError); ok {
 		return fmt.Errorf("%v: %s", err, output)
@@ -196,12 +202,12 @@ func LoadDump() error {
 		return err
 	}
 
-	currentUser, err := user.Current()
+	dumpLocation, err := getDumpLocation()
 	if err != nil {
 		return err
 	}
 
-	command := exec.Command("pg_restore", "--dbname", databaseName, "--jobs", "4", currentUser.HomeDir+dumpLocation)
+	command := exec.Command("pg_restore", "--dbname", databaseName, "--jobs", "4", dumpLocation)
 	output, err := command.CombinedOutput()
 	if _, ok := err.(*exec.ExitError); ok {
 		return fmt.Errorf("%v: %s", err, output)
@@ -223,12 +229,12 @@ func getDatabaseConnection() (*sql.DB, error) {
 }
 
 func loadSchema(database *sql.DB) error {
-	currentUser, err := user.Current()
+	schemaLocation, err := getSchemaLocation()
 	if err != nil {
 		return err
 	}
 
-	file, err := ioutil.ReadFile(currentUser.HomeDir + schemaLocation)
+	file, err := ioutil.ReadFile(schemaLocation)
 	if err != nil {
 		return err
 	}
