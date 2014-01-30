@@ -11,8 +11,8 @@ import (
 	"html/template"
 	"io"
 	"koality/resources"
+	"koality/util/pathtranslator"
 	"net/http"
-	"os/user"
 	"path"
 )
 
@@ -38,12 +38,11 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 }
 
 func getIndexTemplate() (*template.Template, error) {
-	currentUser, err := user.Current()
+	relativePath := path.Join("code", "front", "templates", "index.html")
+	filePath, err := pathtranslator.TranslatePath(relativePath)
 	if err != nil {
 		return nil, err
 	}
-
-	filePath := path.Join(currentUser.HomeDir, "code", "front", "templates", "index.html")
 	return template.ParseFiles(filePath)
 }
 
