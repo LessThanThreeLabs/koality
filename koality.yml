@@ -10,8 +10,8 @@ sections:
     # prepare database
     - ln -s $HOME/koality-v1/postgres $HOME/postgres
     # create repositories directory
-    - mkdir -p /etc/koality/repositories
-    - chmod -R 777 /etc/koality/repositories
+    - sudo mkdir -p /etc/koality
+    - sudo chmod -R 777 /etc/koality
     # run chef
     - |
       echo '
@@ -28,9 +28,9 @@ sections:
           "gobin": "/home/lt3/koality-v1/code/back/bin"
         }
       }' > chef-node.json
-    - gem install chef --no-ri --no-rdoc -v 10.30.2
+    - sudo gem install chef --no-ri --no-rdoc -v 10.30.2
     - mkdir -p /home/lt3/koality-v1/chef-cache
-    - chef-solo -c chef-config.rb
+    - sudo chef-solo -c chef-config.rb
 - integration tests:
     run on: split
     fail on: any
