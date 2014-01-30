@@ -81,6 +81,10 @@ func (repository *gitSubRepository) pushWithPrivateKey(remoteUri string, args ..
 }
 
 func (repository *gitRepository) storePending(ref, remoteUri string, args ...string) (err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
+		return
+	}
+
 	if err = repository.bare.fetchWithPrivateKey(remoteUri, "+refs/*:refs/*"); err != nil {
 		return
 	}
@@ -232,6 +236,14 @@ func (repository *gitSubRepository) getTopShaForSubrepository(ref string) (topSh
 }
 
 func (repository *gitRepository) getTopSha(ref string) (topSha string, err error) {
+	if err = checkRepositoryExists(repository.bare.path); err != nil {
+		return
+	}
+
+	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/*:refs/*"); err != nil {
+		return
+	}
+
 	return repository.slave.getTopShaForSubrepository(ref)
 }
 
@@ -326,6 +338,10 @@ func (repository *gitRepository) pushMergeRetry(remoteUri, refToMergeInto, origi
 
 func (repository *gitRepository) getCommitAttributes(ref string) (headSha, message, username, email string, err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
+		return
+	}
+
+	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/*:refs/*"); err != nil {
 		return
 	}
 
