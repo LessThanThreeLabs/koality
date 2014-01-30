@@ -42,7 +42,7 @@ func (webserver *Webserver) Start() error {
 		return err
 	}
 
-	hasCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(webserver.resourcesConnection, router)
+	hasCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router)
 	hasApiKeyWrapper := middleware.HasApiKeyWrapper(webserver.resourcesConnection, router)
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

@@ -54,8 +54,6 @@ func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Route
 
 func (templatesHandler *TemplatesHandler) GetRoot(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
-	fmt.Println(userId)
-
 	user, err := templatesHandler.resourcesConnection.Users.Read.Get(userId)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

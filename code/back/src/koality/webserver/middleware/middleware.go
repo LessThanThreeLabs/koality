@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"koality/resources"
 	"net/http"
 )
@@ -54,9 +55,26 @@ func IsLoggedOutWrapper(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func CheckCsrfTokenWraper(resourcesConnection *resources.Connection, router *mux.Router) http.HandlerFunc {
+func CheckCsrfTokenWraper(sessionStore sessions.Store, sessionName string, router *mux.Router) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		router.ServeHTTP(writer, request)
+		csrfTokenToVerify := request.Header.Get("X-XSRF-TOKEN")
+		if csrfTokenToVerify == "" {
+			writer.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(writer, "Forbidden request, must provide csrf token")
+			return
+		}
+
+		session, _ := sessionStore.Get(request, sessionName)
+		csrfToken := session.Values["csrfToken"]
+		if csrfToken == "" {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, "Expected csrf token to be set in session")
+		} else if csrfToken != csrfTokenToVerify {
+			writer.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(writer, "Forbidden request, invalid csrf token")
+		} else {
+			router.ServeHTTP(writer, request)
+		}
 	}
 }
 
@@ -76,7 +94,6 @@ func HasApiKeyWrapper(resourcesConnection *resources.Connection, router *mux.Rou
 		} else if apiKey.Key != apiKeyToVerify {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(writer, "Forbidden request, invalid api key")
-			fmt.Println(apiKey.Key)
 		} else {
 			router.ServeHTTP(writer, request)
 		}
