@@ -115,7 +115,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		if err != nil {
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
-			log.Errorf("Failed to run stages for verification: %v\nConfig: %v\n%s", currentVerification, verificationConfig, stacktrace)
+			log.Errorf("Failed to run stages for verification: %v\nConfig: %v\n%s\nerror: %v", currentVerification, verificationConfig, stacktrace, err)
 		}
 	}
 
