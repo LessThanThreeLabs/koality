@@ -44,6 +44,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "golang"
 		chef.add_recipe "nginx"
 		chef.add_recipe "postgres"
+		chef.add_recipe "nodejs"
 
 		chef.json = {
 			:koality => {
@@ -62,6 +63,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 				:version => "1.2",
 				:gopath => "#{KOALITY_REPOSITORY_DIRECTORY}/code/back",
 				:gobin => "#{KOALITY_REPOSITORY_DIRECTORY}/code/back/bin"
+			},
+			:nodejs => {
+				:version => "0.10.15",
+				:install_method => "package"
 			}
 		}
 	end

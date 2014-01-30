@@ -61,3 +61,6 @@
 [submodule "code/back/src/github.com/pwaller/goupx"]
 	path = code/back/src/github.com/pwaller/goupx
 	url = git@github.com:pwaller/goupx
+[submodule "chef/cookbooks/nodejs"]
+	path = chef/cookbooks/nodejs
+	url = git@github.com:mdxp/nodejs-cookbook.git
