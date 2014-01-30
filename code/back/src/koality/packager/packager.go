@@ -13,9 +13,10 @@ import (
 	"strings"
 )
 
-var requiredLibraries = []string{"curl", "libpcre3-dev"}
+var requiredLibraries = []string{"curl", "libpcre3-dev", "upx"}
 
-var expectedArtifacts = []string{"koality", "getXunitResults", "exportPaths", "sshwrapper", "installer"}
+var expectedArtifacts = []string{"koality", "koalityRunner", "getXunitResults", "exportPaths", "sshwrapper",
+	"installer", "authorizedKeys", "restrictedShell"}
 
 var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", ".metadata"}
 
@@ -132,34 +133,6 @@ func packageKoality(outputDirectory string) error {
 	}
 	fmt.Printf("Removed pkg directory at %s\n", pkgDir)
 
-	expectedFilesSet := make(map[string]bool, len(expectedFiles))
-	for _, directory := range expectedFiles {
-		expectedFilesSet[directory] = true
-	}
-
-	files, err := ioutil.ReadDir(outputDirectory)
-	if err != nil {
-		return fmt.Errorf("Unable to list the contents of the output directory: %s\nError: %v", outputDirectory, err)
-	}
-
-	for _, file := range files {
-		if _, expected := expectedFilesSet[file.Name()]; !expected {
-			unexpectedFile := filepath.Join(outputDirectory, file.Name())
-			fmt.Printf("Removing unexpected file at %s...\n", unexpectedFile)
-			if err = os.RemoveAll(unexpectedFile); err != nil {
-				return fmt.Errorf("Unable to remove unexpected file at %s\nError: %v", unexpectedFile, err)
-			}
-			fmt.Printf("Removed unexpected file at %s\n", unexpectedFile)
-		}
-	}
-
-	chefDir := filepath.Join(outputDirectory, "chef")
-	fmt.Printf("Removing chef directory at %s...\n", chefDir)
-	if err = os.RemoveAll(chefDir); err != nil {
-		return fmt.Errorf("Failed to remove chef directory at %s\nError: %v", chefDir, err)
-	}
-	fmt.Printf("Removed chef directory at %s\n", chefDir)
-
 	dependenciesDirectory := filepath.Join(outputDirectory, "dependencies")
 	if err = os.Mkdir(dependenciesDirectory, 0755); err != nil {
 		return fmt.Errorf("Failed to create dependencies directory at %s\nError: %v", dependenciesDirectory, err)
@@ -200,17 +173,30 @@ func packageKoality(outputDirectory string) error {
 
 	nginxOriginalPath := filepath.Join(dependenciesDirectory, "nginx-1.4.4", "objs", "nginx")
 	nginxOutputPath := filepath.Join(outputDirectory, "nginx")
-	moveCommand := exec.Command("mv", nginxOriginalPath, nginxOutputPath)
-	moveStdout, moveStderr := new(bytes.Buffer), new(bytes.Buffer)
-	moveCommand.Stdout, moveCommand.Stderr = moveStdout, moveStderr
 	fmt.Println("Moving nginx...")
-	if err = moveCommand.Run(); err != nil {
-		return fmt.Errorf("Failed to move nginx binary from %s to %s\nStdout: %s\nStderr: %s\nError: %v", nginxOriginalPath, nginxOutputPath, moveStdout.String(), moveStderr.String(), err)
+	if err = os.Rename(nginxOriginalPath, filepath.Join(nginxOutputPath, "nginx")); err != nil {
+		return fmt.Errorf("Failed to move nginx binary from %s to %s\nError: %v", nginxOriginalPath, nginxOutputPath, err)
 	}
 	fmt.Printf("Moved nginx to %s\n", nginxOutputPath)
 
 	if err = os.RemoveAll(filepath.Join(dependenciesDirectory, "nginx-1.4.4")); err != nil {
 		return fmt.Errorf("Failed to clean up nginx directory\nError: %v", err)
+	}
+
+	nginxConfPath := filepath.Join(nginxOutputPath, "nginx.conf")
+	if err = unlinkFile(nginxConfPath); err != nil {
+		return err
+	}
+
+	fmt.Println("Modifying nginx.conf...")
+	nginxConfFile, err := os.OpenFile(nginxConfPath, os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return fmt.Errorf("Failed to read %s\nError: %v", nginxConfPath, err)
+	}
+	defer nginxConfFile.Close()
+
+	if _, err = fmt.Fprint(nginxConfFile, "daemon off;"); err != nil {
+		return fmt.Errorf("Failed to set daemon to \"off\" for nginx.conf\nError: %v", err)
 	}
 
 	curlCommand = exec.Command("bash", "-c", string(shell.Pipe(
@@ -239,10 +225,12 @@ func packageKoality(outputDirectory string) error {
 	patchCommand := exec.Command("patch", "-p1")
 	patchCommand.Dir = filepath.Join(dependenciesDirectory, "openssh-6.0p1")
 	patchPath := filepath.Join(dependenciesDirectory, "openssh-for-git", "openssh-6.0p1-authorized-keys-script.diff")
-	patchCommand.Stdin, err = os.Open(patchPath)
+	patchFile, err := os.Open(patchPath)
 	if err != nil {
 		return fmt.Errorf("Could not find the OpenSSH patch at %s\nError: %v", patchPath, err)
 	}
+	defer patchFile.Close()
+	patchCommand.Stdin = patchFile
 
 	patchStdout, patchStderr := new(bytes.Buffer), new(bytes.Buffer)
 	patchCommand.Stdout, patchCommand.Stderr = patchStdout, patchStderr
@@ -275,6 +263,81 @@ func packageKoality(outputDirectory string) error {
 		return fmt.Errorf("Failed to make OpenSSH\nStdout: %s\nStderr: %s\nError: %v", makeStdout.String(), makeStderr.String(), err)
 	}
 	fmt.Println("Compiled OpenSSH")
+
+	fmt.Println("Modifying OpenSSH configuration files...")
+	sshdConfigFile, err := os.OpenFile(filepath.Join(dependenciesDirectory, "openssh-6.0p1", "sshd_config"), os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return fmt.Errorf("Failed to read the sshd_config file\nError: %v", err)
+	}
+	defer sshdConfigFile.Close()
+
+	if _, err = fmt.Fprintf(sshdConfigFile, "AuthorizedKeysScript %s", filepath.Join("/", "etc", "koality", "current", pathtranslator.BinaryPath("authorizedKeys"))); err != nil {
+		return fmt.Errorf("Failed to add AuthorizedKeysScript option to the ssh_config file\nError: %v", err)
+	}
+
+	for _, file := range expectedFiles {
+		expectedFilePath := filepath.Join(outputDirectory, file)
+		if _, err = os.Stat(expectedFilePath); err != nil {
+			return fmt.Errorf("Could not find expected file: %s\nError: %v", file, err)
+		}
+	}
+
+	expectedFilesSet := make(map[string]bool, len(expectedFiles))
+	for _, directory := range expectedFiles {
+		expectedFilesSet[directory] = true
+	}
+
+	files, err := ioutil.ReadDir(outputDirectory)
+	if err != nil {
+		return fmt.Errorf("Unable to list the contents of the output directory: %s\nError: %v", outputDirectory, err)
+	}
+
+	for _, file := range files {
+		if _, expected := expectedFilesSet[file.Name()]; !expected {
+			unexpectedFile := filepath.Join(outputDirectory, file.Name())
+			fmt.Printf("Removing unexpected file at %s...\n", unexpectedFile)
+			if err = os.RemoveAll(unexpectedFile); err != nil {
+				return fmt.Errorf("Unable to remove unexpected file at %s\nError: %v", unexpectedFile, err)
+			}
+			fmt.Printf("Removed unexpected file at %s\n", unexpectedFile)
+		}
+	}
+
+	chefDir := filepath.Join(outputDirectory, "chef")
+	fmt.Printf("Removing chef directory at %s...\n", chefDir)
+	if err = os.RemoveAll(chefDir); err != nil {
+		return fmt.Errorf("Failed to remove chef directory at %s\nError: %v", chefDir, err)
+	}
+	fmt.Printf("Removed chef directory at %s\n", chefDir)
+
+	return nil
+}
+
+func unlinkFile(filePath string) error {
+	linkInfo, err := os.Lstat(filePath)
+	if err != nil {
+		return fmt.Errorf("Unable to check link status of %s\nError: %v", filePath, err)
+	}
+
+	if linkInfo.Mode()&os.ModeSymlink != 0 {
+		linkPath, err := os.Readlink(filePath)
+		if err != nil {
+			return fmt.Errorf("Unable to read link at %s\nError: %v", filePath, err)
+		}
+
+		if err = os.Remove(filePath); err != nil {
+			return fmt.Errorf("Failed to remove link at %s\nError: %v", filePath, err)
+		}
+		if !filepath.IsAbs(linkPath) {
+			linkPath = filepath.Join(filepath.Dir(filePath), linkPath)
+		}
+		copyCommand := exec.Command("cp", linkPath, filePath)
+		copyStdout, copyStderr := new(bytes.Buffer), new(bytes.Buffer)
+		copyCommand.Stdout, copyCommand.Stderr = copyStdout, copyStderr
+		if err = copyCommand.Run(); err != nil {
+			return fmt.Errorf("Failed to copy file from %s to %s\nStdout: %s\nStderr: %s\nError: %v", linkPath, filePath, copyStdout.String(), copyStderr.String(), err)
+		}
+	}
 
 	return nil
 }
