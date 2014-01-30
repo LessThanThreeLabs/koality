@@ -27,7 +27,7 @@ var (
 var (
 	hgRepositoryResource = &resources.Repository{1, "hgRepository", "", "hg", "", remoteRepositoryPath, nil, nil, false}
 	hgRepo               = RM.openHgRepository(hgRepositoryResource)
-	hgRemoteRepository   = &hgRepository{remoteRepositoryPath, "", nil}
+	hgRemoteRepository   = &hgRepository{"hgRepository", remoteRepositoryPath, "", nil}
 )
 
 func getTop(remoteRepository Repository) (ref string) {
