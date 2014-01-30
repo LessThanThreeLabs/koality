@@ -7,29 +7,27 @@ sections:
     scripts:
     #  pull down missing submodules
     - git submodule update --init --recursive
-    # prepare database
-    - ln -s $HOME/koality-v1/postgres $HOME/postgres
     # create repositories directory
     - sudo mkdir -p /etc/koality
     - sudo chmod -R 777 /etc/koality
-    # run chef
+      # run chef
     - |
-      echo '
-      file_cache_path "/home/lt3/koality-v1/chef-cache"
-      cookbook_path ["/home/lt3/koality-v1/chef/cookbooks", "/home/lt3/koality-v1/chef/site-cookbooks"]
-      json_attribs "/home/lt3/koality-v1/chef-node.json"
-      ' > chef-config.rb
+      echo "
+      file_cache_path \"$(pwd)/chef-cache\"
+      cookbook_path [\"$(pwd)/chef/cookbooks\", \"$(pwd)/chef/site-cookbooks\"]
+      json_attribs \"$(pwd)/chef-node.json\"
+      " > chef-config.rb
     - |
-      echo '{
-        "run_list": ["recipe[apt]", "recipe[build-essential]", "recipe[postgres]", "recipe[golang]"],
-        "go": {
-          "version": "1.2",
-          "gopath": "/home/lt3/koality-v1/code/back",
-          "gobin": "/home/lt3/koality-v1/code/back/bin"
+      echo "{
+        \"run_list\": [\"recipe[apt]\", \"recipe[build-essential]\", \"recipe[postgres]\", \"recipe[golang]\"],
+        \"go\": {
+          \"version\": \"1.2\",
+          \"gopath\": \"$(pwd)/code/back\",
+          \"gobin\": \"$(pwd)/code/back/bin\"
         }
-      }' > chef-node.json
+      }" > chef-node.json
     - rvmsudo gem install chef --no-ri --no-rdoc -v 10.30.2
-    - mkdir -p /home/lt3/koality-v1/chef-cache
+    - mkdir -p $(pwd)/chef-cache
     - rvmsudo chef-solo -c chef-config.rb
 - integration tests:
     run on: split
