@@ -45,6 +45,12 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 	for sectionNumber, section := range sections {
 		shouldContinue, err := stageRunner.runSection(uint64(sectionNumber), section, environment)
 		if err != nil {
+			stageRunner.ResultsChan <- verification.SectionResult{
+				Section:       section.Name(),
+				Final:         section.IsFinal(),
+				FailSectionOn: section.FailOn(),
+				Passed:        false,
+			}
 			return err
 		}
 		if !shouldContinue {
