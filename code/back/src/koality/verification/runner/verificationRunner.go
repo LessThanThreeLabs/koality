@@ -13,7 +13,6 @@ import (
 	"koality/verification/stagerunner"
 	"koality/vm"
 	"koality/vm/poolmanager"
-	"koality/vm/vcs"
 	"runtime"
 	"time"
 )
@@ -115,7 +114,7 @@ func (verificationRunner *VerificationRunner) RunVerification(currentVerificatio
 		if err != nil {
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
-			log.Errorf("Failed to run stages for verification: %v\nConfig: %v\n%s", currentVerification, verificationConfig, stacktrace)
+			log.Errorf("Failed to run stages for verification: %v\nConfig: %#v\nError: %v\n%s", currentVerification, verificationConfig, err, stacktrace)
 		}
 	}
 
@@ -230,7 +229,11 @@ func (verificationRunner *VerificationRunner) getVerificationConfig(currentVerif
 	}
 
 	// TODO (bbland): add retry logic
-	checkoutCommand := vcs.CheckoutCommand(repository, repositorymanager.GitHiddenRef(currentVerification.Changeset.HeadSha))
+	checkoutCommand, err := verificationRunner.repositoryManager.GetCheckoutCommand(repository, currentVerification.Changeset.HeadSha)
+	if err != nil {
+		return emptyConfig, err
+	}
+
 	setupCommands := []verification.Command{verification.NewShellCommand(repository.VcsType, checkoutCommand)}
 	setupSection := section.New("setup", false, section.RunOnAll, section.FailOnFirst, false, nil, commandgroup.New(setupCommands), nil)
 	verificationConfig.Sections = append([]section.Section{setupSection}, verificationConfig.Sections...)
