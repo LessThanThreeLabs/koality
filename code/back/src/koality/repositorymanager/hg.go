@@ -9,13 +9,25 @@ import (
 )
 
 type hgRepository struct {
+	name                string
 	path                string
 	remoteUri           string
 	resourcesConnection *resources.Connection
 }
 
+var ensureHgInstalledCommand = shell.And(
+	shell.Or(
+		shell.Silent("which ssh"),
+		shell.Advertised(shell.Sudo("apt-get install -y ssh-client")),
+	),
+	shell.Or(
+		shell.Silent("which hg"),
+		shell.Advertised(shell.Sudo("apt-get install -y mercurial")),
+	),
+)
+
 func (repositoryManager *repositoryManager) openHgRepository(repository *resources.Repository) *hgRepository {
-	return &hgRepository{repositoryManager.ToPath(repository), repository.RemoteUri, repositoryManager.resourcesConnection}
+	return &hgRepository{repository.Name, repositoryManager.ToPath(repository), repository.RemoteUri, repositoryManager.resourcesConnection}
 }
 
 func (repository *hgRepository) getVcsBaseCommand() string {
@@ -172,4 +184,33 @@ func (repository *hgRepository) getYamlFile(ref string) (yamlFile string, err er
 
 	yamlFile = command.Stdout.String()
 	return
+}
+
+func (repository *hgRepository) getCloneCommand() shell.Command {
+	return shell.And(
+		ensureHgInstalledCommand,
+		shell.Or(
+			shell.Not(shell.Test(shell.Commandf("-d %s", repository.name))),
+			shell.Advertised(shell.Commandf("rm -rf %s", repository.name)),
+		),
+		shell.Advertised(shell.Commandf("hg clone --uncompressed %s %s", repository.remoteUri, repository.name)),
+	)
+}
+
+func (repository *hgRepository) getCheckoutCommand(ref string) shell.Command {
+	return shell.And(
+		ensureHgInstalledCommand,
+		shell.IfElse(
+			shell.Test(shell.Commandf("-d %s", repository.name)),
+			shell.And(
+				shell.Advertised(shell.Commandf("cd %s", repository.name)),
+				shell.Advertised(shell.Commandf("hg pull %s", repository.remoteUri)),
+			),
+			shell.Chain(
+				shell.Advertised(shell.Commandf("hg clone --uncompressed %s %s", repository.remoteUri, repository.name)),
+				shell.Advertised(shell.Commandf("cd %s", repository.name)),
+			),
+		),
+		shell.Advertised(shell.Commandf("hg update --clean %s", ref)),
+	)
 }

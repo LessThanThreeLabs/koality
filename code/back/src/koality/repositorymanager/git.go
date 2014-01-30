@@ -3,6 +3,7 @@ package repositorymanager
 import (
 	"fmt"
 	"koality/resources"
+	"koality/shell"
 	"os"
 	"strings"
 	"time"
@@ -10,7 +11,7 @@ import (
 
 const (
 	pushMergeRetries = 4
-	retryTimeout     = 1000000000 // In nanoseconds
+	retryTimeout     = time.Second
 )
 
 type gitSubRepository struct {
@@ -30,12 +31,24 @@ type gitRepository struct {
 	bare  *gitSubRepository
 	slave *gitSubRepository
 
+	name      string
 	remoteUri string
 }
 
+var ensureGitInstalledCommand = shell.And(
+	shell.Or(
+		shell.Silent("which ssh"),
+		shell.Advertised(shell.Sudo("apt-get install -y ssh-client")),
+	),
+	shell.Or(
+		shell.Silent("which git"),
+		shell.Advertised(shell.Sudo("apt-get install -y git-core")),
+	),
+)
+
 func (repositoryManager *repositoryManager) openGitRepository(repository *resources.Repository) *gitRepository {
 	path := repositoryManager.ToPath(repository)
-	return &gitRepository{&gitSubRepository{path, repositoryManager.resourcesConnection}, &gitSubRepository{path + ".slave", repositoryManager.resourcesConnection}, repository.RemoteUri}
+	return &gitRepository{&gitSubRepository{path, repositoryManager.resourcesConnection}, &gitSubRepository{path + ".slave", repositoryManager.resourcesConnection}, repository.Name, repository.RemoteUri}
 }
 
 func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
@@ -411,4 +424,28 @@ func (repository *gitRepository) getYamlFile(ref string) (yamlFile string, err e
 
 	yamlFile = command.Stdout.String()
 	return
+}
+
+func (repository *gitRepository) getCloneCommand() shell.Command {
+	return shell.And(
+		ensureGitInstalledCommand,
+		shell.Or(
+			shell.Not(shell.Test(shell.Commandf("-e %s", repository.name))),
+			shell.Advertised(shell.Commandf("rm -rf %s", repository.name)),
+		),
+		shell.Advertised(shell.Commandf("git clone %s %s", repository.remoteUri, repository.name)),
+	)
+}
+
+func (repository *gitRepository) getCheckoutCommand(ref string) shell.Command {
+	return shell.And(
+		ensureGitInstalledCommand,
+		shell.Or(
+			shell.Test(shell.Commandf("-d %s", repository.name)),
+			shell.Advertised(shell.Commandf("git init %s", repository.name)),
+		),
+		shell.Advertised(shell.Commandf("cd %s", repository.name)),
+		shell.Advertised(shell.Commandf("git fetch %s %s -n --depth 1", repository.remoteUri, GitHiddenRef(ref))),
+		shell.Advertised(shell.Commandf("git checkout --force %s", ref)),
+	)
 }

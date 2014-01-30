@@ -2,12 +2,15 @@ package repositorymanager
 
 import (
 	"fmt"
+	"koality/shell"
 	"os"
 )
 
 type PostPushRepository interface {
 	getYamlFile(ref string) (yamlFile string, err error)
 	getCommitAttributes(ref string) (headSha, message, username, email string, err error)
+	getCloneCommand() shell.Command
+	getCheckoutCommand(ref string) shell.Command
 }
 
 type PrePushRepository interface {
