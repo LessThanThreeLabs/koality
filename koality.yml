@@ -9,7 +9,7 @@ sections:
     - git submodule update --init --recursive
     # create repositories directory
     - sudo mkdir -p /etc/koality
-    - sudo chmod -R 777 /etc/koality
+    - sudo chmod -R 0777 /etc/koality
       # run chef
     - |
       echo "
