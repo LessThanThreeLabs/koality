@@ -1,5 +1,7 @@
 parameters:
   nodes: 2
+  environment:
+    KOALITY: true
 sections:
 - setup chicken:
     run on: all
@@ -8,8 +10,8 @@ sections:
     #  pull down missing submodules
     - git submodule update --init --recursive
     # create repositories directory
-    - sudo mkdir -p /etc/koality
-    - sudo chmod -R 0777 /etc/koality
+    - sudo mkdir -p /etc/koality/repositories
+    - sudo chmod -R 0777 /etc/koality/repositories
       # run chef
     - |
       echo "
