@@ -40,5 +40,5 @@ sections:
       cd code/back/src/koality
       ls -d */ | while read testDirectory; do
         echo "- ${testDirectory%?}:"
-        echo "    - go test -v koality/$testDirectory..."
+        echo "    command: go test -v koality/$testDirectory..."
       done
