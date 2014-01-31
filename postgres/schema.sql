@@ -112,10 +112,21 @@ CREATE TABLE IF NOT EXISTS snapshots (
 	CHECK (started IS NULL OR ended IS NULL OR started <= ended)
 );
 
+CREATE TABLE IF NOT EXISTS debug_instances (
+	id 					serial PRIMARY KEY,
+	pool_id				integer NOT NULL references ec2_pools(id) ON DELETE CASCADE,
+	instance_id			varchar(64) NOT NULL,
+	expires				timestamp with time zone NOT NULL,
+	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
+
+	CHECK (deleted = 0 OR deleted = id)
+);
+
 CREATE TABLE IF NOT EXISTS verifications (
 	id 					serial PRIMARY KEY,
 	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
 	snapshot_id			integer references snapshots(id) ON DELETE CASCADE,
+	debug_instance_id	integer references debug_instances(id) ON DELETE CASCADE,
 	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
 	merge_target		varchar(1024),
 	email_to_notify		varchar(256),
