@@ -19,45 +19,34 @@ func TestCreateInvalidRepository(test *testing.T) {
 
 	name := "repository-name"
 	vcsType := "git"
-	localUri := "git/local_uri/name.git"
 	remoteUri := "git@remote.uri.com:name.git"
 
-	_, err = connection.Repositories.Create.Create("", vcsType, localUri, remoteUri)
+	_, err = connection.Repositories.Create.Create("", vcsType, remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository name")
 	}
 
-	_, err = connection.Repositories.Create.Create("inv@lid-repos!tory-name^", vcsType, localUri, remoteUri)
+	_, err = connection.Repositories.Create.Create("inv@lid-repos!tory-name^", vcsType, remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository name")
 	}
 
-	_, err = connection.Repositories.Create.Create(name, "", localUri, remoteUri)
+	_, err = connection.Repositories.Create.Create(name, "", remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository VCS type")
 	}
 
-	_, err = connection.Repositories.Create.Create(name, "blah", localUri, remoteUri)
+	_, err = connection.Repositories.Create.Create(name, "blah", remoteUri)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository VCS type")
 	}
 
-	_, err = connection.Repositories.Create.Create(name, vcsType, "", remoteUri)
-	if err == nil {
-		test.Fatal("Expected error after providing invalid repository local uri")
-	}
-
-	_, err = connection.Repositories.Create.Create(name, vcsType, "git@google.com", remoteUri)
-	if err == nil {
-		test.Fatal("Expected error after providing invalid repository local uri")
-	}
-
-	_, err = connection.Repositories.Create.Create(name, vcsType, localUri, "")
+	_, err = connection.Repositories.Create.Create(name, vcsType, "")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository remote uri")
 	}
 
-	_, err = connection.Repositories.Create.Create(name, vcsType, localUri, "google.com")
+	_, err = connection.Repositories.Create.Create(name, vcsType, "google.com")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid repository remote uri")
 	}
@@ -98,9 +87,8 @@ func TestCreateAndDeleteRepository(test *testing.T) {
 
 	name := "repository-name"
 	vcsType := "hg"
-	localUri := "hg/local_uri/name"
 	remoteUri := "hg@remote.uri.com/name"
-	repository, err := connection.Repositories.Create.Create(name, vcsType, localUri, remoteUri)
+	repository, err := connection.Repositories.Create.Create(name, vcsType, remoteUri)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -109,8 +97,6 @@ func TestCreateAndDeleteRepository(test *testing.T) {
 		test.Fatal("repository.Name mismatch")
 	} else if repository.VcsType != vcsType {
 		test.Fatal("repository.VcsType mismatch")
-	} else if repository.LocalUri != localUri {
-		test.Fatal("repository.LocalUri mismatch")
 	} else if repository.RemoteUri != remoteUri {
 		test.Fatal("repository.RemoteUri mismatch")
 	} else if repository.GitHub != nil {
@@ -129,8 +115,6 @@ func TestCreateAndDeleteRepository(test *testing.T) {
 		test.Fatal("Bad repository.Name in repository creation event")
 	} else if createdEventRepository.VcsType != repository.VcsType {
 		test.Fatal("Bad repository.VcsType in repository creation event")
-	} else if createdEventRepository.LocalUri != repository.LocalUri {
-		test.Fatal("Bad repository.LocalUri in repository creation event")
 	} else if createdEventRepository.RemoteUri != repository.RemoteUri {
 		test.Fatal("Bad repository.RemoteUri in repository creation event")
 	} else if createdEventRepository.GitHub != repository.GitHub {
@@ -148,15 +132,13 @@ func TestCreateAndDeleteRepository(test *testing.T) {
 		test.Fatal("repository.Name mismatch")
 	} else if repository.VcsType != repository2.VcsType {
 		test.Fatal("repository.VcsType mismatch")
-	} else if repository.LocalUri != repository2.LocalUri {
-		test.Fatal("repository.LocalUri mismatch")
 	} else if repository.RemoteUri != repository2.RemoteUri {
 		test.Fatal("repository.RemoteUri mismatch")
 	} else if repository.GitHub != repository2.GitHub {
 		test.Fatal("repository.GitHub mismatch")
 	}
 
-	_, err = connection.Repositories.Create.Create(repository.Name, repository.VcsType, repository.LocalUri, repository.RemoteUri)
+	_, err = connection.Repositories.Create.Create(repository.Name, repository.VcsType, repository.RemoteUri)
 	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
@@ -234,11 +216,10 @@ func TestCreateGitHubRepository(test *testing.T) {
 
 	name := "repository-name"
 	vcsType := "git"
-	localUri := "git/local.uri.com/name"
 	remoteUri := "git@remote_uri:name"
 	gitHubOwner := "jordanpotter"
 	gitHubName := "repository-github-name"
-	repository, err := connection.Repositories.Create.CreateWithGitHub(name, localUri, remoteUri, gitHubOwner, gitHubName)
+	repository, err := connection.Repositories.Create.CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -247,8 +228,6 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.Name mismatch")
 	} else if repository.VcsType != vcsType {
 		test.Fatal("repository.VcsType mismatch")
-	} else if repository.LocalUri != localUri {
-		test.Fatal("repository.LocalUri mismatch")
 	} else if repository.RemoteUri != remoteUri {
 		test.Fatal("repository.RemoteUri mismatch")
 	} else if repository.GitHub.Owner != gitHubOwner {
@@ -269,8 +248,6 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("Bad repository.Name in repository creation event")
 	} else if createdEventRepository.VcsType != repository.VcsType {
 		test.Fatal("Bad repository.VcsType in repository creation event")
-	} else if createdEventRepository.LocalUri != repository.LocalUri {
-		test.Fatal("Bad repository.LocalUri in repository creation event")
 	} else if createdEventRepository.RemoteUri != repository.RemoteUri {
 		test.Fatal("Bad repository.RemoteUri in repository creation event")
 	} else if createdEventRepository.GitHub.Owner != repository.GitHub.Owner {
@@ -290,8 +267,6 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.Name mismatch")
 	} else if repository.VcsType != repository2.VcsType {
 		test.Fatal("repository.VcsType mismatch")
-	} else if repository.LocalUri != repository2.LocalUri {
-		test.Fatal("repository.LocalUri mismatch")
 	} else if repository.RemoteUri != repository2.RemoteUri {
 		test.Fatal("repository.RemoteUri mismatch")
 	} else if repository.GitHub.Owner != repository2.GitHub.Owner {
@@ -300,7 +275,7 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Name mismatch")
 	}
 
-	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.LocalUri, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
+	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
 	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
@@ -350,7 +325,7 @@ func TestRepositoryStatus(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Create.Create("repository-name", "hg", "hg/local_uri/name", "hg@remote.uri.com/name")
+	repository, err := connection.Repositories.Create.Create("repository-name", "hg", "hg@remote.uri.com/name")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -432,7 +407,7 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git/local_uri/name.git", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
 	if err != nil {
 		test.Fatal(err)
 	}

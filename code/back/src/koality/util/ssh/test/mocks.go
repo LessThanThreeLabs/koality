@@ -17,7 +17,6 @@ var (
 	Repository  = resources.Repository{
 		Id:        100,
 		Name:      "koality-v1",
-		LocalUri:  "koality-v1.git",
 		RemoteUri: "git@github.com:KoalityCode/koality-v1.git",
 		Created:   &currentTime,
 	}
@@ -32,7 +31,7 @@ func (mockPublicKeyVerifier PublicKeyVerifier) GetUserIdForKey(publicKey string,
 
 type RepositoryReader struct{}
 
-func (repositoryReader RepositoryReader) GetRepoFromLocalUri(localUri string, repositoryInfo *internalapi.RepositoryInfo) error {
+func (repositoryReader RepositoryReader) GetRepoByName(name string, repositoryInfo *internalapi.RepositoryInfo) error {
 	repositoryInfo.Repository = Repository
 	repositoryInfo.RepositoriesPath = RepositoriesPath
 	return nil

@@ -125,13 +125,11 @@ func createRepositories(connection *resources.Connection) error {
 			var repository *resources.Repository
 			var err error
 			if index%2 == 0 {
-				localUri := fmt.Sprintf("hg/test-data.koalitycode.com/koality-%d", index)
 				remoteUri := fmt.Sprintf("ssh://hg@hghub.com/koality-%d.hg", index)
-				repository, err = connection.Repositories.Create.Create(name, "hg", localUri, remoteUri)
+				repository, err = connection.Repositories.Create.Create(name, "hg", remoteUri)
 			} else {
-				localUri := fmt.Sprintf("git/test-data.koalitycode.com/koality-%d.git", index)
 				remoteUri := fmt.Sprintf("git@github.com:KoalityCode/koality-%d.git", index)
-				repository, err = connection.Repositories.Create.CreateWithGitHub(name, localUri, remoteUri, "github-owner", name)
+				repository, err = connection.Repositories.Create.CreateWithGitHub(name, remoteUri, "github-owner", name)
 				if err == nil {
 					hookTypes := []string{"push", "pull_request"}
 					err = connection.Repositories.Update.SetGitHubHook(repository.Id, int64(index), "hook-secret", hookTypes)

@@ -22,15 +22,15 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri string) (*resources.Repository, error) {
-	err := createHandler.getRepositoryParamsError(name, vcsType, localUri, remoteUri)
+func (createHandler *CreateHandler) Create(name, vcsType, remoteUri string) (*resources.Repository, error) {
+	err := createHandler.getRepositoryParamsError(name, vcsType, remoteUri)
 	if err != nil {
 		return nil, err
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO repositories (name, status, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4, $5) RETURNING id"
-	err = createHandler.database.QueryRow(query, name, initialRepositoryStatus, vcsType, localUri, remoteUri).Scan(&id)
+	query := "INSERT INTO repositories (name, status, vcs_type, remote_uri) VALUES ($1, $2, $3, $4) RETURNING id"
+	err = createHandler.database.QueryRow(query, name, initialRepositoryStatus, vcsType, remoteUri).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -44,8 +44,8 @@ func (createHandler *CreateHandler) Create(name, vcsType, localUri, remoteUri st
 	return repository, nil
 }
 
-func (createHandler *CreateHandler) CreateWithGitHub(name, localUri, remoteUri, gitHubOwner, gitHubName string) (*resources.Repository, error) {
-	err := createHandler.getRepositoryParamsError(name, "git", localUri, remoteUri)
+func (createHandler *CreateHandler) CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName string) (*resources.Repository, error) {
+	err := createHandler.getRepositoryParamsError(name, "git", remoteUri)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +56,8 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, localUri, remoteUri, 
 	}
 
 	id := uint64(0)
-	repositoryQuery := "INSERT INTO repositories (name, status, vcs_type, local_uri, remote_uri) VALUES ($1, $2, $3, $4, $5) RETURNING id"
-	err = transaction.QueryRow(repositoryQuery, name, initialRepositoryStatus, "git", localUri, remoteUri).Scan(&id)
+	repositoryQuery := "INSERT INTO repositories (name, status, vcs_type, remote_uri) VALUES ($1, $2, $3, $4) RETURNING id"
+	err = transaction.QueryRow(repositoryQuery, name, initialRepositoryStatus, "git", remoteUri).Scan(&id)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err
@@ -81,7 +81,7 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, localUri, remoteUri, 
 	return repository, nil
 }
 
-func (createHandler *CreateHandler) getRepositoryParamsError(name, vcsType, localUri, remoteUri string) error {
+func (createHandler *CreateHandler) getRepositoryParamsError(name, vcsType, remoteUri string) error {
 	if err := createHandler.verifier.verifyName(name); err != nil {
 		return err
 	}
@@ -89,17 +89,11 @@ func (createHandler *CreateHandler) getRepositoryParamsError(name, vcsType, loca
 		return err
 	}
 	if vcsType == "git" {
-		if err := createHandler.verifier.verifyLocalGitUri(localUri); err != nil {
-			return err
-		}
 		if err := createHandler.verifier.verifyRemoteGitUri(remoteUri); err != nil {
 			return err
 		}
 	}
 	if vcsType == "hg" {
-		if err := createHandler.verifier.verifyLocalHgUri(localUri); err != nil {
-			return err
-		}
 		if err := createHandler.verifier.verifyRemoteHgUri(remoteUri); err != nil {
 			return err
 		}

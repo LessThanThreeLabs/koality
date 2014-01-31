@@ -39,19 +39,16 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 		return
 	}
 
-	// command[1] should always be localUri regardless of command
-	localUri := strings.Trim(shell.command[1], "'")
-	if !strings.HasSuffix(localUri, ".git") {
-		localUri += ".git"
-	}
-	if strings.Contains(localUri, "..") {
-		err = MalformedCommandError{localUri}
+	// command[1] should always be name regardless of command
+	name := strings.TrimSuffix(strings.Trim(shell.command[1], "'"), ".git")
+	if strings.Contains(name, "..") {
+		err = MalformedCommandError{name}
 		return
 	}
 
 	var repositoryInfo internalapi.RepositoryInfo
-	repoCall := shell.client.Go("RepositoryReader.GetRepoFromLocalUri",
-		&localUri, &repositoryInfo, nil)
+	repoCall := shell.client.Go("RepositoryReader.GetRepoByName",
+		&name, &repositoryInfo, nil)
 	if err != nil {
 		return
 	}

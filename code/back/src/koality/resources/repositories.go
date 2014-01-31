@@ -9,7 +9,6 @@ type Repository struct {
 	Name      string
 	Status    string
 	VcsType   string
-	LocalUri  string
 	RemoteUri string
 	Created   *time.Time
 	GitHub    *RepositoryGitHubMetadata
@@ -33,13 +32,13 @@ type RepositoriesHandler struct {
 }
 
 type RepositoriesCreateHandler interface {
-	Create(name, vcsType, localUri, remoteUri string) (*Repository, error)
-	CreateWithGitHub(name, localUri, remoteUri, gitHubOwner, gitHubName string) (*Repository, error)
+	Create(name, vcsType, remoteUri string) (*Repository, error)
+	CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName string) (*Repository, error)
 }
 
 type RepositoriesReadHandler interface {
 	Get(repositoryId uint64) (*Repository, error)
-	GetByLocalUri(localUri string) (*Repository, error)
+	GetByName(name string) (*Repository, error)
 	GetAll() ([]Repository, error)
 }
 

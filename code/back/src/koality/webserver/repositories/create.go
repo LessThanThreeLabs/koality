@@ -12,10 +12,7 @@ func (repositoriesHandler *RepositoriesHandler) create(writer http.ResponseWrite
 	vcsType := request.PostFormValue("vcsType")
 	remoteUri := request.PostFormValue("remoteUri")
 
-	fmt.Println("...need to actually get the local uri here")
-	localUri := "git/local_uri/name.git"
-
-	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.Create(name, vcsType, localUri, remoteUri)
+	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.Create(name, vcsType, remoteUri)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -61,11 +58,9 @@ func (repositoriesHandler *RepositoriesHandler) createWithGitHub(writer http.Res
 	owner := request.PostFormValue("owner")
 	name := request.PostFormValue("name")
 
-	fmt.Println("...need to actually get the local and remote uri here")
-	localUri := "git/local_uri/name.git"
-	remoteUri := "git@remote.uri.com:name.git"
+	remoteUri := fmt.Sprintf("git@github.com:%s/%s.git", owner, name)
 
-	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.CreateWithGitHub(name, localUri, remoteUri, owner, name)
+	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.CreateWithGitHub(name, remoteUri, owner, name)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

@@ -13,7 +13,6 @@ type sanitizedRepository struct {
 	Name      string                             `json:"name"`
 	Status    string                             `json:"status"`
 	VcsType   string                             `json:"vcsType"`
-	LocalUri  string                             `json:"localUri"`
 	RemoteUri string                             `json:"remoteUri"`
 	GitHub    *sanitizedRepositoryGitHubMetadata `json:"gitHub,omitempty"`
 	Created   *time.Time                         `json:"created"`
@@ -73,7 +72,6 @@ func getSanitizedRepository(repository *resources.Repository) *sanitizedReposito
 		Name:      repository.Name,
 		Status:    repository.Status,
 		VcsType:   repository.VcsType,
-		LocalUri:  repository.LocalUri,
 		RemoteUri: repository.RemoteUri,
 		GitHub:    getSanitizedRepositoryGitHubMetadata(repository.GitHub),
 		Created:   repository.Created,

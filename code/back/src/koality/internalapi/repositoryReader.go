@@ -10,12 +10,12 @@ type RepositoryReader struct {
 }
 
 type RepositoryInfo struct {
-       resources.Repository
+	resources.Repository
 	RepositoriesPath string
 }
 
-func (repositoryReader RepositoryReader) GetRepoFromLocalUri(localUri string, repositoryInfo *RepositoryInfo) error {
-	repository, err := repositoryReader.resourcesConnection.Repositories.Read.GetByLocalUri(localUri)
+func (repositoryReader RepositoryReader) GetRepoByName(name string, repositoryInfo *RepositoryInfo) error {
+	repository, err := repositoryReader.resourcesConnection.Repositories.Read.GetByName(name)
 	if err != nil {
 		return err
 	}

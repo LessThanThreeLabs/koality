@@ -27,7 +27,7 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 	var deletedId uint64
 	var gitHubOwner, gitHubName, gitHubHookSecret, gitHubHookTypes sql.NullString
 	err := scannable.Scan(&repository.Id, &repository.Name, &repository.Status, &repository.VcsType,
-		&repository.LocalUri, &repository.RemoteUri, &repository.Created, &deletedId,
+		&repository.RemoteUri, &repository.Created, &deletedId,
 		&gitHubOwner, &gitHubName, &gitHubHookId, &gitHubHookSecret, &gitHubHookTypes)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchRepositoryError{"Unable to find repository"}
@@ -60,7 +60,7 @@ func (readHandler *ReadHandler) scanRepository(scannable Scannable) (*resources.
 }
 
 func (readHandler *ReadHandler) Get(repositoryId uint64) (*resources.Repository, error) {
-	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created, R.deleted," +
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.remote_uri, R.created, R.deleted," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
 		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
 		" ON R.id=RGM.repository_id WHERE R.id=$1"
@@ -68,17 +68,17 @@ func (readHandler *ReadHandler) Get(repositoryId uint64) (*resources.Repository,
 	return readHandler.scanRepository(row)
 }
 
-func (readHandler *ReadHandler) GetByLocalUri(localUri string) (*resources.Repository, error) {
-	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created, R.deleted," +
+func (readHandler *ReadHandler) GetByName(name string) (*resources.Repository, error) {
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.remote_uri, R.created, R.deleted," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
 		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
-		" ON R.id=RGM.repository_id WHERE R.local_uri=$1"
-	row := readHandler.database.QueryRow(query, localUri)
+		" ON R.id=RGM.repository_id WHERE R.name=$1"
+	row := readHandler.database.QueryRow(query, name)
 	return readHandler.scanRepository(row)
 }
 
 func (readHandler *ReadHandler) GetAll() ([]resources.Repository, error) {
-	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.local_uri, R.remote_uri, R.created, R.deleted," +
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.remote_uri, R.created, R.deleted," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
 		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
 		" ON R.id=RGM.repository_id WHERE R.id != R.deleted"
