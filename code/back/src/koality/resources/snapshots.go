@@ -24,18 +24,8 @@ type SnapshotsHandler struct {
 	Subscription SnapshotsSubscriptionHandler
 }
 
-type SnapshotVerificationInformation struct {
-	RepositoryId  uint64
-	HeadSha       string
-	BaseSha       string
-	HeadMessage   string
-	HeadUsername  string
-	HeadEmail     string
-	EmailToNotify string
-}
-
 type SnapshotsCreateHandler interface {
-	Create(poolId uint64, imageType string, repositoryInformation []*SnapshotVerificationInformation) (*Snapshot, error)
+	Create(poolId uint64, imageType string, repositoryInformation []*CoreVerificationInformation) (*Snapshot, error)
 }
 
 type SnapshotsReadHandler interface {

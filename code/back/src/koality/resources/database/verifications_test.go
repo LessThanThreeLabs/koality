@@ -37,7 +37,7 @@ func TestCreateInvalidVerification(test *testing.T) {
 		test.Fatal("Expected NoSuchRepositoryError when providing invalid repository id")
 	}
 
-	_, err = connection.Verifications.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Verifications.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify)
 	if _, ok := err.(resources.NoSuchSnapshotError); !ok {
 		test.Fatal("Expected NoSuchSnapshotError")
 	}

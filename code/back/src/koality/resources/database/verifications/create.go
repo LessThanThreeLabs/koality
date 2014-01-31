@@ -22,15 +22,15 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func nilOnZero(snapshotId uint64) interface{} {
-	if snapshotId == 0 {
+func nilOnZero(id uint64) interface{} {
+	if id == 0 {
 		return nil
 	} else {
-		return snapshotId
+		return id
 	}
 }
 
-func (createHandler *CreateHandler) create(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
+func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
 	if err := createHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
 	} else if err := createHandler.getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail); err != nil {
@@ -54,10 +54,10 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId uint64, head
 	}
 
 	verificationId := uint64(0)
-	verificationQuery := "INSERT INTO verifications (repository_id, snapshot_id, changeset_id, merge_target, email_to_notify, status)" +
+	verificationQuery := "INSERT INTO verifications (repository_id, snapshot_id, debug_instance_id, changeset_id, merge_target, email_to_notify, status)" +
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 
-	err = transaction.QueryRow(verificationQuery, repositoryId, nilOnZero(snapshotId), changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&verificationId)
+	err = transaction.QueryRow(verificationQuery, repositoryId, nilOnZero(snapshotId), nilOnZero(debugInstanceId), changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&verificationId)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err
@@ -75,11 +75,15 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId uint64, head
 }
 
 func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
-	return createHandler.create(repositoryId, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	return createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 }
 
-func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
-	return createHandler.create(repositoryId, snapshotId, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Verification, error) {
+	return createHandler.create(repositoryId, snapshotId, 0, headSha, baseSha, headMessage, headUsername, headEmail, "", emailToNotify)
+}
+
+func (createHandler *CreateHandler) CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Verification, error) {
+	return createHandler.create(repositoryId, 0, debugInstanceId, headSha, baseSha, headMessage, headUsername, headEmail, "", emailToNotify)
 }
 
 func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*resources.Verification, error) {

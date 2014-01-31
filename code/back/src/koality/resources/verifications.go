@@ -18,6 +18,16 @@ type Verification struct {
 	Changeset     Changeset
 }
 
+type CoreVerificationInformation struct {
+	RepositoryId  uint64
+	HeadSha       string
+	BaseSha       string
+	HeadMessage   string
+	HeadUsername  string
+	HeadEmail     string
+	EmailToNotify string
+}
+
 type Changeset struct {
 	Id           uint64
 	RepositoryId uint64
@@ -38,7 +48,8 @@ type VerificationsHandler struct {
 
 type VerificationsCreateHandler interface {
 	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Verification, error)
-	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Verification, error)
+	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*Verification, error)
+	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*Verification, error)
 	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*Verification, error)
 }
 

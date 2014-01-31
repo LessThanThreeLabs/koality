@@ -24,7 +24,7 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, verificationHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repositoryInformation []*resources.SnapshotVerificationInformation) (*resources.Snapshot, error) {
+func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repositoryInformation []*resources.CoreVerificationInformation) (*resources.Snapshot, error) {
 	err := createHandler.getSnapshotParamsError(poolId, imageType)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repo
 
 	for _, repositoryInformationElement := range repositoryInformation {
 		createHandler.verificationsHandler.Create.CreateForSnapshot(repositoryInformationElement.RepositoryId, id, repositoryInformationElement.HeadSha, repositoryInformationElement.BaseSha,
-			repositoryInformationElement.HeadMessage, repositoryInformationElement.HeadUsername, repositoryInformationElement.HeadEmail, "", repositoryInformationElement.EmailToNotify)
+			repositoryInformationElement.HeadMessage, repositoryInformationElement.HeadUsername, repositoryInformationElement.HeadEmail, repositoryInformationElement.EmailToNotify)
 	}
 
 	snapshot, err := createHandler.readHandler.Get(id)
