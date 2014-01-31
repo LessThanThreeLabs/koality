@@ -236,6 +236,124 @@ func TestSettingsResetCookieStoreKeys(test *testing.T) {
 	}
 }
 
+func TestSettingsSmtpAuth(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	smtpAuthSettingsUpdatedEventReceived := make(chan bool, 3)
+	var smtpAuthSettingsUpdatedEventSettings *resources.SmtpAuthSettings
+	smtpAuthSettingsUpdatedHandler := func(smtpAuthSettings *resources.SmtpAuthSettings) {
+		smtpAuthSettingsUpdatedEventSettings = smtpAuthSettings
+		smtpAuthSettingsUpdatedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToSmtpAuthSettingsUpdatedEvents(smtpAuthSettingsUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	plainIdentity := ""
+	plainUsername := "bbland"
+	plainPassword := "Ap@$$w0Rd!"
+	plainHost := "smtp.gmail.com"
+	smtpAuthSettings, err := connection.Settings.Update.SetSmtpAuthPlain(plainIdentity, plainUsername, plainPassword, plainHost)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if smtpAuthSettings.CramMd5 != nil {
+		test.Fatal("Bad smtp auth settings, CramMd5 should be nil")
+	} else if smtpAuthSettings.Login != nil {
+		test.Fatal("Bad smtp auth settings, Login should be nil")
+	}
+
+	select {
+	case <-smtpAuthSettingsUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear smtp auth settings updated event")
+	}
+
+	if smtpAuthSettingsUpdatedEventSettings.CramMd5 != nil {
+		test.Fatal("Bad smtp auth settings event, CramMd5 should be nil")
+	} else if smtpAuthSettingsUpdatedEventSettings.Login != nil {
+		test.Fatal("Bad smtp auth settings event, Login should be nil")
+	} else if smtpAuthSettings.Plain.Identity != smtpAuthSettingsUpdatedEventSettings.Plain.Identity {
+		test.Fatal("Bad smtpAuthSettings.Plain.Identity in smtp auth settings update event")
+	} else if smtpAuthSettings.Plain.Username != smtpAuthSettingsUpdatedEventSettings.Plain.Username {
+		test.Fatal("Bad smtpAuthSettings.Plain.Username in smtp auth settings update event")
+	} else if smtpAuthSettings.Plain.Password != smtpAuthSettingsUpdatedEventSettings.Plain.Password {
+		test.Fatal("Bad smtpAuthSettings.Plain.Password in smtp auth settings update event")
+	} else if smtpAuthSettings.Plain.Host != smtpAuthSettingsUpdatedEventSettings.Plain.Host {
+		test.Fatal("Bad smtpAuthSettings.Plain.Host in smtp auth settings update event")
+	}
+
+	cramMd5Username := "a Username"
+	cramMd5Secret := "$Up3r_sEcR3+"
+
+	smtpAuthSettings, err = connection.Settings.Update.SetSmtpAuthCramMd5(cramMd5Username, cramMd5Secret)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if smtpAuthSettings.Plain != nil {
+		test.Fatal("Bad smtp auth settings, Plain should be nil")
+	} else if smtpAuthSettings.Login != nil {
+		test.Fatal("Bad smtp auth settings, Login should be nil")
+	}
+
+	select {
+	case <-smtpAuthSettingsUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear smtp auth settings updated event")
+	}
+
+	if smtpAuthSettingsUpdatedEventSettings.Plain != nil {
+		test.Fatal("Bad smtp auth settings event, Plain should be nil")
+	} else if smtpAuthSettingsUpdatedEventSettings.Login != nil {
+		test.Fatal("Bad smtp auth settings event, Login should be nil")
+	} else if smtpAuthSettings.CramMd5.Username != smtpAuthSettingsUpdatedEventSettings.CramMd5.Username {
+		test.Fatal("Bad smtpAuthSettings.CramMd5.Username in smtp auth settings update event")
+	} else if smtpAuthSettings.CramMd5.Secret != smtpAuthSettingsUpdatedEventSettings.CramMd5.Secret {
+		test.Fatal("Bad smtpAuthSettings.CramMd5.Secret in smtp auth settings update event")
+	}
+
+	loginUsername := "a Username"
+	loginPassword := "4n0T#3r_p4$Sw0rd"
+
+	smtpAuthSettings, err = connection.Settings.Update.SetSmtpAuthLogin(loginUsername, loginPassword)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if smtpAuthSettings.Plain != nil {
+		test.Fatal("Bad smtp auth settings, Plain should be nil")
+	} else if smtpAuthSettings.CramMd5 != nil {
+		test.Fatal("Bad smtp auth settings, CramMd5 should be nil")
+	}
+
+	select {
+	case <-smtpAuthSettingsUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear smtp auth settings updated event")
+	}
+
+	if smtpAuthSettingsUpdatedEventSettings.Plain != nil {
+		test.Fatal("Bad smtp auth settings event, Plain should be nil")
+	} else if smtpAuthSettingsUpdatedEventSettings.CramMd5 != nil {
+		test.Fatal("Bad smtp auth settings event, CramMd5 should be nil")
+	} else if smtpAuthSettings.Login.Username != smtpAuthSettingsUpdatedEventSettings.Login.Username {
+		test.Fatal("Bad smtpAuthSettings.Login.Username in smtp auth settings update event")
+	} else if smtpAuthSettings.Login.Password != smtpAuthSettingsUpdatedEventSettings.Login.Password {
+		test.Fatal("Bad smtpAuthSettings.Login.Password in smtp auth settings update event")
+	}
+}
+
 func TestSettingsApiKey(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)

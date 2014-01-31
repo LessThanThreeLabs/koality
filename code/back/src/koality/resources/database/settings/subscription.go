@@ -9,6 +9,7 @@ type SubscriptionHandler struct {
 	s3ExporterSettingsUpdatedSubscriptionManager resources.SubscriptionManager
 	s3ExporterSettingsClearedSubscriptionManager resources.SubscriptionManager
 	cookieStoreKeysUpdatedSubscriptionManager    resources.SubscriptionManager
+	smtpAuthSettingsUpdatedSubscriptionManager   resources.SubscriptionManager
 	apiKeyUpdatedSubscriptionManager             resources.SubscriptionManager
 }
 
@@ -62,6 +63,18 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCookieStoreKeysUp
 
 func (subscriptionHandler *SubscriptionHandler) FireCookieStoreKeysUpdatedEvent(keys *resources.CookieStoreKeys) {
 	subscriptionHandler.cookieStoreKeysUpdatedSubscriptionManager.Fire(keys)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToSmtpAuthSettingsUpdatedEvents(updateHandler resources.SmtpAuthSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.smtpAuthSettingsUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromSmtpAuthSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.smtpAuthSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireSmtpAuthSettingsUpdatedEvent(auth *resources.SmtpAuthSettings) {
+	subscriptionHandler.smtpAuthSettingsUpdatedSubscriptionManager.Fire(auth)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToApiKeyUpdatedEvents(updateHandler resources.ApiKeyUpdatedHandler) (resources.SubscriptionId, error) {

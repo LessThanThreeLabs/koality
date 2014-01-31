@@ -40,8 +40,7 @@ func (readHandler *ReadHandler) getSetting(locator SettingLocator, destination i
 
 func (readHandler *ReadHandler) GetRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
 	repositoryKeyPair := new(resources.RepositoryKeyPair)
-	err := readHandler.getSetting(repositoryKeyPairLocator, repositoryKeyPair)
-	if err != nil {
+	if err := readHandler.getSetting(repositoryKeyPairLocator, repositoryKeyPair); err != nil {
 		return nil, err
 	}
 	return repositoryKeyPair, nil
@@ -49,8 +48,7 @@ func (readHandler *ReadHandler) GetRepositoryKeyPair() (*resources.RepositoryKey
 
 func (readHandler *ReadHandler) GetS3ExporterSettings() (*resources.S3ExporterSettings, error) {
 	s3Settings := new(resources.S3ExporterSettings)
-	err := readHandler.getSetting(s3ExporterSettingsLocator, s3Settings)
-	if err != nil {
+	if err := readHandler.getSetting(s3ExporterSettingsLocator, s3Settings); err != nil {
 		return nil, err
 	}
 	return s3Settings, nil
@@ -58,17 +56,23 @@ func (readHandler *ReadHandler) GetS3ExporterSettings() (*resources.S3ExporterSe
 
 func (readHandler *ReadHandler) GetCookieStoreKeys() (*resources.CookieStoreKeys, error) {
 	storeKeys := new(resources.CookieStoreKeys)
-	err := readHandler.getSetting(cookieStoreKeysLocator, storeKeys)
-	if err != nil {
+	if err := readHandler.getSetting(cookieStoreKeysLocator, storeKeys); err != nil {
 		return nil, err
 	}
 	return storeKeys, nil
 }
 
+func (readHandler *ReadHandler) GetSmtpAuthSettings() (*resources.SmtpAuthSettings, error) {
+	smtpAuth := new(resources.SmtpAuthSettings)
+	if err := readHandler.getSetting(smtpAuthLocator, smtpAuth); err != nil {
+		return nil, err
+	}
+	return smtpAuth, nil
+}
+
 func (readHandler *ReadHandler) GetApiKey() (*resources.ApiKey, error) {
 	apiKey := new(resources.ApiKey)
-	err := readHandler.getSetting(apiKeyLocator, apiKey)
-	if err != nil {
+	if err := readHandler.getSetting(apiKeyLocator, apiKey); err != nil {
 		return nil, err
 	}
 	return apiKey, nil

@@ -126,6 +126,51 @@ func (updateHandler *UpdateHandler) ResetCookieStoreKeys() (*resources.CookieSto
 	return cookieStoreKeys, nil
 }
 
+func (updateHandler *UpdateHandler) setSmtpAuthSettings(smtpAuthSettings *resources.SmtpAuthSettings) error {
+	if err := updateHandler.setSetting(smtpAuthLocator, smtpAuthSettings); err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireSmtpAuthSettingsUpdatedEvent(smtpAuthSettings)
+	return nil
+}
+
+func (updateHandler *UpdateHandler) SetSmtpAuthPlain(identity, username, password, host string) (*resources.SmtpAuthSettings, error) {
+	smtpAuthSettings := &resources.SmtpAuthSettings{
+		Plain: &resources.SmtpPlainAuthSettings{identity, username, password, host},
+	}
+
+	if err := updateHandler.setSmtpAuthSettings(smtpAuthSettings); err != nil {
+		return nil, err
+	}
+
+	return smtpAuthSettings, nil
+}
+
+func (updateHandler *UpdateHandler) SetSmtpAuthCramMd5(username, secret string) (*resources.SmtpAuthSettings, error) {
+	smtpAuthSettings := &resources.SmtpAuthSettings{
+		CramMd5: &resources.SmtpCramMd5AuthSettings{username, secret},
+	}
+
+	if err := updateHandler.setSmtpAuthSettings(smtpAuthSettings); err != nil {
+		return nil, err
+	}
+
+	return smtpAuthSettings, nil
+}
+
+func (updateHandler *UpdateHandler) SetSmtpAuthLogin(username, password string) (*resources.SmtpAuthSettings, error) {
+	smtpAuthSettings := &resources.SmtpAuthSettings{
+		Login: &resources.SmtpLoginAuthSettings{username, password},
+	}
+
+	if err := updateHandler.setSmtpAuthSettings(smtpAuthSettings); err != nil {
+		return nil, err
+	}
+
+	return smtpAuthSettings, nil
+}
+
 func (updateHandler *UpdateHandler) ResetApiKey() (*resources.ApiKey, error) {
 	apiKey := new(resources.ApiKey)
 
