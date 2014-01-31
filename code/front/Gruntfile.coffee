@@ -13,9 +13,6 @@ module.exports = (grunt) ->
 				stderr: true
 				failOnError: true
 
-			compileCoffee:
-				command: 'iced --compile --runtime window --output <%= frontCoffeeCompiledDirectory %>/ <%= sourceDirectory %>/'
-
 			compileHtml:
 				command: 'find <%= sourceDirectory %> -name "*.html" | cpio -pdm <%= compiledHtmlDirectory %>'
 
@@ -26,20 +23,31 @@ module.exports = (grunt) ->
 					'rm -rf <%= compiledLessDirectory %>'
 				].join ' && '
 
-			test:
-				command: 'echo "REIMPLEMENT THIS"'
-				# command: 'karma start <%= testDirectory %>/karma.unit.conf.js --browsers PhantomJS --single-run'
+			# test:
+			# 	command: 'echo "REIMPLEMENT THIS"'
+			# 	# command: 'karma start <%= testDirectory %>/karma.unit.conf.js --browsers PhantomJS --single-run'
 
-		uglify:
-			options:
-				preserveComments: 'some'
+		# uglify:
+		# 	options:
+		# 		preserveComments: 'some'
 
-			code:
+		# 	code:
+		# 		files: [
+		# 			expand: true
+		# 			cwd: '<%= compiledCoffeeDirectory %>/'
+		# 			src: ['**/*.js']
+		# 			dest: '<%= frontUglifiedDirectory %>/'
+		# 			ext: '.js'
+		# 		]
+
+		coffee:
+			compile:
 				files: [
 					expand: true
-					cwd: '<%= compiledCoffeeDirectory %>/'
-					src: ['**/*.js']
-					dest: '<%= frontUglifiedDirectory %>/'
+					flatten: false
+					cwd: '<%= sourceDirectory %>/'
+					src: ['**/*.less']
+					dest: '<%= compiledCoffeeDirectory %>/'
 					ext: '.js'
 				]
 
@@ -47,6 +55,7 @@ module.exports = (grunt) ->
 			development:
 				files: [
 					expand: true
+					flatten: false
 					cwd: '<%= sourceDirectory %>/'
 					src: ['**/*.less']
 					dest: '<%= compiledLessDirectory %>/'
@@ -58,6 +67,7 @@ module.exports = (grunt) ->
 					yuicompress: true
 				files: [
 					expand: true
+					flatten: false
 					cwd: '<%= sourceDirectory %>/'
 					src: ['**/*.less']
 					dest: '<%= compiledLessDirectory %>/'
@@ -73,16 +83,17 @@ module.exports = (grunt) ->
 				files: ['<%= sourceDirectory %>/**/*.html', '<%= sourceDirectory %>/**/*.coffee', '<%= sourceDirectory %>/**/*.less']
 				tasks: ['compile', 'test']
 
+	grunt.loadNpmTasks 'grunt-shell'
 	grunt.loadNpmTasks 'grunt-contrib-uglify'
 	grunt.loadNpmTasks 'grunt-contrib-less'
 	grunt.loadNpmTasks 'grunt-contrib-watch'
-	grunt.loadNpmTasks 'grunt-shell'
+	grunt.loadNpmTasks 'grunt-iced-coffee'
 
 	grunt.registerTask 'default', ['compile']
-	grunt.registerTask 'compile', ['shell:copyHtml', 'shell:removeCompile', 'shell:compileCoffee', 'less:development']
-	grunt.registerTask 'compile-production', ['shell:copyHtml', 'shell:removeCompile', 'shell:compileCoffee', 'less:production']
+	grunt.registerTask 'compile', ['shell:removeCompile', 'shell:compileHtml', 'coffee:compile', 'less:development']
+	grunt.registerTask 'compile-production', ['shell:removeCompile', 'shell:compileHtml', 'coffee:compile', 'less:production']
 
-	grunt.registerTask 'test', ['shell:test']
+	# grunt.registerTask 'test', ['shell:test']
 
-	grunt.registerTask 'make-ugly', ['shell:removeUglify', 'uglify']
-	grunt.registerTask 'production', ['compile-production', 'make-ugly', 'shell:replaceCompiledWithUglified']
+	# grunt.registerTask 'make-ugly', ['shell:removeUglify', 'uglify']
+	# grunt.registerTask 'production', ['compile-production', 'make-ugly', 'shell:replaceCompiledWithUglified']

@@ -45,6 +45,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chef.add_recipe "nginx"
 		chef.add_recipe "postgres"
 		chef.add_recipe "nodejs"
+		chef.add_recipe "npm"
+		chef.add_recipe "grunt"
 
 		chef.json = {
 			:koality => {
