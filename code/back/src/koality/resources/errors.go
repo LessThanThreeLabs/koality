@@ -112,6 +112,16 @@ func (err InvalidSnapshotStatusError) Error() string {
 	return err.Message
 }
 
+//-------------------- Debug Instances --------------------
+
+type NoSuchDebugInstanceError struct {
+	Message string
+}
+
+func (err NoSuchDebugInstanceError) Error() string {
+	return err.Message
+}
+
 //-------------------- Verifications --------------------
 
 type NoSuchVerificationError struct {

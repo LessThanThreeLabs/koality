@@ -24,7 +24,7 @@ func (readHandler *ReadHandler) scanSnapshot(scannable Scannable) (*resources.Sn
 
 	var imageId sql.NullString
 	var deletedId uint64
-	err := scannable.Scan(&snapshot.PoolId, &snapshot.Id, &imageId, &snapshot.ImageType, &snapshot.Status,
+	err := scannable.Scan(&snapshot.Id, &snapshot.PoolId, &imageId, &snapshot.ImageType, &snapshot.Status,
 		&snapshot.Created, &snapshot.Started, &snapshot.Ended, &deletedId)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchSnapshotError{"Unable to find snapshot"}
