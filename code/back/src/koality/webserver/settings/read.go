@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (settingsHandler *SettingsHandler) GetApiKey(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) getApiKey(writer http.ResponseWriter, request *http.Request) {
 	apiKey, err := settingsHandler.resourcesConnection.Settings.Read.GetApiKey()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -26,7 +26,7 @@ func (settingsHandler *SettingsHandler) GetApiKey(writer http.ResponseWriter, re
 	fmt.Fprintf(writer, "%s", jsonedApiKey)
 }
 
-func (settingsHandler *SettingsHandler) GetRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) getRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
 	repositoryKeyPair, err := settingsHandler.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -46,7 +46,7 @@ func (settingsHandler *SettingsHandler) GetRepositoryKeyPair(writer http.Respons
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
 }
 
-func (settingsHandler *SettingsHandler) GetS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) getS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
 	s3ExporterSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetS3ExporterSettings()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

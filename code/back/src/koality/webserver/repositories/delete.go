@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func (repositoriesHandler *RepositoriesHandler) Delete(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) delete(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := mux.Vars(request)["repositoryId"]
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {

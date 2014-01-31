@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func (repositoriesHandler *RepositoriesHandler) Create(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) create(writer http.ResponseWriter, request *http.Request) {
 	name := request.PostFormValue("name")
 	vcsType := request.PostFormValue("vcsType")
 	remoteUri := request.PostFormValue("remoteUri")
@@ -46,7 +46,7 @@ func (repositoriesHandler *RepositoriesHandler) Create(writer http.ResponseWrite
 	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
 
-func (repositoriesHandler *RepositoriesHandler) CreateWithGitHub(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) createWithGitHub(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	user, err := repositoriesHandler.resourcesConnection.Users.Read.Get(userId)
 	if err != nil {

@@ -47,12 +47,12 @@ func getIndexTemplate() (*template.Template, error) {
 }
 
 func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/", templatesHandler.GetRoot).Methods("GET")
-	subrouter.HandleFunc("/index", templatesHandler.GetRoot).Methods("GET")
-	subrouter.HandleFunc("/index.html", templatesHandler.GetRoot).Methods("GET")
+	subrouter.HandleFunc("/", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/index", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/index.html", templatesHandler.getRoot).Methods("GET")
 }
 
-func (templatesHandler *TemplatesHandler) GetRoot(writer http.ResponseWriter, request *http.Request) {
+func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	user, err := templatesHandler.resourcesConnection.Users.Read.Get(userId)
 	if err != nil {

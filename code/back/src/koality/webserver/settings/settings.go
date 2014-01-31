@@ -30,36 +30,36 @@ func New(resourcesConnection *resources.Connection) (*SettingsHandler, error) {
 
 func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/apiKey",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetApiKey)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getApiKey)).
 		Methods("GET")
 	subrouter.HandleFunc("/repositoryKeyPair",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetRepositoryKeyPair)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getRepositoryKeyPair)).
 		Methods("GET")
 	subrouter.HandleFunc("/s3Exporter",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.GetS3ExporterSettings)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getS3ExporterSettings)).
 		Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.ResetApiKey)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetApiKey)).
 		Methods("POST")
 	subrouter.HandleFunc("/repositoryKeyPair/reset",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.ResetRepositoryKeyPair)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetRepositoryKeyPair)).
 		Methods("POST")
 
 	subrouter.HandleFunc("/s3Exporter",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.SetS3ExporterSettings)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setS3ExporterSettings)).
 		Methods("PUT")
 }
 
 func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/apiKey", settingsHandler.GetApiKey).Methods("GET")
-	subrouter.HandleFunc("/repositoryKeyPair", settingsHandler.GetRepositoryKeyPair).Methods("GET")
-	subrouter.HandleFunc("/s3Exporter", settingsHandler.GetS3ExporterSettings).Methods("GET")
+	subrouter.HandleFunc("/apiKey", settingsHandler.getApiKey).Methods("GET")
+	subrouter.HandleFunc("/repositoryKeyPair", settingsHandler.getRepositoryKeyPair).Methods("GET")
+	subrouter.HandleFunc("/s3Exporter", settingsHandler.getS3ExporterSettings).Methods("GET")
 
-	subrouter.HandleFunc("/apiKey/reset", settingsHandler.ResetApiKey).Methods("POST")
-	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.ResetRepositoryKeyPair).Methods("POST")
+	subrouter.HandleFunc("/apiKey/reset", settingsHandler.resetApiKey).Methods("POST")
+	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.resetRepositoryKeyPair).Methods("POST")
 
-	subrouter.HandleFunc("/s3Exporter", settingsHandler.SetS3ExporterSettings).Methods("PUT")
+	subrouter.HandleFunc("/s3Exporter", settingsHandler.setS3ExporterSettings).Methods("PUT")
 }
 
 func getSanitizedRepositoryKeyPair(repositoryKeyPair *resources.RepositoryKeyPair) *sanitizedRepositoryKeyPair {

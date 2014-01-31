@@ -16,7 +16,7 @@ func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
 	}
 }
 
-func (accountsHandler *AccountsHandler) Login(writer http.ResponseWriter, request *http.Request) {
+func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, request *http.Request) {
 	email := request.PostFormValue("email")
 	password := request.PostFormValue("password")
 	rememberMeString := request.PostFormValue("rememberMe")
@@ -60,7 +60,7 @@ func (accountsHandler *AccountsHandler) Login(writer http.ResponseWriter, reques
 	http.Redirect(writer, request, "/", http.StatusFound)
 }
 
-func (accountsHandler *AccountsHandler) Logout(writer http.ResponseWriter, request *http.Request) {
+func (accountsHandler *AccountsHandler) logout(writer http.ResponseWriter, request *http.Request) {
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
 	session.Options = &sessions.Options{
 		MaxAge: -1,

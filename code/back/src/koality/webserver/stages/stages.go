@@ -51,42 +51,42 @@ func New(resourcesConnection *resources.Connection) (*StagesHandler, error) {
 
 func (stagesHandler *StagesHandler) WireStagesAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{stageId:[0-9]+}",
-		middleware.IsLoggedInWrapper(stagesHandler.Get)).
+		middleware.IsLoggedInWrapper(stagesHandler.get)).
 		Methods("GET")
 	subrouter.HandleFunc("/",
-		middleware.IsLoggedInWrapper(stagesHandler.GetAll)).
+		middleware.IsLoggedInWrapper(stagesHandler.getAll)).
 		Methods("GET")
 }
 
 func (stagesHandler *StagesHandler) WireStagesApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{stageId:[0-9]+}", stagesHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/", stagesHandler.GetAll).Methods("GET")
+	subrouter.HandleFunc("/{stageId:[0-9]+}", stagesHandler.get).Methods("GET")
+	subrouter.HandleFunc("/", stagesHandler.getAll).Methods("GET")
 }
 
 func (stagesHandler *StagesHandler) WireStageRunsAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{stageRunId:[0-9]+}",
-		middleware.IsLoggedInWrapper(stagesHandler.GetRun)).
+		middleware.IsLoggedInWrapper(stagesHandler.getRun)).
 		Methods("GET")
 	subrouter.HandleFunc("/",
-		middleware.IsLoggedInWrapper(stagesHandler.GetAllRuns)).
+		middleware.IsLoggedInWrapper(stagesHandler.getAllRuns)).
 		Methods("GET")
 	subrouter.HandleFunc("/{stageRunId:[0-9]+}/lines",
-		middleware.IsLoggedInWrapper(stagesHandler.GetConsoleLines)).
+		middleware.IsLoggedInWrapper(stagesHandler.getConsoleLines)).
 		Methods("GET")
 	subrouter.HandleFunc("/{stageRunId:[0-9]+}/xunits",
-		middleware.IsLoggedInWrapper(stagesHandler.GetXunitResults)).
+		middleware.IsLoggedInWrapper(stagesHandler.getXunitResults)).
 		Methods("GET")
 	subrouter.HandleFunc("/{stageRunId:[0-9]+}/exports",
-		middleware.IsLoggedInWrapper(stagesHandler.GetExports)).
+		middleware.IsLoggedInWrapper(stagesHandler.getExports)).
 		Methods("GET")
 }
 
 func (stagesHandler *StagesHandler) WireStageRunsApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}", stagesHandler.GetRun).Methods("GET")
-	subrouter.HandleFunc("/", stagesHandler.GetAllRuns).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/lines", stagesHandler.GetConsoleLines).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/xunits", stagesHandler.GetXunitResults).Methods("GET")
-	subrouter.HandleFunc("/{stageRunId:[0-9]+}/exports", stagesHandler.GetExports).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}", stagesHandler.getRun).Methods("GET")
+	subrouter.HandleFunc("/", stagesHandler.getAllRuns).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/lines", stagesHandler.getConsoleLines).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/xunits", stagesHandler.getXunitResults).Methods("GET")
+	subrouter.HandleFunc("/{stageRunId:[0-9]+}/exports", stagesHandler.getExports).Methods("GET")
 }
 
 func getSanitizedStage(stage *resources.Stage) *sanitizedStage {

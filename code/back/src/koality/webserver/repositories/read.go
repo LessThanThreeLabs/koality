@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (repositoriesHandler *RepositoriesHandler) Get(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) get(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := mux.Vars(request)["repositoryId"]
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
@@ -36,7 +36,7 @@ func (repositoriesHandler *RepositoriesHandler) Get(writer http.ResponseWriter, 
 	fmt.Fprintf(writer, "%s", jsonedRepository)
 }
 
-func (repositoriesHandler *RepositoriesHandler) GetAll(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) getAll(writer http.ResponseWriter, request *http.Request) {
 	repositories, err := repositoriesHandler.resourcesConnection.Repositories.Read.GetAll()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

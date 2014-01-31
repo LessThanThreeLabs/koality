@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (settingsHandler *SettingsHandler) ResetApiKey(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) resetApiKey(writer http.ResponseWriter, request *http.Request) {
 	apiKey, err := settingsHandler.resourcesConnection.Settings.Update.ResetApiKey()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -26,7 +26,7 @@ func (settingsHandler *SettingsHandler) ResetApiKey(writer http.ResponseWriter, 
 	fmt.Fprintf(writer, "%s", jsonedApiKey)
 }
 
-func (settingsHandler *SettingsHandler) ResetRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) resetRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
 	repositoryKeyPair, err := settingsHandler.resourcesConnection.Settings.Update.ResetRepositoryKeyPair()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -46,7 +46,7 @@ func (settingsHandler *SettingsHandler) ResetRepositoryKeyPair(writer http.Respo
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
 }
 
-func (settingsHandler *SettingsHandler) SetS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
 	accessKey := request.PostFormValue("accessKey")
 	secretKey := request.PostFormValue("secretKey")
 	bucketName := request.PostFormValue("bucketName")

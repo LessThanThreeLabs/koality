@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (usersHandler *UsersHandler) SetName(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) setName(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	firstName := request.PostFormValue("firstName")
 	lastName := request.PostFormValue("lastName")
@@ -21,7 +21,7 @@ func (usersHandler *UsersHandler) SetName(writer http.ResponseWriter, request *h
 	fmt.Fprint(writer, "ok")
 }
 
-func (usersHandler *UsersHandler) SetPassword(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) setPassword(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	password := request.PostFormValue("password")
 	passwordHash, passwordSalt, err := usersHandler.passwordHasher.GenerateHashAndSalt(password)
@@ -40,7 +40,7 @@ func (usersHandler *UsersHandler) SetPassword(writer http.ResponseWriter, reques
 	fmt.Fprint(writer, "ok")
 }
 
-func (usersHandler *UsersHandler) SetAdmin(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) setAdmin(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 
 	userToModifyIdString := mux.Vars(request)["userId"]
@@ -74,7 +74,7 @@ func (usersHandler *UsersHandler) SetAdmin(writer http.ResponseWriter, request *
 	fmt.Fprint(writer, "ok")
 }
 
-func (usersHandler *UsersHandler) AddKey(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) addKey(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	name := request.PostFormValue("name")
 	publicKey := request.PostFormValue("publicKey")
@@ -89,7 +89,7 @@ func (usersHandler *UsersHandler) AddKey(writer http.ResponseWriter, request *ht
 	fmt.Fprintf(writer, "{id:%d}", keyId)
 }
 
-func (usersHandler *UsersHandler) RemoveKey(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) removeKey(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	keyIdString := request.PostFormValue("id")
 	keyId, err := strconv.ParseUint(keyIdString, 10, 64)

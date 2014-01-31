@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (stagesHandler *StagesHandler) Get(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) get(writer http.ResponseWriter, request *http.Request) {
 	stageIdString := mux.Vars(request)["stageId"]
 	stageId, err := strconv.ParseUint(stageIdString, 10, 64)
 	if err != nil {
@@ -37,7 +37,7 @@ func (stagesHandler *StagesHandler) Get(writer http.ResponseWriter, request *htt
 	fmt.Fprintf(writer, "%s", jsonedStage)
 }
 
-func (stagesHandler *StagesHandler) GetAll(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) getAll(writer http.ResponseWriter, request *http.Request) {
 	queryValues := request.URL.Query()
 	verificationIdString := queryValues.Get("verificationId")
 	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
@@ -70,7 +70,7 @@ func (stagesHandler *StagesHandler) GetAll(writer http.ResponseWriter, request *
 	fmt.Fprintf(writer, "%s", jsonedStages)
 }
 
-func (stagesHandler *StagesHandler) GetRun(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) getRun(writer http.ResponseWriter, request *http.Request) {
 	stageRunIdString := mux.Vars(request)["stageRunId"]
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
@@ -98,7 +98,7 @@ func (stagesHandler *StagesHandler) GetRun(writer http.ResponseWriter, request *
 	fmt.Fprintf(writer, "%s", jsonedStageRun)
 }
 
-func (stagesHandler *StagesHandler) GetAllRuns(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) getAllRuns(writer http.ResponseWriter, request *http.Request) {
 	queryValues := request.URL.Query()
 	stageIdString := queryValues.Get("stageId")
 	stageId, err := strconv.ParseUint(stageIdString, 10, 64)
@@ -131,7 +131,7 @@ func (stagesHandler *StagesHandler) GetAllRuns(writer http.ResponseWriter, reque
 	fmt.Fprintf(writer, "%s", jsonedStageRuns)
 }
 
-func (stagesHandler *StagesHandler) GetConsoleLines(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) getConsoleLines(writer http.ResponseWriter, request *http.Request) {
 	stageRunIdString := mux.Vars(request)["stageRunId"]
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
@@ -203,7 +203,7 @@ func (stagesHandler *StagesHandler) getConsoleLinesForDirection(stageRunId uint6
 	}
 }
 
-func (stagesHandler *StagesHandler) GetXunitResults(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) getXunitResults(writer http.ResponseWriter, request *http.Request) {
 	stageRunIdString := mux.Vars(request)["stageRunId"]
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {
@@ -235,7 +235,7 @@ func (stagesHandler *StagesHandler) GetXunitResults(writer http.ResponseWriter, 
 	fmt.Fprintf(writer, "%s", jsonedXunitResults)
 }
 
-func (stagesHandler *StagesHandler) GetExports(writer http.ResponseWriter, request *http.Request) {
+func (stagesHandler *StagesHandler) getExports(writer http.ResponseWriter, request *http.Request) {
 	stageRunIdString := mux.Vars(request)["stageRunId"]
 	stageRunId, err := strconv.ParseUint(stageRunIdString, 10, 64)
 	if err != nil {

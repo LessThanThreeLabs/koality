@@ -43,23 +43,23 @@ func New(resourcesConnection *resources.Connection, repositoryManager repository
 
 func (verificationsHandler *VerificationsHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{verificationId:[0-9]+}",
-		middleware.IsLoggedInWrapper(verificationsHandler.Get)).
+		middleware.IsLoggedInWrapper(verificationsHandler.get)).
 		Methods("GET")
 	subrouter.HandleFunc("/tail",
-		middleware.IsLoggedInWrapper(verificationsHandler.GetTail)).
+		middleware.IsLoggedInWrapper(verificationsHandler.getTail)).
 		Methods("GET")
 
 	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger",
-		middleware.IsLoggedInWrapper(verificationsHandler.Retrigger)).
+		middleware.IsLoggedInWrapper(verificationsHandler.retrigger)).
 		Methods("POST")
 }
 
 func (verificationsHandler *VerificationsHandler) WireApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/tail", verificationsHandler.GetTail).Methods("GET")
+	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.get).Methods("GET")
+	subrouter.HandleFunc("/tail", verificationsHandler.getTail).Methods("GET")
 
-	subrouter.HandleFunc("/", verificationsHandler.Create).Methods("POST")
-	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.Retrigger).Methods("POST")
+	subrouter.HandleFunc("/", verificationsHandler.create).Methods("POST")
+	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.retrigger).Methods("POST")
 }
 
 func getSanitizedVerification(verification *resources.Verification) *sanitizedVerification {

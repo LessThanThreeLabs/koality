@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWriter, request *http.Request) {
+func (verificationsHandler *VerificationsHandler) create(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := request.PostFormValue("repositoryId")
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
@@ -73,7 +73,7 @@ func (verificationsHandler *VerificationsHandler) Create(writer http.ResponseWri
 	fmt.Fprintf(writer, "%s", jsonedVerification)
 }
 
-func (verificationsHandler *VerificationsHandler) Retrigger(writer http.ResponseWriter, request *http.Request) {
+func (verificationsHandler *VerificationsHandler) retrigger(writer http.ResponseWriter, request *http.Request) {
 	verificationIdString := mux.Vars(request)["verificationId"]
 	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
 	if err != nil {

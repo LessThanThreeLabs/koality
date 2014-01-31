@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (repositoriesHandler *RepositoriesHandler) SetGitHubHookTypes(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := mux.Vars(request)["repositoryId"]
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
@@ -39,7 +39,7 @@ func (repositoriesHandler *RepositoriesHandler) SetGitHubHookTypes(writer http.R
 	fmt.Fprint(writer, "ok")
 }
 
-func (repositoriesHandler *RepositoriesHandler) ClearGitHubHook(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) clearGitHubHook(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := mux.Vars(request)["repositoryId"]
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {

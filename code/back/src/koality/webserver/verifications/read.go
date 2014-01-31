@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (verificationsHandler *VerificationsHandler) Get(writer http.ResponseWriter, request *http.Request) {
+func (verificationsHandler *VerificationsHandler) get(writer http.ResponseWriter, request *http.Request) {
 	verificationIdString := mux.Vars(request)["verificationId"]
 	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
 	if err != nil {
@@ -36,7 +36,7 @@ func (verificationsHandler *VerificationsHandler) Get(writer http.ResponseWriter
 	fmt.Fprintf(writer, "%s", jsonedVerification)
 }
 
-func (verificationsHandler *VerificationsHandler) GetTail(writer http.ResponseWriter, request *http.Request) {
+func (verificationsHandler *VerificationsHandler) getTail(writer http.ResponseWriter, request *http.Request) {
 	queryValues := request.URL.Query()
 
 	repositoryIdString := queryValues.Get("repositoryId")

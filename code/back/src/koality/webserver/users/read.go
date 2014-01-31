@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (usersHandler *UsersHandler) Get(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) get(writer http.ResponseWriter, request *http.Request) {
 	userIdString := mux.Vars(request)["userId"]
 	userId, err := strconv.ParseUint(userIdString, 10, 64)
 	if err != nil {
@@ -37,7 +37,7 @@ func (usersHandler *UsersHandler) Get(writer http.ResponseWriter, request *http.
 	fmt.Fprintf(writer, "%s", jsonedUser)
 }
 
-func (usersHandler *UsersHandler) GetAll(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) getAll(writer http.ResponseWriter, request *http.Request) {
 	users, err := usersHandler.resourcesConnection.Users.Read.GetAll()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -61,7 +61,7 @@ func (usersHandler *UsersHandler) GetAll(writer http.ResponseWriter, request *ht
 	fmt.Fprintf(writer, "%s", jsonedUsers)
 }
 
-func (usersHandler *UsersHandler) GetKeys(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) getKeys(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	sshKeys, err := usersHandler.resourcesConnection.Users.Read.GetKeys(userId)
 	if err != nil {

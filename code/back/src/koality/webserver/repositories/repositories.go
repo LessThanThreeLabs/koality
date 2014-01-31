@@ -37,35 +37,34 @@ func New(resourcesConnection *resources.Connection, repositoryManager repository
 
 func (repositoriesHandler *RepositoriesHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}",
-		middleware.IsLoggedInWrapper(repositoriesHandler.Get)).
+		middleware.IsLoggedInWrapper(repositoriesHandler.get)).
 		Methods("GET")
 	subrouter.HandleFunc("/",
-		middleware.IsLoggedInWrapper(repositoriesHandler.GetAll)).
+		middleware.IsLoggedInWrapper(repositoriesHandler.getAll)).
 		Methods("GET")
 
 	subrouter.HandleFunc("/create",
-		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.Create)).
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.create)).
 		Methods("POST")
-
 	subrouter.HandleFunc("/gitHub/create",
-		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.CreateWithGitHub)).
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.createWithGitHub)).
 		Methods("POST")
 
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook",
-		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.SetGitHubHookTypes)).
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.setGitHubHookTypes)).
 		Methods("PUT")
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/clearHook",
-		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.ClearGitHubHook)).
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.clearGitHubHook)).
 		Methods("PUT")
 
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}",
-		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.Delete)).
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.delete)).
 		Methods("DELETE")
 }
 
 func (repositoriesHandler *RepositoriesHandler) WireApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/", repositoriesHandler.GetAll).Methods("GET")
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}", repositoriesHandler.get).Methods("GET")
+	subrouter.HandleFunc("/", repositoriesHandler.getAll).Methods("GET")
 }
 
 func getSanitizedRepository(repository *resources.Repository) *sanitizedRepository {

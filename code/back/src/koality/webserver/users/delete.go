@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func (usersHandler *UsersHandler) Delete(writer http.ResponseWriter, request *http.Request) {
+func (usersHandler *UsersHandler) delete(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 
 	userToDeleteIdString := mux.Vars(request)["userId"]

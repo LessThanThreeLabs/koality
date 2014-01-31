@@ -34,41 +34,41 @@ func New(resourcesConnection *resources.Connection, passwordHasher *resources.Pa
 
 func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{userId:[0-9]+}",
-		middleware.IsLoggedInWrapper(usersHandler.Get)).
-		Methods("GET")
-	subrouter.HandleFunc("/keys",
-		middleware.IsLoggedInWrapper(usersHandler.GetKeys)).
+		middleware.IsLoggedInWrapper(usersHandler.get)).
 		Methods("GET")
 	subrouter.HandleFunc("/",
-		middleware.IsLoggedInWrapper(usersHandler.GetAll)).
+		middleware.IsLoggedInWrapper(usersHandler.getAll)).
+		Methods("GET")
+	subrouter.HandleFunc("/keys",
+		middleware.IsLoggedInWrapper(usersHandler.getKeys)).
 		Methods("GET")
 
 	subrouter.HandleFunc("/name",
-		middleware.IsLoggedInWrapper(usersHandler.SetName)).
+		middleware.IsLoggedInWrapper(usersHandler.setName)).
 		Methods("POST")
 	subrouter.HandleFunc("/password",
-		middleware.IsLoggedInWrapper(usersHandler.SetPassword)).
+		middleware.IsLoggedInWrapper(usersHandler.setPassword)).
 		Methods("POST")
 	subrouter.HandleFunc("/addKey",
-		middleware.IsLoggedInWrapper(usersHandler.AddKey)).
+		middleware.IsLoggedInWrapper(usersHandler.addKey)).
 		Methods("POST")
 	subrouter.HandleFunc("/removeKey",
-		middleware.IsLoggedInWrapper(usersHandler.RemoveKey)).
+		middleware.IsLoggedInWrapper(usersHandler.removeKey)).
 		Methods("POST")
 
 	subrouter.HandleFunc("/{userId:[0-9]+}/admin",
-		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.SetAdmin)).
+		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.setAdmin)).
 		Methods("PUT")
 
 	subrouter.HandleFunc("/{userId:[0-9]+}",
-		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.Delete)).
+		middleware.IsAdminWrapper(usersHandler.resourcesConnection, usersHandler.delete)).
 		Methods("DELETE")
 }
 
 func (usersHandler *UsersHandler) WireApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.Get).Methods("GET")
-	subrouter.HandleFunc("/{userId:[0-9]+}/keys", usersHandler.GetKeys).Methods("GET")
-	subrouter.HandleFunc("/", usersHandler.GetAll).Methods("GET")
+	subrouter.HandleFunc("/{userId:[0-9]+}", usersHandler.get).Methods("GET")
+	subrouter.HandleFunc("/", usersHandler.getAll).Methods("GET")
+	subrouter.HandleFunc("/{userId:[0-9]+}/keys", usersHandler.getKeys).Methods("GET")
 }
 
 func getSanitizedUser(user *resources.User) *sanitizedUser {

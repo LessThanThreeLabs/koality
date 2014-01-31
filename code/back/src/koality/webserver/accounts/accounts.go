@@ -26,9 +26,9 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) {
 	fmt.Println("...need to add functionality to reset password")
 	subrouter.HandleFunc("/login",
-		middleware.IsLoggedOutWrapper(accountsHandler.Logout)).
+		middleware.IsLoggedOutWrapper(accountsHandler.login)).
 		Methods("POST")
 	subrouter.HandleFunc("/logout",
-		middleware.IsLoggedInWrapper(accountsHandler.Logout)).
+		middleware.IsLoggedInWrapper(accountsHandler.logout)).
 		Methods("POST")
 }
