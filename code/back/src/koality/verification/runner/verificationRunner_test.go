@@ -75,7 +75,7 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 		test.Fatal(err)
 	}
 
-	repository, err := resourcesConnection.Repositories.Create.Create("repositoryName", "git", "localUri", "file://"+repoPath)
+	repository, err := resourcesConnection.Repositories.Create.Create("repositoryName", "git", "file://"+repoPath)
 	if err != nil {
 		test.Fatal(err)
 	}
