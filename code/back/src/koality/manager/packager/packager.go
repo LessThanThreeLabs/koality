@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"github.com/pwaller/goupx/hemfix"
 	"io/ioutil"
@@ -13,6 +14,9 @@ import (
 	"strings"
 )
 
+var compressFlag = flag.Bool("compress", true, "compress the Koality package")
+var upxFlag = flag.Bool("upx", false, "compress Koality go binaries with upx (not suggested)")
+
 var requiredLibraries = []string{"curl", "libpcre3-dev", "upx"}
 
 var expectedArtifacts = []string{"koality", "koalityRunner", "getXunitResults", "exportPaths", "sshwrapper",
@@ -21,6 +25,7 @@ var expectedArtifacts = []string{"koality", "koalityRunner", "getXunitResults", 
 var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", ".metadata"}
 
 func main() {
+	flag.Parse()
 	installDependenciesCommand := exec.Command("bash", "-c", string(shell.Sudo(
 		shell.Commandf("apt-get install -y %s", strings.Join(requiredLibraries, " ")),
 	)))
@@ -31,7 +36,9 @@ func main() {
 	}
 
 	outputDirectory := filepath.Join("/", "tmp", "out")
-	defer os.RemoveAll(outputDirectory)
+	if *compressFlag {
+		defer os.RemoveAll(outputDirectory)
+	}
 	if err := packageKoality(outputDirectory); err != nil {
 		panic(err)
 	}
@@ -43,11 +50,13 @@ func main() {
 	compressStdout, compressStderr := new(bytes.Buffer), new(bytes.Buffer)
 	compressCommand.Stdout, compressCommand.Stderr = compressStdout, compressStderr
 
-	fmt.Printf("Compressing Koality from %s to %s...\n", outputDirectory, tgzPath)
-	if err := compressCommand.Run(); err != nil {
-		panic(err)
+	if *compressFlag {
+		fmt.Printf("Compressing Koality from %s to %s...\n", outputDirectory, tgzPath)
+		if err := compressCommand.Run(); err != nil {
+			panic(err)
+		}
+		fmt.Printf("Koality compressed to %s\n", tgzPath)
 	}
-	fmt.Printf("Koality compressed to %s\n", tgzPath)
 }
 
 func packageKoality(outputDirectory string) error {
@@ -92,9 +101,11 @@ func packageKoality(outputDirectory string) error {
 			return fmt.Errorf("Could not find expected artifact: %s\nError: %v", artifact, err)
 		}
 
-		// if err = runUpx(artifactPath); err != nil {
-		// 	return err
-		// }
+		if *upxFlag {
+			if err = runUpx(artifactPath); err != nil {
+				return err
+			}
+		}
 	}
 
 	expectedArtifactsSet := make(map[string]bool, len(expectedArtifacts))
@@ -171,13 +182,21 @@ func packageKoality(outputDirectory string) error {
 	}
 	fmt.Println("Compiled nginx")
 
-	nginxOriginalPath := filepath.Join(dependenciesDirectory, "nginx-1.4.4", "objs", "nginx")
 	nginxOutputPath := filepath.Join(outputDirectory, "nginx")
+
+	nginxOriginalPath := filepath.Join(dependenciesDirectory, "nginx-1.4.4", "objs", "nginx")
 	fmt.Println("Moving nginx...")
 	if err = os.Rename(nginxOriginalPath, filepath.Join(nginxOutputPath, "nginx")); err != nil {
 		return fmt.Errorf("Failed to move nginx binary from %s to %s\nError: %v", nginxOriginalPath, nginxOutputPath, err)
 	}
 	fmt.Printf("Moved nginx to %s\n", nginxOutputPath)
+
+	nginxMimeTypesOriginalPath := filepath.Join(dependenciesDirectory, "nginx-1.4.4", "conf", "mime.types")
+	fmt.Println("Moving nginx mime.types...")
+	if err = os.Rename(nginxMimeTypesOriginalPath, filepath.Join(nginxOutputPath, "mime.types")); err != nil {
+		return fmt.Errorf("Failed to move nginx mime.types from %s to %s\nError: %v", nginxMimeTypesOriginalPath, nginxOutputPath, err)
+	}
+	fmt.Printf("Moved nginx mime.types to %s\n", nginxOutputPath)
 
 	if err = os.RemoveAll(filepath.Join(dependenciesDirectory, "nginx-1.4.4")); err != nil {
 		return fmt.Errorf("Failed to clean up nginx directory\nError: %v", err)
@@ -189,14 +208,15 @@ func packageKoality(outputDirectory string) error {
 	}
 
 	fmt.Println("Modifying nginx.conf...")
-	nginxConfFile, err := os.OpenFile(nginxConfPath, os.O_WRONLY|os.O_APPEND, 0644)
+	nginxConfBytes, err := ioutil.ReadFile(nginxConfPath)
 	if err != nil {
 		return fmt.Errorf("Failed to read %s\nError: %v", nginxConfPath, err)
 	}
-	defer nginxConfFile.Close()
 
-	if _, err = fmt.Fprint(nginxConfFile, "daemon off;"); err != nil {
-		return fmt.Errorf("Failed to set daemon to \"off\" for nginx.conf\nError: %v", err)
+	nginxConfContents := strings.Replace(string(nginxConfBytes), "/etc/nginx", "/etc/koality/current/nginx", -1) + "\ndaemon off;"
+
+	if err = ioutil.WriteFile(nginxConfPath, []byte(nginxConfContents), 0644); err != nil {
+		return fmt.Errorf("Failed to modify nginx.conf\nError: %v", err)
 	}
 
 	curlCommand = exec.Command("bash", "-c", string(shell.Pipe(
@@ -356,7 +376,7 @@ func runUpx(binaryPath string) error {
 		return fmt.Errorf("Failed to strip file %s\nError: %v", binaryPath, err)
 	}
 
-	upxCommand := exec.Command("upx", binaryPath)
+	upxCommand := exec.Command("bash", "-c", string(shell.And("upx", "upx -d", "upx")), binaryPath)
 	if err = upxCommand.Run(); err != nil {
 		return fmt.Errorf("Failed to run upx on file %s\nError: %v", upxCommand, err)
 	}

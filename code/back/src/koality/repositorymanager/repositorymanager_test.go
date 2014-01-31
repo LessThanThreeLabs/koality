@@ -19,13 +19,13 @@ var remoteRepositoryPath = filepath.Join("/", "etc", "koality", "repositories", 
 var RM = repositoryManager{filepath.Join("/", "etc", "koality"), connection}
 
 var (
-	gitRepositoryResource = &resources.Repository{0, "gitRepository", "", "git", "", remoteRepositoryPath, nil, nil, false}
+	gitRepositoryResource = &resources.Repository{0, "gitRepository", "", "git", remoteRepositoryPath, nil, nil, false}
 	gitRepo               = RM.openGitRepository(gitRepositoryResource)
 	gitRemoteRepository   = &gitSubRepository{remoteRepositoryPath, nil}
 )
 
 var (
-	hgRepositoryResource = &resources.Repository{1, "hgRepository", "", "hg", "", remoteRepositoryPath, nil, nil, false}
+	hgRepositoryResource = &resources.Repository{1, "hgRepository", "", "hg", remoteRepositoryPath, nil, nil, false}
 	hgRepo               = RM.openHgRepository(hgRepositoryResource)
 	hgRemoteRepository   = &hgRepository{"hgRepository", remoteRepositoryPath, "", nil}
 )
