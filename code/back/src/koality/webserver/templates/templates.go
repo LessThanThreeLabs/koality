@@ -17,8 +17,7 @@ import (
 )
 
 type indexTemplateValues struct {
-	UserId    uint64
-	IsAdmin   bool
+	User      *resources.User
 	CsrfToken string
 }
 
@@ -55,25 +54,37 @@ func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Route
 func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	user, err := templatesHandler.resourcesConnection.Users.Read.Get(userId)
+	if _, ok := err.(resources.NoSuchUserError); err != nil && !ok {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	csrfToken, err := templatesHandler.getCsrfFromSession(writer, request)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	var csrfTokenBuffer bytes.Buffer
-	_, err = io.CopyN(&csrfTokenBuffer, rand.Reader, 15)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to stringify: %v", err)
-		return
-	}
-	csrfToken := base32.StdEncoding.EncodeToString(csrfTokenBuffer.Bytes())
-
-	session, _ := templatesHandler.sessionStore.Get(request, templatesHandler.sessionName)
-	session.Values["csrfToken"] = csrfToken
-	session.Save(request, writer)
-
-	templateValues := indexTemplateValues{userId, user.IsAdmin, csrfToken}
+	templateValues := indexTemplateValues{user, csrfToken}
 	templatesHandler.indexTemplate.Execute(writer, templateValues)
+}
+
+func (templatesHandler *TemplatesHandler) getCsrfFromSession(writer http.ResponseWriter, request *http.Request) (string, error) {
+	session, _ := templatesHandler.sessionStore.Get(request, templatesHandler.sessionName)
+	csrfToken, ok := session.Values["csrfToken"]
+	if ok {
+		return csrfToken.(string), nil
+	} else {
+		var csrfTokenBuffer bytes.Buffer
+		if _, err := io.CopyN(&csrfTokenBuffer, rand.Reader, 15); err != nil {
+			return "", err
+		}
+		newCsrfToken := base32.StdEncoding.EncodeToString(csrfTokenBuffer.Bytes())
+
+		session.Values["csrfToken"] = newCsrfToken
+		session.Save(request, writer)
+		return newCsrfToken, nil
+	}
 }

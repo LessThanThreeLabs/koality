@@ -13,8 +13,8 @@
 
 		<script>
 			var csrfToken = '{{.CsrfToken}}'
-			var userId = '{{.UserId}}'
-			var isAdmin = '{{.IsAdmin}}'
+			var userId = {{if .User}}{{.User.Id}}{{else}}null{{end}}
+			var isAdmin = {{if .User}}{{.User.IsAdmin}}{{else}}false{{end}}
 		</script>
 
 		<!-- need js files here -->
