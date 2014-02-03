@@ -62,12 +62,12 @@ func (readHandler *ReadHandler) GetCookieStoreKeys() (*resources.CookieStoreKeys
 	return storeKeys, nil
 }
 
-func (readHandler *ReadHandler) GetSmtpAuthSettings() (*resources.SmtpAuthSettings, error) {
-	smtpAuth := new(resources.SmtpAuthSettings)
-	if err := readHandler.getSetting(smtpAuthLocator, smtpAuth); err != nil {
+func (readHandler *ReadHandler) GetSmtpServerSettings() (*resources.SmtpServerSettings, error) {
+	smtpServer := new(resources.SmtpServerSettings)
+	if err := readHandler.getSetting(smtpServerSettingsLocator, smtpServer); err != nil {
 		return nil, err
 	}
-	return smtpAuth, nil
+	return smtpServer, nil
 }
 
 func (readHandler *ReadHandler) GetApiKey() (*resources.ApiKey, error) {

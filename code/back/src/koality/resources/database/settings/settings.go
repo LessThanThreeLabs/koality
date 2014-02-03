@@ -18,7 +18,7 @@ var (
 	repositoryKeyPairLocator  SettingLocator = SettingLocator{"Repository", "KeyPair"}
 	s3ExporterSettingsLocator SettingLocator = SettingLocator{"Exporter", "S3Settings"}
 	cookieStoreKeysLocator    SettingLocator = SettingLocator{"CookieStore", "Keys"}
-	smtpAuthLocator           SettingLocator = SettingLocator{"Smtp", "Auth"}
+	smtpServerSettingsLocator SettingLocator = SettingLocator{"Smtp", "ServerSettings"}
 	apiKeyLocator             SettingLocator = SettingLocator{"Api", "Key"}
 )
 

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"koality/internalapi"
+	"koality/mail"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/resources/database"
@@ -35,6 +36,11 @@ func main() {
 	}
 
 	database.KeepClean(resourcesConnection)
+
+	smtpServerSettings, err := resourcesConnection.Settings.Read.GetSmtpServerSettings()
+	// Ignore error for now
+	mailer := mail.NewMailer(smtpServerSettings)
+	mailer.SubscribeToEvents(resourcesConnection)
 
 	// TODO (bbland): use a real pool instead of this bogus one (although this is nice and fast/free)
 	virtualMachinePool := vm.NewPool(0, localmachine.Manager, 0, 3)

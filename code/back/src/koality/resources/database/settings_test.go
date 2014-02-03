@@ -247,110 +247,116 @@ func TestSettingsSmtpAuth(test *testing.T) {
 	}
 	defer connection.Close()
 
-	smtpAuthSettingsUpdatedEventReceived := make(chan bool, 3)
-	var smtpAuthSettingsUpdatedEventSettings *resources.SmtpAuthSettings
-	smtpAuthSettingsUpdatedHandler := func(smtpAuthSettings *resources.SmtpAuthSettings) {
-		smtpAuthSettingsUpdatedEventSettings = smtpAuthSettings
-		smtpAuthSettingsUpdatedEventReceived <- true
+	smtpServerSettingsUpdatedEventReceived := make(chan bool, 3)
+	var smtpServerSettingsUpdatedEventSettings *resources.SmtpServerSettings
+	smtpServerSettingsUpdatedHandler := func(smtpServerSettings *resources.SmtpServerSettings) {
+		smtpServerSettingsUpdatedEventSettings = smtpServerSettings
+		smtpServerSettingsUpdatedEventReceived <- true
 	}
-	_, err = connection.Settings.Subscription.SubscribeToSmtpAuthSettingsUpdatedEvents(smtpAuthSettingsUpdatedHandler)
+	_, err = connection.Settings.Subscription.SubscribeToSmtpServerSettingsUpdatedEvents(smtpServerSettingsUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
+	hostname := "a.hostName"
+	port := uint16(1234)
 	plainIdentity := ""
 	plainUsername := "bbland"
 	plainPassword := "Ap@$$w0Rd!"
 	plainHost := "smtp.gmail.com"
-	smtpAuthSettings, err := connection.Settings.Update.SetSmtpAuthPlain(plainIdentity, plainUsername, plainPassword, plainHost)
+	smtpServerSettings, err := connection.Settings.Update.SetSmtpAuthPlain(hostname, port, plainIdentity, plainUsername, plainPassword, plainHost)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if smtpAuthSettings.CramMd5 != nil {
-		test.Fatal("Bad smtp auth settings, CramMd5 should be nil")
-	} else if smtpAuthSettings.Login != nil {
-		test.Fatal("Bad smtp auth settings, Login should be nil")
+	if smtpServerSettings.Auth.CramMd5 != nil {
+		test.Fatal("Bad smtp server settings, CramMd5 should be nil")
+	} else if smtpServerSettings.Auth.Login != nil {
+		test.Fatal("Bad smtp server settings, Login should be nil")
 	}
 
 	select {
-	case <-smtpAuthSettingsUpdatedEventReceived:
+	case <-smtpServerSettingsUpdatedEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear smtp auth settings updated event")
+		test.Fatal("Failed to hear smtp server settings updated event")
 	}
 
-	if smtpAuthSettingsUpdatedEventSettings.CramMd5 != nil {
-		test.Fatal("Bad smtp auth settings event, CramMd5 should be nil")
-	} else if smtpAuthSettingsUpdatedEventSettings.Login != nil {
-		test.Fatal("Bad smtp auth settings event, Login should be nil")
-	} else if smtpAuthSettings.Plain.Identity != smtpAuthSettingsUpdatedEventSettings.Plain.Identity {
-		test.Fatal("Bad smtpAuthSettings.Plain.Identity in smtp auth settings update event")
-	} else if smtpAuthSettings.Plain.Username != smtpAuthSettingsUpdatedEventSettings.Plain.Username {
-		test.Fatal("Bad smtpAuthSettings.Plain.Username in smtp auth settings update event")
-	} else if smtpAuthSettings.Plain.Password != smtpAuthSettingsUpdatedEventSettings.Plain.Password {
-		test.Fatal("Bad smtpAuthSettings.Plain.Password in smtp auth settings update event")
-	} else if smtpAuthSettings.Plain.Host != smtpAuthSettingsUpdatedEventSettings.Plain.Host {
-		test.Fatal("Bad smtpAuthSettings.Plain.Host in smtp auth settings update event")
+	if smtpServerSettings.Hostname != smtpServerSettingsUpdatedEventSettings.Hostname {
+		test.Fatal("Bad smtpServerSettings.Hostname in smtp server settings update event")
+	} else if smtpServerSettings.Port != smtpServerSettingsUpdatedEventSettings.Port {
+		test.Fatal("Bad smtpServerSettings.Port in smtp server settings update event")
+	} else if smtpServerSettingsUpdatedEventSettings.Auth.CramMd5 != nil {
+		test.Fatal("Bad smtp server settings event, CramMd5 should be nil")
+	} else if smtpServerSettingsUpdatedEventSettings.Auth.Login != nil {
+		test.Fatal("Bad smtp server settings event, Login should be nil")
+	} else if smtpServerSettings.Auth.Plain.Identity != smtpServerSettingsUpdatedEventSettings.Auth.Plain.Identity {
+		test.Fatal("Bad smtpServerSettings.Auth.Plain.Identity in smtp server settings update event")
+	} else if smtpServerSettings.Auth.Plain.Username != smtpServerSettingsUpdatedEventSettings.Auth.Plain.Username {
+		test.Fatal("Bad smtpServerSettings.Auth.Plain.Username in smtp server settings update event")
+	} else if smtpServerSettings.Auth.Plain.Password != smtpServerSettingsUpdatedEventSettings.Auth.Plain.Password {
+		test.Fatal("Bad smtpServerSettings.Auth.Plain.Password in smtp server settings update event")
+	} else if smtpServerSettings.Auth.Plain.Host != smtpServerSettingsUpdatedEventSettings.Auth.Plain.Host {
+		test.Fatal("Bad smtpServerSettings.Auth.Plain.Host in smtp server settings update event")
 	}
 
 	cramMd5Username := "a Username"
 	cramMd5Secret := "$Up3r_sEcR3+"
 
-	smtpAuthSettings, err = connection.Settings.Update.SetSmtpAuthCramMd5(cramMd5Username, cramMd5Secret)
+	smtpServerSettings, err = connection.Settings.Update.SetSmtpAuthCramMd5(hostname, port, cramMd5Username, cramMd5Secret)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if smtpAuthSettings.Plain != nil {
-		test.Fatal("Bad smtp auth settings, Plain should be nil")
-	} else if smtpAuthSettings.Login != nil {
-		test.Fatal("Bad smtp auth settings, Login should be nil")
+	if smtpServerSettings.Auth.Plain != nil {
+		test.Fatal("Bad smtp server settings, Plain should be nil")
+	} else if smtpServerSettings.Auth.Login != nil {
+		test.Fatal("Bad smtp server settings, Login should be nil")
 	}
 
 	select {
-	case <-smtpAuthSettingsUpdatedEventReceived:
+	case <-smtpServerSettingsUpdatedEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear smtp auth settings updated event")
+		test.Fatal("Failed to hear smtp server settings updated event")
 	}
 
-	if smtpAuthSettingsUpdatedEventSettings.Plain != nil {
-		test.Fatal("Bad smtp auth settings event, Plain should be nil")
-	} else if smtpAuthSettingsUpdatedEventSettings.Login != nil {
-		test.Fatal("Bad smtp auth settings event, Login should be nil")
-	} else if smtpAuthSettings.CramMd5.Username != smtpAuthSettingsUpdatedEventSettings.CramMd5.Username {
-		test.Fatal("Bad smtpAuthSettings.CramMd5.Username in smtp auth settings update event")
-	} else if smtpAuthSettings.CramMd5.Secret != smtpAuthSettingsUpdatedEventSettings.CramMd5.Secret {
-		test.Fatal("Bad smtpAuthSettings.CramMd5.Secret in smtp auth settings update event")
+	if smtpServerSettingsUpdatedEventSettings.Auth.Plain != nil {
+		test.Fatal("Bad smtp server settings event, Plain should be nil")
+	} else if smtpServerSettingsUpdatedEventSettings.Auth.Login != nil {
+		test.Fatal("Bad smtp server settings event, Login should be nil")
+	} else if smtpServerSettings.Auth.CramMd5.Username != smtpServerSettingsUpdatedEventSettings.Auth.CramMd5.Username {
+		test.Fatal("Bad smtpServerSettings.Auth.CramMd5.Auth.Username in smtp server settings update event")
+	} else if smtpServerSettings.Auth.CramMd5.Secret != smtpServerSettingsUpdatedEventSettings.Auth.CramMd5.Secret {
+		test.Fatal("Bad smtpServerSettings.Auth.CramMd5.Secret in smtp server settings update event")
 	}
 
 	loginUsername := "a Username"
 	loginPassword := "4n0T#3r_p4$Sw0rd"
 
-	smtpAuthSettings, err = connection.Settings.Update.SetSmtpAuthLogin(loginUsername, loginPassword)
+	smtpServerSettings, err = connection.Settings.Update.SetSmtpAuthLogin(hostname, port, loginUsername, loginPassword)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if smtpAuthSettings.Plain != nil {
-		test.Fatal("Bad smtp auth settings, Plain should be nil")
-	} else if smtpAuthSettings.CramMd5 != nil {
-		test.Fatal("Bad smtp auth settings, CramMd5 should be nil")
+	if smtpServerSettings.Auth.Plain != nil {
+		test.Fatal("Bad smtp server settings, Plain should be nil")
+	} else if smtpServerSettings.Auth.CramMd5 != nil {
+		test.Fatal("Bad smtp server settings, CramMd5 should be nil")
 	}
 
 	select {
-	case <-smtpAuthSettingsUpdatedEventReceived:
+	case <-smtpServerSettingsUpdatedEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear smtp auth settings updated event")
+		test.Fatal("Failed to hear smtp server settings updated event")
 	}
 
-	if smtpAuthSettingsUpdatedEventSettings.Plain != nil {
-		test.Fatal("Bad smtp auth settings event, Plain should be nil")
-	} else if smtpAuthSettingsUpdatedEventSettings.CramMd5 != nil {
-		test.Fatal("Bad smtp auth settings event, CramMd5 should be nil")
-	} else if smtpAuthSettings.Login.Username != smtpAuthSettingsUpdatedEventSettings.Login.Username {
-		test.Fatal("Bad smtpAuthSettings.Login.Username in smtp auth settings update event")
-	} else if smtpAuthSettings.Login.Password != smtpAuthSettingsUpdatedEventSettings.Login.Password {
-		test.Fatal("Bad smtpAuthSettings.Login.Password in smtp auth settings update event")
+	if smtpServerSettingsUpdatedEventSettings.Auth.Plain != nil {
+		test.Fatal("Bad smtp server settings event, Plain should be nil")
+	} else if smtpServerSettingsUpdatedEventSettings.Auth.CramMd5 != nil {
+		test.Fatal("Bad smtp server settings event, CramMd5 should be nil")
+	} else if smtpServerSettings.Auth.Login.Username != smtpServerSettingsUpdatedEventSettings.Auth.Login.Username {
+		test.Fatal("Bad smtpServerSettings.Auth.Login.Username in smtp server settings update event")
+	} else if smtpServerSettings.Auth.Login.Password != smtpServerSettingsUpdatedEventSettings.Auth.Login.Password {
+		test.Fatal("Bad smtpServerSettings.Auth.Login.Password in smtp server settings update event")
 	}
 }
 

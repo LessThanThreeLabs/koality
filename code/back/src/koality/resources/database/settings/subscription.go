@@ -9,7 +9,7 @@ type SubscriptionHandler struct {
 	s3ExporterSettingsUpdatedSubscriptionManager resources.SubscriptionManager
 	s3ExporterSettingsClearedSubscriptionManager resources.SubscriptionManager
 	cookieStoreKeysUpdatedSubscriptionManager    resources.SubscriptionManager
-	smtpAuthSettingsUpdatedSubscriptionManager   resources.SubscriptionManager
+	smtpServerSettingsUpdatedSubscriptionManager resources.SubscriptionManager
 	apiKeyUpdatedSubscriptionManager             resources.SubscriptionManager
 }
 
@@ -65,16 +65,16 @@ func (subscriptionHandler *SubscriptionHandler) FireCookieStoreKeysUpdatedEvent(
 	subscriptionHandler.cookieStoreKeysUpdatedSubscriptionManager.Fire(keys)
 }
 
-func (subscriptionHandler *SubscriptionHandler) SubscribeToSmtpAuthSettingsUpdatedEvents(updateHandler resources.SmtpAuthSettingsUpdatedHandler) (resources.SubscriptionId, error) {
-	return subscriptionHandler.smtpAuthSettingsUpdatedSubscriptionManager.Add(updateHandler)
+func (subscriptionHandler *SubscriptionHandler) SubscribeToSmtpServerSettingsUpdatedEvents(updateHandler resources.SmtpServerSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.smtpServerSettingsUpdatedSubscriptionManager.Add(updateHandler)
 }
 
-func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromSmtpAuthSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
-	return subscriptionHandler.smtpAuthSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromSmtpServerSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.smtpServerSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireSmtpAuthSettingsUpdatedEvent(auth *resources.SmtpAuthSettings) {
-	subscriptionHandler.smtpAuthSettingsUpdatedSubscriptionManager.Fire(auth)
+func (subscriptionHandler *SubscriptionHandler) FireSmtpServerSettingsUpdatedEvent(auth *resources.SmtpServerSettings) {
+	subscriptionHandler.smtpServerSettingsUpdatedSubscriptionManager.Fire(auth)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToApiKeyUpdatedEvents(updateHandler resources.ApiKeyUpdatedHandler) (resources.SubscriptionId, error) {
