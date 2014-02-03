@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"io/ioutil"
 	"testing"
 )
@@ -270,8 +269,6 @@ func TestLanguagesIsProper(test *testing.T) {
 	if err == nil {
 		test.Errorf("The languages section needs to have a specific format")
 	}
-
-	fmt.Println(err)
 }
 
 func TestNodesIsInt(test *testing.T) {
