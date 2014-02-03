@@ -6,20 +6,12 @@ angular.module('koality.service', []).
 	]).
 	factory('initialState', ['$window', ($window) ->
 		toReturn =
-			fileSuffix: if $window.fileSuffix is '' then null else $window.fileSuffix
-			csrfToken: if $window.csrfToken is '' then null else $window.csrfToken
-			userConnectionType: if $window.userConnectionType is '' then null else $window.userConnectionType
+			csrfToken: $window.csrfToken
 			user:
-				id: if isNaN(parseInt($window.accountInformation?.id)) then null else parseInt($window.accountInformation.id)
-				isAdmin: $window.accountInformation?.isAdmin
+				id: $window.userId
+				isAdmin: $window.isAdmin
 		toReturn.loggedIn = toReturn.user.id?
 		return Object.freeze toReturn
-	]).
-	factory('fileSuffixAdder', ['initialState', (initialState) ->
-		return addFileSuffix: (fileSrc) ->
-			lastPeriodIndex = fileSrc.lastIndexOf '.'
-			return fileSrc if lastPeriodIndex is -1
-			return fileSrc.substr(0, lastPeriodIndex) + initialState.fileSuffix + fileSrc.substr(lastPeriodIndex)
 	]).
 	factory('integerConverter', [() ->
 		return toInteger: (integerAsString) ->

@@ -53,7 +53,7 @@ func (webserver *Webserver) Start() error {
 		context.Set(request, "userId", uint64(1000))
 		// context.Set(request, "userId", uint64(0))
 
-		if request.URL.Path == "/" {
+		if request.URL.Path == "/" || request.URL.Path == "/dashboard" {
 			router.ServeHTTP(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/app") {
 			hasCsrfTokenWrapper(writer, request)

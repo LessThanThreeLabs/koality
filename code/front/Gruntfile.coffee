@@ -20,6 +20,9 @@ module.exports = (grunt) ->
 					'find . -name "*.html" | cpio -pmud ../<%= compiledHtmlDirectory %>'
 				].join ' && '
 
+			compileCoffee:
+				command: 'iced --compile --runtime window --output <%= compiledCoffeeDirectory %>/ <%= sourceDirectory %>/'
+
 			removeCompiled:
 				command: [
 					'rm -rf <%= compiledHtmlDirectory %>',
@@ -46,17 +49,6 @@ module.exports = (grunt) ->
 					cwd: '<%= compiledCoffeeDirectory %>/'
 					src: ['**/*.js']
 					dest: '<%= uglifiedDirectory %>/'
-					ext: '.js'
-				]
-
-		coffee:
-			compile:
-				files: [
-					expand: true
-					flatten: false
-					cwd: '<%= sourceDirectory %>/'
-					src: ['**/*.coffee']
-					dest: '<%= compiledCoffeeDirectory %>/'
 					ext: '.js'
 				]
 
@@ -92,11 +84,10 @@ module.exports = (grunt) ->
 	grunt.loadNpmTasks 'grunt-contrib-uglify'
 	grunt.loadNpmTasks 'grunt-contrib-less'
 	grunt.loadNpmTasks 'grunt-contrib-watch'
-	grunt.loadNpmTasks 'grunt-iced-coffee'
 
 	grunt.registerTask 'default', ['compile']
-	grunt.registerTask 'compile', ['shell:removeCompiled', 'shell:compileHtml', 'coffee:compile', 'less:development']
-	grunt.registerTask 'compile-production', ['shell:removeCompiled', 'shell:compileHtml', 'coffee:compile', 'less:production']
+	grunt.registerTask 'compile', ['shell:removeCompiled', 'shell:compileHtml', 'shell:compileCoffee', 'less:development']
+	grunt.registerTask 'compile-production', ['shell:removeCompiled', 'shell:compileHtml', 'shell:compileCoffee', 'less:production']
 
 	grunt.registerTask 'make-ugly', ['shell:removeUglified', 'uglify']
 	grunt.registerTask 'production', ['compile-production', 'make-ugly', 'shell:replaceCompiledWithUglified', 'shell:removeUglified']

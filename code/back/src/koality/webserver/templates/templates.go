@@ -34,6 +34,10 @@ type TemplatesHandler struct {
 	jsFiles             []string
 }
 
+var (
+	pathsToHandle []string = []string{"index", "dashboard"}
+)
+
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string) (*TemplatesHandler, error) {
 	indexTemplate, err := getIndexTemplate()
 	if err != nil {
@@ -78,8 +82,11 @@ func getCssAndJsFiles() ([]string, []string, error) {
 
 func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/", templatesHandler.getRoot).Methods("GET")
-	subrouter.HandleFunc("/index", templatesHandler.getRoot).Methods("GET")
-	subrouter.HandleFunc("/index.html", templatesHandler.getRoot).Methods("GET")
+
+	for _, pathToHandler := range pathsToHandle {
+		subrouter.HandleFunc(fmt.Sprintf("/%s", pathToHandler), templatesHandler.getRoot).Methods("GET")
+		subrouter.HandleFunc(fmt.Sprintf("/%s.html", pathToHandler), templatesHandler.getRoot).Methods("GET")
+	}
 }
 
 func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {

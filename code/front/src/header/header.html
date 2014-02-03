@@ -1,6 +1,6 @@
 <div id="header" class="growingCentered unselectable">
 
-	<img id="title" ng-src="{{'/img/headerLogo.png' | fileSuffix}}" ng-click="goToDashboard()">
+	<img id="title" src="/img/headerLogo.png" ng-click="goToDashboard()">
 
 	<div id="primaryNavigation" ng-show="loggedIn">
 		<a class="headerLink" href="/dashboard" ng-class="{disabled: rootPath == '/dashboard'}">Dashboard</a>

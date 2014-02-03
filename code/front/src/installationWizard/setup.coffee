@@ -4,7 +4,7 @@ angular.module('koalitySetup', ['ngSanitize', 'koality.service', 'koality.servic
 	config(['$routeProvider', ($routeProvider) ->
 		$routeProvider.
 			when('/wizard',
-				templateUrl: "/html/installationWizard/wizard/wizard#{fileSuffix}.html"
+				templateUrl: "/html/installationWizard/wizard/wizard.html"
 				controller: Wizard
 				reloadOnSearch: false
 			).
