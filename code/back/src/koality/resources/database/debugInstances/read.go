@@ -21,20 +21,18 @@ func NewReadHandler(database *sql.DB, subscriptionHandler resources.InternalDebu
 func (readHandler *ReadHandler) scanDebugInstance(scannable Scannable) (*resources.DebugInstance, error) {
 	debugInstance := new(resources.DebugInstance)
 
-	var deletedId uint64
-	err := scannable.Scan(&debugInstance.Id, &debugInstance.PoolId, &debugInstance.InstanceId, &debugInstance.Expires, &deletedId, &debugInstance.VerificationId)
+	err := scannable.Scan(&debugInstance.Id, &debugInstance.PoolId, &debugInstance.InstanceId, &debugInstance.Expires, &debugInstance.VerificationId)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchDebugInstanceError{"Unable to find debug instance"}
 	} else if err != nil {
 		return nil, err
 	}
 
-	debugInstance.IsDeleted = debugInstance.Id == deletedId
 	return debugInstance, nil
 }
 
 func (readHandler *ReadHandler) Get(debugInstanceId uint64) (*resources.DebugInstance, error) {
-	query := "SELECT D.id, D.pool_id, D.instance_id, D.expires, D.deleted, V.id" +
+	query := "SELECT D.id, D.pool_id, D.instance_id, D.expires, V.id" +
 		" FROM debug_instances D JOIN verifications V" +
 		" ON V.debug_instance_id=D.id WHERE D.id=$1"
 	row := readHandler.database.QueryRow(query, debugInstanceId)
@@ -42,9 +40,10 @@ func (readHandler *ReadHandler) Get(debugInstanceId uint64) (*resources.DebugIns
 }
 
 func (readHandler *ReadHandler) GetAllRunning() ([]resources.DebugInstance, error) {
-	query := "SELECT id, pool_id, instance_id, expires, deleted FROM debug_instances" +
-		" WHERE deleted = $1"
-	rows, err := readHandler.database.Query(query, 0)
+	query := "SELECT D.id, D.pool_id, D.instance_id, D.expires, V.id" +
+		" FROM debug_instances D JOIN verifications V" +
+		" WHERE V.ended = $1"
+	rows, err := readHandler.database.Query(query, nil)
 	if err != nil {
 		return nil, err
 	}
