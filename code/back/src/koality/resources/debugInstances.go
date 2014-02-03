@@ -9,7 +9,7 @@ type DebugInstance struct {
 	PoolId         uint64
 	VerificationId uint64
 	InstanceId     string
-	Expires        *time.Time
+	Expires        time.Time
 }
 
 type DebugInstancesHandler struct {

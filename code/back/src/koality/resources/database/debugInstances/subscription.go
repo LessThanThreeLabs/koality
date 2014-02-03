@@ -6,7 +6,6 @@ import (
 
 type SubscriptionHandler struct {
 	createdSubscriptionManager resources.SubscriptionManager
-	deletedSubscriptionManager resources.SubscriptionManager
 }
 
 func NewInternalSubscriptionHandler() (resources.InternalDebugInstancesSubscriptionHandler, error) {

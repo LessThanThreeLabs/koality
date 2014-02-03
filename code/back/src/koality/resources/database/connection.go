@@ -6,6 +6,7 @@ import (
 	_ "github.com/lib/pq" // Adds the Postgres driver
 	"io/ioutil"
 	"koality/resources"
+	"koality/resources/database/debugInstances"
 	"koality/resources/database/pools"
 	"koality/resources/database/repositories"
 	"koality/resources/database/settings"
@@ -76,15 +77,21 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
+	debugInstancesHandler, err := debugInstances.New(database, verificationsHandler)
+	if err != nil {
+		return nil, err
+	}
+
 	connection := &resources.Connection{
-		Users:         usersHandler,
-		Repositories:  repositoriesHandler,
-		Verifications: verificationsHandler,
-		Stages:        stagesHandler,
-		Pools:         poolsHandler,
-		Settings:      settingsHandler,
-		Snapshots:     snapshotsHandler,
-		Closer:        database,
+		Users:          usersHandler,
+		Repositories:   repositoriesHandler,
+		Verifications:  verificationsHandler,
+		Stages:         stagesHandler,
+		Pools:          poolsHandler,
+		Settings:       settingsHandler,
+		Snapshots:      snapshotsHandler,
+		DebugInstances: debugInstancesHandler,
+		Closer:         database,
 	}
 
 	if err = checkSettingsInitialized(connection); err != nil {
