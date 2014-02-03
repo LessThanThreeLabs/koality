@@ -126,49 +126,38 @@ func (updateHandler *UpdateHandler) ResetCookieStoreKeys() (*resources.CookieSto
 	return cookieStoreKeys, nil
 }
 
-func (updateHandler *UpdateHandler) setSmtpAuthSettings(smtpAuthSettings *resources.SmtpAuthSettings) error {
-	if err := updateHandler.setSetting(smtpAuthLocator, smtpAuthSettings); err != nil {
-		return err
+func (updateHandler *UpdateHandler) setSmtpServerSettings(hostname string, port uint16, smtpAuthSettings resources.SmtpAuthSettings) (*resources.SmtpServerSettings, error) {
+	smtpServerSettings := &resources.SmtpServerSettings{hostname, port, smtpAuthSettings}
+	if err := updateHandler.setSetting(smtpServerSettingsLocator, smtpServerSettings); err != nil {
+		return nil, err
 	}
 
-	updateHandler.subscriptionHandler.FireSmtpAuthSettingsUpdatedEvent(smtpAuthSettings)
-	return nil
+	updateHandler.subscriptionHandler.FireSmtpServerSettingsUpdatedEvent(smtpServerSettings)
+	return smtpServerSettings, nil
 }
 
-func (updateHandler *UpdateHandler) SetSmtpAuthPlain(identity, username, password, host string) (*resources.SmtpAuthSettings, error) {
-	smtpAuthSettings := &resources.SmtpAuthSettings{
+func (updateHandler *UpdateHandler) SetSmtpAuthPlain(hostname string, port uint16, identity, username, password, host string) (*resources.SmtpServerSettings, error) {
+	smtpAuthSettings := resources.SmtpAuthSettings{
 		Plain: &resources.SmtpPlainAuthSettings{identity, username, password, host},
 	}
 
-	if err := updateHandler.setSmtpAuthSettings(smtpAuthSettings); err != nil {
-		return nil, err
-	}
-
-	return smtpAuthSettings, nil
+	return updateHandler.setSmtpServerSettings(hostname, port, smtpAuthSettings)
 }
 
-func (updateHandler *UpdateHandler) SetSmtpAuthCramMd5(username, secret string) (*resources.SmtpAuthSettings, error) {
-	smtpAuthSettings := &resources.SmtpAuthSettings{
+func (updateHandler *UpdateHandler) SetSmtpAuthCramMd5(hostname string, port uint16, username, secret string) (*resources.SmtpServerSettings, error) {
+	smtpAuthSettings := resources.SmtpAuthSettings{
 		CramMd5: &resources.SmtpCramMd5AuthSettings{username, secret},
 	}
 
-	if err := updateHandler.setSmtpAuthSettings(smtpAuthSettings); err != nil {
-		return nil, err
-	}
-
-	return smtpAuthSettings, nil
+	return updateHandler.setSmtpServerSettings(hostname, port, smtpAuthSettings)
 }
 
-func (updateHandler *UpdateHandler) SetSmtpAuthLogin(username, password string) (*resources.SmtpAuthSettings, error) {
-	smtpAuthSettings := &resources.SmtpAuthSettings{
+func (updateHandler *UpdateHandler) SetSmtpAuthLogin(hostname string, port uint16, username, password string) (*resources.SmtpServerSettings, error) {
+	smtpAuthSettings := resources.SmtpAuthSettings{
 		Login: &resources.SmtpLoginAuthSettings{username, password},
 	}
 
-	if err := updateHandler.setSmtpAuthSettings(smtpAuthSettings); err != nil {
-		return nil, err
-	}
-
-	return smtpAuthSettings, nil
+	return updateHandler.setSmtpServerSettings(hostname, port, smtpAuthSettings)
 }
 
 func (updateHandler *UpdateHandler) ResetApiKey() (*resources.ApiKey, error) {
