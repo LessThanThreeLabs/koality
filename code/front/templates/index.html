@@ -6,17 +6,25 @@
 		<title>Koality</title>
 		<style type="text/css">[ng\:cloak], [ng-cloak], .ng-cloak { display: none !important; }</style>
 
-		<!-- need css files here -->
+		{{range .CssFiles}}<link rel="stylesheet" type="text/css" href="{{.}}" />
+		{{end}}
 	</head>
 	<body>
-		<p>hello</p>
+		<div id="main" ng-controller="Main">
+			<div id="headerContainer" ng-controller="Header" ng-include="/html/header/header.html"></div>
+			<div id="notificationsContainer"></div>
+			<div id="contentContainer">
+				<div id="contentCenterContainer" class="growingCentered" ng-view></div>
+			</div>
+		</div>
 
-		<script>
-			var csrfToken = '{{.CsrfToken}}'
-			var userId = {{if .User}}{{.User.Id}}{{else}}null{{end}}
-			var isAdmin = {{if .User}}{{.User.IsAdmin}}{{else}}false{{end}}
+		<script type="text/javascript">
+			var csrfToken = "{{.CsrfToken}}"
+			var userId = {{if .User}} {{.User.Id}} {{else}} null {{end}}
+			var isAdmin = {{if .User}} {{.User.IsAdmin}} {{else}} false {{end}}
 		</script>
 
-		<!-- need js files here -->
+		{{range .JsFiles}}<script type="text/javascript" src="{{.}}"></script>
+		{{end}}
 	</body>
 </html>

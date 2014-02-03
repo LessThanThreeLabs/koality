@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base32"
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"koality/resources"
 	"koality/util/pathtranslator"
 	"net/http"
@@ -19,6 +21,8 @@ import (
 type indexTemplateValues struct {
 	User      *resources.User
 	CsrfToken string
+	CssFiles  []string
+	JsFiles   []string
 }
 
 type TemplatesHandler struct {
@@ -26,6 +30,8 @@ type TemplatesHandler struct {
 	sessionStore        sessions.Store
 	sessionName         string
 	indexTemplate       *template.Template
+	cssFiles            []string
+	jsFiles             []string
 }
 
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string) (*TemplatesHandler, error) {
@@ -33,7 +39,12 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 	if err != nil {
 		return nil, err
 	}
-	return &TemplatesHandler{resourcesConnection, sessionStore, sessionName, indexTemplate}, nil
+
+	cssFiles, jsFiles, err := getCssAndJsFiles()
+	if err != nil {
+		panic(err)
+	}
+	return &TemplatesHandler{resourcesConnection, sessionStore, sessionName, indexTemplate, cssFiles, jsFiles}, nil
 }
 
 func getIndexTemplate() (*template.Template, error) {
@@ -43,6 +54,26 @@ func getIndexTemplate() (*template.Template, error) {
 		return nil, err
 	}
 	return template.ParseFiles(filePath)
+}
+
+func getCssAndJsFiles() ([]string, []string, error) {
+	relativePath := path.Join("code", "front", "templates", "indexFiles.json")
+	filePath, err := pathtranslator.TranslatePathAndCheckExists(relativePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	file, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var cssAndJsFiles map[string][]string
+	err = json.Unmarshal(file, &cssAndJsFiles)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cssAndJsFiles["css"], cssAndJsFiles["js"], nil
 }
 
 func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Router) {
@@ -67,7 +98,7 @@ func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, re
 		return
 	}
 
-	templateValues := indexTemplateValues{user, csrfToken}
+	templateValues := indexTemplateValues{user, csrfToken, templatesHandler.cssFiles, templatesHandler.jsFiles}
 	templatesHandler.indexTemplate.Execute(writer, templateValues)
 }
 

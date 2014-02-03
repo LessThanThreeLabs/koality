@@ -47,9 +47,11 @@ func (webserver *Webserver) Start() error {
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
+		// set to zero if can't find!!
 		// context.Set(request, "userId", session.Values["userId"])
 		var _ = session
 		context.Set(request, "userId", uint64(1000))
+		// context.Set(request, "userId", uint64(0))
 
 		if request.URL.Path == "/" {
 			router.ServeHTTP(writer, request)

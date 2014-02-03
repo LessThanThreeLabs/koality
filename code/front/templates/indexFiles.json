@@ -1,0 +1,131 @@
+{
+	"css": [
+		"/css/src/util/ansi.css",
+		"/css/src/util/d3/lineGraph/d3ChangesLineGraph.css",
+
+		"/css/src/fonts.css",
+		"/css/src/setup.css",
+
+		"/css/src/elements/panel.css",
+		"/css/src/elements/changesMenu.css",
+		"/css/src/elements/consoleText.css",
+		"/css/src/elements/notification.css",
+		"/css/src/elements/dropdown.css",
+		"/css/src/elements/triangle.css",
+		"/css/src/elements/fadingContent.css",
+
+		"/css/src/prettyElements/prettyCenteredPanel.css",
+		"/css/src/prettyElements/prettyDivider.css",
+		"/css/src/prettyElements/prettyForm.css",
+		"/css/src/prettyElements/prettyModal.css",
+		"/css/src/prettyElements/prettyTable.css",
+		"/css/src/prettyElements/prettyTooltip.css",
+
+		"/css/src/main.css",
+
+		"/css/src/header/header.css",
+
+		"/css/src/login/login.css",
+
+		"/css/src/createAccount/createAccount.css",
+
+		"/css/src/resetPassword/resetPassword.css",
+
+		"/css/src/dashboard/dashboard.css",
+
+		"/css/src/analytics/analytics.css",
+		
+		"/css/src/account/account.css",
+		"/css/src/account/basic/accountBasic.css",
+		"/css/src/account/password/accountPassword.css",
+		"/css/src/account/sshKeys/accountSshKeys.css",
+
+		"/css/src/repository/repository.css",
+		"/css/src/repository/repositoryChanges/repositoryChanges.css",
+		"/css/src/repository/repositoryStages/repositoryStages.css",
+		"/css/src/repository/repositoryStageDetails/repositoryStageDetails.css",
+
+		"/css/src/admin/admin.css",
+		"/css/src/admin/users/adminUsers.css",
+		"/css/src/admin/repositories/adminRepositories.css",
+		"/css/src/admin/aws/adminAws.css",
+		"/css/src/admin/hpCloud/adminHpCloud.css",
+		"/css/src/admin/exporter/adminExporter.css",
+		"/css/src/admin/website/adminWebsite.css",
+		"/css/src/admin/notifications/adminNotifications.css",
+		"/css/src/admin/gitHubEnterprise/adminGitHubEnterprise.css",
+		"/css/src/admin/api/adminApi.css",
+		"/css/src/admin/plan/adminPlan.css",
+		"/css/src/admin/upgrade/adminUpgrade.css"
+	],
+
+	"js": [
+		"/js/libs/assert.js",
+		"/js/libs/jquery.js",
+		"/js/libs/angular.js",
+		"/js/libs/angularSanitize.js",
+		"/js/libs/socket.io.js",
+		"/js/libs/d3.js",
+		"/js/libs/spinner.js",
+
+		"/js/src/util/ansiParser.js",
+		"/js/src/util/xUnitParser.js",
+
+		"/js/src/util/d3/binner/d3Binner.js",
+		"/js/src/util/d3/lineGraph/d3ChangesLineGraph.js",
+		"/js/src/util/d3/lineGraph/d3ChangesLineGraphAxes.js",
+		"/js/src/util/d3/lineGraph/d3ChangesLineGraphLines.js",
+
+		"/js/src/services.js",
+		"/js/src/services/socket.js",
+		"/js/src/services/repository.js",
+		"/js/src/services/changes.js",
+
+		"/js/src/directives.js",
+		"/js/src/directives/panel.js",
+		"/js/src/directives/changesMenu.js",
+		"/js/src/directives/dropdown.js",
+		"/js/src/d3Directives.js",
+		
+		"/js/src/filters.js",
+
+		"/js/src/setup.js",
+
+		"/js/src/main.js",
+
+		"/js/src/header/header.js",
+
+		"/js/src/login/login.js",
+
+		"/js/src/createAccount/createAccount.js",
+
+		"/js/src/resetPassword/resetPassword.js",
+
+		"/js/src/dashboard/dashboard.js",
+
+		"/js/src/analytics/analytics.js",
+
+		"/js/src/account/account.js",
+		"/js/src/account/basic/accountBasic.js",
+		"/js/src/account/password/accountPassword.js",
+		"/js/src/account/sshKeys/accountSshKeys.js",
+
+		"/js/src/repository/repository.js",
+		"/js/src/repository/repositoryChanges/repositoryChanges.js",
+		"/js/src/repository/repositoryStages/repositoryStages.js",
+		"/js/src/repository/repositoryStageDetails/repositoryStageDetails.js",
+
+		"/js/src/admin/admin.js",
+		"/js/src/admin/users/adminUsers.js",
+		"/js/src/admin/repositories/adminRepositories.js",
+		"/js/src/admin/aws/adminAws.js",
+		"/js/src/admin/hpCloud/adminHpCloud.js",
+		"/js/src/admin/exporter/adminExporter.js",
+		"/js/src/admin/website/adminWebsite.js",
+		"/js/src/admin/notifications/adminNotifications.js",
+		"/js/src/admin/gitHubEnterprise/adminGitHubEnterprise.js",
+		"/js/src/admin/api/adminApi.js",
+		"/js/src/admin/plan/adminPlan.js",
+		"/js/src/admin/upgrade/adminUpgrade.js"
+	]
+}
