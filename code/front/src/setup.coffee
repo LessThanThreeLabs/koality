@@ -59,6 +59,9 @@ angular.module('koality', ['ngSanitize',
 	config(['$locationProvider', ($locationProvider) ->
 		$locationProvider.html5Mode true
 	]).
+	config(['$httpProvider', ($httpProvider) ->
+		$httpProvider.defaults.headers.common['X-XSRF-TOKEN'] = window.csrfToken
+	]).
 	run(() ->
 		# initialization happens here
 	)

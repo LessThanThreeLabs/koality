@@ -1,6 +1,6 @@
 'use strict'
 
-window.Header = ['$scope', '$location', 'initialState', 'rpc', 'events', 'notification', ($scope, $location, initialState, rpc, events, notification) ->
+window.Header = ['$scope', '$location', '$http', 'initialState', 'events', 'notification', ($scope, $location, $http, initialState, events, notification) ->
 	$scope.loggedIn = initialState.loggedIn
 	$scope.isAdmin = initialState.user.isAdmin
 	$scope.feedback = open: false
@@ -8,25 +8,28 @@ window.Header = ['$scope', '$location', 'initialState', 'rpc', 'events', 'notifi
 	getRepositories = () ->
 		return if not $scope.loggedIn
 
-		rpc 'repositories', 'read', 'getRepositories', null, (error, repositories) ->
-			$scope.repositories = repositories
+		request = $http.get('/app/repositories/')
+		request.success (data, status, headers, config) ->
+			$scope.repositories = data
+		request.error (data, status, headers, config) ->
+			notification.error data
 
-	handleRepositoryAdded = (data) ->
-		return if data.resourceId isnt initialState.user.id
-		$scope.repositories ?= []
-		repositoryExists = (repository for repository in $scope.repositories when repository.id is data.id).length isnt 0
-		$scope.repositories.push data if not repositoryExists
+	# handleRepositoryAdded = (data) ->
+	# 	return if data.resourceId isnt initialState.user.id
+	# 	$scope.repositories ?= []
+	# 	repositoryExists = (repository for repository in $scope.repositories when repository.id is data.id).length isnt 0
+	# 	$scope.repositories.push data if not repositoryExists
 
-	handleRepositoryRemoved = (data) ->
-		return if data.resourceId isnt initialState.user.id
-		repositoryToRemoveIndex = (index for repository, index in $scope.repositories when repository.id is data.id)[0]
-		$scope.repositories.splice repositoryToRemoveIndex, 1 if repositoryToRemoveIndex?
+	# handleRepositoryRemoved = (data) ->
+	# 	return if data.resourceId isnt initialState.user.id
+	# 	repositoryToRemoveIndex = (index for repository, index in $scope.repositories when repository.id is data.id)[0]
+	# 	$scope.repositories.splice repositoryToRemoveIndex, 1 if repositoryToRemoveIndex?
 
-	if $scope.loggedIn
-		addRepositoryEvents = events('users', 'repository added', initialState.user.id).setCallback(handleRepositoryAdded).subscribe()
-		removeRepositoryEvents = events('users', 'repository removed', initialState.user.id).setCallback(handleRepositoryRemoved).subscribe()
-		$scope.$on '$destroy', addRepositoryEvents.unsubscribe
-		$scope.$on '$destroy', removeRepositoryEvents.unsubscribe
+	# if $scope.loggedIn
+	# 	addRepositoryEvents = events('users', 'repository added', initialState.user.id).setCallback(handleRepositoryAdded).subscribe()
+	# 	removeRepositoryEvents = events('users', 'repository removed', initialState.user.id).setCallback(handleRepositoryRemoved).subscribe()
+	# 	$scope.$on '$destroy', addRepositoryEvents.unsubscribe
+	# 	$scope.$on '$destroy', removeRepositoryEvents.unsubscribe
 	
 	getRepositories()
 
@@ -45,11 +48,16 @@ window.Header = ['$scope', '$location', 'initialState', 'rpc', 'events', 'notifi
 			screen: window.screen
 
 		$scope.feedback.makingRequest = true
-		rpc 'users', 'update', 'submitFeedback', requestParams, (error) ->
+		request = $http.post('/app/account/leaveFeedback', requestParams)
+		request.success (data, status, headers, config) ->
 			$scope.feedback.makingRequest = false
 			$scope.feedback.message = ''
 			$scope.feedback.open = false
 			notification.success 'Thank you for your feedback!'
+		request.error (data, status, headers, config) ->
+			$scope.feedback.makingRequest = false
+			$scope.feedback.open = false
+			notification.error data
 
 	$scope.hideFeedback = () ->
 		$scope.feedback.open = false
@@ -57,9 +65,12 @@ window.Header = ['$scope', '$location', 'initialState', 'rpc', 'events', 'notifi
 	$scope.performLogout = () ->
 		return if not $scope.loggedIn
 
-		rpc 'users', 'update', 'logout', null, (error) ->
+		request = $http.post('/app/account/logout')
+		request.success (data, status, headers, config) ->
 			# this will force a refresh, rather than do html5 pushstate
 			window.location.href = '/'
+		request.error (data, status, headers, config) ->
+			notification.error data
 
 	$scope.$on '$routeChangeSuccess', () ->
 		secondSlashIndex = $location.path().indexOf '/', 1
