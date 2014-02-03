@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/dchest/goyaml"
 	"koality/shell"
+	"koality/util/log"
 	"koality/verification"
 	"koality/verification/config/commandgroup"
 	"koality/verification/config/provision"
@@ -40,7 +41,11 @@ var environmentVariableNameRegexp = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*
 func ParseRemoteCommands(config interface{}, advertised bool, directory string) (commands []verification.Command, err error) {
 	scripts, ok := config.([]interface{})
 	if !ok {
-		err = BadConfigurationError{"The scripts subsection should always be a list of either strings or parameter maps."}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n %sThe scripts subsection should always be a list of strings and parameter maps, but was of type %T.%s",
+			config,
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			scripts,
+			shell.AnsiFormat(shell.AnsiReset))}
 		return
 	}
 
@@ -51,15 +56,25 @@ func ParseRemoteCommands(config interface{}, advertised bool, directory string) 
 		case map[interface{}]interface{}:
 			script := script.(map[interface{}]interface{})
 			for name, parameters := range script {
-				name, ok := name.(string)
+				nameString, ok := name.(string)
 				if !ok {
-					err = BadConfigurationError{fmt.Sprintf("The name %#v is not a valid string", name)}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe script name %#v is not a valid string%s",
+						script,
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						name,
+						shell.AnsiFormat(shell.AnsiReset))}
 					return
 				}
 
 				paramMap, ok := parameters.(map[interface{}]interface{})
 				if !ok {
-					err = BadConfigurationError{fmt.Sprintf("The parameters for script %q should be a map.", name)}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe parameters for script %q should be a map, but  %v was of type %T%s.",
+						script,
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						nameString,
+						parameters,
+						parameters,
+						shell.AnsiFormat(shell.AnsiReset))}
 					return
 				}
 
@@ -73,47 +88,76 @@ func ParseRemoteCommands(config interface{}, advertised bool, directory string) 
 						case []interface{}:
 							paths := value.([]interface{})
 							for _, path := range paths {
-								path, ok := path.(string)
+								xunitPath, ok := path.(string)
 								if !ok {
-									err = BadConfigurationError{"Each xunit path should be a string."}
+									err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sXunit path should be a string, but %v was of type %T.%s",
+										script,
+										shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+										path,
+										path,
+										shell.AnsiFormat(shell.AnsiReset))}
 									return
 								}
 
-								xunitPaths = append(xunitPaths, path)
+								xunitPaths = append(xunitPaths, xunitPath)
 							}
 						case string:
 							xunitPaths = []string{value.(string)}
 						default:
-							err = BadConfigurationError{"The xunit parameter should be a string or a list of strings."}
+							err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe xunit parameter should be a string or a list of strings, but %v was %T.%s",
+								paramMap,
+								shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+								value,
+								value,
+								shell.AnsiFormat(shell.AnsiReset))}
 							return
 						}
 					case "timeout":
 						timeout, ok = value.(int)
 
 						if !ok {
-							err = BadConfigurationError{"The timeout parameter should be an integer."}
+							err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe timeout parameter should be an integer, but %v was of type %T.%s",
+								paramMap,
+								shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+								value,
+								value,
+								shell.AnsiFormat(shell.AnsiReset))}
 							return
 						}
 					case "command":
 						command, ok = value.(string)
 						if !ok {
-							err = BadConfigurationError{"The command parameter of a script should be a string"}
+							err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe command parameter of a script should be a string, but %v was of type %T.%s",
+								paramMap,
+								shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+								value,
+								value,
+								shell.AnsiFormat(shell.AnsiReset))}
 							return
 						}
 					default:
-						err = BadConfigurationError{fmt.Sprintf("The parameter %#v is not supported for scripts.", parameter)}
+						err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe parameter %v is not currently supported for scripts.%s",
+							paramMap,
+							shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+							parameter,
+							shell.AnsiFormat(shell.AnsiReset))}
 						return
 					}
 				}
 
 				if _, ok := paramMap["command"]; !ok {
-					command = name
+					command = nameString
 				}
 
-				commands = append(commands, remotecommand.NewRemoteCommand(advertised, directory, name, timeout, xunitPaths, []string{command}))
+				commands = append(commands, remotecommand.NewRemoteCommand(advertised, directory, nameString, timeout, xunitPaths, []string{command}))
 			}
 		default:
-			return commands, BadConfigurationError{"The script subsection should contain a list of shell scripts or a map from script names to script parameters."}
+			return commands, BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe scripts subsection should contain a list shell scripts and maps from script names to script parameters, but %v was of type %T.%s",
+				scripts,
+				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+				script,
+				script,
+				shell.AnsiFormat(shell.AnsiReset))}
 		}
 	}
 
@@ -134,17 +178,24 @@ func FromYaml(yamlContents, directory string) (verificationConfig VerificationCo
 	err = goyaml.Unmarshal([]byte(yamlContents), &parsedConfig)
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "YAML error") {
+			err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%s%s%s",
+				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+				err.Error(),
+				shell.AnsiFormat(shell.AnsiReset))}
 			return
 		} else {
+			log.Criticalf("Failure when unmarshaling yaml file (error is %v)", err)
 			return
-			// TODO(andrey) log the error (this should be an oom/null-pointer type of error)
 		}
 	}
 
 	configMap, ok := parsedConfig.(map[interface{}]interface{})
 
 	if !ok {
-		err = BadConfigurationError{"The configuration should be a map. For more information go to https://koalitycode.com/documentation."}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe configuration should be a map, but was a %T. For more information go to https://koalitycode.com/documentation.%s",
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			parsedConfig,
+			shell.AnsiFormat(shell.AnsiReset))}
 		return
 	}
 
@@ -186,8 +237,30 @@ func FromYaml(yamlContents, directory string) (verificationConfig VerificationCo
 
 			verificationConfig.FinalSections = finalSections
 		default:
-			err = BadConfigurationError{fmt.Sprintf("The primary key %q is not currently supported.", key)}
+			err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe primary key %q is not currently supported.%s",
+				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+				key,
+				shell.AnsiFormat(shell.AnsiReset))}
 			return
+		}
+	}
+
+	// This check is here, because the order of the configuration keys (parameters, sections and final) is not enforced or guaranteed.
+	if verificationConfig.Params.SnapshotUntil != "" {
+		ok := false
+
+		for _, section := range verificationConfig.Sections {
+			if section.Name() == verificationConfig.Params.SnapshotUntil {
+				ok = true
+				break
+			}
+		}
+
+		if !ok {
+			return verificationConfig, BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe snapshot until parameter has to identify another section, but this configuration file does not specify a section with the name %q.%s",
+				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+				verificationConfig.Params.SnapshotUntil,
+				shell.AnsiFormat(shell.AnsiReset))}
 		}
 	}
 
@@ -206,31 +279,44 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 			case "languages":
 				option, ok := option.(map[interface{}]interface{})
 				if !ok {
-					err = BadConfigurationError{"Unable to parse language selection.\n" +
-						"This should be specified as a mapping from language to version.\n" +
-						"Example:\n" +
-						"  python: 2.7\n" +
-						"  ruby: 1.9.3\n" +
-						"See https://koalitycode.com/documentation?view=yamlLanguages for more information."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sUnable to parse the languages section.%s\n"+
+						"The language section should be specified as a mapping from language to version.\n"+
+						"Example:\n\n"+
+						"languages:\n"+
+						"  python: 2.7\n"+
+						"  ruby: 1.9.3\n\n"+
+						"See https://koalitycode.com/documentation?view=yamlLanguages for more information.",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						shell.AnsiFormat(shell.AnsiReset))}
 					return
 				}
 
 				provisionCommand, err = provision.ParseLanguages(option)
 
 				if err != nil {
-					return
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%s%s%s",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						err.Error(),
+						shell.AnsiFormat(shell.AnsiReset))}
 				}
 			case "nodes":
-				intVal, err := strconv.Atoi(fmt.Sprint(option))
+				var intVal int
+				intVal, err = strconv.Atoi(fmt.Sprint(option))
 				if err != nil || intVal < 0 {
-					err = BadConfigurationError{"The number of nodes must be a positive integer."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe number of nodes must be a positive integer.%s",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						shell.AnsiFormat(shell.AnsiReset))}
+					return
 				}
 
 				params.Nodes = uint64(intVal)
 			case "snapshot until":
 				snapshot, ok := option.(string)
 				if !ok {
-					err = BadConfigurationError{"The snapshot until parameter has to be a string that identifies another section."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe snapshot until parameter has to be a string, but was instead a %T.%s",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						option,
+						shell.AnsiFormat(shell.AnsiReset))}
 					return
 				}
 
@@ -238,31 +324,44 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 			case "environment":
 				variableMap, ok := option.(map[interface{}]interface{})
 				if !ok {
-					err = BadConfigurationError{"The environment subsection should be a map from environment variables to their desired values."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe environment subsection should be a map from environment variables to their desired values., but was instead of type %T.%s",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						option,
+						shell.AnsiFormat(shell.AnsiReset))}
 					return
 				}
 
 				params.Environment = make(map[string]string, len(variableMap))
 				for name, value := range variableMap {
-					name, ok := name.(string)
+					variableName, ok := name.(string)
 					if !ok {
-						err = BadConfigurationError{"The keys of the environment map should be strings."}
+						err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe keys of the environment map should be strings, but instead %v was %T.%s",
+							shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+							name,
+							name,
+							shell.AnsiFormat(shell.AnsiReset))}
 						return
 					}
 
-					isValid := environmentVariableNameRegexp.MatchString(name)
+					isValid := environmentVariableNameRegexp.MatchString(variableName)
 					if !isValid {
-						err = BadConfigurationError{fmt.Sprintf("The environment variable %q does not match the regular expression %q", name, environmentVariableNameRegexp.String())}
+						err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe environment variable %q does not match the regular expression %q.%s",
+							shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+							variableName,
+							environmentVariableNameRegexp.String(),
+							shell.AnsiFormat(shell.AnsiReset))}
 						return
 					}
 
-					params.Environment[name] = fmt.Sprintf("%v", value)
+					params.Environment[variableName] = fmt.Sprintf("%v", value)
 				}
 
 			case "recursiveClone":
 				recursiveClone, err := parseBool(option)
 				if err != nil {
-					err = BadConfigurationError{"The recursiveClone parameter can be only true or false."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe recursiveClone parameter should only be true or false.%s",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						shell.AnsiFormat(shell.AnsiReset))}
 					return provisionCommand, params, err
 				}
 
@@ -270,18 +369,26 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 			case "gitClean":
 				gitClean, err := parseBool(option)
 				if err != nil {
-					err = BadConfigurationError{"The gitClean parameter can be only true or false."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe gitClean parameter should only be true or false.%s",
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						shell.AnsiFormat(shell.AnsiReset))}
 					return provisionCommand, params, err
 				}
 
 				params.GitClean = gitClean
 			default:
-				err = BadConfigurationError{fmt.Sprintf("The option %#v is not currently supported.", option)}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe option %s is not currently a supported parameter.%s",
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					option,
+					shell.AnsiFormat(shell.AnsiReset))}
 				return
 			}
 		}
 	default:
-		err = BadConfigurationError{"The parameter section should be a map."}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe parameter section should be a map, but instead was of type %T.%s",
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			config,
+			shell.AnsiFormat(shell.AnsiReset))}
 		return
 	}
 	return
@@ -290,7 +397,9 @@ func convertParameters(config interface{}) (provisionCommand shell.Command, para
 func parseSections(config interface{}, directory string, final bool) (sections []section.Section, err error) {
 	parsedSections, ok := config.([]interface{})
 	if !ok {
-		err = BadConfigurationError{"Sections should contain a list of sections"}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe sections key should contain a list of sections.%s",
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			shell.AnsiFormat(shell.AnsiReset))}
 		return
 	}
 
@@ -316,20 +425,35 @@ func parseSection(config interface{}, directory string, final bool) (newSection 
 
 	singletonMap, ok := config.(map[interface{}]interface{})
 	if !ok || len(singletonMap) != 1 {
-		err = BadConfigurationError{fmt.Sprintf("Each section should be a map from its name to its parameters.\n%v", singletonMap)}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sEach section should be a map from its name to its parameters, but %q was not.%s",
+			config,
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			config,
+			shell.AnsiFormat(shell.AnsiReset))}
 		return
 	}
 
 	for key := range singletonMap {
 		name, ok = key.(string)
 		if !ok {
-			err = BadConfigurationError{"Each section name should be a string."}
+			err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sEach section name should be a string, but %v was of type %T.%s",
+				config,
+				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+				key,
+				key,
+				shell.AnsiFormat(shell.AnsiReset))}
+			return
 		}
 	}
 
 	sectionMap, ok := singletonMap[name].(map[interface{}]interface{})
 	if !ok {
-		err = BadConfigurationError{"Each section should be a list of scripts and options."}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sEach section should be a list of scripts and options, but instead %v was of type %T.%s",
+			config,
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			singletonMap[name],
+			singletonMap[name],
+			shell.AnsiFormat(shell.AnsiReset))}
 		return
 	}
 
@@ -342,7 +466,10 @@ func parseSection(config interface{}, directory string, final bool) (newSection 
 			}
 
 			if _, ok := sectionMap["exports"]; ok {
-				err = BadConfigurationError{"A section cannot contain both a scripts and an exports subsection."}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sA section cannot contain both a scripts and an exports subsection.%s",
+					config,
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					shell.AnsiFormat(shell.AnsiReset))}
 				return newSection, err
 			}
 
@@ -354,7 +481,10 @@ func parseSection(config interface{}, directory string, final bool) (newSection 
 			}
 
 			if _, ok := sectionMap["exports"]; ok {
-				err = BadConfigurationError{"A section cannot contain both a factories and an exports subsection."}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sA section cannot contain both a factories and an exports subsection.%s",
+					config,
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					shell.AnsiFormat(shell.AnsiReset))}
 				return newSection, err
 			}
 
@@ -368,7 +498,10 @@ func parseSection(config interface{}, directory string, final bool) (newSection 
 			case "single":
 				runOn = section.RunOnSingle
 			default:
-				err = BadConfigurationError{"The run on section should be either all, split or single."}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe run on section should be either all, split or single.%s",
+					config,
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					shell.AnsiFormat(shell.AnsiReset))}
 				return
 			}
 		case "fail on":
@@ -380,33 +513,54 @@ func parseSection(config interface{}, directory string, final bool) (newSection 
 			case "first":
 				failOn = section.FailOnFirst
 			default:
-				err = BadConfigurationError{"The fail on section should be either never, any or first."}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe fail on section should be either never, any or first.%s",
+					config,
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					shell.AnsiFormat(shell.AnsiReset))}
 				return
 			}
 		case "exports":
 			paths, ok := content.([]interface{})
 			if !ok {
-				err = BadConfigurationError{"The export subsection should be a list of strings."}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe export subsection should be a list, but instead %v was of type %T.%s",
+					config,
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					content,
+					content,
+					shell.AnsiFormat(shell.AnsiReset))}
 				return
 			}
 
 			for _, path := range paths {
-				path, ok := path.(string)
+				exportPath, ok := path.(string)
 				if !ok {
-					err = BadConfigurationError{"Each export path should be a string."}
+					err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sEach export path should be a string, but %v was of type %T.%s",
+						config,
+						shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+						path,
+						path,
+						shell.AnsiFormat(shell.AnsiReset))}
 					return
 				}
 
-				exportPaths = append(exportPaths, path)
+				exportPaths = append(exportPaths, exportPath)
 			}
 		case "continue on failure":
 			continueOnFailure, err = parseBool(content)
 			if err != nil {
-				err = BadConfigurationError{"The continue on failure parameter can be only true or false."}
+				err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe continue on failure parameter should only be true or false.%s",
+					config,
+					shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+					shell.AnsiFormat(shell.AnsiReset))}
 				return
 			}
 		default:
-			err = BadConfigurationError{fmt.Sprintf("The %#v parameter is not currently supported for scripts.", subsection)}
+			err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe parameter %v is not currently supported for sections.%s",
+				config,
+				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+				subsection,
+				shell.AnsiFormat(shell.AnsiReset))}
+			return
 		}
 	}
 	if failOn == "" {
@@ -414,12 +568,18 @@ func parseSection(config interface{}, directory string, final bool) (newSection 
 	}
 
 	if runOn == "" {
-		err = BadConfigurationError{"The run on parameter must be specified for every section."}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sThe run on parameter must be specified for every section.%s",
+			config,
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			shell.AnsiFormat(shell.AnsiReset))}
 		return newSection, err
 	}
 
 	if len(exportPaths) == 0 && factoryCommands == nil && regularCommands == nil {
-		err = BadConfigurationError{"Each section must have at least one of a scripts, factories or exports subsection."}
+		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n%sEach section must have at least one of a scripts, factories or exports subsection.%s",
+			config,
+			shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
+			shell.AnsiFormat(shell.AnsiReset))}
 		return newSection, err
 	}
 
