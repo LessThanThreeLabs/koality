@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var requiredLibraries = []string{"curl", "python-pip"}
+var requiredLibraries = []string{"curl"}
 
 type koalityMetadata struct {
 	Version string `json:"version"`
@@ -93,6 +93,13 @@ func installKoality() error {
 		return fmt.Errorf("Failed to install dependencies: %v\nStdout: %s\nStderr: %s\nError: %v", requiredLibraries, installDependenciesStdout.String(), installDependenciesStderr.String(), err)
 	}
 
+	postgresqlSourceFile := filepath.Join("/", "etc", "apt", "sources.list.d", "pgdg.list")
+	if _, err := os.Stat(postgresqlSourceFile); err != nil {
+		if err = ioutil.WriteFile(postgresqlSourceFile, []byte("deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main"), 0644); err != nil {
+			return fmt.Errorf("Failed to create the postgresql sources file at %s\nError: %v", postgresqlSourceFile, err)
+		}
+	}
+
 	addPostgresqlKeysCommand := exec.Command("bash", "-c", string(shell.Pipe(
 		shell.Command("curl https://www.postgresql.org/media/keys/ACCC4CF8.asc"),
 		shell.Sudo("apt-key add -"),
@@ -125,7 +132,7 @@ func installKoality() error {
 			),
 			shell.Or(
 				shell.Pipe(shell.AsUser("postgres", shell.Commandf("psql -c %s", shell.Quote("SELECT 1 FROM pg_database WHERE datname='koality'"))), shell.Command("grep -q 1")),
-				shell.AsUser("postgres", shell.Commandf("su postgres psql -c %s", shell.Quote("createdb koality --template template0 --locale en_US.utf8 --encoding UTF8"))),
+				shell.AsUser("postgres", shell.Command("createdb koality --template template0 --locale en_US.utf8 --encoding UTF8")),
 			),
 		),
 	))
@@ -140,7 +147,7 @@ func installKoality() error {
 	installOpenSshStdout, installOpenSshStderr := new(bytes.Buffer), new(bytes.Buffer)
 	installOpenSshCommand.Stdout, installOpenSshCommand.Stderr = installOpenSshStdout, installOpenSshStderr
 	if err := installOpenSshCommand.Run(); err != nil {
-		return fmt.Errorf("Failed to install OpenSSH\nStdout: %s\nStderr: %s\nError: %v", installDependenciesStdout.String(), installDependenciesStderr.String(), err)
+		return fmt.Errorf("Failed to install OpenSSH\nStdout: %s\nStderr: %s\nError: %v", installOpenSshStdout.String(), installOpenSshStderr.String(), err)
 	}
 
 	relinkCommand := exec.Command("bash", "-c", string(shell.Sudo(shell.Commandf("ln -n -f -s %s %s", installDirectory, filepath.Join("/", "etc", "koality", "current")))))
