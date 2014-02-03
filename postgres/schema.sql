@@ -116,10 +116,7 @@ CREATE TABLE IF NOT EXISTS debug_instances (
 	id 					serial PRIMARY KEY,
 	pool_id				integer NOT NULL references ec2_pools(id) ON DELETE CASCADE,
 	instance_id			varchar(64) NOT NULL,
-	expires				timestamp with time zone NOT NULL,
-	deleted 			integer NOT NULL DEFAULT 0,  -- set to id when deleted
-
-	CHECK (deleted = 0 OR deleted = id)
+	expires				timestamp with time zone NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS verifications (
