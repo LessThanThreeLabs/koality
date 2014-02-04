@@ -49,16 +49,16 @@ angular.module('koality.filter', ['koality.service']).
 			getBitBucketLink = () ->
 				return generateLink "/#{bitBucketGitMatch[2]}/commits/#{headSha}", 'View Diff in BitBucket'
 
-			forwardUrl = repositoryInformation.forwardUrl
-			domain = forwardUrl.substring forwardUrl.indexOf('@') + 1, forwardUrl.indexOf(':')
+			remoteUri = repositoryInformation.remoteUri
+			domain = remoteUri.substring remoteUri.indexOf('@') + 1, remoteUri.indexOf(':')
 
 			gitHubRegex = new RegExp "^git@#{domain}:(.+?)(\.git)?$"
-			gitHubMatch = gitHubRegex.exec repositoryInformation.forwardUrl
+			gitHubMatch = gitHubRegex.exec repositoryInformation.remoteUri
 			if (repositoryInformation.github? or domain is 'github.com') and gitHubMatch? and gitHubMatch[1]?
 				return getGitHubLink()
 
 			bitBucketRegex = new RegExp "^git@bitbucket.(org|com):(.+?)(\.git)?$"
-			bitBucketGitMatch = bitBucketRegex.exec repositoryInformation.forwardUrl
+			bitBucketGitMatch = bitBucketRegex.exec repositoryInformation.remoteUri
 			if bitBucketGitMatch? and bitBucketGitMatch[2]?
 				return getBitBucketLink()
 

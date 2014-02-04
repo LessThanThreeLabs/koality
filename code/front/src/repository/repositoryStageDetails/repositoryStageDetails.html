@@ -2,7 +2,7 @@
 	<panel>
 		<panel-header>
 			<div class="left">
-				<span ng-show="selectedChange.getInformation() != null && selectedStage.isSummary()">summary</span>
+				<span ng-show="selectedBuild.getInformation() != null && selectedStage.isSummary()">summary</span>
 				<span ng-show="selectedStage.getInformation() != null">{{selectedStage.getInformation().name}}</span>
 				<span ng-show="selectedStage.isSkipped()">skipped</span>
 				<span ng-show="selectedStage.isMerge()">merge</span>
@@ -12,7 +12,7 @@
 			</div>
 
 			<div class="right" ng-show="selectedStage.isSummary()">
-				<a ng-show="selectedChange.getInformation().aggregateStatus == 'failed'" ng-click="toggleDrawer('retrigger')">Retrigger</a>
+				<a ng-show="selectedBuild.getInformation().aggregateStatus == 'failed'" ng-click="toggleDrawer('retrigger')">Retrigger</a>
 				<a ng-click="toggleDrawer('launchDebugInstance')">Launch Debug Instance</a>
 			</div>
 
@@ -33,7 +33,7 @@
 			<panel-drawer drawer-name="retrigger">
 				<form id="retriggerForm" name="retriggerForm" novalidate>
 					<div id="retriggerDescription">
-						Koality will relaunch this change. Do this if you're confident this change should have passed.
+						Koality will relaunch this build. Do this if you're confident this build should have passed.
 					</div>
 
 					<table>
@@ -52,7 +52,7 @@
 			<panel-drawer drawer-name="launchDebugInstance">
 				<form id="launchDebugInstanceForm" name="launchDebugInstanceForm" novalidate>
 					<div id="debugInstanceDescription">
-						Koality will provision a virtual machine with the contents of this change and email you when it's ready. The machine will automatically spin down after the instance duration.
+						Koality will provision a virtual machine with the contents of this build and email you when it's ready. The machine will automatically spin down after the instance duration.
 					</div>
 
 					<table>
@@ -73,63 +73,49 @@
 				</form>
 			</panel-drawer>
 
-			<div id="summary" ng-show="selectedStage.isSummary() && selectedChange.getInformation() != null">
+			<div id="summary" ng-show="selectedStage.isSummary() && selectedBuild.getInformation() != null">
 				<table>
 					<tr>
 						<th>Name</th>
-
-						<td>
-							<span ng-show="selectedChange.getInformation().user.id >= 1000">
-								{{selectedChange.getInformation().user.name.first}} {{selectedChange.getInformation().user.name.last}}
-							</span>
-
-							<span ng-show="selectedChange.getInformation().user.id < 1000">
-								{{selectedChange.getInformation().headCommit.user.name}}
-							</span>
-						</td>
+						<td>{{selectedBuild.getInformation().changeset.headUsername}}</td>
 					</tr>
 					<tr>
 						<th>Email</th>
-
 						<td>
-							<a ng-href="mailto:{{selectedChange.getInformation().user.email}}?subject=Koality%3A%20{{selectedRepository.getInformation().name}}%20-%20change%20%23{{selectedChange.getInformation().headCommit.sha | limitTo:4}}&body=Link%20to%20change%3A%20{{currentUrl}}" target="_blank" ng-show="selectedChange.getInformation().user.id >= 1000">
-								{{selectedChange.getInformation().user.email}}
-							</a>
-
-							<a ng-href="mailto:{{selectedChange.getInformation().headCommit.user.email}}?subject=Koality%3A%20{{selectedRepository.getInformation().name}}%20-%20change%20%23{{selectedChange.getInformation().headCommit.sha | limitTo:4}}&body=Link%20to%20change%3A%20{{currentUrl}}" target="_blank" ng-show="selectedChange.getInformation().user.id < 1000">
-								{{selectedChange.getInformation().headCommit.user.email}}
+							<a ng-href="mailto:{{selectedBuild.getInformation().changeset.headEmail}}?subject=Koality%3A%20{{selectedRepository.getInformation().name}}%20-%20build%20%23{{selectedBuild.getInformation().changeset.headSha | limitTo:4}}&body=Link%20to%20build%3A%20{{currentUrl}}" target="_blank">
+								{{selectedBuild.getInformation().changeset.headEmail}}
 							</a>
 						</td>
 					</tr>
-					<tr>
+					<tr ng-show="selectedBuild.getInformation().created != null">
 						<th>Submit Time</th>
-						<td>{{selectedChange.getInformation().createTime | date:'EEEE, MM/dd hh:mm:ss a'}}</td>
+						<td>{{selectedBuild.getInformation().created | date:'EEEE, MM/dd hh:mm:ss a'}}</td>
 					</tr>
-					<tr ng-show="selectedChange.getInformation().startTime != null">
+					<tr ng-show="selectedBuild.getInformation().started != null">
 						<th>Start Time</th>
-						<td>{{selectedChange.getInformation().startTime | date:'EEEE, MM/dd hh:mm:ss a'}}</td>
+						<td>{{selectedBuild.getInformation().started | date:'EEEE, MM/dd hh:mm:ss a'}}</td>
 					</tr>
-					<tr ng-show="selectedChange.getInformation().startTime != null && selectedChange.getInformation().endTime != null">
+					<tr ng-show="selectedBuild.getInformation().started != null && selectedBuild.getInformation().ended != null">
 						<th>Duration</th>
-						<td>{{(selectedChange.getInformation().endTime - selectedChange.getInformation().startTime) / 60000 | number:0}}m {{((selectedChange.getInformation().endTime - selectedChange.getInformation().startTime) % 60000) / 1000 | number:0}}s</td>
+						<td>{{(selectedBuild.getInformation().ended - selectedBuild.getInformation().started) / 60000 | number:0}}m {{((selectedBuild.getInformation().ended - selectedBuild.getInformation().started) % 60000) / 1000 | number:0}}s</td>
 					</tr>
 					<tr>
 						<th>Branch</th>
-						<td>{{selectedChange.getInformation().target}}</td>
+						<td>{{selectedBuild.getInformation().target}}</td>
 					</tr>
 					<tr>
 						<th>Head SHA</th>
-						<td>{{selectedChange.getInformation().headCommit.sha}}</td>
+						<td>{{selectedBuild.getInformation().changeset.headSha}}</td>
 					</tr>
 					<tr>
 						<th>Head Commit</th>
 						<td>
-							<pre ng-bind-html="selectedChange.getInformation().headCommit.message | linky"></pre>
+							<pre ng-bind-html="selectedBuild.getInformation().changeset.headMessage | linky"></pre>
 						</td>
 					</tr>
-					<tr ng-show="(selectedChange.getInformation().headCommit.sha | shaLink: selectedChange.getInformation().headCommit.baseSha:selectedRepository.getInformation()) != null">
+					<tr ng-show="(selectedBuild.getInformation().changeset.headSha | shaLink: selectedBuild.getInformation().changeset.baseSha:selectedRepository.getInformation()) != null">
 						<th>Diff</th>
-						<td ng-bind-html="selectedChange.getInformation().headCommit.sha | shaLink: selectedChange.getInformation().headCommit.baseSha:selectedRepository.getInformation()"></td>
+						<td ng-bind-html="selectedBuild.getInformation().changeset.headSha | shaLink: selectedBuild.getInformation().changeset.baseSha:selectedRepository.getInformation()"></td>
 					</tr>
 					<tr ng-show="exportUris.length > 0">
 						<th>Exported Files</th>
@@ -142,7 +128,7 @@
 				</table>
 			</div>
 
-			<div id="console" ng-show="output.type == 'console'">
+			<!-- <div id="console" ng-show="output.type == 'console'">
 				<div auto-scroll-to-bottom="consoleTextManager.getNewLines()" auto-scroll-to-bottom-buffer="40" start-at-bottom on-scroll-to-top="consoleTextManager.retrieveMoreLines()" fading-content>
 					<console-text class="consoleText" new-lines="consoleTextManager.getNewLines()" old-lines="consoleTextManager.getOldLines()" remove-lines="consoleTextManager.removeLines(startIndex, numLines)" listener="contentTextManager.lastUpdateTime"></console-text>
 				</div>
@@ -211,27 +197,27 @@
 
 			<div id="skipped" ng-show="selectedStage.isSkipped()">
 				<div id="skippedMessage">
-					This change was not verified.
+					This build was not verified.
 				</div>
 			</div>
 
 			<div id="merge" ng-show="selectedStage.isMerge()">
-				<div ng-show="selectedChange.getInformation().mergeStatus == 'passed'">
-					Change merged successfully.
+				<div ng-show="selectedBuild.getInformation().mergeStatus == 'passed'">
+					Build merged successfully.
 				</div>
-				<div ng-show="selectedChange.getInformation().mergeStatus == 'failed'">
+				<div ng-show="selectedBuild.getInformation().mergeStatus == 'failed'">
 					Failed to merge. Try pulling before pushing again.
 				</div>
 			</div>
 
 			<div id="debug" ng-show="selectedStage.isDebug()">
 				<div id="debugMessage">
-					This change failed to create any output. This could be caused by invalid AWS credentials.
+					This build failed to create any output. This could be caused by invalid AWS credentials.
 				</div>
 				<div id="debugInstructions">
 					Contact your administrator to correct the issue.
 				</div>
-			</div>
+			</div> -->
 		</panel-body>
 	</panel>
 </div>

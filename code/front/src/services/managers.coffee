@@ -217,7 +217,7 @@ angular.module('koality.service.managers', []).
 			_linesAddedListener: null
 
 			constructor: () ->
-				@consoleTextRpc = ConsoleTextRpc.create()
+				@consoleLinesRpc = ConsoleLinesRpc.create()
 
 			_linesRetrievedHandler: (error, linesData) =>
 				if error? then console.error error
@@ -270,7 +270,7 @@ angular.module('koality.service.managers', []).
 				@_newLines = {}
 				@_oldLines = {}
 				@_gettingMoreLines = true
-				@_currentRequestId = @consoleTextRpc.queueRequest @_stageId, 0, @_linesRetrievedHandler
+				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, 0, @_linesRetrievedHandler
 
 			retrieveMoreLines: () =>
 				getStartIndex = () =>
@@ -282,10 +282,10 @@ angular.module('koality.service.managers', []).
 				return if Object.keys(@_newLines).length is 0
 				return if not @_allowGettingMoreLines
 				return if @_gettingMoreLines
-				return if not @consoleTextRpc.hasMoreLinesToRequest()
+				return if not @consoleLinesRpc.hasMoreLinesToRequest()
 
 				@_gettingMoreLines = true
-				@_currentRequestId = @consoleTextRpc.queueRequest @_stageId, getStartIndex(), @_linesRetrievedHandler
+				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, getStartIndex(), @_linesRetrievedHandler
 
 			getNewLines: () =>
 				return @_newLines
@@ -299,7 +299,7 @@ angular.module('koality.service.managers', []).
 
 				for lineNumber in [startIndex...(startIndex+numLines)]
 					delete @_oldLines[lineNumber]
-				@consoleTextRpc.notifyLinesRemoved()
+				@consoleLinesRpc.notifyLinesRemoved()
 
 			isRetrievingLines: () =>
 				return @_gettingMoreLines
