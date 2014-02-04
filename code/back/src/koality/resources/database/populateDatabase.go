@@ -10,7 +10,7 @@ import (
 
 const (
 	numRepositories               = 2
-	numVerificationsPerRepository = 10
+	numVerificationsPerRepository = 15
 	numPools                      = 1
 	parallelizationLevel          = 2
 )
@@ -170,8 +170,15 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 		return sha
 	}
 
-	errorChannel := make(chan error, numVerifications)
+	getStatus := func() string {
+		if rand.Intn(3) < 2 {
+			return "passed"
+		} else {
+			return "failed"
+		}
+	}
 
+	errorChannel := make(chan error, numVerifications)
 	for index := 0; index < numVerifications; index++ {
 		go func(index int) {
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
@@ -183,12 +190,18 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 				return
 			}
 
+			err = connection.Verifications.Update.SetStatus(verification.Id, getStatus())
+			if err != nil {
+				errorChannel <- err
+				return
+			}
+
 			err = createStages(connection, verification.Id)
 			errorChannel <- err
 		}(index)
 	}
 
-	for index := 0; index < numVerificationsPerRepository; index++ {
+	for index := 0; index < numVerifications; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err

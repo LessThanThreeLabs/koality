@@ -34,6 +34,13 @@ angular.module('koality.service.rpc', []).
 
 					@_retrieveMoreBuilds()
 
+			_parseBuildTimes: (builds) =>
+				for build in builds
+					build.created = new Date build.created if build.created?
+					build.started = new Date build.started if build.started?
+					build.ended = new Date build.ended if build.ended?
+				return builds
+
 			_retrieveMoreBuilds: () =>
 				assert.ok @_currentQuery?
 				assert.ok @_currentCallback?
@@ -43,26 +50,26 @@ angular.module('koality.service.rpc', []).
 				if @_noMoreBuildsToRequest
 					@_shiftBuildsRequest()
 				else
-					repositoryId = @_currentQuery[0]
+					repositoryId = @_currentQuery.repositoryIds[0]
 					console.log 'SHOULD BE PASSING MULTIPLE REPOSITORY IDS, and what about group and query?'
 					# repositoryIds = @_currentQuery.repositoryIds.join ','
 					offset = @_currentQuery.startIndex
 					results = @_currentQuery.numToRetrieve
 					request = $http.get("/app/verifications/tail?repositoryId=#{repositoryId}&offset=#{offset}&results=#{results}")
-					request.success (data, status, headers, config) ->
+					request.success (data, status, headers, config) =>
 						@_noMoreBuildsToRequest = data.length < @_numBuildsToRequest
-						@_currentCallback error,
+						@_currentCallback null,
 							requestId: @_currentQuery.requestId
-							builds: data
+							builds: @_parseBuildTimes data
 						@_shiftBuildsRequest()
-					request.error (data, status, headers, config) ->
-						console.error data
+					request.error (data, status, headers, config) =>
+						@_currentCallback data
 						@_shiftBuildsRequest()
 
 			hasMoreBuildsToRequest: () =>
 				return not @_noMoreBuildsToRequest
 
-			queueRequest: (repositoryIds, group, query, startIndex, callback) ->
+			queueRequest: (repositoryIds, group, query, startIndex, callback) =>
 				assert.ok typeof repositoryIds is 'object' and repositoryIds.length > 0
 				assert.ok not group? or (typeof group is 'string' and (group is 'all' or group is 'me'))
 				assert.ok not query? or (typeof query is 'string')
@@ -132,14 +139,14 @@ angular.module('koality.service.rpc', []).
 					offset = @_currentQuery.startIndex
 					results = @_currentQuery.numToRetrieve
 					request = $http.get("/app/stageRuns/#{stageRunId}/lines?offset=#{offset}&results=#{results}")
-					request.success (data, status, headers, config) ->
+					request.success (data, status, headers, config) =>
 						@_noMoreLinesToRequest = Object.keys(data).length < @_numLinesToRequest
 						@_currentCallback error,
 							requestId: @_currentQuery.requestId
 							lines: data
 						@_shiftConsoleLinesRequest()
-					request.error (data, status, headers, config) ->
-						console.error data
+					request.error (data, status, headers, config) =>
+						@_currentCallback data
 						@_shiftConsoleLinesRequest()
 
 			hasMoreLinesToRequest: () =>
@@ -148,7 +155,7 @@ angular.module('koality.service.rpc', []).
 			notifyLinesRemoved: () =>
 				@_noMoreLinesToRequest = false
 
-			queueRequest: (stageRunId, startIndex, callback) ->
+			queueRequest: (stageRunId, startIndex, callback) =>
 				assert.ok typeof stageRunId is 'number'
 				assert.ok typeof startIndex is 'number'
 				assert.ok typeof callback is 'function'

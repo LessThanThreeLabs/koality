@@ -1,8 +1,8 @@
 'use strict'
 
-window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRepository', 'currentChange', 'currentStage', 'localStorage', ($scope, $routeParams, StagesManager, currentRepository, currentChange, currentStage, localStorage) ->
+window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRepository', 'currentBuild', 'currentStage', 'localStorage', ($scope, $routeParams, StagesManager, currentRepository, currentBuild, currentStage, localStorage) ->
 	$scope.selectedRepository = currentRepository
-	$scope.selectedChange = currentChange
+	$scope.selectedBuild = currentBuild
 	$scope.selectedStage = currentStage
 
 	$scope.filter = type: localStorage.repositoryStagesFilterType ? 'all'
@@ -39,7 +39,7 @@ window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRe
 			continue if $scope.selectedStage.getId() is mirrorStage.id
 
 			if mirrorStage.status is 'failed'
-				$scope.selectedStage.setId $scope.selectedRepository.getId(), $scope.selectedChange.getId(), mirrorStage.id
+				$scope.selectedStage.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), mirrorStage.id
 				$scope.selectedStage.setInformation mirrorStage
 				return
 
@@ -48,19 +48,7 @@ window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRe
 		return stage1.type is stage2.type and stage1.name is stage2.name
 
 	$scope.stageSort = (stage) ->
-		if stage.type is 'setup'
-			return 10000 + stage.orderNumber
-		else if stage.type is 'compile'
-			return 20000 + stage.orderNumber
-		else if stage.type is 'testFactory'
-			return 30000 + stage.orderNumber
-		else if stage.type is 'test'
-			return 40000 + stage.orderNumber
-		else if stage.type is 'export'
-			return 50000 + stage.orderNumber
-		else
-			console.error 'Cannot sort stage'
-			return 60000
+		return stage.sectionNumber * 1000 + stage.orderNumber
 
 	$scope.shouldStageBeVisible = (stage) ->
 		return true if stage.id is $scope.selectedStage.getId()
@@ -74,7 +62,7 @@ window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRe
 			return stage.status is 'failed'
 
 	$scope.selectStage = (stage) ->
-		$scope.selectedStage.setId $scope.selectedRepository.getId(), $scope.selectedChange.getId(), stage.id
+		$scope.selectedStage.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), stage.id
 		$scope.selectedStage.setInformation stage
 
 	$scope.$watch 'filter.type', (newFilterType, oldFilterType) ->
@@ -87,13 +75,13 @@ window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRe
 			if status? and status isnt 'failed'
 				$scope.selectedStage.setSummary()
 
-	$scope.$watch 'selectedChange.getId()', (newChangeId, oldChangeId) ->
-		$scope.selectedStage.setSummary() if newChangeId isnt oldChangeId
+	$scope.$watch 'selectedBuild.getId()', (newBuildId, oldBuildId) ->
+		$scope.selectedStage.setSummary() if newBuildId isnt oldBuildId
 
-		$scope.stagesManager.setChangeId $scope.selectedChange.getId()
+		$scope.stagesManager.setBuildId $scope.selectedBuild.getId()
 		$scope.stagesManager.stopListeningToEvents()
 
-		if $scope.selectedChange.getId()?
+		if $scope.selectedBuild.getId()?
 			$scope.stagesManager.listenToEvents()
 			$scope.stagesManager.retrieveStages()
 

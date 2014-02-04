@@ -54,11 +54,11 @@ func (webserver *Webserver) Start() error {
 		context.Set(request, "userId", uint64(1000))
 		// context.Set(request, "userId", uint64(0))
 
-		if request.URL.Path == "/" || request.URL.Path == "/dashboard" {
+		if request.URL.Path == "/" || request.URL.Path == "/dashboard" || strings.HasPrefix(request.URL.Path, "/repository/") {
 			router.ServeHTTP(writer, request)
-		} else if strings.HasPrefix(request.URL.Path, "/app") {
+		} else if strings.HasPrefix(request.URL.Path, "/app/") {
 			hasCsrfTokenWrapper(writer, request)
-		} else if strings.HasPrefix(request.URL.Path, "/api") {
+		} else if strings.HasPrefix(request.URL.Path, "/api/") {
 			hasApiKeyWrapper(writer, request)
 		} else {
 			panic("Unexpected path: " + request.URL.Path)

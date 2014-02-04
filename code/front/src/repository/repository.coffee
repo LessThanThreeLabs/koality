@@ -1,22 +1,22 @@
 'use strict'
 
-window.Repository = ['$scope', '$location', '$routeParams', 'rpc', 'currentRepository', 'currentChange', 'currentStage', ($scope, $location, $routeParams, rpc, currentRepository, currentChange, currentStage) ->
+window.Repository = ['$scope', '$location', '$routeParams', 'currentRepository', 'currentBuild', 'currentStage', ($scope, $location, $routeParams, currentRepository, currentBuild, currentStage) ->
 	$scope.selectedRepository = currentRepository
-	$scope.selectedChange = currentChange
+	$scope.selectedBuild = currentBuild
 	$scope.selectedStage = currentStage
 
 	syncToRouteParams = () ->
 		$scope.selectedRepository.setId $routeParams.repositoryId
 		$scope.selectedRepository.retrieveInformation $routeParams.repositoryId
 
-		if $routeParams.change?
-			$scope.selectedChange.setId $routeParams.repositoryId, $routeParams.change
-			$scope.selectedChange.retrieveInformation $routeParams.repositoryId, $routeParams.change
+		if $routeParams.build?
+			$scope.selectedBuild.setId $routeParams.repositoryId, $routeParams.build
+			$scope.selectedBuild.retrieveInformation $routeParams.repositoryId, $routeParams.build
 		else
-			$scope.selectedChange.clear()
+			$scope.selectedBuild.clear()
 
-		if $routeParams.change? and $routeParams.stage?
-			$scope.selectedStage.setId $routeParams.repositoryId, $routeParams.change, $routeParams.stage
+		if $routeParams.build? and $routeParams.stage?
+			$scope.selectedStage.setId $routeParams.repositoryId, $routeParams.build, $routeParams.stage
 			$scope.selectedStage.retrieveInformation $routeParams.repositoryId, $routeParams.stage
 		else
 			$scope.selectedStage.clear()
@@ -31,10 +31,10 @@ window.Repository = ['$scope', '$location', '$routeParams', 'rpc', 'currentRepos
 		repositoryInformation = $scope.selectedRepository.getInformation()
 
 		if repositoryInformation?
-			$scope.cloneUri = repositoryInformation.type + ' clone ' + repositoryInformation.uri
+			$scope.cloneUri = repositoryInformation.vcsType + ' clone ' + repositoryInformation.uri
 
-	$scope.$watch 'selectedChange.getId()', (newValue) ->
-		$location.search 'change', newValue ? null
+	$scope.$watch 'selectedBuild.getId()', (newValue) ->
+		$location.search 'build', newValue ? null
 
 	$scope.$watch 'selectedStage.getId()', (newValue) ->
 		$location.search 'stage', newValue ? null
