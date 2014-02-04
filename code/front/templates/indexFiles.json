@@ -77,8 +77,7 @@
 		"/js/src/util/d3/lineGraph/d3ChangesLineGraphLines.js",
 
 		"/js/src/services.js",
-		"/js/src/services/socket.js",
-		"/js/src/services/repository.js",
+		"/js/src/services/state.js",
 		"/js/src/services/changes.js",
 
 		"/js/src/directives.js",

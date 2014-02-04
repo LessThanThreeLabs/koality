@@ -1,7 +1,7 @@
 'use strict'
 
 angular.module('koality', ['ngSanitize', 
-		'koality.service', 'koality.service.socket', 'koality.service.repository', 'koality.service.changes',
+		'koality.service', 'koality.service.repository', 'koality.service.builds',
 		'koality.filter',
 		'koality.directive', 'koality.directive.changesMenu', 'koality.directive.panel', 'koality.directive.dropdown', 'koality.d3.directive']).
 	config(['$routeProvider', ($routeProvider) ->

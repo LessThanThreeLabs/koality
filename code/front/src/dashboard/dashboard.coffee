@@ -1,6 +1,6 @@
 'use strict'
 
-window.Dashboard = ['$scope', 'rpc', 'ChangesManager', 'localStorage', ($scope, rpc, ChangesManager, localStorage) ->
+window.Dashboard = ['$scope', '$http', 'ChangesManager', 'localStorage', ($scope, $http, ChangesManager, localStorage) ->
 	repositoryCache = {}
 
 	$scope.search =
@@ -8,12 +8,14 @@ window.Dashboard = ['$scope', 'rpc', 'ChangesManager', 'localStorage', ($scope, 
 		query: ''
 
 	getRepositories = () ->
-		rpc 'repositories', 'read', 'getRepositories', null, (error, repositories) ->
-			if error? then notification.error error
-			else
-				$scope.repositories = repositories
-				createRepositoryCache()
-				getChanges()
+		request = $http.get('/app/repositories/')
+		request.success (data, status, headers, config) ->
+			console.log data
+			$scope.repositories = data
+			createRepositoryCache()
+			getChanges()
+		request.error (data, status, headers, config) ->
+			notification.error data
 
 	createRepositoryCache = () ->
 		for repository in $scope.repositories

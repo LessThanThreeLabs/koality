@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('koality.service.changes', []).
+angular.module('koality.service.manager', []).
 	factory('ChangesManager', ['initialState', 'ChangesRpc', 'events', (initialState, ChangesRpc, events) ->
 		class ChangesManager
 			_changes: []
@@ -303,37 +303,12 @@ angular.module('koality.service.changes', []).
 			listenToEvents: () =>
 				assert.ok @_stageId?
 
-				# @stopGenerateFakeLines()
-				# @startGenerateFakeLines()
-
 				@stopListeningToEvents()
 				@_linesAddedListener = events('buildConsoles', 'new output', @_stageId).setCallback(@_handleLinesAdded).subscribe()
 					
 			stopListeningToEvents: () =>
 				@_linesAddedListener.unsubscribe() if @_linesAddedListener?
 				@_linesAddedListener = null
-
-			# @_interval = null
-			# stopGenerateFakeLines: () =>
-			# 	clearInterval(@_interval) if @_interval?
-
-			# startGenerateFakeLines: () =>
-			# 	lineNumber = 1
-
-			# 	fireNewLinesEvent = () =>
-			# 		lines = {}
-			# 		for blah in [0...100]
-			# 			lines[lineNumber] = lineNumber + " " + lineNumber + " " + lineNumber  + " " + lineNumber + " " + lineNumber
-			# 			lineNumber++
-
-			# 		data = 
-			# 			resourceId: @_stageId
-			# 			lines: lines
-			# 		$rootScope.$apply () => @_handleLinesAdded data
-
-			# 		@stopGenerateFakeLines() if lineNumber > 2500
-
-			# 	@_interval = setInterval fireNewLinesEvent, 400
 
 		return create: () ->
 			return new ConsoleTextManager()

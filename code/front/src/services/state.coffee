@@ -1,13 +1,11 @@
 'use strict'
 
-angular.module('koality.service.repository', []).
-	factory('currentRepository', ['rpc', 'integerConverter', (rpc, integerConverter) ->
+angular.module('koality.service.state', []).
+	factory('currentRepository', ['$http', 'integerConverter', ($http, integerConverter) ->
 
 		class RepositoryManager
 			_id: null
 			_information: null
-
-			_forwardUrlListener: null
 
 			clear: () =>
 				@_id = null
@@ -20,23 +18,6 @@ angular.module('koality.service.repository', []).
 			getId: () =>
 				return @_id
 
-			# We ONLY listen to these evets when retrieving information, not when it is set.
-			# If the information is set, it is coming from a source that is managing the
-			# data and keeping it up to date.
-			_handleForwardUrlUpdated: (data) =>
-				return if data.id isnt @_id
-				$.extend true, @_information, data
-
-			_listenToEvents: () =>
-				assert.ok @_id?
-
-				@_stopListeningToEvents()
-				@_forwardUrlListener = events('repositories', 'forward url updated', @_id).setCallback(@_handleForwardUrlUpdated).subscribe()
-			
-			_stopListeningToEvents: () =>
-				@_forwardUrlListener.unsubscribe() if @_forwardUrlListener?
-				@_forwardUrlListener = null
-
 			setInformation: (repositoryInformation) =>
 				assert.ok @_id?
 				assert.ok repositoryInformation?
@@ -44,23 +25,27 @@ angular.module('koality.service.repository', []).
 
 			retrieveInformation: () =>
 				assert.ok @_id
-				rpc 'repositories', 'read', 'getMetadata', id: @_id, (error, repositoryInformation) =>
+
+				request = $http.get('/app/repositories/' + @_id)
+				request.success (data, status, headers, config) ->
 					@_information = repositoryInformation
+				request.error (data, status, headers, config) ->
+					console.error data
 
 			getInformation: () =>
 				return @_information
 
 		return new RepositoryManager()
 	]).
-	factory('currentChange', ['rpc', 'events', 'integerConverter', (rpc, events, integerConverter) ->
+	factory('currentBuild', ['$http', 'events', 'integerConverter', ($http, events, integerConverter) ->
 
-		class ChangeManager
+		class BuildManager
 			_repositoryId: null
 			_id: null
 			_information: null
 
-			_startedListener: null
-			_finishedListener: null
+			# _startedListener: null
+			# _finishedListener: null
 
 			clear: () =>
 				@_repositoryId = null
@@ -75,37 +60,37 @@ angular.module('koality.service.repository', []).
 			getId: () =>
 				return @_id
 
-			# We ONLY listen to these evets when retrieving information, not when it is set.
+			# We ONLY listen to these events when retrieving information, not when it is set.
 			# If the information is set, it is coming from a source that is managing the
 			# data and keeping it up to date.
-			_handleChangeStarted: (data) =>
-				return if data.id isnt @_id
-				$.extend true, @_information, data
+			# _handleChangeStarted: (data) =>
+			# 	return if data.id isnt @_id
+			# 	$.extend true, @_information, data
 
-			_handleChangeFinished: (data) =>
-				return if data.id isnt @_id
-				$.extend true, @_information, data
+			# _handleChangeFinished: (data) =>
+			# 	return if data.id isnt @_id
+			# 	$.extend true, @_information, data
 
-			_listenToEvents: () =>
-				assert.ok @_repositoryId?
-				assert.ok @_id?
+			# _listenToEvents: () =>
+			# 	assert.ok @_repositoryId?
+			# 	assert.ok @_id?
 
-				@_stopListeningToEvents()
-				@_startedListener = events('repositories', 'change started', @_repositoryId).setCallback(@_handleChangeStarted).subscribe()
-				@_finishedListener = events('repositories', 'change finished', @_repositoryId).setCallback(@_handleChangeFinished).subscribe()
+			# 	@_stopListeningToEvents()
+			# 	@_startedListener = events('repositories', 'change started', @_repositoryId).setCallback(@_handleChangeStarted).subscribe()
+			# 	@_finishedListener = events('repositories', 'change finished', @_repositoryId).setCallback(@_handleChangeFinished).subscribe()
 			
-			_stopListeningToEvents: () =>
-				@_startedListener.unsubscribe() if @_startedListener?
-				@_finishedListener.unsubscribe() if @_finishedListener?
+			# _stopListeningToEvents: () =>
+			# 	@_startedListener.unsubscribe() if @_startedListener?
+			# 	@_finishedListener.unsubscribe() if @_finishedListener?
 
-				@_startedListener = null
-				@_finishedListener = null
+			# 	@_startedListener = null
+			# 	@_finishedListener = null
 
 			setInformation: (changeInformation) =>
 				assert.ok @_repositoryId?
 				assert.ok @_id?
 				assert.ok changeInformation?
-				@_stopListeningToEvents()
+				# @_stopListeningToEvents()
 				@_information = changeInformation
 
 			retrieveInformation: () =>
@@ -117,14 +102,14 @@ angular.module('koality.service.repository', []).
 					id: @_id
 				rpc 'changes', 'read', 'getChange', requestData, (error, changeInformation) =>
 					@_information = changeInformation
-					@_listenToEvents()
+					# @_listenToEvents()
 
 			getInformation: () =>
 				return @_information
 
-		return new ChangeManager()
+		return new BuildManager()
 	]).
-	factory('currentStage', ['rpc', 'events', 'integerConverter', (rpc, events, integerConverter) ->
+	factory('currentStage', ['$http', 'events', 'integerConverter', ($http, events, integerConverter) ->
 
 		class StageManager
 			_repositoryId: null
@@ -136,8 +121,8 @@ angular.module('koality.service.repository', []).
 			_merge: false
 			_debug: false
 
-			_updatedListener: null
-			_outputTypesListener: null
+			# _updatedListener: null
+			# _outputTypesListener: null
 
 			clear: () =>
 				@_repositoryId = null
@@ -157,41 +142,41 @@ angular.module('koality.service.repository', []).
 			getId: () =>
 				return @_id
 
-			# We ONLY listen to these evets when retrieving information, not when it is set.
+			# We ONLY listen to these events when retrieving information, not when it is set.
 			# If the information is set, it is coming from a source that is managing the
 			# data and keeping it up to date.
-			_handleUpdated: (data) =>
-				return if data.id isnt @_id
-				$.extend true, @_information, data
+			# _handleUpdated: (data) =>
+			# 	return if data.id isnt @_id
+			# 	$.extend true, @_information, data
 
-			_handleOutputTypeAdded: (data) =>
-				return if data.id isnt @_id
+			# _handleOutputTypeAdded: (data) =>
+			# 	return if data.id isnt @_id
 
-				if not (data.outputType in @_information.outputTypes)
-					@_information.outputTypes.push data.outputType
+			# 	if not (data.outputType in @_information.outputTypes)
+			# 		@_information.outputTypes.push data.outputType
 
-			_listenToEvents: () =>
-				assert.ok @_repositoryId?
-				assert.ok @_changeId?
-				assert.ok @_id?
+			# _listenToEvents: () =>
+			# 	assert.ok @_repositoryId?
+			# 	assert.ok @_changeId?
+			# 	assert.ok @_id?
 
-				@_stopListeningToEvents()
-				@_updatedListener = events('changes', 'return code added', @_changeId).setCallback(@_handleUpdated).subscribe()
-				@_outputTypesListener = events('changes', 'output type added', @_changeId).setCallback(@_handleOutputTypeAdded).subscribe()
+			# 	@_stopListeningToEvents()
+			# 	@_updatedListener = events('changes', 'return code added', @_changeId).setCallback(@_handleUpdated).subscribe()
+			# 	@_outputTypesListener = events('changes', 'output type added', @_changeId).setCallback(@_handleOutputTypeAdded).subscribe()
 			
-			_stopListeningToEvents: () =>
-				@_updatedListener.unsubscribe() if @_updatedListener?
-				@_outputTypesListener.unsubscribe() if @_outputTypesListener?
+			# _stopListeningToEvents: () =>
+			# 	@_updatedListener.unsubscribe() if @_updatedListener?
+			# 	@_outputTypesListener.unsubscribe() if @_outputTypesListener?
 
-				@_updatedListener = null
-				@_outputTypesListener = null
+			# 	@_updatedListener = null
+			# 	@_outputTypesListener = null
 
 			setInformation: (stageInformation) =>
 				assert.ok @_repositoryId?
 				assert.ok @_changeId?
 				assert.ok @_id?
 				assert.ok stageInformation?
-				@_stopListeningToEvents()
+				# @_stopListeningToEvents()
 				@_information = stageInformation
 
 			retrieveInformation: () =>
@@ -204,7 +189,7 @@ angular.module('koality.service.repository', []).
 					id: @_id
 				rpc 'buildConsoles', 'read', 'getBuildConsole', requestData, (error, stageInformation) =>
 					@_information = stageInformation
-					@_listenToEvents()
+					# @_listenToEvents()
 
 			getInformation: () =>
 				return @_information
