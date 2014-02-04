@@ -18,61 +18,57 @@
 			</div>
 		</panel-header>
 		<panel-body>
-			<div fading-content on-scroll-to-bottom="changesManager.retrieveMoreChanges()">
+			<div fading-content on-scroll-to-bottom="buildsManager.retrieveMoreBuilds()">
 				<table class="delineated">
 					<tr>
 						<th class="statusColumn">Status</th>
 						<th class="repositoryColumn">Repository</th>
 						<th class="branchColumn">Branch</th>
-						<th class="changeColumn">Change</th>
+						<th class="shaColumn">Sha</th>
 						<th class="commitMessageColumn">Commit Message</th>
 						<th class="userColumn">User</th>
 						<th class="timeColumn">Submit Time</th>
 					</tr>
 
-					<tr ng-repeat="change in changesManager.getChanges() | orderBy:'createTime':true">
-						<td class="statusColumn gray" ng-class="{green: change.aggregateStatus == 'passed', orange: change.aggregateStatus == 'skipped', red: change.aggregateStatus == 'failed'}">
-							{{change.aggregateStatus}}
+					<tr ng-repeat="build in buildsManager.getBuilds() | orderBy:'created':true">
+						<td class="statusColumn gray" ng-class="{green: build.status == 'passed', orange: build.status == 'skipped', red: build.status == 'failed'}">
+							{{build.status}}
 						</td>
 
 						<td class="repositoryColumn">
-							{{change.repository.name}}
+							{{build.repository.name}}
 						</td>
 
 						<td class="branchColumn">
-							{{change.target}}
+							{{build.changeset.ref}}
 						</td>
 
-						<td class="changeColumn">
-							<a ng-href="/repository/{{change.repository.id}}?change={{change.id}}">
-								{{change.headCommit.sha | limitTo:12}}
+						<td class="shaColumn">
+							<a ng-href="/repository/{{build.repositoryId}}?build={{build.id}}">
+								{{build.changeset.headSha | limitTo:12}}
 							</a>
 						</td>
 
 						<td class="commitMessageColumn">
-							{{change.headCommit.message | onlyFirstLine}}
+							{{build.changeset.headMessage | onlyFirstLine}}
 						</td>
 
 						<td class="userColumn">
-							<a ng-href="mailto:{{change.user.email}}?subject=Koality%3A%20{{change.repository.name}}%20-%20change%20%23{{change.headCommit.sha | limitTo:4}}" target="_blank" ng-show="change.user.id >= 1000">
-								{{change.user.name.first}} {{change.user.name.last}}
-							</a>
-
-							<a ng-href="mailto:{{change.headCommit.user.email}}?subject=Koality%3A%20{{change.repository.name}}%20-%20change%20%23{{change.headCommit.sha | limitTo:4}}" target="_blank" ng-show="change.user.id < 1000">
-								{{change.headCommit.user.name}}
+							<a ng-href="mailto:{{build.changeset.headEmail}}?subject=Koality%3A%20{{build.repository.name}}%20-%20build%20%23{{build.changeset.headSha | limitTo:4}}" target="_blank">
+								{{build.changeset.headUsername}}
 							</a>
 						</td>
 
 						<td class="timeColumn">
-							{{change.createTime | date:'MM/dd hh:mm:ss a'}}
+							{{build.created | date:'MM/dd hh:mm:ss a'}}
 						</td>
 					</tr>
 
-					<tr ng-if="changesManager.isRetrievingChanges()">
+					<tr ng-if="buildsManager.isRetrievingBuilds()">
 						<td class="retrievingMoreColumn" colspan="6">
 							<div class="retrievingMoreMessage">
-								<spinner id="retrievingMoreSpinner" running="changesManager.isRetrievingChanges()"></spinner>
-								<span>Retrieving more changes...</span>
+								<spinner id="retrievingMoreSpinner" running="buildsManager.isRetrievingBuilds()"></spinner>
+								<span>Retrieving more builds...</span>
 							</div>
 						</td>
 					</tr>

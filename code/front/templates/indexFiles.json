@@ -64,7 +64,6 @@
 		"/js/libs/jquery.js",
 		"/js/libs/angular.js",
 		"/js/libs/angularSanitize.js",
-		"/js/libs/socket.io.js",
 		"/js/libs/d3.js",
 		"/js/libs/spinner.js",
 
@@ -78,7 +77,8 @@
 
 		"/js/src/services.js",
 		"/js/src/services/state.js",
-		"/js/src/services/changes.js",
+		"/js/src/services/rpc.js",
+		"/js/src/services/managers.js",
 
 		"/js/src/directives.js",
 		"/js/src/directives/panel.js",
@@ -87,44 +87,9 @@
 		"/js/src/d3Directives.js",
 		
 		"/js/src/filters.js",
-
 		"/js/src/setup.js",
-
 		"/js/src/main.js",
-
 		"/js/src/header/header.js",
-
-		"/js/src/login/login.js",
-
-		"/js/src/createAccount/createAccount.js",
-
-		"/js/src/resetPassword/resetPassword.js",
-
-		"/js/src/dashboard/dashboard.js",
-
-		"/js/src/analytics/analytics.js",
-
-		"/js/src/account/account.js",
-		"/js/src/account/basic/accountBasic.js",
-		"/js/src/account/password/accountPassword.js",
-		"/js/src/account/sshKeys/accountSshKeys.js",
-
-		"/js/src/repository/repository.js",
-		"/js/src/repository/repositoryChanges/repositoryChanges.js",
-		"/js/src/repository/repositoryStages/repositoryStages.js",
-		"/js/src/repository/repositoryStageDetails/repositoryStageDetails.js",
-
-		"/js/src/admin/admin.js",
-		"/js/src/admin/users/adminUsers.js",
-		"/js/src/admin/repositories/adminRepositories.js",
-		"/js/src/admin/aws/adminAws.js",
-		"/js/src/admin/hpCloud/adminHpCloud.js",
-		"/js/src/admin/exporter/adminExporter.js",
-		"/js/src/admin/website/adminWebsite.js",
-		"/js/src/admin/notifications/adminNotifications.js",
-		"/js/src/admin/gitHubEnterprise/adminGitHubEnterprise.js",
-		"/js/src/admin/api/adminApi.js",
-		"/js/src/admin/plan/adminPlan.js",
-		"/js/src/admin/upgrade/adminUpgrade.js"
+		"/js/src/dashboard/dashboard.js"
 	]
 }
