@@ -67,3 +67,15 @@
 [submodule "chef/cookbooks/npm"]
 	path = chef/cookbooks/npm
 	url = git@github.com:balbeko/chef-npm.git
+[submodule "code/back/src/github.com/google/go-github"]
+	path = code/back/src/github.com/google/go-github
+	url = git@github.com:google/go-github.git
+[submodule "code/back/src/github.com/LessThanThreeLabs/go.crypto"]
+	path = code/back/src/github.com/LessThanThreeLabs/go.crypto
+	url = git@github.com:LessThanThreeLabs/go.crypto
+[submodule "code/back/src/github.com/LessThanThreeLabs/goauth2"]
+	path = code/back/src/github.com/LessThanThreeLabs/goauth2
+	url = git@github.com:LessThanThreeLabs/goauth2
+[submodule "code/back/src/github.com/google/go-querystring"]
+	path = code/back/src/github.com/google/go-querystring
+	url = git@github.com:google/go-querystring

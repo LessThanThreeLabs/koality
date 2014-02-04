@@ -2,9 +2,9 @@ package stagerunner
 
 import (
 	"bytes"
-	"code.google.com/p/go.crypto/ssh"
 	"encoding/json"
 	"fmt"
+	"github.com/LessThanThreeLabs/go.crypto/ssh"
 	"github.com/dchest/goyaml"
 	"io"
 	"koality/resources"

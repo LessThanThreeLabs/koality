@@ -2,13 +2,13 @@ package vm
 
 import (
 	"bytes"
-	"code.google.com/p/go.crypto/ssh"
-	"code.google.com/p/go.crypto/ssh/terminal"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"github.com/LessThanThreeLabs/go.crypto/ssh"
+	"github.com/LessThanThreeLabs/go.crypto/ssh/terminal"
 	"io"
 	"koality/shell"
 	"os"
