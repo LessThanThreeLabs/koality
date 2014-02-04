@@ -28,11 +28,6 @@ type StoredRepository interface {
 	deleteRepository() error
 }
 
-const (
-	defaultTimeout   = 120
-	defaultSshScript = ""
-)
-
 func checkRepositoryExists(path string) (err error) {
 	if _, err = os.Stat(path); os.IsNotExist(err) {
 		return NoSuchRepositoryInStoreError{fmt.Sprintf("There is no repository at %s in the repository store.", path)}

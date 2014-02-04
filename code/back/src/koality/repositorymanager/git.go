@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"koality/resources"
 	"koality/shell"
+	"koality/util/pathtranslator"
 	"os"
 	"strings"
 	"time"
@@ -57,10 +58,14 @@ func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args .
 		return
 	}
 
+	sshWrapperPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
+	if err != nil {
+		return
+	}
+
 	env := []string{
-		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("SSH_PRIVATE_KEY=%s", keyPair.PrivateKey),
-		fmt.Sprintf("SSH_TIMEOUT=%s", defaultTimeout),
+		fmt.Sprintf("GIT_SSH=%s", sshWrapperPath),
+		fmt.Sprintf("PRIVATE_KEY=%s", keyPair.PrivateKey),
 	}
 
 	if err := RunCommand(Command(repository, env, "remote", "prune", remoteUri)); err != nil {
@@ -80,10 +85,14 @@ func (repository *gitSubRepository) pushWithPrivateKey(remoteUri string, args ..
 		return
 	}
 
+	sshWrapperPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
+	if err != nil {
+		return
+	}
+
 	env := []string{
-		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("SSH_PRIVATE_KEY=%s", keyPair.PrivateKey),
-		fmt.Sprintf("SSH_TIMEOUT=%s", defaultTimeout),
+		fmt.Sprintf("GIT_SSH=%s", sshWrapperPath),
+		fmt.Sprintf("PRIVATE_KEY=%s", keyPair.PrivateKey),
 	}
 
 	if err := RunCommand(Command(repository, env, "push", append([]string{remoteUri}, args...)...)); err != nil {

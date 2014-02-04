@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"koality/resources"
 	"koality/shell"
+	"koality/util/pathtranslator"
 	"os"
 	"strings"
 )
@@ -44,8 +45,13 @@ func (repository *hgRepository) fetchWithPrivateKey(args ...string) (err error) 
 		return
 	}
 
-	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", shell.Quote(fmt.Sprintf("SSH_PRIVATE_KEY=%s %s -o ConnectTimeout=%s", keyPair.PrivateKey, defaultSshScript, defaultTimeout)), repository.remoteUri}, args...)...)); err != nil {
-		return err
+	sshWrapperPath, err := pathtranslator.TranslatePathAndCheckExists(pathtranslator.BinaryPath("sshwrapper"))
+	if err != nil {
+		return
+	}
+
+	if err = RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", shell.Quote(fmt.Sprintf("PRIVATE_KEY=%s %s -o", keyPair.PrivateKey, sshWrapperPath)), repository.remoteUri}, args...)...)); err != nil {
+		return
 	}
 
 	return
