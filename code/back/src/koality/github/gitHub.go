@@ -60,7 +60,7 @@ func (client *GitHubClient) GetSshKeys(user resources.User) ([]string, error) {
 		return nil, err
 	}
 
-	sshKeys := make([]string, 0, len(keys))
+	sshKeys := make([]string, len(keys))
 	for index, key := range keys {
 		sshKeys[index] = *key.Key
 	}
