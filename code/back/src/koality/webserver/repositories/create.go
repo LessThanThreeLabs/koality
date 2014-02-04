@@ -49,7 +49,7 @@ func (repositoriesHandler *RepositoriesHandler) createWithGitHub(writer http.Res
 	if err != nil {
 		fmt.Fprint(writer, err)
 		return
-	} else if user.GitHubOauth == "" && false {
+	} else if user.GitHubOAuth == "" && false {
 		writer.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(writer, "Forbidden request, must be connected to GitHub")
 		return
@@ -60,7 +60,7 @@ func (repositoriesHandler *RepositoriesHandler) createWithGitHub(writer http.Res
 
 	remoteUri := fmt.Sprintf("git@github.com:%s/%s.git", owner, name)
 
-	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.CreateWithGitHub(name, remoteUri, owner, name)
+	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.CreateWithGitHub(name, remoteUri, owner, name, user.GitHubOAuth)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

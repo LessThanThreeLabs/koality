@@ -219,7 +219,8 @@ func TestCreateGitHubRepository(test *testing.T) {
 	remoteUri := "git@remote_uri:name"
 	gitHubOwner := "jordanpotter"
 	gitHubName := "repository-github-name"
-	repository, err := connection.Repositories.Create.CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName)
+	oAuthToken := "ABC123"
+	repository, err := connection.Repositories.Create.CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName, oAuthToken)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -234,6 +235,8 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Owner mismatch")
 	} else if repository.GitHub.Name != gitHubName {
 		test.Fatal("repository.GitHub.Name mismatch")
+	} else if repository.GitHub.OAuthToken != oAuthToken {
+		test.Fatal("repository.GitHub.OAuthToken mismatch")
 	}
 
 	select {
@@ -254,6 +257,8 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("Bad repository.GitHub.Owner in repository creation event")
 	} else if createdEventRepository.GitHub.Name != repository.GitHub.Name {
 		test.Fatal("Bad repository.GitHub.Name in repository creation event")
+	} else if createdEventRepository.GitHub.OAuthToken != repository.GitHub.OAuthToken {
+		test.Fatal("Bad repository.GitHub.OAuthToken in repository creation event")
 	}
 
 	repository2, err := connection.Repositories.Read.Get(repository.Id)
@@ -273,6 +278,8 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Owner mismatch")
 	} else if repository.GitHub.Name != repository2.GitHub.Name {
 		test.Fatal("repository.GitHub.Name mismatch")
+	} else if repository.GitHub.OAuthToken != repository2.GitHub.OAuthToken {
+		test.Fatal("repository.GitHub.OAuthToken mismatch")
 	}
 
 	repository3, err := connection.Repositories.Read.GetByGitHubInfo(repository.GitHub.Owner, repository.GitHub.Name)
@@ -292,9 +299,11 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Owner mismatch")
 	} else if repository.GitHub.Name != repository3.GitHub.Name {
 		test.Fatal("repository.GitHub.Name mismatch")
+	} else if repository.GitHub.OAuthToken != repository3.GitHub.OAuthToken {
+		test.Fatal("repository.GitHub.OAuthToken mismatch")
 	}
 
-	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
+	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name, "A different OAuth token")
 	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")
 	}
@@ -398,6 +407,142 @@ func TestRepositoryStatus(test *testing.T) {
 	}
 }
 
+func TestGitHubOAuthTokens(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	oAuthUpdatedEventReceived := make(chan bool, 1)
+	var oAuthEventRepositoryId uint64
+	var oAuthEventToken string
+	repositoryGitHubOAuthTokenUpdatedHandler := func(repositoryId uint64, oAuthToken string) {
+		oAuthEventRepositoryId = repositoryId
+		oAuthEventToken = oAuthToken
+		oAuthUpdatedEventReceived <- true
+	}
+	_, err = connection.Repositories.Subscription.SubscribeToGitHubOAuthTokenUpdatedEvents(repositoryGitHubOAuthTokenUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	oAuthClearedEventReceived := make(chan bool, 1)
+	var oAuthClearedRepositoryId uint64
+	repositoryGitHubOAuthTokenClearedHandler := func(repositoryId uint64) {
+		oAuthClearedRepositoryId = repositoryId
+		oAuthClearedEventReceived <- true
+	}
+	_, err = connection.Repositories.Subscription.SubscribeToGitHubOAuthTokenClearedEvents(repositoryGitHubOAuthTokenClearedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	name := "repository-name"
+	vcsType := "git"
+	remoteUri := "git@remote_uri:name"
+	gitHubOwner := "jordanpotter"
+	gitHubName := "repository-github-name"
+	oAuthToken := "ABC123"
+	repository, err := connection.Repositories.Create.CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName, oAuthToken)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if repository.Name != name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != vcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.RemoteUri != remoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub.Owner != gitHubOwner {
+		test.Fatal("repository.GitHub.Owner mismatch")
+	} else if repository.GitHub.Name != gitHubName {
+		test.Fatal("repository.GitHub.Name mismatch")
+	} else if repository.GitHub.OAuthToken != oAuthToken {
+		test.Fatal("repository.GitHub.OAuthToken mismatch")
+	}
+
+	newOAuthToken := "A new OAuth Token"
+	err = connection.Repositories.Update.SetGitHubOAuthToken(repository.Id, newOAuthToken)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-oAuthUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear oAuthToken updated event")
+	}
+
+	if oAuthEventRepositoryId != repository.Id {
+		test.Fatal("Bad repositoryId in oAuthToken updated event")
+	} else if oAuthEventToken != newOAuthToken {
+		test.Fatal("Bad oAuthToken in oAuthToken updated event")
+	}
+
+	repository2, err := connection.Repositories.Read.Get(repository.Id)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if repository.Id != repository2.Id {
+		test.Fatal("repository.Id mismatch")
+	} else if repository.Name != repository2.Name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != repository2.VcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.RemoteUri != repository2.RemoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub.Owner != repository2.GitHub.Owner {
+		test.Fatal("repository.GitHub.Owner mismatch")
+	} else if repository.GitHub.Name != repository2.GitHub.Name {
+		test.Fatal("repository.GitHub.Name mismatch")
+	} else if repository2.GitHub.OAuthToken != newOAuthToken {
+		test.Fatal("repository.GitHub.OAuthToken was not updated")
+	}
+
+	err = connection.Repositories.Update.ClearGitHubOAuthToken(repository.Id)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-oAuthClearedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear oAuthToken cleared event")
+	}
+
+	if oAuthClearedRepositoryId != repository.Id {
+		test.Fatal("Bad repositoryId in oAuthToken cleared event")
+	}
+
+	repository3, err := connection.Repositories.Read.Get(repository.Id)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if repository.Id != repository3.Id {
+		test.Fatal("repository.Id mismatch")
+	} else if repository.Name != repository3.Name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != repository3.VcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.RemoteUri != repository3.RemoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub.Owner != repository3.GitHub.Owner {
+		test.Fatal("repository.GitHub.Owner mismatch")
+	} else if repository.GitHub.Name != repository3.GitHub.Name {
+		test.Fatal("repository.GitHub.Name mismatch")
+	} else if repository3.GitHub.OAuthToken != "" {
+		test.Fatal("repository.GitHub.OAuthToken was not cleared")
+	}
+}
+
 func TestRepositoryHook(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
@@ -410,10 +555,10 @@ func TestRepositoryHook(test *testing.T) {
 	defer connection.Close()
 
 	repositoryEventReceived := make(chan bool, 1)
-	repositoryEventId := uint64(0)
-	repositoryEventHookId := int64(0)
-	repositoryEventHookSecret := ""
-	repositoryEventHookTypes := []string{}
+	var repositoryEventId uint64
+	var repositoryEventHookId int64
+	var repositoryEventHookSecret string
+	var repositoryEventHookTypes []string
 	repositoryGitHubHookUpdatedHandler := func(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) {
 		repositoryEventId = repositoryId
 		repositoryEventHookId = hookId
@@ -426,7 +571,18 @@ func TestRepositoryHook(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name")
+	repositoryHookClearedEventReceived := make(chan bool, 1)
+	var repositoryHookClearedId uint64
+	repositoryGitHubHookClearedHandler := func(repositoryId uint64) {
+		repositoryHookClearedId = repositoryId
+		repositoryHookClearedEventReceived <- true
+	}
+	_, err = connection.Repositories.Subscription.SubscribeToGitHubHookClearedEvents(repositoryGitHubHookClearedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	repository, err := connection.Repositories.Create.CreateWithGitHub("repository-name", "git@remote.uri.com:name.git", "jordanpotter", "repository-github-name", "oAuthToken")
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -481,30 +637,24 @@ func TestRepositoryHook(test *testing.T) {
 	}
 
 	select {
-	case <-repositoryEventReceived:
+	case <-repositoryHookClearedEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear repository hook event")
+		test.Fatal("Failed to hear repository hook cleared event")
 	}
 
-	if repositoryEventId != repository.Id {
-		test.Fatal("Bad repositoryId in hook updated event")
-	} else if repositoryEventHookId != 0 {
-		test.Fatal("Bad repository hook id in hook updated event")
-	} else if repositoryEventHookSecret != "" {
-		test.Fatal("Bad repository hook secret in hook updated event")
-	} else if len(repositoryEventHookTypes) != 0 {
-		test.Fatal("Bad repository hook types in hook updated event")
+	if repositoryHookClearedId != repository.Id {
+		test.Fatal("Bad repositoryId in hook cleared event")
 	}
 
-	repository2, err = connection.Repositories.Read.Get(repository2.Id)
+	repository3, err := connection.Repositories.Read.Get(repository.Id)
 	if err != nil {
 		test.Fatal(err)
-	} else if repository2.GitHub.HookId != 0 {
-		test.Fatal("Hook id not updated")
-	} else if repository2.GitHub.HookSecret != "" {
-		test.Fatal("Hook secret not updated")
-	} else if len(repository2.GitHub.HookTypes) != 0 {
-		test.Fatal("Hook types not updated")
+	} else if repository3.GitHub.HookId != 0 {
+		test.Fatal("Hook id not cleared")
+	} else if repository3.GitHub.HookSecret != "" {
+		test.Fatal("Hook secret not cleared")
+	} else if len(repository3.GitHub.HookTypes) != 0 {
+		test.Fatal("Hook types not cleared")
 	}
 
 	err = connection.Repositories.Update.SetGitHubHook(0, hookId, hookSecret, hookTypes)

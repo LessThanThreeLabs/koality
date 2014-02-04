@@ -11,7 +11,7 @@ type User struct {
 	LastName     string
 	PasswordHash []byte
 	PasswordSalt []byte
-	GitHubOauth  string
+	GitHubOAuth  string
 	IsAdmin      bool
 	Created      *time.Time
 	IsDeleted    bool
@@ -47,7 +47,7 @@ type UsersReadHandler interface {
 type UsersUpdateHandler interface {
 	SetName(userId uint64, firstName, lastName string) error
 	SetPassword(userId uint64, passwordHash, passwordSalt []byte) error
-	SetGitHubOauth(userId uint64, gitHubOauth string) error
+	SetGitHubOAuth(userId uint64, gitHubOAuth string) error
 	SetAdmin(userId uint64, admin bool) error
 	AddKey(userId uint64, name, publicKey string) (uint64, error)
 	RemoveKey(userId, keyId uint64) error
