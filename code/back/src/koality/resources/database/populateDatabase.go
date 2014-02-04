@@ -179,7 +179,6 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 	}
 
 	errorChannel := make(chan error, numVerifications)
-
 	for index := 0; index < numVerifications; index++ {
 		go func(index int) {
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
@@ -202,7 +201,7 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 		}(index)
 	}
 
-	for index := 0; index < numVerificationsPerRepository; index++ {
+	for index := 0; index < numVerifications; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err

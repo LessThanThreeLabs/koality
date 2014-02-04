@@ -89,8 +89,8 @@ func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Route
 	subrouter.HandleFunc("/dashboard", templatesHandler.getRoot).Methods("GET")
 	subrouter.HandleFunc("/dashboard.html", templatesHandler.getRoot).Methods("GET")
 
-	subrouter.HandleFunc("/repository/{reposiotryId:[0-9]+}", templatesHandler.getRoot).Methods("GET")
-	subrouter.HandleFunc("/repository/{reposiotryId:[0-9]+}.html", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/repository/{repositoryId:[0-9]+}", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/repository/{repositoryId:[0-9]+}.html", templatesHandler.getRoot).Methods("GET")
 }
 
 func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {
