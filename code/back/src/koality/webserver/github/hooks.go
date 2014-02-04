@@ -11,7 +11,7 @@ import (
 )
 
 func (gitHubHandler *GitHubHandler) verifyChange(writer http.ResponseWriter, request *http.Request) {
-	payload := []byte(request.FormValue("payload"))
+	payload := []byte(request.PostFormValue("payload"))
 
 	var pullRequestPayload PullRequestHookPayload
 	var pushPayload PushHookPayload
@@ -56,7 +56,7 @@ func (gitHubHandler *GitHubHandler) triggerVerification(repositoryOwner, reposit
 		return
 	}
 
-	if ok := gitHubHandler.checkSignature([]byte(request.FormValue("payload")), repository.GitHub.HookSecret, request.Header.Get("x-hub-signature")); !ok {
+	if ok := gitHubHandler.checkSignature([]byte(request.PostFormValue("payload")), repository.GitHub.HookSecret, request.Header.Get("x-hub-signature")); !ok {
 		writer.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(writer, "Hook secret does not match")
 		return

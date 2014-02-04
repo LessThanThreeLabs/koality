@@ -37,3 +37,9 @@ func (deleteHandler *DeleteHandler) ClearS3ExporterSettings() error {
 	deleteHandler.subscriptionHandler.FireS3ExporterSettingsClearedEvent()
 	return err
 }
+
+func (deleteHandler *DeleteHandler) ClearGitHubEnterpriseSettings() error {
+	err := deleteHandler.removeSetting(gitHubEnterpriseSettingsLocator)
+	deleteHandler.subscriptionHandler.FireGitHubEnterpriseSettingsClearedEvent()
+	return err
+}

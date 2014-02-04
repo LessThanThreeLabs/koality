@@ -45,6 +45,12 @@ type SmtpLoginAuthSettings struct {
 	Password string `json:"password"`
 }
 
+type GitHubEnterpriseSettings struct {
+	Url               string `json:"url"`
+	OAuthClientId     string `json:"oauthClientId"`
+	OAuthClientSecret string `json:"oauthClientSecret"`
+}
+
 type ApiKey struct {
 	Key string `json:"key"`
 }
@@ -61,6 +67,7 @@ type SettingsReadHandler interface {
 	GetS3ExporterSettings() (*S3ExporterSettings, error)
 	GetCookieStoreKeys() (*CookieStoreKeys, error)
 	GetSmtpServerSettings() (*SmtpServerSettings, error)
+	GetGitHubEnterpriseSettings() (*GitHubEnterpriseSettings, error)
 	GetApiKey() (*ApiKey, error)
 }
 
@@ -71,11 +78,13 @@ type SettingsUpdateHandler interface {
 	SetSmtpAuthPlain(hostname string, port uint16, identity, username, password, host string) (*SmtpServerSettings, error)
 	SetSmtpAuthCramMd5(hostname string, port uint16, username, secret string) (*SmtpServerSettings, error)
 	SetSmtpAuthLogin(hostname string, port uint16, username, password string) (*SmtpServerSettings, error)
+	SetGitHubEnterpriseSettings(url, oauthClientId, oauthClientSecret string) (*GitHubEnterpriseSettings, error)
 	ResetApiKey() (*ApiKey, error)
 }
 
 type SettingsDeleteHandler interface {
 	ClearS3ExporterSettings() error
+	ClearGitHubEnterpriseSettings() error
 }
 
 type RepositoryKeyPairUpdatedHandler func(keyPair *RepositoryKeyPair)
@@ -83,6 +92,8 @@ type S3ExporterSettingsUpdatedHandler func(s3Settings *S3ExporterSettings)
 type S3ExporterSettingsClearedHandler func()
 type CookieStoreKeysUpdatedHandler func(keys *CookieStoreKeys)
 type SmtpServerSettingsUpdatedHandler func(auth *SmtpServerSettings)
+type GitHubEnterpriseSettingsUpdatedHandler func(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
+type GitHubEnterpriseSettingsClearedHandler func()
 type ApiKeyUpdatedHandler func(key *ApiKey)
 
 type SettingsSubscriptionHandler interface {
@@ -96,6 +107,8 @@ type SettingsSubscriptionHandler interface {
 	UnsubscribeFromCookieStoreKeysUpdatedEvents(subscriptionId SubscriptionId) error
 	SubscribeToSmtpServerSettingsUpdatedEvents(updateHandler SmtpServerSettingsUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromSmtpServerSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+	SubscribeToGitHubEnterpriseSettingsUpdatedEvents(updateHandler GitHubEnterpriseSettingsUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromGitHubEnterpriseSettingsUpdatedEvents(subscriptionId SubscriptionId) error
 	SubscribeToApiKeyUpdatedEvents(updateHandler ApiKeyUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromApiKeyUpdatedEvents(subscriptionId SubscriptionId) error
 }
@@ -106,6 +119,8 @@ type InternalSettingsSubscriptionHandler interface {
 	FireS3ExporterSettingsClearedEvent()
 	FireCookieStoreKeysUpdatedEvent(keys *CookieStoreKeys)
 	FireSmtpServerSettingsUpdatedEvent(auth *SmtpServerSettings)
+	FireGitHubEnterpriseSettingsUpdatedEvent(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
+	FireGitHubEnterpriseSettingsClearedEvent()
 	FireApiKeyUpdatedEvent(key *ApiKey)
 	SettingsSubscriptionHandler
 }

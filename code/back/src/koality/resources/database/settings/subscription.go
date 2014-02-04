@@ -5,12 +5,14 @@ import (
 )
 
 type SubscriptionHandler struct {
-	repositoryKeyPairUpdatedSubscriptionManager  resources.SubscriptionManager
-	s3ExporterSettingsUpdatedSubscriptionManager resources.SubscriptionManager
-	s3ExporterSettingsClearedSubscriptionManager resources.SubscriptionManager
-	cookieStoreKeysUpdatedSubscriptionManager    resources.SubscriptionManager
-	smtpServerSettingsUpdatedSubscriptionManager resources.SubscriptionManager
-	apiKeyUpdatedSubscriptionManager             resources.SubscriptionManager
+	repositoryKeyPairUpdatedSubscriptionManager        resources.SubscriptionManager
+	s3ExporterSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
+	s3ExporterSettingsClearedSubscriptionManager       resources.SubscriptionManager
+	cookieStoreKeysUpdatedSubscriptionManager          resources.SubscriptionManager
+	smtpServerSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
+	gitHubEnterpriseSettingsUpdatedSubscriptionManager resources.SubscriptionManager
+	gitHubEnterpriseSettingsClearedSubscriptionManager resources.SubscriptionManager
+	apiKeyUpdatedSubscriptionManager                   resources.SubscriptionManager
 }
 
 func NewInternalSubscriptionHandler() (resources.InternalSettingsSubscriptionHandler, error) {
@@ -75,6 +77,29 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromSmtpServerSetting
 
 func (subscriptionHandler *SubscriptionHandler) FireSmtpServerSettingsUpdatedEvent(auth *resources.SmtpServerSettings) {
 	subscriptionHandler.smtpServerSettingsUpdatedSubscriptionManager.Fire(auth)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToGitHubEnterpriseSettingsUpdatedEvents(updateHandler resources.GitHubEnterpriseSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.gitHubEnterpriseSettingsUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubEnterpriseSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.gitHubEnterpriseSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireGitHubEnterpriseSettingsUpdatedEvent(gitHubEnterpriseSettings *resources.GitHubEnterpriseSettings) {
+	subscriptionHandler.gitHubEnterpriseSettingsUpdatedSubscriptionManager.Fire(gitHubEnterpriseSettings)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToGitHubEnterpriseSettingsClearedEvents(updateHandler resources.GitHubEnterpriseSettingsClearedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.gitHubEnterpriseSettingsClearedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubEnterpriseSettingsClearedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.gitHubEnterpriseSettingsClearedSubscriptionManager.Remove(subscriptionId)
+}
+func (subscriptionHandler *SubscriptionHandler) FireGitHubEnterpriseSettingsClearedEvent() {
+	subscriptionHandler.gitHubEnterpriseSettingsClearedSubscriptionManager.Fire()
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToApiKeyUpdatedEvents(updateHandler resources.ApiKeyUpdatedHandler) (resources.SubscriptionId, error) {

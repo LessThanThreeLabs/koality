@@ -6,11 +6,6 @@ import (
 	"koality/resources"
 )
 
-type GitHubHandler struct {
-	resourcesConnection *resources.Connection
-	repositoryManager   repositorymanager.RepositoryManager
-}
-
 type PullRequestHookPayload struct {
 	Action      string      `json:"action"`
 	Number      int         `json:"number"`
@@ -53,6 +48,11 @@ type PushRepository struct {
 
 type PushUser struct {
 	Name string `json:"name"`
+}
+
+type GitHubHandler struct {
+	resourcesConnection *resources.Connection
+	repositoryManager   repositorymanager.RepositoryManager
 }
 
 func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*GitHubHandler, error) {

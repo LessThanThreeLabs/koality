@@ -15,11 +15,12 @@ type SettingLocator struct {
 }
 
 var (
-	repositoryKeyPairLocator  SettingLocator = SettingLocator{"Repository", "KeyPair"}
-	s3ExporterSettingsLocator SettingLocator = SettingLocator{"Exporter", "S3Settings"}
-	cookieStoreKeysLocator    SettingLocator = SettingLocator{"CookieStore", "Keys"}
-	smtpServerSettingsLocator SettingLocator = SettingLocator{"Smtp", "ServerSettings"}
-	apiKeyLocator             SettingLocator = SettingLocator{"Api", "Key"}
+	repositoryKeyPairLocator        SettingLocator = SettingLocator{"Repository", "KeyPair"}
+	s3ExporterSettingsLocator       SettingLocator = SettingLocator{"Exporter", "S3Settings"}
+	cookieStoreKeysLocator          SettingLocator = SettingLocator{"CookieStore", "Keys"}
+	smtpServerSettingsLocator       SettingLocator = SettingLocator{"Smtp", "ServerSettings"}
+	gitHubEnterpriseSettingsLocator SettingLocator = SettingLocator{"GitHub", "EnterpriseSettings"}
+	apiKeyLocator                   SettingLocator = SettingLocator{"Api", "Key"}
 )
 
 func New(database *sql.DB) (*resources.SettingsHandler, error) {

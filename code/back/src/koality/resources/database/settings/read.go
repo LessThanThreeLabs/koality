@@ -70,6 +70,14 @@ func (readHandler *ReadHandler) GetSmtpServerSettings() (*resources.SmtpServerSe
 	return smtpServer, nil
 }
 
+func (readHandler *ReadHandler) GetGitHubEnterpriseSettings() (*resources.GitHubEnterpriseSettings, error) {
+	gitHubEnterpriseSettings := new(resources.GitHubEnterpriseSettings)
+	if err := readHandler.getSetting(gitHubEnterpriseSettingsLocator, gitHubEnterpriseSettings); err != nil {
+		return nil, err
+	}
+	return gitHubEnterpriseSettings, nil
+}
+
 func (readHandler *ReadHandler) GetApiKey() (*resources.ApiKey, error) {
 	apiKey := new(resources.ApiKey)
 	if err := readHandler.getSetting(apiKeyLocator, apiKey); err != nil {
