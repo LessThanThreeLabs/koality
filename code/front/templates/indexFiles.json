@@ -7,7 +7,7 @@
 		"/css/src/setup.css",
 
 		"/css/src/elements/panel.css",
-		"/css/src/elements/changesMenu.css",
+		"/css/src/elements/buildsMenu.css",
 		"/css/src/elements/consoleText.css",
 		"/css/src/elements/notification.css",
 		"/css/src/elements/dropdown.css",
@@ -41,7 +41,7 @@
 		"/css/src/account/sshKeys/accountSshKeys.css",
 
 		"/css/src/repository/repository.css",
-		"/css/src/repository/repositoryChanges/repositoryChanges.css",
+		"/css/src/repository/repositoryBuilds/repositoryBuilds.css",
 		"/css/src/repository/repositoryStages/repositoryStages.css",
 		"/css/src/repository/repositoryStageDetails/repositoryStageDetails.css",
 
@@ -82,7 +82,7 @@
 
 		"/js/src/directives.js",
 		"/js/src/directives/panel.js",
-		"/js/src/directives/changesMenu.js",
+		"/js/src/directives/buildsMenu.js",
 		"/js/src/directives/dropdown.js",
 		"/js/src/d3Directives.js",
 		
@@ -90,6 +90,11 @@
 		"/js/src/setup.js",
 		"/js/src/main.js",
 		"/js/src/header/header.js",
-		"/js/src/dashboard/dashboard.js"
+		"/js/src/dashboard/dashboard.js",
+
+		"/js/src/repository/repository.js",
+		"/js/src/repository/repositoryBuilds/repositoryBuilds.js",
+		"/js/src/repository/repositoryStages/repositoryStages.js",
+		"/js/src/repository/repositoryStageDetails/repositoryStageDetails.js"
 	]
 }

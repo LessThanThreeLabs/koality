@@ -1,7 +1,7 @@
 @import '../constants';
 
 
-.changesMenu {
+.buildsMenu {
 	@headerHeight: 50px;
 	@footerHeight: 8px;
 	@optionHeight: 44px;
@@ -11,7 +11,7 @@
 	width: @menuWidth;
 	height: 100%;
 
-	.changesMenuBackgroundPanel {
+	.buildsMenuBackgroundPanel {
 		position: absolute;
 		z-index: 1;
 		top: @headerHeight;
@@ -21,7 +21,7 @@
 		background-color: @panelBackground;
 	}
 
-	.changesMenuHeader {
+	.buildsMenuHeader {
 		position: absolute;
 		z-index: 100;
 		top: 0;
@@ -30,7 +30,7 @@
 		height: @headerHeight;
 
 		&.noPadding {
-			.changesMenuHeaderContent {
+			.buildsMenuHeaderContent {
 				padding-left: 0;
 				padding-right: 0;
 			}
@@ -46,7 +46,7 @@
 			height: 100%;
 		}
 
-		.changesMenuHeaderContent {
+		.buildsMenuHeaderContent {
 			position: absolute;
 			top: 0;
 			left: 0;
@@ -65,7 +65,7 @@
 			line-height: @headerHeight;
 		}
 
-		.changesMenuHeaderBuffer {
+		.buildsMenuHeaderBuffer {
 			position: absolute;
 			top: 0;
 			right: 0;
@@ -80,7 +80,7 @@
 		}
 	}
 
-	.changesMenuOptions {
+	.buildsMenuOptions {
 		position: absolute;
 		z-index: 99;
 		top: @borderRadius;
@@ -89,7 +89,7 @@
 		bottom: @borderRadius;
 		overflow: hidden;
 
-		.changesMenuOptionsScrollWrapper {
+		.buildsMenuOptionsScrollWrapper {
 			@scrollbarHideWidth: 50px;
 
 			position: absolute;
@@ -101,7 +101,7 @@
 			padding-bottom: @footerHeight - @borderRadius;
 			overflow-y: auto;
 
-			.changesMenuEmptyMessage {
+			.buildsMenuEmptyMessage {
 				display: block;
 				position: relative;
 				padding: 12px;
@@ -111,14 +111,14 @@
 				-moz-box-sizing: border-box;
 			}
 
-			.changesMenuOption {
+			.buildsMenuOption {
 				cursor: hand; cursor: pointer;
 				display: block;
 				position: relative;
 				width: @menuWidth - @toothWidth;
 				height: @optionHeight;
 
-				.changesMenuOptionContents {
+				.buildsMenuOptionContents {
 					@transitionTime: 0.25s;
 					transition: all @transitionTime ease-in-out;
 					-moz-transition: all @transitionTime ease-in-out;
@@ -134,7 +134,7 @@
 					background-color: @panelBackground;
 					border-bottom: 1px solid @platformBackground;
 
-					.changesMenuOptionTextContainer {
+					.buildsMenuOptionTextContainer {
 						position: absolute;
 						top: 0;
 						left: 12px;
@@ -152,7 +152,7 @@
 						}
 					}
 
-					.changesMenuOptionSpinner {
+					.buildsMenuOptionSpinner {
 						position: absolute;
 						top: 0;
 						right: 20px;
@@ -160,7 +160,7 @@
 						height: @optionHeight;
 					}
 
-					.changesMenuOptionArrow {
+					.buildsMenuOptionArrow {
 						@rightTransitionTime: 0.25s;
 						@borderColorTransitionTime: 0.25s;
 						transition: right @rightTransitionTime ease-in-out,
@@ -188,7 +188,7 @@
 					}
 				}
 
-				.changesMenuOptionTooth {
+				.buildsMenuOptionTooth {
 					@transitionTime: 0.25s;
 					transition: all @transitionTime ease-in-out;
 					-moz-transition: all @transitionTime ease-in-out;
@@ -208,20 +208,20 @@
 				}
 
 				&.orange {
-					.changesMenuOptionContents {
+					.buildsMenuOptionContents {
 						color: @koalityOrange;
 
-						.changesMenuOptionArrow {
+						.buildsMenuOptionArrow {
 							border-color: @koalityOrange;
 						}			
 					}
 				}
 
 				&.red {
-					.changesMenuOptionContents {
+					.buildsMenuOptionContents {
 						color: @koalityRed;
 
-						.changesMenuOptionArrow {
+						.buildsMenuOptionArrow {
 							border-color: @koalityRed;
 						}			
 					}
@@ -229,35 +229,35 @@
 
 				&:hover {
 
-					.changesMenuOptionContents {
+					.buildsMenuOptionContents {
 						color: @koalityWhite;
-						background-color: @changeHover;
+						background-color: @buildHover;
 
-						.changesMenuOptionArrow {
+						.buildsMenuOptionArrow {
 							right: 2px;
 							border-color: @koalityWhite;
 						}
 					}
 
-					.changesMenuOptionTooth {
-						border-left: @toothWidth solid @changeHover;
+					.buildsMenuOptionTooth {
+						border-left: @toothWidth solid @buildHover;
 					}
 
 					&.green {
-						.changesMenuOptionContents {
+						.buildsMenuOptionContents {
 							color: @koalityGreen;
 
-							.changesMenuOptionArrow {
+							.buildsMenuOptionArrow {
 								border-color: @koalityGreen;
 							}
 						}
 					}
 
 					&.orange {
-						.changesMenuOptionContents {
+						.buildsMenuOptionContents {
 							color: @koalityOrange;
 
-							.changesMenuOptionArrow {
+							.buildsMenuOptionArrow {
 								border-color: @koalityOrange;
 							}
 						}
@@ -265,10 +265,10 @@
 
 					&.red {
 
-						.changesMenuOptionContents {
+						.buildsMenuOptionContents {
 							color: @koalityRed;
 
-							.changesMenuOptionArrow {
+							.buildsMenuOptionArrow {
 								border-color: @koalityRed;
 							}			
 						}
@@ -277,78 +277,78 @@
 
 				&.selected {
 
-					.changesMenuOptionContents {
+					.buildsMenuOptionContents {
 						color: @koalityWhite;
-						background-color: @changeHover;
+						background-color: @buildHover;
 
-						.changesMenuOptionArrow {
+						.buildsMenuOptionArrow {
 							right: 2px;
 							border-color: @koalityWhite;
 						}
 					}
 
-					.changesMenuOptionTooth {
-						border-left: @toothWidth solid @changeHover;
+					.buildsMenuOptionTooth {
+						border-left: @toothWidth solid @buildHover;
 					}
 
 					&.green {
 
-						.changesMenuOptionContents {
+						.buildsMenuOptionContents {
 							color: @koalityWhite;
 							background-color: @koalityGreen;
 
-							.changesMenuOptionArrow {
+							.buildsMenuOptionArrow {
 								border-color: @koalityWhite;
 							}
 						}
 
-						.changesMenuOptionTooth {
+						.buildsMenuOptionTooth {
 							border-left-color: @koalityGreen;
 						}
 					}
 
 					&.orange {
 
-						.changesMenuOptionContents {
+						.buildsMenuOptionContents {
 							color: @koalityWhite;
 							background-color: @koalityOrange;
 
-							.changesMenuOptionArrow {
+							.buildsMenuOptionArrow {
 								border-color: @koalityWhite;
 							}
 						}
 
-						.changesMenuOptionTooth {
+						.buildsMenuOptionTooth {
 							border-left-color: @koalityOrange;
 						}
 					}
 
 					&.red {
 
-						.changesMenuOptionContents {
+						.buildsMenuOptionContents {
 							color: @koalityWhite;
 							background-color: @koalityRed;
 
-							.changesMenuOptionArrow {
+							.buildsMenuOptionArrow {
 								border-color: @koalityWhite;
 							}
 						}
 
-						.changesMenuOptionTooth {
+						.buildsMenuOptionTooth {
 							border-left-color: @koalityRed;
 						}
 					}
 				}
 			}
 
-			.changesMenuRetrievingMore {
-				@keyframes changesMenuRetrievingMoreFadeIn {
+			.buildsMenuRetrievingMore {
+				@keyframes buildsMenuRetrievingMoreFadeIn {
 					0% { opacity: 0.0; }
 					50% { opacity: 0.0; }
 					100% { opacity: 1.0; }
 				}
 
-				@-webkit-keyframes changesMenuRetrievingMoreFadeIn {
+				@-webkit-keyframes buildsMenuRetrievingMoreFadeIn {
 					0% { opacity: 0.0; }
 					50% { opacity: 0.0; }
 					100% { opacity: 1.0; }
@@ -359,8 +359,8 @@
 				width: @menuWidth - @toothWidth;
 				height: @optionHeight;
 
-				animation: changesMenuRetrievingMoreFadeIn 1s linear;
-				-webkit-animation: changesMenuRetrievingMoreFadeIn 1s linear;
+				animation: buildsMenuRetrievingMoreFadeIn 1s linear;
+				-webkit-animation: buildsMenuRetrievingMoreFadeIn 1s linear;
 
 				#retrievingMoreSpinner {
 					position: absolute;
@@ -373,7 +373,7 @@
 		}
 	}
 
-	.changesMenuFooter {
+	.buildsMenuFooter {
 		position: absolute;
 		z-index: 100;
 		left: 0;

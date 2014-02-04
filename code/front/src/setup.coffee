@@ -3,7 +3,7 @@
 angular.module('koality', ['ngSanitize', 
 		'koality.service', 'koality.service.state', 'koality.service.rpc', 'koality.service.managers',
 		'koality.filter',
-		'koality.directive', 'koality.directive.changesMenu', 'koality.directive.panel', 'koality.directive.dropdown', 'koality.d3.directive']).
+		'koality.directive', 'koality.directive.buildsMenu', 'koality.directive.panel', 'koality.directive.dropdown', 'koality.d3.directive']).
 	config(['$routeProvider', ($routeProvider) ->
 		$routeProvider.
 			# when('/login',
@@ -34,12 +34,12 @@ angular.module('koality', ['ngSanitize',
 				reloadOnSearch: false
 				redirectTo: if window.userId? then null else '/login'
 			).
-			# when('/repository/:repositoryId',
-			# 	templateUrl: "/html/repository/repository.html"
-			# 	controller: Repository
-			# 	reloadOnSearch: false
-			# 	redirectTo: if window.userId? then null else '/login'
-			# ).
+			when('/repository/:repositoryId',
+				templateUrl: "/html/repository/repository.html"
+				controller: Repository
+				reloadOnSearch: false
+				redirectTo: if window.userId? then null else '/login'
+			).
 			# when('/analytics',
 			# 	templateUrl: "/html/analytics/analytics.html"
 			# 	controller: Analytics

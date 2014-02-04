@@ -35,7 +35,7 @@ type TemplatesHandler struct {
 }
 
 var (
-	pathsToHandle []string = []string{"index", "dashboard"}
+	pathsToHandle []string = []string{"index", "dashboard", "repository"}
 )
 
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string) (*TemplatesHandler, error) {
@@ -83,10 +83,14 @@ func getCssAndJsFiles() ([]string, []string, error) {
 func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/", templatesHandler.getRoot).Methods("GET")
 
-	for _, pathToHandler := range pathsToHandle {
-		subrouter.HandleFunc(fmt.Sprintf("/%s", pathToHandler), templatesHandler.getRoot).Methods("GET")
-		subrouter.HandleFunc(fmt.Sprintf("/%s.html", pathToHandler), templatesHandler.getRoot).Methods("GET")
-	}
+	subrouter.HandleFunc("/index", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/index.html", templatesHandler.getRoot).Methods("GET")
+
+	subrouter.HandleFunc("/dashboard", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/dashboard.html", templatesHandler.getRoot).Methods("GET")
+
+	subrouter.HandleFunc("/repository/{reposiotryId:[0-9]+}", templatesHandler.getRoot).Methods("GET")
+	subrouter.HandleFunc("/repository/{reposiotryId:[0-9]+}.html", templatesHandler.getRoot).Methods("GET")
 }
 
 func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {

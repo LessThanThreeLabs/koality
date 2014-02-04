@@ -27,9 +27,9 @@ angular.module('koality.service.state', []).
 				assert.ok @_id
 
 				request = $http.get('/app/repositories/' + @_id)
-				request.success (data, status, headers, config) ->
-					@_information = repositoryInformation
-				request.error (data, status, headers, config) ->
+				request.success (data, status, headers, config) =>
+					@_information = data
+				request.error (data, status, headers, config) =>
 					console.error data
 
 			getInformation: () =>
@@ -97,12 +97,12 @@ angular.module('koality.service.state', []).
 				assert.ok @_repositoryId?
 				assert.ok @_id?
 
-				requestData =
-					repositoryId: @_repositoryId
-					id: @_id
-				rpc 'changes', 'read', 'getChange', requestData, (error, changeInformation) =>
-					@_information = changeInformation
+				request = $http.get('/app/verifications/' + @_id)
+				request.success (data, status, headers, config) =>
+					@_information = data
 					# @_listenToEvents()
+				request.error (data, status, headers, config) =>
+					console.error data
 
 			getInformation: () =>
 				return @_information

@@ -49,5 +49,4 @@ window.Dashboard = ['$scope', '$http', 'BuildsManager', 'localStorage', ($scope,
 		$scope.buildsManager.retrieveInitialBuilds() if $scope.buildsManager?
 		localStorage.dashboardSearchMode = $scope.search.mode
 	), true
-
 ]

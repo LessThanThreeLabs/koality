@@ -1,0 +1,32 @@
+<div id="repositoryBuilds" ng-controller="RepositoryBuilds">
+	<builds-menu>
+		<builds-menu-header no-padding>
+			<div id="search" ng-class="{searchOn: search.mode == 'search'}">
+				<div id="searchAll" ng-class="{selected: search.mode == 'all'}" ng-click="search.mode = 'all'">All</div>
+				<div id="searchMe" ng-class="{selected: search.mode == 'me'}" ng-click="search.mode = 'me'">Me</div>
+				<div id="searchQuery" ng-class="{selected: search.mode == 'search'}" ng-click="search.mode = 'search'" input-focus-on-click>
+					<div id="searchImageAndInputContainer">
+						<img src="/img/icons/search.png">
+						<input type="text" ng-model="search.query" placeholder="User">
+					</div>
+				</div>
+			</div>
+		</builds-menu-header>
+
+		<builds-menu-options on-scroll-to-bottom="buildsManager.retrieveMoreBuilds()">
+			<builds-menu-empty-message ng-show="!buildsManager.isRetrievingBuilds() && buildsManager.getBuilds().length == 0">You have no builds</builds-menu-empty-message>
+
+			<builds-menu-option ng-repeat="build in buildsManager.getBuilds() | orderBy:'number':true" menu-option-spinning="{{build.status == 'running'}}" ng-click="selectBuild(build)" ng-class="{selected: build.id == selectedBuild.getId(), green: build.status == 'passed', orange: build.status == 'skipped', red: build.status == 'failed'}">
+				<span class="buildSha">{{build.changeset.headSha | limitTo:4 | lowercase}}</span>
+				<span class="buildAlias" ng-show="build.status != 'queued'">
+					<span>{{build.changeset.headEmail | emailToAlias | lowercase}}</span>
+				</span>
+				<span class="buildQueued" ng-show="build.status == 'queued'">queued</span>
+			</builds-menu-option>
+			
+			<builds-menu-retrieving-more ng-show="buildsManager.isRetrievingBuilds()">
+				<spinner id="retrievingMoreSpinner" running="buildsManager.isRetrievingBuilds()"></spinner>
+			</builds-menu-retrieving-more>
+		</builds-menu-options>
+	</builds-menu>
+</div>
