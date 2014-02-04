@@ -371,7 +371,7 @@ func TestUsersUpdatePassword(test *testing.T) {
 	}
 }
 
-func TestUsersUpdateGitHubOauth(test *testing.T) {
+func TestUsersUpdateGitHubOAuth(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -382,8 +382,8 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 	}
 	defer connection.Close()
 
-	updateAndCheckGitHubOauth := func(userId uint64, gitHubOauth string) {
-		err = connection.Users.Update.SetGitHubOauth(userId, gitHubOauth)
+	updateAndCheckGitHubOAuth := func(userId uint64, gitHubOAuth string) {
+		err = connection.Users.Update.SetGitHubOAuth(userId, gitHubOAuth)
 		if err != nil {
 			test.Fatal(err)
 		}
@@ -393,8 +393,8 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 			test.Fatal(err)
 		}
 
-		if user.GitHubOauth != gitHubOauth {
-			test.Fatal("GitHubOauth not updated")
+		if user.GitHubOAuth != gitHubOAuth {
+			test.Fatal("GitHubOAuth not updated")
 		}
 	}
 
@@ -404,14 +404,14 @@ func TestUsersUpdateGitHubOauth(test *testing.T) {
 	}
 
 	firstUser := users[0]
-	updateAndCheckGitHubOauth(firstUser.Id, "github-oauth")
-	updateAndCheckGitHubOauth(firstUser.Id, "github-oauth-2")
+	updateAndCheckGitHubOAuth(firstUser.Id, "github-oauth")
+	updateAndCheckGitHubOAuth(firstUser.Id, "github-oauth-2")
 
 	lastUser := users[len(users)-1]
-	updateAndCheckGitHubOauth(lastUser.Id, "github-oauth-2")
-	updateAndCheckGitHubOauth(lastUser.Id, "github-oauth")
+	updateAndCheckGitHubOAuth(lastUser.Id, "github-oauth-2")
+	updateAndCheckGitHubOAuth(lastUser.Id, "github-oauth")
 
-	err = connection.Users.Update.SetGitHubOauth(0, "github-oauth")
+	err = connection.Users.Update.SetGitHubOAuth(0, "github-oauth")
 	if _, ok := err.(resources.NoSuchUserError); !ok {
 		test.Fatal("Expected NoSuchUserError when trying to set github oauth for nonexistent user")
 	}

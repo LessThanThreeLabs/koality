@@ -53,6 +53,42 @@ func (updateHandler *UpdateHandler) updateRepositoryHook(query string, params ..
 	return nil
 }
 
+func (updateHandler *UpdateHandler) SetGitHubOAuthToken(repositoryId uint64, oAuthToken string) error {
+	query := "UPDATE repository_github_metadatas SET oauth_token=$1 WHERE repository_id=$2"
+	result, err := updateHandler.database.Exec(query, oAuthToken, repositoryId)
+	if err != nil {
+		return err
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	} else if count != 1 {
+		return resources.NoSuchRepositoryError{"Unable to find repository"}
+	}
+
+	updateHandler.subscriptionHandler.FireGitHubOAuthTokenUpdatedEvent(repositoryId, oAuthToken)
+	return nil
+}
+
+func (updateHandler *UpdateHandler) ClearGitHubOAuthToken(repositoryId uint64) error {
+	query := "UPDATE repository_github_metadatas SET oauth_token=DEFAULT WHERE repository_id=$1"
+	result, err := updateHandler.database.Exec(query, repositoryId)
+	if err != nil {
+		return err
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	} else if count != 1 {
+		return resources.NoSuchRepositoryError{"Unable to find repository"}
+	}
+
+	updateHandler.subscriptionHandler.FireGitHubOAuthTokenClearedEvent(repositoryId)
+	return nil
+}
+
 func (updateHandler *UpdateHandler) SetGitHubHook(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) error {
 	if err := updateHandler.verifier.verifyHookTypes(hookTypes); err != nil {
 		return err
@@ -76,6 +112,6 @@ func (updateHandler *UpdateHandler) ClearGitHubHook(repositoryId uint64) error {
 		return err
 	}
 
-	updateHandler.subscriptionHandler.FireGitHubHookUpdatedEvent(repositoryId, 0, "", nil)
+	updateHandler.subscriptionHandler.FireGitHubHookClearedEvent(repositoryId)
 	return nil
 }

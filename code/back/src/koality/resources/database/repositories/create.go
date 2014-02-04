@@ -44,7 +44,7 @@ func (createHandler *CreateHandler) Create(name, vcsType, remoteUri string) (*re
 	return repository, nil
 }
 
-func (createHandler *CreateHandler) CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName string) (*resources.Repository, error) {
+func (createHandler *CreateHandler) CreateWithGitHub(name, remoteUri, gitHubOwner, gitHubName, oAuthToken string) (*resources.Repository, error) {
 	err := createHandler.getRepositoryParamsError(name, "git", remoteUri)
 	if err != nil {
 		return nil, err
@@ -63,8 +63,8 @@ func (createHandler *CreateHandler) CreateWithGitHub(name, remoteUri, gitHubOwne
 		return nil, err
 	}
 
-	gitHubQuery := "INSERT INTO repository_github_metadatas (repository_id, owner, name) VALUES ($1, $2, $3)"
-	_, err = transaction.Exec(gitHubQuery, id, gitHubOwner, gitHubName)
+	gitHubQuery := "INSERT INTO repository_github_metadatas (repository_id, owner, name, oauth_token) VALUES ($1, $2, $3, $4)"
+	_, err = transaction.Exec(gitHubQuery, id, gitHubOwner, gitHubName, oAuthToken)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err

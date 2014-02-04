@@ -5,10 +5,13 @@ import (
 )
 
 type SubscriptionHandler struct {
-	createdSubscriptionManager           resources.SubscriptionManager
-	deletedSubscriptionManager           resources.SubscriptionManager
-	statusUpdatedSubscriptionManager     resources.SubscriptionManager
-	gitHubHookUpdatedSubscriptionManager resources.SubscriptionManager
+	createdSubscriptionManager                 resources.SubscriptionManager
+	deletedSubscriptionManager                 resources.SubscriptionManager
+	statusUpdatedSubscriptionManager           resources.SubscriptionManager
+	gitHubOAuthTokenUpdatedSubscriptionManager resources.SubscriptionManager
+	gitHubOAuthTokenClearedSubscriptionManager resources.SubscriptionManager
+	gitHubHookUpdatedSubscriptionManager       resources.SubscriptionManager
+	gitHubHookClearedSubscriptionManager       resources.SubscriptionManager
 }
 
 func NewInternalSubscriptionHandler() (resources.InternalRepositoriesSubscriptionHandler, error) {
@@ -51,6 +54,30 @@ func (subscriptionHandler *SubscriptionHandler) FireStatusUpdatedEvent(repositor
 	subscriptionHandler.statusUpdatedSubscriptionManager.Fire(repositoryId, status)
 }
 
+func (subscriptionHandler *SubscriptionHandler) SubscribeToGitHubOAuthTokenUpdatedEvents(updateHandler resources.RepositoryGitHubOAuthTokenUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.gitHubOAuthTokenUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubOAuthTokenUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.gitHubOAuthTokenUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireGitHubOAuthTokenUpdatedEvent(repositoryId uint64, oAuthToken string) {
+	subscriptionHandler.gitHubOAuthTokenUpdatedSubscriptionManager.Fire(repositoryId, oAuthToken)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToGitHubOAuthTokenClearedEvents(updateHandler resources.RepositoryGitHubOAuthTokenClearedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.gitHubOAuthTokenClearedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubOAuthTokenClearedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.gitHubOAuthTokenClearedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireGitHubOAuthTokenClearedEvent(repositoryId uint64) {
+	subscriptionHandler.gitHubOAuthTokenClearedSubscriptionManager.Fire(repositoryId)
+}
+
 func (subscriptionHandler *SubscriptionHandler) SubscribeToGitHubHookUpdatedEvents(updateHandler resources.RepositoryGitHubHookUpdatedHandler) (resources.SubscriptionId, error) {
 	return subscriptionHandler.gitHubHookUpdatedSubscriptionManager.Add(updateHandler)
 }
@@ -61,4 +88,16 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubHookUpdated
 
 func (subscriptionHandler *SubscriptionHandler) FireGitHubHookUpdatedEvent(repositoryId uint64, hookId int64, hookSecret string, hookTypes []string) {
 	subscriptionHandler.gitHubHookUpdatedSubscriptionManager.Fire(repositoryId, hookId, hookSecret, hookTypes)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToGitHubHookClearedEvents(updateHandler resources.RepositoryGitHubHookClearedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.gitHubHookClearedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubHookClearedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.gitHubHookClearedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireGitHubHookClearedEvent(repositoryId uint64) {
+	subscriptionHandler.gitHubHookClearedSubscriptionManager.Fire(repositoryId)
 }
