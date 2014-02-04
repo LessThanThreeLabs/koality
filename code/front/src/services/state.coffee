@@ -2,7 +2,6 @@
 
 angular.module('koality.service.state', []).
 	factory('currentRepository', ['$http', 'integerConverter', ($http, integerConverter) ->
-
 		class RepositoryManager
 			_id: null
 			_information: null
@@ -26,7 +25,7 @@ angular.module('koality.service.state', []).
 			retrieveInformation: () =>
 				assert.ok @_id
 
-				request = $http.get('/app/repositories/' + @_id)
+				request = $http.get("/app/repositories/#{@_id}")
 				request.success (data, status, headers, config) =>
 					@_information = data
 				request.error (data, status, headers, config) =>
@@ -38,7 +37,6 @@ angular.module('koality.service.state', []).
 		return new RepositoryManager()
 	]).
 	factory('currentBuild', ['$http', 'events', 'integerConverter', ($http, events, integerConverter) ->
-
 		class BuildManager
 			_repositoryId: null
 			_id: null
@@ -52,9 +50,9 @@ angular.module('koality.service.state', []).
 				@_id = null
 				@_information = null
 
-			setId: (repositoryId, changeId) =>
+			setId: (repositoryId, buildId) =>
 				@_repositoryId = integerConverter.toInteger repositoryId
-				@_id = integerConverter.toInteger changeId
+				@_id = integerConverter.toInteger buildId
 				@_information = null
 
 			getId: () =>
@@ -97,7 +95,7 @@ angular.module('koality.service.state', []).
 				assert.ok @_repositoryId?
 				assert.ok @_id?
 
-				request = $http.get('/app/verifications/' + @_id)
+				request = $http.get("/app/verifications/#{@_id}")
 				request.success (data, status, headers, config) =>
 					@_information = data
 					# @_listenToEvents()
@@ -110,10 +108,9 @@ angular.module('koality.service.state', []).
 		return new BuildManager()
 	]).
 	factory('currentStage', ['$http', 'events', 'integerConverter', ($http, events, integerConverter) ->
-
 		class StageManager
 			_repositoryId: null
-			_changeId: null
+			_buildId: null
 			_id: null
 			_information: null
 			_summary: false
@@ -129,9 +126,9 @@ angular.module('koality.service.state', []).
 				@_id = null
 				@_information = null
 
-			setId: (repositoryId, changeId, stageId) =>
+			setId: (repositoryId, buildId, stageId) =>
 				@_repositoryId = integerConverter.toInteger repositoryId
-				@_changeId = integerConverter.toInteger changeId
+				@_buildId = integerConverter.toInteger buildId
 				@_id = integerConverter.toInteger stageId
 				@_information = null
 				@_summary = false
@@ -157,12 +154,12 @@ angular.module('koality.service.state', []).
 
 			# _listenToEvents: () =>
 			# 	assert.ok @_repositoryId?
-			# 	assert.ok @_changeId?
+			# 	assert.ok @_buildId?
 			# 	assert.ok @_id?
 
 			# 	@_stopListeningToEvents()
-			# 	@_updatedListener = events('changes', 'return code added', @_changeId).setCallback(@_handleUpdated).subscribe()
-			# 	@_outputTypesListener = events('changes', 'output type added', @_changeId).setCallback(@_handleOutputTypeAdded).subscribe()
+			# 	@_updatedListener = events('changes', 'return code added', @_buildId).setCallback(@_handleUpdated).subscribe()
+			# 	@_outputTypesListener = events('changes', 'output type added', @_buildId).setCallback(@_handleOutputTypeAdded).subscribe()
 			
 			# _stopListeningToEvents: () =>
 			# 	@_updatedListener.unsubscribe() if @_updatedListener?
@@ -173,7 +170,7 @@ angular.module('koality.service.state', []).
 
 			setInformation: (stageInformation) =>
 				assert.ok @_repositoryId?
-				assert.ok @_changeId?
+				assert.ok @_buildId?
 				assert.ok @_id?
 				assert.ok stageInformation?
 				# @_stopListeningToEvents()
@@ -181,15 +178,15 @@ angular.module('koality.service.state', []).
 
 			retrieveInformation: () =>
 				assert.ok @_repositoryId?
-				assert.ok @_changeId?
+				assert.ok @_buildId?
 				assert.ok @_id?
 
-				requestData =
-					repositoryId: @_repositoryId
-					id: @_id
-				rpc 'buildConsoles', 'read', 'getBuildConsole', requestData, (error, stageInformation) =>
-					@_information = stageInformation
+				request = $http.get("/app/stages/#{@_id}")
+				request.success (data, status, headers, config) =>
+					@_information = data
 					# @_listenToEvents()
+				request.error (data, status, headers, config) =>
+					console.error data
 
 			getInformation: () =>
 				return @_information

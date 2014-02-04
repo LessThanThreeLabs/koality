@@ -32,7 +32,7 @@ angular.module('koality.service.managers', []).
 				if query is '' then return null
 				else return query
 
-			_doesBuildMatchQuery: (change) =>
+			_doesBuildMatchQuery: (build) =>
 				console.log 'NEED TO FIX THIS!'
 				return true
 				# if @searchModel.mode is 'me'
@@ -155,7 +155,7 @@ angular.module('koality.service.managers', []).
 				if stage? and not (data.outputType in stage.outputTypes)
 					stage.outputTypes.push data.outputType
 
-			setBuildId: (changeId) =>
+			setBuildId: (buildId) =>
 				assert.ok not buildId? or typeof buildId is 'number'
 
 				if @_buildId isnt buildId
@@ -171,10 +171,10 @@ angular.module('koality.service.managers', []).
 				@_stagesCache = {}
 				@_gettingStages = true
 
-				request = $http.get('/app/stages/')
-				request.success (data, status, headers, config) ->
+				request = $http.get("/app/stages/?verificationId=#{@_buildId}")
+				request.success (data, status, headers, config) =>
 					@_stagesRetrievedHandler null, data
-				request.error (data, status, headers, config) ->
+				request.error (data, status, headers, config) =>
 					@_stagesRetrievedHandler data
 
 			getStages: () =>

@@ -1,8 +1,8 @@
 <div id="repositoryStages" ng-controller="RepositoryStages">
-	<changes-menu>
-		<changes-menu-header>
+	<builds-menu>
+		<builds-menu-header>
 			<div class="left">
-				<span ng-show="selectedChange.getInformation() != null">{{selectedChange.getInformation().headCommit.sha | limitTo: 4}}</span>
+				<span ng-show="selectedBuild.getInformation() != null">{{selectedBuild.getInformation().changeset.headSha | limitTo: 4 | lowercase}}</span>
 			</div>
 
 			<div class="right" ng-show="stagesManager.getStages().length > 0">
@@ -16,32 +16,32 @@
 					</dropdown-options>
 				</dropdown>
 			</div>
-		</changes-menu-header>
+		</builds-menu-header>
 
-		<changes-menu-options>
-			<changes-menu-option ng-show="selectedChange.getInformation() != null && !stagesManager.isRetrievingStages()" ng-click="selectedStage.setSummary()" ng-class="{selected: selectedStage.isSummary(), green: selectedChange.getInformation().aggregateStatus == 'passed', orange: selectedChange.getInformation().aggregateStatus == 'skipped', red: selectedChange.getInformation().aggregateStatus == 'failed'}">
+		<builds-menu-options>
+			<builds-menu-option ng-show="selectedBuild.getInformation() != null && !stagesManager.isRetrievingStages()" ng-click="selectedStage.setSummary()" ng-class="{selected: selectedStage.isSummary(), green: selectedBuild.getInformation().aggregateStatus == 'passed', orange: selectedBuild.getInformation().aggregateStatus == 'skipped', red: selectedBuild.getInformation().aggregateStatus == 'failed'}">
 				<span>summary</span>
-			</changes-menu-option>
+			</builds-menu-option>
 
-			<changes-menu-option ng-repeat="stage in stagesManager.getStages() | filter:shouldStageBeVisible | orderBy:[stageSort, 'name']" menu-option-spinning="{{stage.status == 'running'}}" ng-click="selectStage(stage)" ng-class="{selected: stage.id == selectedStage.getId(), green: stage.status == 'passed', red: stage.status == 'failed'}">
+			<builds-menu-option ng-repeat="stage in stagesManager.getStages() | filter:shouldStageBeVisible | orderBy:[stageSort, 'name']" menu-option-spinning="{{stage.status == 'running'}}" ng-click="selectStage(stage)" ng-class="{selected: stage.id == selectedStage.getId(), green: stage.status == 'passed', red: stage.status == 'failed'}">
 				<span>{{stage.name}}</span>
-			</changes-menu-option>
+			</builds-menu-option>
 
-			<changes-menu-option ng-show="selectedChange.getInformation().aggregateStatus == 'skipped' && !stagesManager.isRetrievingStages()" ng-click="selectedStage.setSkipped()" ng-class="{selected: selectedStage.isSkipped(), orange: true}">
+			<builds-menu-option ng-show="selectedBuild.getInformation().aggregateStatus == 'skipped' && !stagesManager.isRetrievingStages()" ng-click="selectedStage.setSkipped()" ng-class="{selected: selectedStage.isSkipped(), orange: true}">
 				<span>skipped</span>
-			</changes-menu-option>
+			</builds-menu-option>
 
-			<changes-menu-option menu-option-text="merge" ng-show="selectedChange.getInformation().mergeStatus != null && !stagesManager.isRetrievingStages() && (filter.type != 'failed' || (filter.type == 'failed' && selectedChange.getInformation().mergeStatus == 'failed'))" ng-click="selectedStage.setMerge()" ng-class="{selected: selectedStage.isMerge(), green: selectedChange.getInformation().mergeStatus == 'passed', red: selectedChange.getInformation().mergeStatus == 'failed'}">
+			<builds-menu-option menu-option-text="merge" ng-show="selectedBuild.getInformation().mergeStatus != null && !stagesManager.isRetrievingStages() && (filter.type != 'failed' || (filter.type == 'failed' && selectedBuild.getInformation().mergeStatus == 'failed'))" ng-click="selectedStage.setMerge()" ng-class="{selected: selectedStage.isMerge(), green: selectedBuild.getInformation().mergeStatus == 'passed', red: selectedBuild.getInformation().mergeStatus == 'failed'}">
 				<span>merge</span>
-			</changes-menu-option>
+			</builds-menu-option>
 
-			<changes-menu-option ng-show="selectedChange.getInformation().aggregateStatus == 'failed' && !stagesManager.isRetrievingStages() && stagesManager.getStages().length == 0" ng-click="selectedStage.setDebug()" ng-class="{selected: selectedStage.isDebug(), red: true}">
+			<builds-menu-option ng-show="selectedBuild.getInformation().aggregateStatus == 'failed' && !stagesManager.isRetrievingStages() && stagesManager.getStages().length == 0" ng-click="selectedStage.setDebug()" ng-class="{selected: selectedStage.isDebug(), red: true}">
 				<span>debug</span>
-			</changes-menu-option>
+			</builds-menu-option>
 
-			<changes-menu-empty-message ng-show="selectedChange.getInformation().aggregateStatus == 'running' && filter.type == 'failed' && hasNoFailedStages()">This change is currently running. No stage has failed yet...</changes-menu-empty-message>
+			<builds-menu-empty-message ng-show="selectedBuild.getInformation().aggregateStatus == 'running' && filter.type == 'failed' && hasNoFailedStages()">This build is currently running. No stage has failed yet...</builds-menu-empty-message>
 
-			<changes-menu-empty-message ng-show="selectedChange.getInformation().aggregateStatus != 'running' && filter.type == 'failed' && hasNoFailedStages()">There are no failed stages</changes-menu-empty-message>
-		</changes-menu-options>
-	</changes-menu>
+			<builds-menu-empty-message ng-show="selectedBuild.getInformation().aggregateStatus != 'running' && filter.type == 'failed' && hasNoFailedStages()">There are no failed stages</builds-menu-empty-message>
+		</builds-menu-options>
+	</builds-menu>
 </div>

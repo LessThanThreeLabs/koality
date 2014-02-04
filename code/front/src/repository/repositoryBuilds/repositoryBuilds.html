@@ -16,7 +16,7 @@
 		<builds-menu-options on-scroll-to-bottom="buildsManager.retrieveMoreBuilds()">
 			<builds-menu-empty-message ng-show="!buildsManager.isRetrievingBuilds() && buildsManager.getBuilds().length == 0">You have no builds</builds-menu-empty-message>
 
-			<builds-menu-option ng-repeat="build in buildsManager.getBuilds() | orderBy:'number':true" menu-option-spinning="{{build.status == 'running'}}" ng-click="selectBuild(build)" ng-class="{selected: build.id == selectedBuild.getId(), green: build.status == 'passed', orange: build.status == 'skipped', red: build.status == 'failed'}">
+			<builds-menu-option ng-repeat="build in buildsManager.getBuilds() | orderBy:'id':true" menu-option-spinning="{{build.status == 'running'}}" ng-click="selectBuild(build)" ng-class="{selected: build.id == selectedBuild.getId(), green: build.status == 'passed', orange: build.status == 'skipped', red: build.status == 'failed'}">
 				<span class="buildSha">{{build.changeset.headSha | limitTo:4 | lowercase}}</span>
 				<span class="buildAlias" ng-show="build.status != 'queued'">
 					<span>{{build.changeset.headEmail | emailToAlias | lowercase}}</span>
