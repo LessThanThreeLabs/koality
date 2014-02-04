@@ -39,6 +39,7 @@ type RepositoriesCreateHandler interface {
 type RepositoriesReadHandler interface {
 	Get(repositoryId uint64) (*Repository, error)
 	GetByName(name string) (*Repository, error)
+	GetByGitHubInfo(ownerName, repositoryName string) (*Repository, error)
 	GetAll() ([]Repository, error)
 }
 

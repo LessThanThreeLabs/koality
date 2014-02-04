@@ -77,6 +77,15 @@ func (readHandler *ReadHandler) GetByName(name string) (*resources.Repository, e
 	return readHandler.scanRepository(row)
 }
 
+func (readHandler *ReadHandler) GetByGitHubInfo(ownerName, repositoryName string) (*resources.Repository, error) {
+	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.remote_uri, R.created, R.deleted," +
+		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +
+		" FROM repositories R LEFT JOIN repository_github_metadatas RGM" +
+		" ON R.id=RGM.repository_id WHERE RGM.owner=$1 AND RGM.name=$2"
+	row := readHandler.database.QueryRow(query, ownerName, repositoryName)
+	return readHandler.scanRepository(row)
+}
+
 func (readHandler *ReadHandler) GetAll() ([]resources.Repository, error) {
 	query := "SELECT R.id, R.name, R.status, R.vcs_type, R.remote_uri, R.created, R.deleted," +
 		" RGM.owner, RGM.name, RGM.hook_id, RGM.hook_secret, RGM.hook_types" +

@@ -275,6 +275,25 @@ func TestCreateGitHubRepository(test *testing.T) {
 		test.Fatal("repository.GitHub.Name mismatch")
 	}
 
+	repository3, err := connection.Repositories.Read.GetByGitHubInfo(repository.GitHub.Owner, repository.GitHub.Name)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if repository.Id != repository3.Id {
+		test.Fatal("repository.Id mismatch")
+	} else if repository.Name != repository3.Name {
+		test.Fatal("repository.Name mismatch")
+	} else if repository.VcsType != repository3.VcsType {
+		test.Fatal("repository.VcsType mismatch")
+	} else if repository.RemoteUri != repository3.RemoteUri {
+		test.Fatal("repository.RemoteUri mismatch")
+	} else if repository.GitHub.Owner != repository3.GitHub.Owner {
+		test.Fatal("repository.GitHub.Owner mismatch")
+	} else if repository.GitHub.Name != repository3.GitHub.Name {
+		test.Fatal("repository.GitHub.Name mismatch")
+	}
+
 	_, err = connection.Repositories.Create.CreateWithGitHub(repository.Name, repository.RemoteUri, repository.GitHub.Owner, repository.GitHub.Name)
 	if _, ok := err.(resources.RepositoryAlreadyExistsError); !ok {
 		test.Fatal("Expected RepositoryAlreadyExistsError when trying to add same repository twice")

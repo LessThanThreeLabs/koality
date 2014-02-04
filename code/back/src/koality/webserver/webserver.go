@@ -8,6 +8,7 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
+	"koality/webserver/github"
 	"koality/webserver/middleware"
 	"koality/webserver/repositories"
 	"koality/webserver/settings"
@@ -126,6 +127,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	gitHubHandler, err := github.New(webserver.resourcesConnection, webserver.repositoryManager)
+	if err != nil {
+		return nil, err
+	}
+
 	wireRootSubroutes := func() {
 		templatesHandler.WireRootSubroutes(router)
 	}
@@ -176,9 +182,16 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		settingsHandler.WireApiSubroutes(settingsSubrouter)
 	}
 
+	wireHooksSubroutes := func() {
+		hooksSubrouter := router.PathPrefix("/hooks").Subrouter()
+		gitHubSubrouter := hooksSubrouter.PathPrefix("/gitHub").Subrouter()
+		gitHubHandler.WireHooksSubroutes(gitHubSubrouter)
+	}
+
 	wireRootSubroutes()
 	wireAppSubroutes()
 	wireApiSubroutes()
+	wireHooksSubroutes()
 
 	return router, nil
 }
