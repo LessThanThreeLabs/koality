@@ -360,6 +360,97 @@ func TestSettingsSmtpAuth(test *testing.T) {
 	}
 }
 
+func TestSettingsGitHubEnterprise(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	gitHubEnterpriseSettingsUpdatedEventReceived := make(chan bool, 1)
+	var gitHubEnterpriseSettingsUpdatedEventSettings *resources.GitHubEnterpriseSettings
+	gitHubEnterpriseSettingsUpdatedHandler := func(gitHubEnterpriseSettings *resources.GitHubEnterpriseSettings) {
+		gitHubEnterpriseSettingsUpdatedEventSettings = gitHubEnterpriseSettings
+		gitHubEnterpriseSettingsUpdatedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToGitHubEnterpriseSettingsUpdatedEvents(gitHubEnterpriseSettingsUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	gitHubEnterpriseSettingsClearedEventReceived := make(chan bool, 1)
+	gitHubEnterpriseSettingsClearedHandler := func() {
+		gitHubEnterpriseSettingsClearedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToGitHubEnterpriseSettingsClearedEvents(gitHubEnterpriseSettingsClearedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	url := "aaaabbbbccccddddeeee"
+	oAuthClientId := "0000111122223333444455556666777788889999"
+	oAuthClientSecret := "some-bucket-name"
+	gitHubEnterpriseSettings, err := connection.Settings.Update.SetGitHubEnterpriseSettings(url, oAuthClientId, oAuthClientSecret)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-gitHubEnterpriseSettingsUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear gitHub enterprise settings updated event")
+	}
+
+	if gitHubEnterpriseSettingsUpdatedEventSettings.Url != gitHubEnterpriseSettings.Url {
+		test.Fatal("Bad gitHubEnterpriseSettings.Url in gitHub enterprise settings updated event")
+	} else if gitHubEnterpriseSettingsUpdatedEventSettings.OAuthClientId != gitHubEnterpriseSettings.OAuthClientId {
+		test.Fatal("Bad gitHubEnterpriseSettings.OAuthClientId in gitHub enterprise settings updated event")
+	} else if gitHubEnterpriseSettingsUpdatedEventSettings.OAuthClientSecret != gitHubEnterpriseSettings.OAuthClientSecret {
+		test.Fatal("Bad gitHubEnterpriseSettings.OAuthClientSecret in gitHub enterprise settings updated event")
+	}
+
+	if gitHubEnterpriseSettings.Url != url {
+		test.Fatal("Url mismatch")
+	} else if gitHubEnterpriseSettings.OAuthClientId != oAuthClientId {
+		test.Fatal("OAuthClientId mismatch")
+	} else if gitHubEnterpriseSettings.OAuthClientSecret != oAuthClientSecret {
+		test.Fatal("OAuthClientSecret mismatch")
+	}
+
+	gitHubEnterpriseSettings2, err := connection.Settings.Read.GetGitHubEnterpriseSettings()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if gitHubEnterpriseSettings.Url != gitHubEnterpriseSettings2.Url {
+		test.Fatal("Url mismatch")
+	} else if gitHubEnterpriseSettings.OAuthClientId != gitHubEnterpriseSettings2.OAuthClientId {
+		test.Fatal("OAuthClientId mismatch")
+	} else if gitHubEnterpriseSettings.OAuthClientSecret != gitHubEnterpriseSettings2.OAuthClientSecret {
+		test.Fatal("OAuthClientSecret mismatch")
+	}
+
+	err = connection.Settings.Delete.ClearGitHubEnterpriseSettings()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-gitHubEnterpriseSettingsClearedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear gitHub enterprise settings cleared event")
+	}
+
+	_, err = connection.Settings.Read.GetGitHubEnterpriseSettings()
+	if _, ok := err.(resources.NoSuchSettingError); !ok {
+		test.Fatal("Expected NoSuchSettingError when trying to get gitHub enterprise settings that have been cleared")
+	}
+}
+
 func TestSettingsApiKey(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)

@@ -109,6 +109,8 @@ type SettingsSubscriptionHandler interface {
 	UnsubscribeFromSmtpServerSettingsUpdatedEvents(subscriptionId SubscriptionId) error
 	SubscribeToGitHubEnterpriseSettingsUpdatedEvents(updateHandler GitHubEnterpriseSettingsUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromGitHubEnterpriseSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+	SubscribeToGitHubEnterpriseSettingsClearedEvents(updateHandler GitHubEnterpriseSettingsClearedHandler) (SubscriptionId, error)
+	UnsubscribeFromGitHubEnterpriseSettingsClearedEvents(subscriptionId SubscriptionId) error
 	SubscribeToApiKeyUpdatedEvents(updateHandler ApiKeyUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromApiKeyUpdatedEvents(subscriptionId SubscriptionId) error
 }
