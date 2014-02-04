@@ -10,7 +10,7 @@ import (
 
 const (
 	numRepositories               = 2
-	numVerificationsPerRepository = 10
+	numVerificationsPerRepository = 15
 	numPools                      = 1
 	parallelizationLevel          = 2
 )
@@ -170,6 +170,14 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 		return sha
 	}
 
+	getStatus := func() string {
+		if rand.Intn(3) < 2 {
+			return "passed"
+		} else {
+			return "failed"
+		}
+	}
+
 	errorChannel := make(chan error, numVerifications)
 
 	for index := 0; index < numVerifications; index++ {
@@ -178,6 +186,12 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 			verification, err := connection.Verifications.Create.Create(repositoryId, createSha(), createSha(),
 				headMessage, userNames[index%len(userNames)], userEmails[index%len(userEmails)],
 				mergeTargets[index%len(mergeTargets)], userEmails[rand.Intn(len(userEmails))])
+			if err != nil {
+				errorChannel <- err
+				return
+			}
+
+			err = connection.Verifications.Update.SetStatus(verification.Id, getStatus())
 			if err != nil {
 				errorChannel <- err
 				return
