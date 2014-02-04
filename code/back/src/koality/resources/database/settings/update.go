@@ -160,9 +160,9 @@ func (updateHandler *UpdateHandler) SetSmtpAuthLogin(hostname string, port uint1
 	return updateHandler.setSmtpServerSettings(hostname, port, smtpAuthSettings)
 }
 
-func (updateHandler *UpdateHandler) SetGitHubEnterpriseSettings(url, oauthClientId, oauthClientSecret string) (*resources.GitHubEnterpriseSettings, error) {
+func (updateHandler *UpdateHandler) SetGitHubEnterpriseSettings(url, oAuthClientId, oAuthClientSecret string) (*resources.GitHubEnterpriseSettings, error) {
 	// TODO (bbland): verify these settings
-	gitHubEnterpriseSettings := &resources.GitHubEnterpriseSettings{url, oauthClientId, oauthClientSecret}
+	gitHubEnterpriseSettings := &resources.GitHubEnterpriseSettings{url, oAuthClientId, oAuthClientSecret}
 	err := updateHandler.setSetting(gitHubEnterpriseSettingsLocator, gitHubEnterpriseSettings)
 	if err != nil {
 		return nil, err

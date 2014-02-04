@@ -21,22 +21,22 @@ func NewClient(resourcesConnection *resources.Connection) *GitHubClient {
 }
 
 // TODO (bbland): there's no way this works
-func (client *GitHubClient) getGitHubClient(oauthToken string) (*github.Client, error) {
+func (client *GitHubClient) getGitHubClient(oAuthToken string) (*github.Client, error) {
 	gitHubEnterpriseSettings, err := client.resourcesConnection.Settings.Read.GetGitHubEnterpriseSettings()
 
-	var oauthConfig *oauth.Config
+	var oAuthConfig *oauth.Config
 	if _, ok := err.(resources.NoSuchSettingError); err != nil && !ok {
 		return nil, err
 	} else if err == nil {
-		oauthConfig = &oauth.Config{
+		oAuthConfig = &oauth.Config{
 			ClientId:     gitHubEnterpriseSettings.OAuthClientId,
 			ClientSecret: gitHubEnterpriseSettings.OAuthClientSecret,
 		}
 	}
 
 	transport := &oauth.Transport{
-		Config: oauthConfig,
-		Token:  &oauth.Token{AccessToken: oauthToken},
+		Config: oAuthConfig,
+		Token:  &oauth.Token{AccessToken: oAuthToken},
 	}
 	gitHubClient := github.NewClient(transport.Client())
 	if gitHubEnterpriseSettings != nil {
@@ -50,7 +50,7 @@ func (client *GitHubClient) getGitHubClient(oauthToken string) (*github.Client, 
 }
 
 func (client *GitHubClient) GetSshKeys(user resources.User) ([]string, error) {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOauth)
+	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (client *GitHubClient) GetSshKeys(user resources.User) ([]string, error) {
 }
 
 func (client *GitHubClient) AddKoalitySshKeyToUser(user resources.User) error {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOauth)
+	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return err
 	}
@@ -79,17 +79,15 @@ func (client *GitHubClient) AddKoalitySshKeyToUser(user resources.User) error {
 		return err
 	}
 
-	keyTitle := "Koality Verification"
-
 	_, _, err = gitHubClient.Users.CreateKey(&github.Key{
-		Title: &keyTitle,
+		Title: github.String("Koality Verification"),
 		Key:   &keyPair.PublicKey,
 	})
 	return err
 }
 
 func (client *GitHubClient) GetRepositories(user resources.User) ([]GitHubRepository, error) {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOauth)
+	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -122,4 +120,38 @@ func (client *GitHubClient) GetRepositories(user resources.User) ([]GitHubReposi
 		gitHubRepositories[index] = GitHubRepository{*repository.Owner.Name, *repository.Name}
 	}
 	return gitHubRepositories, nil
+}
+
+func (client *GitHubClient) AddRepositoryHook(user resources.User, repository resources.Repository, hookTypes []string, hookSecret string) (int64, error) {
+	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+	if err != nil {
+		return 0, err
+	}
+
+	hook := github.Hook{
+		Name:   github.String("web"),
+		Events: hookTypes,
+		Active: github.Bool(true),
+		Config: map[string]interface{}{
+			"secret":       hookSecret,
+			"insecure_ssl": 1,
+		},
+	}
+
+	createdHook, _, err := gitHubClient.Repositories.CreateHook(repository.GitHub.Owner, repository.GitHub.Name, &hook)
+	if err != nil {
+		return 0, err
+	}
+
+	return createdHook.Id, nil
+}
+
+func (client *GitHubClient) RemoveRepositoryHook(user resources.User, repository resources.Repository) error {
+	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+	if err != nil {
+		return err
+	}
+
+	_, err = gitHubClient.Repositories.DeleteHook(repository.GitHub.Owner, repository.GitHub.Name, repository.GitHub.HookId)
+	return err
 }

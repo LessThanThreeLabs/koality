@@ -53,9 +53,9 @@ func (updateHandler *UpdateHandler) SetPassword(userId uint64, passwordHash, pas
 	return updateHandler.updateUser(query, passwordHash, passwordSalt, userId)
 }
 
-func (updateHandler *UpdateHandler) SetGitHubOauth(userId uint64, gitHubOauth string) error {
+func (updateHandler *UpdateHandler) SetGitHubOAuth(userId uint64, gitHubOAuth string) error {
 	query := "UPDATE users SET github_oauth=$1 WHERE id=$2"
-	return updateHandler.updateUser(query, gitHubOauth, userId)
+	return updateHandler.updateUser(query, gitHubOAuth, userId)
 }
 
 func (updateHandler *UpdateHandler) SetAdmin(userId uint64, admin bool) error {

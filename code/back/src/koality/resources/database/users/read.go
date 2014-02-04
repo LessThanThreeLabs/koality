@@ -35,7 +35,7 @@ func (readHandler *ReadHandler) scanUser(scannable Scannable) (*resources.User, 
 	user.IsDeleted = user.Id == deletedId
 
 	if gitHubOAuth.Valid {
-		user.GitHubOauth = gitHubOAuth.String
+		user.GitHubOAuth = gitHubOAuth.String
 	}
 	return user, nil
 }

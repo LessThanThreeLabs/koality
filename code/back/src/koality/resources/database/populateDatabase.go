@@ -129,7 +129,7 @@ func createRepositories(connection *resources.Connection) error {
 				repository, err = connection.Repositories.Create.Create(name, "hg", remoteUri)
 			} else {
 				remoteUri := fmt.Sprintf("git@github.com:KoalityCode/koality-%d.git", index)
-				repository, err = connection.Repositories.Create.CreateWithGitHub(name, remoteUri, "github-owner", name)
+				repository, err = connection.Repositories.Create.CreateWithGitHub(name, remoteUri, "github-owner", name, "bogusOAuthToken")
 				if err == nil {
 					hookTypes := []string{"push", "pull_request"}
 					err = connection.Repositories.Update.SetGitHubHook(repository.Id, int64(index), "hook-secret", hookTypes)
