@@ -270,6 +270,7 @@ angular.module('koality.service.managers', []).
 				@_newLines = {}
 				@_oldLines = {}
 				@_gettingMoreLines = true
+				console.log 'QUEUEING FOR STAGE_ID, SHOULD BE STAGE RUN ID'
 				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, 0, @_linesRetrievedHandler
 
 			retrieveMoreLines: () =>
@@ -285,6 +286,7 @@ angular.module('koality.service.managers', []).
 				return if not @consoleLinesRpc.hasMoreLinesToRequest()
 
 				@_gettingMoreLines = true
+				console.log 'QUEUEING FOR STAGE_ID, SHOULD BE STAGE RUN ID'
 				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, getStartIndex(), @_linesRetrievedHandler
 
 			getNewLines: () =>
