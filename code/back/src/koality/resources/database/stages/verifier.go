@@ -46,13 +46,13 @@ func (verifier *Verifier) verifyEndTime(created, started, ended time.Time) error
 	return nil
 }
 
-func (verifier *Verifier) verifyVerificationExists(verificationId uint64) error {
-	query := "SELECT id FROM verifications WHERE id=$1"
-	err := verifier.database.QueryRow(query, verificationId).Scan(new(uint64))
+func (verifier *Verifier) verifyVerificationExists(buildId uint64) error {
+	query := "SELECT id FROM builds WHERE id=$1"
+	err := verifier.database.QueryRow(query, buildId).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err == sql.ErrNoRows {
-		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
+		errorText := fmt.Sprintf("Unable to find build with id: %d", buildId)
 		return resources.NoSuchVerificationError{errorText}
 	}
 	return nil
@@ -82,9 +82,9 @@ func (verifier *Verifier) verifyStageRunExists(stageRunId uint64) error {
 	return nil
 }
 
-func (verifier *Verifier) verifyStageDoesNotExistWithSectionAndName(verificationId, sectionNumber uint64, name string) error {
-	query := "SELECT id FROM stages WHERE verification_id=$1 AND section_number=$2 AND name=$3"
-	err := verifier.database.QueryRow(query, verificationId, sectionNumber, name).Scan(new(uint64))
+func (verifier *Verifier) verifyStageDoesNotExistWithSectionAndName(buildId, sectionNumber uint64, name string) error {
+	query := "SELECT id FROM stages WHERE build_id=$1 AND section_number=$2 AND name=$3"
+	err := verifier.database.QueryRow(query, buildId, sectionNumber, name).Scan(new(uint64))
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	} else if err != sql.ErrNoRows {

@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"koality/resources"
@@ -25,8 +25,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromCreatedEvents(sub
 	return subscriptionHandler.createdSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(verification *resources.Verification) {
-	subscriptionHandler.createdSubscriptionManager.Fire(verification)
+func (subscriptionHandler *SubscriptionHandler) FireCreatedEvent(build *resources.Verification) {
+	subscriptionHandler.createdSubscriptionManager.Fire(build)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToStatusUpdatedEvents(updateHandler resources.VerificationStatusUpdatedHandler) (resources.SubscriptionId, error) {
@@ -37,8 +37,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromStatusUpdatedEven
 	return subscriptionHandler.statusUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireStatusUpdatedEvent(verificationId uint64, status string) {
-	subscriptionHandler.statusUpdatedSubscriptionManager.Fire(verificationId, status)
+func (subscriptionHandler *SubscriptionHandler) FireStatusUpdatedEvent(buildId uint64, status string) {
+	subscriptionHandler.statusUpdatedSubscriptionManager.Fire(buildId, status)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToMergeStatusUpdatedEvents(updateHandler resources.VerificationMergeStatusUpdatedHandler) (resources.SubscriptionId, error) {
@@ -49,8 +49,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromMergeStatusUpdate
 	return subscriptionHandler.mergeStatusUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireMergeStatusUpdatedEvent(verificationId uint64, mergeStatus string) {
-	subscriptionHandler.mergeStatusUpdatedSubscriptionManager.Fire(verificationId, mergeStatus)
+func (subscriptionHandler *SubscriptionHandler) FireMergeStatusUpdatedEvent(buildId uint64, mergeStatus string) {
+	subscriptionHandler.mergeStatusUpdatedSubscriptionManager.Fire(buildId, mergeStatus)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToStartTimeUpdatedEvents(updateHandler resources.VerificationStartTimeUpdatedHandler) (resources.SubscriptionId, error) {
@@ -61,8 +61,8 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromStartTimeUpdatedE
 	return subscriptionHandler.startTimeUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireStartTimeUpdatedEvent(verificationId uint64, startTime time.Time) {
-	subscriptionHandler.startTimeUpdatedSubscriptionManager.Fire(verificationId, startTime)
+func (subscriptionHandler *SubscriptionHandler) FireStartTimeUpdatedEvent(buildId uint64, startTime time.Time) {
+	subscriptionHandler.startTimeUpdatedSubscriptionManager.Fire(buildId, startTime)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToEndTimeUpdatedEvents(updateHandler resources.VerificationEndTimeUpdatedHandler) (resources.SubscriptionId, error) {
@@ -73,6 +73,6 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromEndTimeUpdatedEve
 	return subscriptionHandler.endTimeUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireEndTimeUpdatedEvent(verificationId uint64, endTime time.Time) {
-	subscriptionHandler.endTimeUpdatedSubscriptionManager.Fire(verificationId, endTime)
+func (subscriptionHandler *SubscriptionHandler) FireEndTimeUpdatedEvent(buildId uint64, endTime time.Time) {
+	subscriptionHandler.endTimeUpdatedSubscriptionManager.Fire(buildId, endTime)
 }

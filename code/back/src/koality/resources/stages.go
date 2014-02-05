@@ -46,14 +46,14 @@ type StagesHandler struct {
 }
 
 type StagesCreateHandler interface {
-	Create(verificationId, sectionNumber uint64, name string, orderNumber uint64) (*Stage, error)
+	Create(buildId, sectionNumber uint64, name string, orderNumber uint64) (*Stage, error)
 	CreateRun(stageId uint64) (*StageRun, error)
 }
 
 type StagesReadHandler interface {
 	Get(stageId uint64) (*Stage, error)
-	GetBySectionNumberAndName(verificationId, sectionNumber uint64, name string) (*Stage, error)
-	GetAll(verificationId uint64) ([]Stage, error)
+	GetBySectionNumberAndName(buildId, sectionNumber uint64, name string) (*Stage, error)
+	GetAll(buildId uint64) ([]Stage, error)
 	GetRun(stageRunId uint64) (*StageRun, error)
 	GetAllRuns(stageId uint64) ([]StageRun, error)
 	GetConsoleLinesHead(stageRunId uint64, offset, results uint32) (map[uint64]string, error)

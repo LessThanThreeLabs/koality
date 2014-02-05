@@ -19,7 +19,7 @@ type DebugInstancesHandler struct {
 }
 
 type DebugInstancesCreateHandler interface {
-	Create(poolId uint64, instanceId string, expiration *time.Time, verification *CoreVerificationInformation) (*DebugInstance, error)
+	Create(poolId uint64, instanceId string, expiration *time.Time, build *CoreVerificationInformation) (*DebugInstance, error)
 }
 
 type DebugInstancesReadHandler interface {

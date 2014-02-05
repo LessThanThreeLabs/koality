@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"encoding/json"
@@ -8,23 +8,23 @@ import (
 	"strconv"
 )
 
-func (verificationsHandler *VerificationsHandler) get(writer http.ResponseWriter, request *http.Request) {
-	verificationIdString := mux.Vars(request)["verificationId"]
-	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
+func (buildsHandler *VerificationsHandler) get(writer http.ResponseWriter, request *http.Request) {
+	buildIdString := mux.Vars(request)["buildId"]
+	buildId, err := strconv.ParseUint(buildIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse verificationId: %v", err)
+		fmt.Fprintf(writer, "Unable to parse buildId: %v", err)
 		return
 	}
 
-	verification, err := verificationsHandler.resourcesConnection.Verifications.Read.Get(verificationId)
+	build, err := buildsHandler.resourcesConnection.Verifications.Read.Get(buildId)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	sanitizedVerification := getSanitizedVerification(verification)
+	sanitizedVerification := getSanitizedVerification(build)
 	jsonedVerification, err := json.Marshal(sanitizedVerification)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -36,7 +36,7 @@ func (verificationsHandler *VerificationsHandler) get(writer http.ResponseWriter
 	fmt.Fprintf(writer, "%s", jsonedVerification)
 }
 
-func (verificationsHandler *VerificationsHandler) getTail(writer http.ResponseWriter, request *http.Request) {
+func (buildsHandler *VerificationsHandler) getTail(writer http.ResponseWriter, request *http.Request) {
 	queryValues := request.URL.Query()
 
 	repositoryIdString := queryValues.Get("repositoryId")
@@ -63,16 +63,16 @@ func (verificationsHandler *VerificationsHandler) getTail(writer http.ResponseWr
 		return
 	}
 
-	verifications, err := verificationsHandler.resourcesConnection.Verifications.Read.GetTail(repositoryId, uint32(offset), uint32(results))
+	builds, err := buildsHandler.resourcesConnection.Verifications.Read.GetTail(repositoryId, uint32(offset), uint32(results))
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	sanitizedVerifications := make([]sanitizedVerification, 0, len(verifications))
-	for _, verification := range verifications {
-		sanitizedVerifications = append(sanitizedVerifications, *getSanitizedVerification(&verification))
+	sanitizedVerifications := make([]sanitizedVerification, 0, len(builds))
+	for _, build := range builds {
+		sanitizedVerifications = append(sanitizedVerifications, *getSanitizedVerification(&build))
 	}
 
 	jsonedVerifications, err := json.Marshal(sanitizedVerifications)

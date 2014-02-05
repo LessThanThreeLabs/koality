@@ -59,35 +59,35 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 		return err
 	}
 
-	verificationCount := 0
+	buildCount := 0
 	errorChannel := make(chan error)
 	for _, repository := range repositories {
-		verifications, err := connection.Verifications.Read.GetTail(repository.Id, 0, 1000000)
+		builds, err := connection.Verifications.Read.GetTail(repository.Id, 0, 1000000)
 		if err != nil {
 			return err
 		}
-		verificationCount += len(verifications)
+		buildCount += len(builds)
 
-		for index, verification := range verifications {
-			go func(index int, verificationId uint64) {
-				containsOutput, err := doesVerificationContainOutput(connection, verificationId)
+		for index, build := range builds {
+			go func(index int, buildId uint64) {
+				containsOutput, err := doesVerificationContainOutput(connection, buildId)
 				if err != nil {
 					errorChannel <- err
 					return
 				}
 
 				if index < int(numVerificationsToRetain) && !containsOutput {
-					errorChannel <- fmt.Errorf("Expected output for verification #%d with id: %d\n", index, verificationId)
+					errorChannel <- fmt.Errorf("Expected output for build #%d with id: %d\n", index, buildId)
 				} else if index >= int(numVerificationsToRetain) && containsOutput {
-					errorChannel <- fmt.Errorf("Expected no output for verification #%d with id: %d\n", index, verificationId)
+					errorChannel <- fmt.Errorf("Expected no output for build #%d with id: %d\n", index, buildId)
 				} else {
 					errorChannel <- nil
 				}
-			}(index, verification.Id)
+			}(index, build.Id)
 		}
 	}
 
-	for index := 0; index < verificationCount; index++ {
+	for index := 0; index < buildCount; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err
@@ -96,8 +96,8 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 	return nil
 }
 
-func doesVerificationContainOutput(connection *resources.Connection, verificationId uint64) (bool, error) {
-	stages, err := connection.Stages.Read.GetAll(verificationId)
+func doesVerificationContainOutput(connection *resources.Connection, buildId uint64) (bool, error) {
+	stages, err := connection.Stages.Read.GetAll(buildId)
 	if err != nil {
 		return false, err
 	}

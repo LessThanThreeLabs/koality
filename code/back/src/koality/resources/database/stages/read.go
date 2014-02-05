@@ -18,7 +18,7 @@ func NewReadHandler(database *sql.DB, verifier *Verifier, subscriptionHandler re
 
 func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 	stage := new(resources.Stage)
-	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE id=$1"
+	query := "SELECT id, build_id, section_number, name, order_number FROM stages WHERE id=$1"
 	row := readHandler.database.QueryRow(query, stageId)
 	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.SectionNumber, &stage.Name, &stage.OrderNumber)
 	if err == sql.ErrNoRows {
@@ -36,10 +36,10 @@ func (readHandler *ReadHandler) Get(stageId uint64) (*resources.Stage, error) {
 	return stage, nil
 }
 
-func (readHandler *ReadHandler) GetBySectionNumberAndName(verificationId, sectionNumber uint64, name string) (*resources.Stage, error) {
+func (readHandler *ReadHandler) GetBySectionNumberAndName(buildId, sectionNumber uint64, name string) (*resources.Stage, error) {
 	stage := new(resources.Stage)
-	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE verification_id=$1 AND section_number=$2 AND name=$3"
-	row := readHandler.database.QueryRow(query, verificationId, sectionNumber, name)
+	query := "SELECT id, build_id, section_number, name, order_number FROM stages WHERE build_id=$1 AND section_number=$2 AND name=$3"
+	row := readHandler.database.QueryRow(query, buildId, sectionNumber, name)
 	err := row.Scan(&stage.Id, &stage.VerificationId, &stage.SectionNumber, &stage.Name, &stage.OrderNumber)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find stage with section number %d and name %s", sectionNumber, name)
@@ -56,9 +56,9 @@ func (readHandler *ReadHandler) GetBySectionNumberAndName(verificationId, sectio
 	return stage, nil
 }
 
-func (readHandler *ReadHandler) GetAll(verificationId uint64) ([]resources.Stage, error) {
-	query := "SELECT id, verification_id, section_number, name, order_number FROM stages WHERE verification_id=$1"
-	rows, err := readHandler.database.Query(query, verificationId)
+func (readHandler *ReadHandler) GetAll(buildId uint64) ([]resources.Stage, error) {
+	query := "SELECT id, build_id, section_number, name, order_number FROM stages WHERE build_id=$1"
+	rows, err := readHandler.database.Query(query, buildId)
 	if err != nil {
 		return nil, err
 	}

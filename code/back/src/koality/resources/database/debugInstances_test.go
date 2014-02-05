@@ -63,9 +63,9 @@ func (suite *DebugInstancesSuite) TestCreateGet(check *gocheck.C) {
 
 	instanceId := "instanceIdentifier"
 	expireTime := time.Now().Add(1 * time.Minute)
-	verificationInfo := getVerificationInfo()
+	buildInfo := getVerificationInfo()
 	debugInstance, err := suite.resourcesConnection.DebugInstances.Create.Create(
-		suite.firstPool.Id, instanceId, &expireTime, verificationInfo)
+		suite.firstPool.Id, instanceId, &expireTime, buildInfo)
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(debugInstance, gocheck.Not(gocheck.IsNil))
 
@@ -84,9 +84,9 @@ func (suite *DebugInstancesSuite) TestCreateGet(check *gocheck.C) {
 func (suite *DebugInstancesSuite) TestGetAllRunning(check *gocheck.C) {
 	instanceId := "instanceIdentifier"
 	expireTime := time.Now().Add(1 * time.Minute)
-	verificationInfo := getVerificationInfo()
+	buildInfo := getVerificationInfo()
 	debugInstance, err := suite.resourcesConnection.DebugInstances.Create.Create(
-		suite.firstPool.Id, instanceId, &expireTime, verificationInfo)
+		suite.firstPool.Id, instanceId, &expireTime, buildInfo)
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(debugInstance, gocheck.Not(gocheck.IsNil))
 

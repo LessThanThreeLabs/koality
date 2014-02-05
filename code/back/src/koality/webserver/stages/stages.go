@@ -9,7 +9,7 @@ import (
 
 type sanitizedStage struct {
 	Id             uint64              `json:"id"`
-	VerificationId uint64              `json:"verificationId"`
+	VerificationId uint64              `json:"buildId"`
 	SectionNumber  uint64              `json:"sectionNumber"`
 	Name           string              `json:"name"`
 	OrderNumber    uint64              `json:"orderNumber"`

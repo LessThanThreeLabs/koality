@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"database/sql"
@@ -104,7 +104,7 @@ func (verifier *Verifier) verifyStatus(status string) error {
 			return nil
 		}
 	}
-	return resources.InvalidVerificationStatusError{"Unexpected verification status: " + status}
+	return resources.InvalidVerificationStatusError{"Unexpected build status: " + status}
 }
 
 func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {

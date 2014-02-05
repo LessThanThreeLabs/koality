@@ -21,7 +21,7 @@ func Clean(connection *resources.Connection, numVerificationsToRetain uint32) er
 		return err
 	}
 
-	verificationCount := 0
+	buildCount := 0
 	errorChannel := make(chan error, 100)
 	for _, repository := range repositories {
 		oldVerifications, err := connection.Verifications.Read.GetTail(repository.Id, numVerificationsToRetain, math.MaxUint32)
@@ -30,15 +30,15 @@ func Clean(connection *resources.Connection, numVerificationsToRetain uint32) er
 		}
 
 		for _, oldVerification := range oldVerifications {
-			verificationCount++
-			go func(verificationId uint64) {
-				err := cleanVerification(connection, verificationId)
+			buildCount++
+			go func(buildId uint64) {
+				err := cleanVerification(connection, buildId)
 				errorChannel <- err
 			}(oldVerification.Id)
 		}
 	}
 
-	for index := 0; index < verificationCount; index++ {
+	for index := 0; index < buildCount; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err
@@ -47,8 +47,8 @@ func Clean(connection *resources.Connection, numVerificationsToRetain uint32) er
 	return nil
 }
 
-func cleanVerification(connection *resources.Connection, verificationId uint64) error {
-	stages, err := connection.Stages.Read.GetAll(verificationId)
+func cleanVerification(connection *resources.Connection, buildId uint64) error {
+	stages, err := connection.Stages.Read.GetAll(buildId)
 	if err != nil {
 		return err
 	}

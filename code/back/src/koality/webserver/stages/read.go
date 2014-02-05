@@ -39,15 +39,15 @@ func (stagesHandler *StagesHandler) get(writer http.ResponseWriter, request *htt
 
 func (stagesHandler *StagesHandler) getAll(writer http.ResponseWriter, request *http.Request) {
 	queryValues := request.URL.Query()
-	verificationIdString := queryValues.Get("verificationId")
-	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
+	buildIdString := queryValues.Get("buildId")
+	buildId, err := strconv.ParseUint(buildIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse verificationId: %v", err)
+		fmt.Fprintf(writer, "Unable to parse buildId: %v", err)
 		return
 	}
 
-	stages, err := stagesHandler.resourcesConnection.Stages.Read.GetAll(verificationId)
+	stages, err := stagesHandler.resourcesConnection.Stages.Read.GetAll(buildId)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

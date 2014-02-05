@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"database/sql"
@@ -53,11 +53,11 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 		return nil, err
 	}
 
-	verificationId := uint64(0)
-	verificationQuery := "INSERT INTO verifications (repository_id, snapshot_id, debug_instance_id, changeset_id, merge_target, email_to_notify, status)" +
+	buildId := uint64(0)
+	buildQuery := "INSERT INTO builds (repository_id, snapshot_id, debug_instance_id, changeset_id, merge_target, email_to_notify, status)" +
 		" VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
 
-	err = transaction.QueryRow(verificationQuery, repositoryId, nilOnZero(snapshotId), nilOnZero(debugInstanceId), changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&verificationId)
+	err = transaction.QueryRow(buildQuery, repositoryId, nilOnZero(snapshotId), nilOnZero(debugInstanceId), changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&buildId)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err
@@ -65,21 +65,21 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 
 	transaction.Commit()
 
-	verification, err := createHandler.readHandler.Get(verificationId)
+	build, err := createHandler.readHandler.Get(buildId)
 	if err != nil {
 		return nil, err
 	}
 
-	return verification, nil
+	return build, nil
 }
 
 func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
-	verification, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err == nil {
-		createHandler.subscriptionHandler.FireCreatedEvent(verification)
+		createHandler.subscriptionHandler.FireCreatedEvent(build)
 	}
 
-	return verification, err
+	return build, err
 }
 
 func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Verification, error) {
@@ -100,7 +100,7 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetI
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO verifications (repository_id, snapshot_id, changeset_id, merge_target, email_to_notify, status)" +
+	query := "INSERT INTO builds (repository_id, snapshot_id, changeset_id, merge_target, email_to_notify, status)" +
 		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 
 	err := createHandler.database.QueryRow(query, repositoryId, nil, changesetId, mergeTarget, emailToNotify, initialVerificationStatus).Scan(&id)
@@ -108,13 +108,13 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetI
 		return nil, err
 	}
 
-	verification, err := createHandler.readHandler.Get(id)
+	build, err := createHandler.readHandler.Get(id)
 	if err != nil {
 		return nil, err
 	}
 
-	createHandler.subscriptionHandler.FireCreatedEvent(verification)
-	return verification, nil
+	createHandler.subscriptionHandler.FireCreatedEvent(build)
+	return build, nil
 }
 
 func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail string) error {

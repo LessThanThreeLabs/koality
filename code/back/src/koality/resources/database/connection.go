@@ -6,6 +6,7 @@ import (
 	_ "github.com/lib/pq" // Adds the Postgres driver
 	"io/ioutil"
 	"koality/resources"
+	"koality/resources/database/builds"
 	"koality/resources/database/debugInstances"
 	"koality/resources/database/pools"
 	"koality/resources/database/repositories"
@@ -13,7 +14,6 @@ import (
 	"koality/resources/database/snapshots"
 	"koality/resources/database/stages"
 	"koality/resources/database/users"
-	"koality/resources/database/verifications"
 	"koality/util/pathtranslator"
 	"os"
 	"os/exec"
@@ -52,7 +52,7 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	verificationsHandler, err := verifications.New(database)
+	buildsHandler, err := builds.New(database)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,12 @@ func New() (*resources.Connection, error) {
 		return nil, err
 	}
 
-	snapshotsHandler, err := snapshots.New(database, verificationsHandler)
+	snapshotsHandler, err := snapshots.New(database, buildsHandler)
 	if err != nil {
 		return nil, err
 	}
 
-	debugInstancesHandler, err := debugInstances.New(database, verificationsHandler)
+	debugInstancesHandler, err := debugInstances.New(database, buildsHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func New() (*resources.Connection, error) {
 	connection := &resources.Connection{
 		Users:          usersHandler,
 		Repositories:   repositoriesHandler,
-		Verifications:  verificationsHandler,
+		Verifications:  buildsHandler,
 		Stages:         stagesHandler,
 		Pools:          poolsHandler,
 		Settings:       settingsHandler,

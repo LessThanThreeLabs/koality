@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"database/sql"
@@ -20,33 +20,33 @@ func NewReadHandler(database *sql.DB, verifier *Verifier, subscriptionHandler re
 }
 
 func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resources.Verification, error) {
-	verification := new(resources.Verification)
+	build := new(resources.Verification)
 
 	var mergeTarget, emailToNotify, status, mergeStatus sql.NullString
-	err := scannable.Scan(&verification.Id, &verification.RepositoryId, &mergeTarget, &emailToNotify,
-		&status, &mergeStatus, &verification.Created, &verification.Started, &verification.Ended,
-		&verification.Changeset.Id, &verification.Changeset.RepositoryId, &verification.Changeset.HeadSha,
-		&verification.Changeset.BaseSha, &verification.Changeset.HeadMessage, &verification.Changeset.HeadUsername,
-		&verification.Changeset.HeadEmail, &verification.Changeset.Created)
+	err := scannable.Scan(&build.Id, &build.RepositoryId, &mergeTarget, &emailToNotify,
+		&status, &mergeStatus, &build.Created, &build.Started, &build.Ended,
+		&build.Changeset.Id, &build.Changeset.RepositoryId, &build.Changeset.HeadSha,
+		&build.Changeset.BaseSha, &build.Changeset.HeadMessage, &build.Changeset.HeadUsername,
+		&build.Changeset.HeadEmail, &build.Changeset.Created)
 	if err == sql.ErrNoRows {
-		return nil, resources.NoSuchVerificationError{"Unable to find verification"}
+		return nil, resources.NoSuchVerificationError{"Unable to find build"}
 	} else if err != nil {
 		return nil, err
 	}
 
 	if mergeTarget.Valid {
-		verification.MergeTarget = mergeTarget.String
+		build.MergeTarget = mergeTarget.String
 	}
 	if emailToNotify.Valid {
-		verification.EmailToNotify = emailToNotify.String
+		build.EmailToNotify = emailToNotify.String
 	}
 	if status.Valid {
-		verification.Status = status.String
+		build.Status = status.String
 	}
 	if mergeStatus.Valid {
-		verification.MergeStatus = mergeStatus.String
+		build.MergeStatus = mergeStatus.String
 	}
-	return verification, nil
+	return build, nil
 }
 
 func (readHandler *ReadHandler) scanChangeset(scannable Scannable) (*resources.Changeset, error) {
@@ -63,14 +63,14 @@ func (readHandler *ReadHandler) scanChangeset(scannable Scannable) (*resources.C
 	return changeset, nil
 }
 
-func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verification, error) {
+func (readHandler *ReadHandler) Get(buildId uint64) (*resources.Verification, error) {
 	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
 		" V.status, V.merge_status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.created" +
-		" FROM verifications V JOIN changesets C" +
+		" FROM builds V JOIN changesets C" +
 		" ON V.changeset_id=C.id WHERE V.id=$1"
-	row := readHandler.database.QueryRow(query, verificationId)
+	row := readHandler.database.QueryRow(query, buildId)
 	return readHandler.scanVerification(row)
 }
 
@@ -85,7 +85,7 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 		" V.status, V.merge_status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.created" +
-		" FROM verifications V JOIN changesets C" +
+		" FROM builds V JOIN changesets C" +
 		" ON V.changeset_id=C.id WHERE V.repository_id=$1" +
 		" ORDER BY V.id DESC LIMIT $2 OFFSET $3"
 	rows, err := readHandler.database.Query(query, repositoryId, results, offset)
@@ -93,18 +93,18 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 		return nil, err
 	}
 
-	verifications := make([]resources.Verification, 0, 100)
+	builds := make([]resources.Verification, 0, 100)
 	for rows.Next() {
-		verification, err := readHandler.scanVerification(rows)
+		build, err := readHandler.scanVerification(rows)
 		if err != nil {
 			return nil, err
 		}
-		verifications = append(verifications, *verification)
+		builds = append(builds, *build)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return verifications, nil
+	return builds, nil
 }
 
 func (readHandler *ReadHandler) GetChangesetFromShas(headSha, baseSha string) (*resources.Changeset, error) {
