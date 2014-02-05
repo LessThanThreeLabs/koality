@@ -23,8 +23,7 @@ func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resource
 	verification := new(resources.Verification)
 
 	var mergeTarget, emailToNotify, status, mergeStatus sql.NullString
-	var snapshotId sql.NullInt64
-	err := scannable.Scan(&verification.Id, &verification.RepositoryId, &snapshotId, &mergeTarget, &emailToNotify,
+	err := scannable.Scan(&verification.Id, &verification.RepositoryId, &mergeTarget, &emailToNotify,
 		&status, &mergeStatus, &verification.Created, &verification.Started, &verification.Ended,
 		&verification.Changeset.Id, &verification.Changeset.RepositoryId, &verification.Changeset.HeadSha,
 		&verification.Changeset.BaseSha, &verification.Changeset.HeadMessage, &verification.Changeset.HeadUsername,
@@ -35,9 +34,6 @@ func (readHandler *ReadHandler) scanVerification(scannable Scannable) (*resource
 		return nil, err
 	}
 
-	if snapshotId.Valid {
-		verification.SnapshotId = uint64(snapshotId.Int64)
-	}
 	if mergeTarget.Valid {
 		verification.MergeTarget = mergeTarget.String
 	}
@@ -68,7 +64,7 @@ func (readHandler *ReadHandler) scanChangeset(scannable Scannable) (*resources.C
 }
 
 func (readHandler *ReadHandler) Get(verificationId uint64) (*resources.Verification, error) {
-	query := "SELECT V.id, V.repository_id, V.snapshot_id, V.merge_target, V.email_to_notify," +
+	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
 		" V.status, V.merge_status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.created" +
@@ -85,7 +81,7 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 		return nil, err
 	}
 
-	query := "SELECT V.id, V.repository_id, V.snapshot_id, V.merge_target, V.email_to_notify," +
+	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
 		" V.status, V.merge_status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.created" +

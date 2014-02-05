@@ -7,7 +7,6 @@ import (
 type Verification struct {
 	Id            uint64
 	RepositoryId  uint64
-	SnapshotId    uint64
 	EmailToNotify string
 	Status        string
 	MergeTarget   string

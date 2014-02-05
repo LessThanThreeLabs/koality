@@ -11,7 +11,6 @@ import (
 type sanitizedVerification struct {
 	Id           uint64             `json:"id"`
 	RepositoryId uint64             `json:"repositoryId"`
-	SnapshotId   uint64             `json:"snapshotId"`
 	MergeTarget  string             `json:"mergeTarget"`
 	Status       string             `json:"status"`
 	MergeStatus  string             `json:"mergeStatus"`
@@ -66,7 +65,6 @@ func getSanitizedVerification(verification *resources.Verification) *sanitizedVe
 	return &sanitizedVerification{
 		Id:           verification.Id,
 		RepositoryId: verification.RepositoryId,
-		SnapshotId:   verification.SnapshotId,
 		MergeTarget:  verification.MergeTarget,
 		Status:       verification.Status,
 		MergeStatus:  verification.MergeStatus,

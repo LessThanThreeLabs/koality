@@ -9,7 +9,8 @@ import (
 	"koality/resources"
 	"koality/resources/database"
 	"koality/resources/database/migrate"
-	verificationrunner "koality/verification/runner"
+	"koality/verification/debuginstancerunner"
+	"koality/verification/testrunner"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
 	"koality/vm/localmachine"
@@ -55,8 +56,14 @@ func main() {
 
 	repositoryManager := repositorymanager.New(repositoriesPath, resourcesConnection)
 
-	verificationRunner := verificationrunner.New(resourcesConnection, poolManager, repositoryManager)
-	err = verificationRunner.SubscribeToEvents()
+	testRunner := testrunner.New(resourcesConnection, poolManager, repositoryManager)
+	err = testRunner.SubscribeToEvents()
+	if err != nil {
+		panic(err)
+	}
+
+	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager)
+	err = debugInstanceRunner.SubscribeToEvents()
 	if err != nil {
 		panic(err)
 	}

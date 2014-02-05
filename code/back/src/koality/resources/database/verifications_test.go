@@ -101,8 +101,6 @@ func TestCreateVerification(test *testing.T) {
 
 	if verification.RepositoryId != firstRepository.Id {
 		test.Fatal("verification.RepositoryId mismatch")
-	} else if verification.SnapshotId != 0 {
-		test.Fatal("verification.SnapshotId mismatch")
 	} else if verification.MergeTarget != mergeTarget {
 		test.Fatal("verification.MergeTarget mismatch")
 	} else if verification.EmailToNotify != emailToNotify {
@@ -129,8 +127,6 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal("Bad verification.Id in verification creation event")
 	} else if createdEventVerification.RepositoryId != verification.RepositoryId {
 		test.Fatal("Bad verification.RepositoryId in verification creation event")
-	} else if createdEventVerification.SnapshotId != verification.SnapshotId {
-		test.Fatal("Bad verification.SnapshotId in verification creation event")
 	} else if createdEventVerification.MergeTarget != verification.MergeTarget {
 		test.Fatal("Bad verification.MergeTarget in verification creation event")
 	} else if createdEventVerification.EmailToNotify != verification.EmailToNotify {
@@ -154,8 +150,6 @@ func TestCreateVerification(test *testing.T) {
 
 	if verification.RepositoryId != verificationAgain.RepositoryId {
 		test.Fatal("verification.RepositoryId mismatch")
-	} else if verification.SnapshotId != verificationAgain.SnapshotId {
-		test.Fatal("verification.SnapshotId mismatch")
 	} else if verification.MergeTarget != verificationAgain.MergeTarget {
 		test.Fatal("verification.MergeTarget mismatch")
 	} else if verification.EmailToNotify != verificationAgain.EmailToNotify {
@@ -192,8 +186,6 @@ func TestCreateVerification(test *testing.T) {
 		test.Fatal("Bad verification.Id in verification creation event")
 	} else if createdEventVerification.RepositoryId != verification2.RepositoryId {
 		test.Fatal("Bad verification.RepositoryId in verification creation event")
-	} else if createdEventVerification.SnapshotId != verification2.SnapshotId {
-		test.Fatal("Bad verification.SnapshotId in verification creation event")
 	} else if createdEventVerification.MergeTarget != verification2.MergeTarget {
 		test.Fatal("Bad verification.MergeTarget in verification creation event")
 	} else if createdEventVerification.EmailToNotify != verification2.EmailToNotify {

@@ -1,4 +1,4 @@
-package runner
+package testrunner
 
 import (
 	"github.com/dchest/goyaml"
@@ -91,15 +91,14 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	vmPool := vm.NewPool(1, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	verificationRunner := New(resourcesConnection, poolManager, repositoryManager)
-
+	testRunner := New(resourcesConnection, poolManager, repositoryManager)
 	verification, err := resourcesConnection.Verifications.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	success, err := verificationRunner.RunVerification(verification)
+	success, err := testRunner.RunVerification(verification)
 	if err != nil {
 		test.Fatal(err)
 	}
