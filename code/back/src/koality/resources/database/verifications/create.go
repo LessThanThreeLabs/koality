@@ -70,12 +70,16 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 		return nil, err
 	}
 
-	createHandler.subscriptionHandler.FireCreatedEvent(verification)
 	return verification, nil
 }
 
 func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Verification, error) {
-	return createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	verification, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	if err == nil {
+		createHandler.subscriptionHandler.FireCreatedEvent(verification)
+	}
+
+	return verification, err
 }
 
 func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Verification, error) {
