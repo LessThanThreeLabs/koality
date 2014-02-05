@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"github.com/gorilla/mux"
+	"koality/github"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/middleware"
@@ -28,10 +29,11 @@ type sanitizedRepositoryGitHubMetadata struct {
 type RepositoriesHandler struct {
 	resourcesConnection *resources.Connection
 	repositoryManager   repositorymanager.RepositoryManager
+	gitHubConnection    github.GitHubConnection
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*RepositoriesHandler, error) {
-	return &RepositoriesHandler{resourcesConnection, repositoryManager}, nil
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection github.GitHubConnection) (*RepositoriesHandler, error) {
+	return &RepositoriesHandler{resourcesConnection, repositoryManager, gitHubConnection}, nil
 }
 
 func (repositoriesHandler *RepositoriesHandler) WireAppSubroutes(subrouter *mux.Router) {

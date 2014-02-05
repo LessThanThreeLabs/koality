@@ -116,7 +116,7 @@ type compoundGitHubOAuthConnection struct {
 	enterprise GitHubOAuthConnection
 }
 
-func NewCompoundGitHubEnterpriseOAuthConnection(resourcesConnection *resources.Connection) GitHubOAuthConnection {
+func NewCompoundGitHubOAuthConnection(resourcesConnection *resources.Connection) GitHubOAuthConnection {
 	return &compoundGitHubOAuthConnection{
 		standard:   NewStandardGitHubOAuthConnection(),
 		enterprise: NewGitHubEnterpriseOAuthConnection(resourcesConnection),

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"koality/github"
 	"koality/internalapi"
 	"koality/mail"
 	"koality/repositorymanager"
@@ -63,7 +64,10 @@ func main() {
 	// TODO: initialize more components here
 	internalapi.Start(resourcesConnection, poolManager, repositoriesPath, internalapi.RpcSocket)
 
-	webserver, err := webserver.New(resourcesConnection, repositoryManager, webserverPort)
+	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
+	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
+
+	webserver, err := webserver.New(resourcesConnection, repositoryManager, gitHubConnection, webserverPort)
 	if err != nil {
 		panic(err)
 	}

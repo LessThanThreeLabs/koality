@@ -14,12 +14,12 @@ type GitHubRepository struct {
 }
 
 type GitHubConnection interface {
-	GetSshKeys(user resources.User) (sshKeys []string, err error)
-	AddKoalitySshKeyToUser(user resources.User) error
-	GetRepositories(user resources.User) (repositories []GitHubRepository, err error)
-	AddRepositoryHook(user resources.User, repository resources.Repository, hookTypes []string, hookSecret string) (hookId int64, err error)
-	RemoveRepositoryHook(user resources.User, repository resources.Repository) error
-	SetChangeStatus(user resources.User, repository resources.Repository, sha, status, description, url string) error
+	GetSshKeys(oAuthToken string) (sshKeys []string, err error)
+	AddKoalitySshKeyToUser(oAuthToken string) error
+	GetRepositories(oAuthToken string) (repositories []GitHubRepository, err error)
+	AddRepositoryHook(repository *resources.Repository, hookTypes []string, hookSecret string) (hookId int64, err error)
+	RemoveRepositoryHook(repository *resources.Repository) error
+	SetChangeStatus(repository *resources.Repository, sha, status, description, url string) error
 }
 
 type gitHubConnection struct {
@@ -59,8 +59,8 @@ func (connection *gitHubConnection) getGitHubClient(oAuthToken string) (*github.
 	return gitHubClient, nil
 }
 
-func (connection *gitHubConnection) GetSshKeys(user resources.User) ([]string, error) {
-	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) GetSshKeys(oAuthToken string) ([]string, error) {
+	gitHubClient, err := connection.getGitHubClient(oAuthToken)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +78,8 @@ func (connection *gitHubConnection) GetSshKeys(user resources.User) ([]string, e
 	return sshKeys, nil
 }
 
-func (connection *gitHubConnection) AddKoalitySshKeyToUser(user resources.User) error {
-	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) AddKoalitySshKeyToUser(oAuthToken string) error {
+	gitHubClient, err := connection.getGitHubClient(oAuthToken)
 	if err != nil {
 		return err
 	}
@@ -96,8 +96,8 @@ func (connection *gitHubConnection) AddKoalitySshKeyToUser(user resources.User) 
 	return err
 }
 
-func (connection *gitHubConnection) GetRepositories(user resources.User) ([]GitHubRepository, error) {
-	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) GetRepositories(oAuthToken string) ([]GitHubRepository, error) {
+	gitHubClient, err := connection.getGitHubClient(oAuthToken)
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +132,8 @@ func (connection *gitHubConnection) GetRepositories(user resources.User) ([]GitH
 	return gitHubRepositories, nil
 }
 
-func (connection *gitHubConnection) AddRepositoryHook(user resources.User, repository resources.Repository, hookTypes []string, hookSecret string) (int64, error) {
-	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) AddRepositoryHook(repository *resources.Repository, hookTypes []string, hookSecret string) (int64, error) {
+	gitHubClient, err := connection.getGitHubClient(repository.GitHub.OAuthToken)
 	if err != nil {
 		return 0, err
 	}
@@ -156,8 +156,8 @@ func (connection *gitHubConnection) AddRepositoryHook(user resources.User, repos
 	return int64(*createdHook.ID), nil
 }
 
-func (connection *gitHubConnection) RemoveRepositoryHook(user resources.User, repository resources.Repository) error {
-	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) RemoveRepositoryHook(repository *resources.Repository) error {
+	gitHubClient, err := connection.getGitHubClient(repository.GitHub.OAuthToken)
 	if err != nil {
 		return err
 	}
@@ -166,8 +166,8 @@ func (connection *gitHubConnection) RemoveRepositoryHook(user resources.User, re
 	return err
 }
 
-func (connection *gitHubConnection) SetChangeStatus(user resources.User, repository resources.Repository, sha, status, description, url string) error {
-	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) SetChangeStatus(repository *resources.Repository, sha, status, description, url string) error {
+	gitHubClient, err := connection.getGitHubClient(repository.GitHub.OAuthToken)
 	if err != nil {
 		return err
 	}

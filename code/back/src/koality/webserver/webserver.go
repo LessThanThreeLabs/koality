@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	githubconnection "koality/github"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
@@ -23,13 +24,14 @@ import (
 type Webserver struct {
 	resourcesConnection *resources.Connection
 	repositoryManager   repositorymanager.RepositoryManager
+	gitHubConnection    githubconnection.GitHubConnection
 	sessionName         string
 	address             string
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, port int) (*Webserver, error) {
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection githubconnection.GitHubConnection, port int) (*Webserver, error) {
 	address := fmt.Sprintf(":%d", port)
-	return &Webserver{resourcesConnection, repositoryManager, "koality", address}, nil
+	return &Webserver{resourcesConnection, repositoryManager, gitHubConnection, "koality", address}, nil
 }
 
 func (webserver *Webserver) Start() error {
@@ -107,7 +109,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	repositoriesHandler, err := repositories.New(webserver.resourcesConnection, webserver.repositoryManager)
+	repositoriesHandler, err := repositories.New(webserver.resourcesConnection, webserver.repositoryManager, webserver.gitHubConnection)
 	if err != nil {
 		return nil, err
 	}

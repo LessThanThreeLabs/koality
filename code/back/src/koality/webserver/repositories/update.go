@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.ResponseWriter, request *http.Request) {
@@ -26,10 +28,22 @@ func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.R
 		return
 	}
 
-	fmt.Println("...need to actually set the hook in github")
+	repository, err := repositoriesHandler.resourcesConnection.Repositories.Read.Get(repositoryId)
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	hookSecret := generateSecret()
+	hookId, err := repositoriesHandler.gitHubConnection.AddRepositoryHook(repository, hookTypes, hookSecret)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
 	fmt.Println("...make sure to delete old hooks, if there are any")
-	hookId := int64(17)
-	hookSecret := "hook-secret"
 	err = repositoriesHandler.resourcesConnection.Repositories.Update.SetGitHubHook(repositoryId, hookId, hookSecret, hookTypes)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -63,4 +77,14 @@ func (repositoriesHandler *RepositoriesHandler) clearGitHubHook(writer http.Resp
 
 	fmt.Println("...need to actually remove hooks from github")
 	fmt.Fprint(writer, "ok")
+}
+
+func generateSecret() string {
+	// 36^12 < 2^63; does not overflow
+	maxRandValue := int64(1)
+	for i := 0; i < 12; i++ {
+		maxRandValue *= 36
+	}
+	random := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return strconv.FormatInt(random.Int63n(maxRandValue), 36)
 }
