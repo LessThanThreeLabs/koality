@@ -204,7 +204,7 @@ angular.module('koality.service.managers', []).
 		return create: () ->
 			return new StagesManager()
 	]).
-	factory('ConsoleLinesManager', ['$rootScope', '$timeout', 'ConsoleLinesRpc', 'events', 'stringHasher', 'integerConverter', ($rootScope, $timeout, ConsoleLinesRpc, events, stringHasher, integerConverter) ->
+	factory('ConsoleLinesManager', ['$rootScope', '$http', '$timeout', 'ConsoleLinesRpc', 'events', 'stringHasher', 'integerConverter', ($rootScope, $http, $timeout, ConsoleLinesRpc, events, stringHasher, integerConverter) ->
 		class ConsoleLinesManager
 			_stageId: null
 			_currentRequestId: null
@@ -220,7 +220,9 @@ angular.module('koality.service.managers', []).
 				@consoleLinesRpc = ConsoleLinesRpc.create()
 
 			_linesRetrievedHandler: (error, linesData) =>
-				if error? then console.error error
+				if error?
+					@_gettingMoreLines = false
+					console.error error
 				else 
 					return if @_currentRequestId isnt linesData.requestId
 					@_processNewLines linesData.lines
@@ -270,8 +272,17 @@ angular.module('koality.service.managers', []).
 				@_newLines = {}
 				@_oldLines = {}
 				@_gettingMoreLines = true
-				console.log 'QUEUEING FOR STAGE_ID, SHOULD BE STAGE RUN ID'
-				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, 0, @_linesRetrievedHandler
+
+				request = $http.get("/app/stages/#{@_stageId}")
+				request.success (data, status, headers, config) =>
+					buildRunId = data?.runs?[0]?.id
+					if buildRunId? then @_currentRequestId = @consoleLinesRpc.queueRequest buildRunId, 0, @_linesRetrievedHandler
+					else 
+						console.error 'Unable to find build run'
+						@_gettingMoreLines = false
+				request.error (data, status, headers, config) =>
+					console.error data
+					@_gettingMoreLines = false
 
 			retrieveMoreLines: () =>
 				getStartIndex = () =>
@@ -286,8 +297,17 @@ angular.module('koality.service.managers', []).
 				return if not @consoleLinesRpc.hasMoreLinesToRequest()
 
 				@_gettingMoreLines = true
-				console.log 'QUEUEING FOR STAGE_ID, SHOULD BE STAGE RUN ID'
-				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, getStartIndex(), @_linesRetrievedHandler
+				
+				request = $http.get("/app/stages/#{@_stageId}")
+				request.success (data, status, headers, config) =>
+					buildRunId = data?.runs?[0]?.id
+					if buildRunId? then @_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, getStartIndex(), @_linesRetrievedHandler
+					else 
+						console.error 'Unable to find build run'
+						@_gettingMoreLines = false
+				request.error (data, status, headers, config) =>
+					console.error data
+					@_gettingMoreLines = false
 
 			getNewLines: () =>
 				return @_newLines
