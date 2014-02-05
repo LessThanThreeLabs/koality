@@ -1,4 +1,4 @@
-package verification
+package build
 
 import (
 	"koality/shell"

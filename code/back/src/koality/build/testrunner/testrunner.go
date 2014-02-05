@@ -2,11 +2,11 @@ package testrunner
 
 import (
 	"fmt"
+	"koality/build/runner"
+	"koality/build/stagerunner"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/util/log"
-	"koality/verification/runner"
-	"koality/verification/stagerunner"
 	"koality/vm/poolmanager"
 )
 
@@ -29,11 +29,11 @@ func New(resourcesConnection *resources.Connection, poolManager *poolmanager.Poo
 }
 
 func (testRunner *TestRunner) SubscribeToEvents() error {
-	onTestCreated := func(testBuild *resources.Verification) {
-		testRunner.RunVerification(testBuild)
+	onTestCreated := func(testBuild *resources.Build) {
+		testRunner.RunBuild(testBuild)
 	}
 	var err error
-	testRunner.testBuildCreatedSubscriptionId, err = testRunner.resourcesConnection.Verifications.Subscription.SubscribeToCreatedEvents(onTestCreated)
+	testRunner.testBuildCreatedSubscriptionId, err = testRunner.resourcesConnection.Builds.Subscription.SubscribeToCreatedEvents(onTestCreated)
 	return err
 }
 
@@ -41,9 +41,9 @@ func (testRunner *TestRunner) UnsubscribeFromEvents() error {
 	var err error
 
 	if testRunner.testBuildCreatedSubscriptionId == 0 {
-		return fmt.Errorf("Verification created events not subscribed to")
+		return fmt.Errorf("Build created events not subscribed to")
 	} else {
-		unsubscribeError := testRunner.resourcesConnection.Verifications.Subscription.UnsubscribeFromCreatedEvents(testRunner.testBuildCreatedSubscriptionId)
+		unsubscribeError := testRunner.resourcesConnection.Builds.Subscription.UnsubscribeFromCreatedEvents(testRunner.testBuildCreatedSubscriptionId)
 		if unsubscribeError != nil {
 			err = unsubscribeError
 		} else {
@@ -53,28 +53,28 @@ func (testRunner *TestRunner) UnsubscribeFromEvents() error {
 	return err
 }
 
-func (testRunner *TestRunner) RunVerification(currentVerification *resources.Verification) (bool, error) {
-	buildData, err := testRunner.buildRunner.GetBuildData(currentVerification)
+func (testRunner *TestRunner) RunBuild(currentBuild *resources.Build) (bool, error) {
+	buildData, err := testRunner.buildRunner.GetBuildData(currentBuild)
 	if err != nil {
 		// TODO handle errors
 		return false, err
 	}
 
-	err = testRunner.buildRunner.CreateStages(currentVerification, &buildData.VerificationConfig)
+	err = testRunner.buildRunner.CreateStages(currentBuild, &buildData.BuildConfig)
 	if err != nil {
 		return false, err
 	}
 
-	numNodes := buildData.VerificationConfig.Params.Nodes
+	numNodes := buildData.BuildConfig.Params.Nodes
 	if numNodes == 0 {
 		numNodes = 1 // TODO (bbland): Do a better job guessing the number of nodes when unspecified
 	}
-	log.Debugf("Using %d nodes for verification: %v", numNodes, currentVerification)
+	log.Debugf("Using %d nodes for build: %v", numNodes, currentBuild)
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
 	emptyFinishFunc := func() {}
 
 	testRunner.buildRunner.RunStagesOnNewMachines(
-		numNodes, buildData, currentVerification, newStageRunnersChan, emptyFinishFunc)
-	return testRunner.buildRunner.ProcessResults(currentVerification, newStageRunnersChan, buildData)
+		numNodes, buildData, currentBuild, newStageRunnersChan, emptyFinishFunc)
+	return testRunner.buildRunner.ProcessResults(currentBuild, newStageRunnersChan, buildData)
 }

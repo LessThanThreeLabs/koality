@@ -2,10 +2,10 @@ package debuginstancerunner
 
 import (
 	"fmt"
+	"koality/build/runner"
+	"koality/build/stagerunner"
 	"koality/repositorymanager"
 	"koality/resources"
-	"koality/verification/runner"
-	"koality/verification/stagerunner"
 	"koality/vm/poolmanager"
 	"time"
 )
@@ -54,26 +54,26 @@ func (debugInstanceRunner *DebugInstanceRunner) UnsubscribeFromEvents() error {
 }
 
 func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *resources.DebugInstance) (bool, error) {
-	verification, err := debugInstanceRunner.resourcesConnection.Verifications.Read.Get(debugInstance.VerificationId)
+	build, err := debugInstanceRunner.resourcesConnection.Builds.Read.Get(debugInstance.BuildId)
 	if err != nil {
 		// TODO(dhuang) handle errors here?
 		return false, err
 	}
 
-	buildData, err := debugInstanceRunner.buildRunner.GetBuildData(verification)
+	buildData, err := debugInstanceRunner.buildRunner.GetBuildData(build)
 	if err != nil {
 		return false, err
 	}
 
-	for i, section := range buildData.VerificationConfig.Sections {
-		if section.Name() == buildData.VerificationConfig.Params.SnapshotUntil {
-			buildData.VerificationConfig.Sections = buildData.VerificationConfig.Sections[:i]
+	for i, section := range buildData.BuildConfig.Sections {
+		if section.Name() == buildData.BuildConfig.Params.SnapshotUntil {
+			buildData.BuildConfig.Sections = buildData.BuildConfig.Sections[:i]
 			break
 		}
 	}
-	buildData.VerificationConfig.FinalSections = nil
+	buildData.BuildConfig.FinalSections = nil
 	numNodes := uint64(1)
-	err = debugInstanceRunner.buildRunner.CreateStages(verification, &buildData.VerificationConfig)
+	err = debugInstanceRunner.buildRunner.CreateStages(build, &buildData.BuildConfig)
 	if err != nil {
 		return false, err
 	}
@@ -84,7 +84,7 @@ func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
 	debugInstanceRunner.buildRunner.RunStagesOnNewMachines(
-		numNodes, buildData, verification, newStageRunnersChan, finishFunc)
+		numNodes, buildData, build, newStageRunnersChan, finishFunc)
 
-	return debugInstanceRunner.buildRunner.ProcessResults(verification, newStageRunnersChan, buildData)
+	return debugInstanceRunner.buildRunner.ProcessResults(build, newStageRunnersChan, buildData)
 }

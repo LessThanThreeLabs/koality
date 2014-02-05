@@ -90,7 +90,7 @@ func (connection *gitHubConnection) AddKoalitySshKeyToUser(oAuthToken string) er
 	}
 
 	_, _, err = gitHubClient.Users.CreateKey(&github.Key{
-		Title: github.String("Koality Verification"),
+		Title: github.String("Koality Build"),
 		Key:   &keyPair.PublicKey,
 	})
 	return err

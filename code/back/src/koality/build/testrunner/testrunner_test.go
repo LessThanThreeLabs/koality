@@ -16,7 +16,7 @@ import (
 	"testing"
 )
 
-func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
+func testBuild(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -92,25 +92,25 @@ func testVerification(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
 	testRunner := New(resourcesConnection, poolManager, repositoryManager)
-	verification, err := resourcesConnection.Verifications.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
+	build, err := resourcesConnection.Builds.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	success, err := testRunner.RunVerification(verification)
+	success, err := testRunner.RunBuild(build)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	if !success && expectSuccess {
-		test.Fatal("Verification failed, expected success")
+		test.Fatal("Build failed, expected success")
 	} else if success && !expectSuccess {
-		test.Fatal("Verification passed, expected failure")
+		test.Fatal("Build passed, expected failure")
 	}
 }
 
-func TestSimplePassingVerification(test *testing.T) {
+func TestSimplePassingBuild(test *testing.T) {
 	ymlBytes, err := goyaml.Marshal(
 		map[string]interface{}{
 			"parameters": map[string]interface{}{
@@ -148,10 +148,10 @@ func TestSimplePassingVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	testVerification(test, ymlBytes, true)
+	testBuild(test, ymlBytes, true)
 }
 
-func TestSimpleFailingVerification(test *testing.T) {
+func TestSimpleFailingBuild(test *testing.T) {
 	ymlBytes, err := goyaml.Marshal(
 		map[string]interface{}{
 			"parameters": map[string]interface{}{
@@ -176,7 +176,7 @@ func TestSimpleFailingVerification(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	testVerification(test, ymlBytes, false)
+	testBuild(test, ymlBytes, false)
 }
 
 func TestEnvironment(test *testing.T) {
@@ -207,5 +207,5 @@ func TestEnvironment(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	testVerification(test, ymlBytes, true)
+	testBuild(test, ymlBytes, true)
 }

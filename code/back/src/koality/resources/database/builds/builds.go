@@ -1,11 +1,11 @@
-package verifications
+package builds
 
 import (
 	"database/sql"
 	"koality/resources"
 )
 
-func New(database *sql.DB) (*resources.VerificationsHandler, error) {
+func New(database *sql.DB) (*resources.BuildsHandler, error) {
 	verifier, err := NewVerifier(database)
 	if err != nil {
 		return nil, err
@@ -31,5 +31,5 @@ func New(database *sql.DB) (*resources.VerificationsHandler, error) {
 		return nil, err
 	}
 
-	return &resources.VerificationsHandler{createHandler, readHandler, updateHandler, internalSubscriptionHandler}, nil
+	return &resources.BuildsHandler{createHandler, readHandler, updateHandler, internalSubscriptionHandler}, nil
 }

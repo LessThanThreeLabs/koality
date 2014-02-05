@@ -7,7 +7,7 @@ type Closer interface {
 type Connection struct {
 	Users          *UsersHandler
 	Repositories   *RepositoriesHandler
-	Verifications  *VerificationsHandler
+	Builds         *BuildsHandler
 	Stages         *StagesHandler
 	Pools          *PoolsHandler
 	Settings       *SettingsHandler

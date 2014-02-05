@@ -5,13 +5,13 @@ package config
 import (
 	"fmt"
 	"github.com/dchest/goyaml"
+	"koality/build"
+	"koality/build/config/commandgroup"
+	"koality/build/config/provision"
+	"koality/build/config/remotecommand"
+	"koality/build/config/section"
 	"koality/shell"
 	"koality/util/log"
-	"koality/verification"
-	"koality/verification/config/commandgroup"
-	"koality/verification/config/provision"
-	"koality/verification/config/remotecommand"
-	"koality/verification/config/section"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,7 +19,7 @@ import (
 
 const DefaultTimeout = 600
 
-type VerificationConfig struct {
+type BuildConfig struct {
 	Params        Params
 	Sections      []section.Section
 	FinalSections []section.Section
@@ -38,7 +38,7 @@ const defaultTimeout = 600
 
 var environmentVariableNameRegexp = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
-func ParseRemoteCommands(config interface{}, advertised bool, directory string) (commands []verification.Command, err error) {
+func ParseRemoteCommands(config interface{}, advertised bool, directory string) (commands []build.Command, err error) {
 	scripts, ok := config.([]interface{})
 	if !ok {
 		err = BadConfigurationError{fmt.Sprintf("ERROR when parsing %v from the yaml file.\n %sThe scripts subsection should always be a list of strings and parameter maps, but was of type %T.%s",
@@ -172,7 +172,7 @@ func parseBool(option interface{}) (val bool, err error) {
 	return
 }
 
-func FromYaml(yamlContents, directory string) (verificationConfig VerificationConfig, err error) {
+func FromYaml(yamlContents, directory string) (buildConfig BuildConfig, err error) {
 	var parsedConfig interface{}
 
 	err = goyaml.Unmarshal([]byte(yamlContents), &parsedConfig)
@@ -204,38 +204,38 @@ func FromYaml(yamlContents, directory string) (verificationConfig VerificationCo
 		case "parameters":
 			provisionCommand, params, err := convertParameters(config)
 			if err != nil {
-				return verificationConfig, err
+				return buildConfig, err
 			}
 
-			verificationConfig.Params = params
+			buildConfig.Params = params
 
-			provisionShellCommand := verification.NewShellCommand("provision", provisionCommand)
+			provisionShellCommand := build.NewShellCommand("provision", provisionCommand)
 			provisionSection := section.New(
 				"provision",
 				false,
 				section.RunOnAll,
 				section.FailOnFirst,
 				false,
-				commandgroup.New([]verification.Command{}),
-				commandgroup.New([]verification.Command{provisionShellCommand}),
+				commandgroup.New([]build.Command{}),
+				commandgroup.New([]build.Command{provisionShellCommand}),
 				[]string{},
 			)
 			provisionShellCommand = provisionShellCommand
-			verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
+			buildConfig.Sections = append([]section.Section{provisionSection}, buildConfig.Sections...)
 		case "sections":
 			sections, err := parseSections(config, directory, false)
 			if err != nil {
-				return verificationConfig, err
+				return buildConfig, err
 			}
 
-			verificationConfig.Sections = append(verificationConfig.Sections, sections...)
+			buildConfig.Sections = append(buildConfig.Sections, sections...)
 		case "final":
 			finalSections, err := parseSections(config, directory, true)
 			if err != nil {
-				return verificationConfig, err
+				return buildConfig, err
 			}
 
-			verificationConfig.FinalSections = finalSections
+			buildConfig.FinalSections = finalSections
 		default:
 			err = BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe primary key %q is not currently supported.%s",
 				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
@@ -246,20 +246,20 @@ func FromYaml(yamlContents, directory string) (verificationConfig VerificationCo
 	}
 
 	// This check is here, because the order of the configuration keys (parameters, sections and final) is not enforced or guaranteed.
-	if verificationConfig.Params.SnapshotUntil != "" {
+	if buildConfig.Params.SnapshotUntil != "" {
 		ok := false
 
-		for _, section := range verificationConfig.Sections {
-			if section.Name() == verificationConfig.Params.SnapshotUntil {
+		for _, section := range buildConfig.Sections {
+			if section.Name() == buildConfig.Params.SnapshotUntil {
 				ok = true
 				break
 			}
 		}
 
 		if !ok {
-			return verificationConfig, BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe snapshot until parameter has to identify another section, but this configuration file does not specify a section with the name %q.%s",
+			return buildConfig, BadConfigurationError{fmt.Sprintf("ERROR when parsing the yaml file.\n%sThe snapshot until parameter has to identify another section, but this configuration file does not specify a section with the name %q.%s",
 				shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold),
-				verificationConfig.Params.SnapshotUntil,
+				buildConfig.Params.SnapshotUntil,
 				shell.AnsiFormat(shell.AnsiReset))}
 		}
 	}

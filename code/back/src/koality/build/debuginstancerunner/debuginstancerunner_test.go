@@ -24,7 +24,7 @@ func Test(t *testing.T) { gocheck.TestingT(t) }
 type DebugInstanceRunnerSuite struct {
 	resourcesConnection *resources.Connection
 	repository          *resources.Repository
-	verification        *resources.Verification
+	build               *resources.Build
 	debugInstance       *resources.DebugInstance
 	debugInstanceRunner *DebugInstanceRunner
 	repositoryManager   repositorymanager.RepositoryManager
@@ -151,7 +151,7 @@ func (suite *DebugInstanceRunnerSuite) runDebugInstanceWithYaml(check *gocheck.C
 	debugInstanceRunner := New(suite.resourcesConnection, poolManager, suite.repositoryManager)
 	expires := time.Now() // don't run the debug instance any longer after running the stages
 	suite.debugInstance, err = suite.resourcesConnection.DebugInstances.Create.Create(
-		vmPool.Id(), suite.instanceId, &expires, &resources.CoreVerificationInformation{
+		vmPool.Id(), suite.instanceId, &expires, &resources.CoreBuildInformation{
 			suite.repository.Id, sha, "1234567890123456789012345678901234567890", "headMessage",
 			"headUsername", "head@Ema.il", "a@b.com"})
 	check.Assert(err, gocheck.IsNil)
@@ -228,7 +228,7 @@ func (suite *DebugInstanceRunnerSuite) TestDebugInstanceDoesntRunFinalStages(che
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(success, gocheck.Equals, true)
 
-	stages, err := suite.resourcesConnection.Stages.Read.GetAll(suite.debugInstance.VerificationId)
+	stages, err := suite.resourcesConnection.Stages.Read.GetAll(suite.debugInstance.BuildId)
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(stages, gocheck.HasLen, 3) // git, provision, pwd
 }
