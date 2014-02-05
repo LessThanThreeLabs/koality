@@ -13,11 +13,12 @@ func (gitHubHandler *GitHubHandler) handleOAuthToken(writer http.ResponseWriter,
 
 	if oAuthToken == "" {
 		writer.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(writer, "No oAuth Token provided")
+		fmt.Fprint(writer, "No oAuth token provided")
 		return
 	} else if action == "" {
 		writer.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(writer, "No action provided")
+		return
 	}
 
 	user, err := gitHubHandler.resourcesConnection.Users.Read.Get(userId)
@@ -45,5 +46,5 @@ func (gitHubHandler *GitHubHandler) handleOAuthToken(writer http.ResponseWriter,
 		redirectUrl = "/"
 	}
 
-	http.Redirect(writer, request, redirectUrl, http.StatusOK)
+	http.Redirect(writer, request, redirectUrl, http.StatusSeeOther)
 }

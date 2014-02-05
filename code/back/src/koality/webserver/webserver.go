@@ -56,7 +56,10 @@ func (webserver *Webserver) Start() error {
 		context.Set(request, "userId", uint64(1000))
 		// context.Set(request, "userId", uint64(0))
 
-		if request.URL.Path == "/" || request.URL.Path == "/dashboard" || strings.HasPrefix(request.URL.Path, "/repository/") {
+		if request.URL.Path == "/" || request.URL.Path == "/dashboard" ||
+			strings.HasPrefix(request.URL.Path, "/repository/") ||
+			strings.HasPrefix(request.URL.Path, "/hooks/") ||
+			strings.HasPrefix(request.URL.Path, "/oAuth/") {
 			router.ServeHTTP(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/app/") {
 			hasCsrfTokenWrapper(writer, request)
