@@ -206,7 +206,7 @@ angular.module('koality.service.managers', []).
 	]).
 	factory('ConsoleLinesManager', ['$rootScope', '$http', '$timeout', 'ConsoleLinesRpc', 'events', 'stringHasher', 'integerConverter', ($rootScope, $http, $timeout, ConsoleLinesRpc, events, stringHasher, integerConverter) ->
 		class ConsoleLinesManager
-			_stageId: null
+			_stageRunId: null
 			_currentRequestId: null
 
 			_oldLines: {}
@@ -231,7 +231,7 @@ angular.module('koality.service.managers', []).
 					$timeout (() => @_allowGettingMoreLines = true), 100
 
 			# _handleLinesAdded: (data) =>
-			# 	return if data.resourceId isnt @_stageId
+			# 	return if data.resourceId isnt @_stageRunId
 			# 	@_processNewLines data.lines
 
 			_processNewLines: (data) =>
@@ -250,39 +250,29 @@ angular.module('koality.service.managers', []).
 					@_oldLines[lineNumber] = line
 
 			clear: () =>
-				@_stageId = null
+				@_stageRunId = null
 				@_newLines = {}
 				@_oldLines = {}
 				@_currentRequestId = null
 				@stopListeningToEvents()
 
-			setStageId: (stageId) =>
-				assert.ok not stageId? or typeof stageId is 'number'
+			setStageRunId: (stageRunId) =>
+				assert.ok not stageRunId? or typeof stageRunId is 'number'
 
-				if @_stageId isnt stageId
-					@_stageId = stageId
+				if @_stageRunId isnt stageRunId
+					@_stageRunId = stageRunId
 					@_newLines = {}
 					@_oldLines = {}
 					@_currentRequestId = null
 					@stopListeningToEvents()
 
 			retrieveInitialLines: () =>
-				assert.ok @_stageId?
+				assert.ok @_stageRunId?
 
 				@_newLines = {}
 				@_oldLines = {}
 				@_gettingMoreLines = true
-
-				request = $http.get("/app/stages/#{@_stageId}")
-				request.success (data, status, headers, config) =>
-					buildRunId = data?.runs?[0]?.id
-					if buildRunId? then @_currentRequestId = @consoleLinesRpc.queueRequest buildRunId, 0, @_linesRetrievedHandler
-					else 
-						console.error 'Unable to find build run'
-						@_gettingMoreLines = false
-				request.error (data, status, headers, config) =>
-					console.error data
-					@_gettingMoreLines = false
+				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageRunId, 0, @_linesRetrievedHandler
 
 			retrieveMoreLines: () =>
 				getStartIndex = () =>
@@ -297,17 +287,7 @@ angular.module('koality.service.managers', []).
 				return if not @consoleLinesRpc.hasMoreLinesToRequest()
 
 				@_gettingMoreLines = true
-				
-				request = $http.get("/app/stages/#{@_stageId}")
-				request.success (data, status, headers, config) =>
-					buildRunId = data?.runs?[0]?.id
-					if buildRunId? then @_currentRequestId = @consoleLinesRpc.queueRequest @_stageId, getStartIndex(), @_linesRetrievedHandler
-					else 
-						console.error 'Unable to find build run'
-						@_gettingMoreLines = false
-				request.error (data, status, headers, config) =>
-					console.error data
-					@_gettingMoreLines = false
+				@_currentRequestId = @consoleLinesRpc.queueRequest @_stageRunId, getStartIndex(), @_linesRetrievedHandler
 
 			getNewLines: () =>
 				return @_newLines
@@ -327,10 +307,10 @@ angular.module('koality.service.managers', []).
 				return @_gettingMoreLines
 
 			listenToEvents: () =>
-				# assert.ok @_stageId?
+				# assert.ok @_stageRunId?
 
 				# @stopListeningToEvents()
-				# @_linesAddedListener = events('buildConsoles', 'new output', @_stageId).setCallback(@_handleLinesAdded).subscribe()
+				# @_linesAddedListener = events('buildConsoles', 'new output', @_stageRunId).setCallback(@_handleLinesAdded).subscribe()
 					
 			stopListeningToEvents: () =>
 				# @_linesAddedListener.unsubscribe() if @_linesAddedListener?

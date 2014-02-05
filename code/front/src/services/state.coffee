@@ -114,15 +114,13 @@ angular.module('koality.service.state', []).
 			_id: null
 			_information: null
 			_summary: false
-			_skipped: false
-			_merge: false
-			_debug: false
 
 			# _updatedListener: null
 			# _outputTypesListener: null
 
 			clear: () =>
 				@_repositoryId = null
+				@_buildId = null
 				@_id = null
 				@_information = null
 
@@ -132,9 +130,6 @@ angular.module('koality.service.state', []).
 				@_id = integerConverter.toInteger stageId
 				@_information = null
 				@_summary = false
-				@_skipped = false
-				@_merge = false
-				@_debug = false
 
 			getId: () =>
 				return @_id
@@ -202,38 +197,89 @@ angular.module('koality.service.state', []).
 			isSummary: () =>
 				return @_summary
 
-			setSkipped: () =>
+		return new StageManager()
+	]).
+	factory('currentStageRun', ['$http', 'events', 'integerConverter', ($http, events, integerConverter) ->
+		class StageManager
+			_repositoryId: null
+			_buildId: null
+			_stageId: null
+			_id: null
+			_information: null
+
+			# _updatedListener: null
+			# _outputTypesListener: null
+
+			clear: () =>
+				@_repositoryId = null
+				@_buildId = null
+				@_stageId = null
 				@_id = null
 				@_information = null
-				@_summary = false
-				@_skipped = true
-				@_merge = false
-				@_debug = false
 
-			isSkipped: () =>
-				return @_skipped
-
-			setMerge: () =>
-				@_id = null
+			setId: (repositoryId, buildId, stageId, stageRunId) =>
+				@_repositoryId = integerConverter.toInteger repositoryId
+				@_buildId = integerConverter.toInteger buildId
+				@_stageId = integerConverter.toInteger stageId
+				@_id = integerConverter.toInteger stageRunId
 				@_information = null
-				@_summary = false
-				@_skipped = false
-				@_merge = true
-				@_debug = false
 
-			isMerge: () =>
-				return @_merge
+			getId: () =>
+				return @_id
 
-			setDebug: () =>
-				@_id = null
-				@_information = null
-				@_summary = false
-				@_skipped = false
-				@_merge = false
-				@_debug = true
+			# We ONLY listen to these events when retrieving information, not when it is set.
+			# If the information is set, it is coming from a source that is managing the
+			# data and keeping it up to date.
+			# _handleUpdated: (data) =>
+			# 	return if data.id isnt @_id
+			# 	$.extend true, @_information, data
 
-			isDebug: () =>
-				return @_debug
+			# _handleOutputTypeAdded: (data) =>
+			# 	return if data.id isnt @_id
+
+			# 	if not (data.outputType in @_information.outputTypes)
+			# 		@_information.outputTypes.push data.outputType
+
+			# _listenToEvents: () =>
+			# 	assert.ok @_repositoryId?
+			# 	assert.ok @_buildId?
+			# 	assert.ok @_id?
+
+			# 	@_stopListeningToEvents()
+			# 	@_updatedListener = events('changes', 'return code added', @_buildId).setCallback(@_handleUpdated).subscribe()
+			# 	@_outputTypesListener = events('changes', 'output type added', @_buildId).setCallback(@_handleOutputTypeAdded).subscribe()
+			
+			# _stopListeningToEvents: () =>
+			# 	@_updatedListener.unsubscribe() if @_updatedListener?
+			# 	@_outputTypesListener.unsubscribe() if @_outputTypesListener?
+
+			# 	@_updatedListener = null
+			# 	@_outputTypesListener = null
+
+			setInformation: (stageRunInformation) =>
+				assert.ok @_repositoryId?
+				assert.ok @_buildId?
+				assert.ok @_stageId?
+				assert.ok @_id?
+				assert.ok stageRunInformation?
+				# @_stopListeningToEvents()
+				@_information = stageRunInformation
+
+			retrieveInformation: () =>
+				assert.ok @_repositoryId?
+				assert.ok @_buildId?
+				assert.ok @_stageId?
+				assert.ok @_id?
+
+				request = $http.get("/app/stageRuns/#{@_id}")
+				request.success (data, status, headers, config) =>
+					@_information = data
+					# @_listenToEvents()
+				request.error (data, status, headers, config) =>
+					console.error data
+
+			getInformation: () =>
+				return @_information
 
 		return new StageManager()
 	])

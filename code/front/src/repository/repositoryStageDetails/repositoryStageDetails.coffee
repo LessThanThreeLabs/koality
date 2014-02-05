@@ -1,9 +1,10 @@
 'use strict'
 
-window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'ConsoleLinesManager', 'xUnitParser', 'currentRepository', 'currentBuild', 'currentStage', 'notification', ($scope, $location, $http, events, ConsoleLinesManager, xUnitParser, currentRepository, currentBuild, currentStage, notification) ->
+window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'ConsoleLinesManager', 'xUnitParser', 'currentRepository', 'currentBuild', 'currentStage', 'currentStageRun', 'notification', ($scope, $location, $http, events, ConsoleLinesManager, xUnitParser, currentRepository, currentBuild, currentStage, currentStageRun, notification) ->
 	$scope.selectedRepository = currentRepository
 	$scope.selectedBuild = currentBuild
 	$scope.selectedStage = currentStage
+	$scope.selectedStageRun = currentStageRun
 
 	$scope.output = type: null
 	$scope.xunit =
@@ -114,6 +115,12 @@ window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'Cons
 		$scope.clearLaunchDebugInstance()
 
 	$scope.$watch 'selectedStage.getInformation()', (() ->
+		return if not $scope.selectedStage.getInformation()?
+
+		stageRun = $scope.selectedStage.getInformation().runs?[0]
+		$scope.selectedStageRun.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), $scope.selectedStage.getId(), stageRun.id
+		$scope.selectedStageRun.setInformation stageRun
+
 		console.log '...need to actually get output types somehow'
 		$scope.selectedStage?.getInformation()?.outputTypes = ['console']
 
@@ -139,7 +146,7 @@ window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'Cons
 		$scope.xunit.testCases = []
 
 		if $scope.output.type is 'console'
-			$scope.consoleLinesManager.setStageId $scope.selectedStage.getId()
+			$scope.consoleLinesManager.setStageRunId $scope.selectedStageRun.getId()
 			$scope.consoleLinesManager.listenToEvents()
 			$scope.consoleLinesManager.retrieveInitialLines()
 
