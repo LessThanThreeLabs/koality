@@ -186,14 +186,23 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 	wireHooksSubroutes := func() {
 		hooksSubrouter := router.PathPrefix("/hooks").Subrouter()
+
 		gitHubSubrouter := hooksSubrouter.PathPrefix("/gitHub").Subrouter()
 		gitHubHandler.WireHooksSubroutes(gitHubSubrouter)
+	}
+
+	wireOAuthSubroutes := func() {
+		oAuthSubrouter := router.PathPrefix("/oAuth").Subrouter()
+
+		gitHubSubrouter := oAuthSubrouter.PathPrefix("/gitHub").Subrouter()
+		gitHubHandler.WireOAuthSubroutes(gitHubSubrouter)
 	}
 
 	wireRootSubroutes()
 	wireAppSubroutes()
 	wireApiSubroutes()
 	wireHooksSubroutes()
+	wireOAuthSubroutes()
 
 	return router, nil
 }

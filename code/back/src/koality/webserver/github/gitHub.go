@@ -62,3 +62,7 @@ func New(resourcesConnection *resources.Connection, repositoryManager repository
 func (gitHubHandler *GitHubHandler) WireHooksSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/verifyChange", gitHubHandler.verifyChange).Methods("POST")
 }
+
+func (gitHubHandler *GitHubHandler) WireOAuthSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/token", gitHubHandler.handleOAuthToken).Methods("GET")
+}
