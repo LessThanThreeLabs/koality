@@ -1,6 +1,7 @@
 package stages
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"koality/resources"
 	"koality/webserver/middleware"
@@ -19,6 +20,7 @@ type sanitizedStage struct {
 type sanitizedStageRun struct {
 	Id         uint64     `json:"id"`
 	StageId    uint64     `json:"stageId"`
+	Status     string     `json:"status"`
 	ReturnCode int        `json:"returnCode"`
 	Created    *time.Time `json:"created"`
 	Started    *time.Time `json:"started"`
@@ -109,9 +111,22 @@ func getSanitizedStageRuns(stageRuns []resources.StageRun) []sanitizedStageRun {
 }
 
 func getSanitizedStageRun(stageRun *resources.StageRun) *sanitizedStageRun {
+	getStatus := func(returnCode int) string {
+		if returnCode == -1 {
+			return "running"
+		} else if returnCode == 0 {
+			return "passed"
+		} else if returnCode > 0 {
+			return "failed"
+		} else {
+			panic(fmt.Sprintf("Unexpected return code: %d", returnCode))
+		}
+	}
+
 	return &sanitizedStageRun{
 		Id:         stageRun.Id,
 		StageId:    stageRun.StageId,
+		Status:     getStatus(stageRun.ReturnCode),
 		ReturnCode: stageRun.ReturnCode,
 		Created:    stageRun.Created,
 		Started:    stageRun.Started,
