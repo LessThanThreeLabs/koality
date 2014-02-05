@@ -46,7 +46,7 @@ type SmtpLoginAuthSettings struct {
 }
 
 type GitHubEnterpriseSettings struct {
-	Url               string `json:"url"`
+	BaseUrl           string `json:"baseUrl"`
 	OAuthClientId     string `json:"oAuthClientId"`
 	OAuthClientSecret string `json:"oAuthClientSecret"`
 }
@@ -78,7 +78,7 @@ type SettingsUpdateHandler interface {
 	SetSmtpAuthPlain(hostname string, port uint16, identity, username, password, host string) (*SmtpServerSettings, error)
 	SetSmtpAuthCramMd5(hostname string, port uint16, username, secret string) (*SmtpServerSettings, error)
 	SetSmtpAuthLogin(hostname string, port uint16, username, password string) (*SmtpServerSettings, error)
-	SetGitHubEnterpriseSettings(url, oAuthClientId, oAuthClientSecret string) (*GitHubEnterpriseSettings, error)
+	SetGitHubEnterpriseSettings(baseUrl, oAuthClientId, oAuthClientSecret string) (*GitHubEnterpriseSettings, error)
 	ResetApiKey() (*ApiKey, error)
 }
 

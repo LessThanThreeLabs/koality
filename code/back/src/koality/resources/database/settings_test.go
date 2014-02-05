@@ -405,15 +405,15 @@ func TestSettingsGitHubEnterprise(test *testing.T) {
 		test.Fatal("Failed to hear gitHub enterprise settings updated event")
 	}
 
-	if gitHubEnterpriseSettingsUpdatedEventSettings.Url != gitHubEnterpriseSettings.Url {
-		test.Fatal("Bad gitHubEnterpriseSettings.Url in gitHub enterprise settings updated event")
+	if gitHubEnterpriseSettingsUpdatedEventSettings.BaseUrl != gitHubEnterpriseSettings.BaseUrl {
+		test.Fatal("Bad gitHubEnterpriseSettings.BaseUrl in gitHub enterprise settings updated event")
 	} else if gitHubEnterpriseSettingsUpdatedEventSettings.OAuthClientId != gitHubEnterpriseSettings.OAuthClientId {
 		test.Fatal("Bad gitHubEnterpriseSettings.OAuthClientId in gitHub enterprise settings updated event")
 	} else if gitHubEnterpriseSettingsUpdatedEventSettings.OAuthClientSecret != gitHubEnterpriseSettings.OAuthClientSecret {
 		test.Fatal("Bad gitHubEnterpriseSettings.OAuthClientSecret in gitHub enterprise settings updated event")
 	}
 
-	if gitHubEnterpriseSettings.Url != url {
+	if gitHubEnterpriseSettings.BaseUrl != url {
 		test.Fatal("Url mismatch")
 	} else if gitHubEnterpriseSettings.OAuthClientId != oAuthClientId {
 		test.Fatal("OAuthClientId mismatch")
@@ -426,7 +426,7 @@ func TestSettingsGitHubEnterprise(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if gitHubEnterpriseSettings.Url != gitHubEnterpriseSettings2.Url {
+	if gitHubEnterpriseSettings.BaseUrl != gitHubEnterpriseSettings2.BaseUrl {
 		test.Fatal("Url mismatch")
 	} else if gitHubEnterpriseSettings.OAuthClientId != gitHubEnterpriseSettings2.OAuthClientId {
 		test.Fatal("OAuthClientId mismatch")

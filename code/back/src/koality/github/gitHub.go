@@ -1,6 +1,7 @@
 package github
 
 import (
+	"fmt"
 	"github.com/LessThanThreeLabs/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"koality/resources"
@@ -12,35 +13,44 @@ type GitHubRepository struct {
 	Name  string
 }
 
-type GitHubClient struct {
-	resourcesConnection *resources.Connection
+type GitHubConnection interface {
+	GetSshKeys(user resources.User) (sshKeys []string, err error)
+	AddKoalitySshKeyToUser(user resources.User) error
+	GetRepositories(user resources.User) (repositories []GitHubRepository, err error)
+	AddRepositoryHook(user resources.User, repository resources.Repository, hookTypes []string, hookSecret string) (hookId int64, err error)
+	RemoveRepositoryHook(user resources.User, repository resources.Repository) error
+	SetChangeStatus(user resources.User, repository resources.Repository, sha, status, description, url string) error
 }
 
-func NewClient(resourcesConnection *resources.Connection) *GitHubClient {
-	return &GitHubClient{resourcesConnection}
+type gitHubConnection struct {
+	resourcesConnection *resources.Connection
+	oAuthConnection     GitHubOAuthConnection
+}
+
+func NewConnection(resourcesConnection *resources.Connection, oAuthConnection GitHubOAuthConnection) *gitHubConnection {
+	return &gitHubConnection{resourcesConnection, oAuthConnection}
 }
 
 // TODO (bbland): there's no way this works
-func (client *GitHubClient) getGitHubClient(oAuthToken string) (*github.Client, error) {
-	gitHubEnterpriseSettings, err := client.resourcesConnection.Settings.Read.GetGitHubEnterpriseSettings()
-
-	var oAuthConfig *oauth.Config
+func (connection *gitHubConnection) getGitHubClient(oAuthToken string) (*github.Client, error) {
+	gitHubEnterpriseSettings, err := connection.resourcesConnection.Settings.Read.GetGitHubEnterpriseSettings()
 	if _, ok := err.(resources.NoSuchSettingError); err != nil && !ok {
 		return nil, err
-	} else if err == nil {
-		oAuthConfig = &oauth.Config{
-			ClientId:     gitHubEnterpriseSettings.OAuthClientId,
-			ClientSecret: gitHubEnterpriseSettings.OAuthClientSecret,
-		}
+	}
+
+	ok, err := connection.oAuthConnection.CheckValidOAuthToken(oAuthToken)
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, fmt.Errorf("Invalid OAuth token: %s", oAuthToken)
 	}
 
 	transport := &oauth.Transport{
-		Config: oAuthConfig,
-		Token:  &oauth.Token{AccessToken: oAuthToken},
+		Token: &oauth.Token{AccessToken: oAuthToken},
 	}
 	gitHubClient := github.NewClient(transport.Client())
 	if gitHubEnterpriseSettings != nil {
-		baseUrl, err := url.Parse(gitHubEnterpriseSettings.Url)
+		baseUrl, err := url.Parse(gitHubEnterpriseSettings.BaseUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -49,8 +59,8 @@ func (client *GitHubClient) getGitHubClient(oAuthToken string) (*github.Client, 
 	return gitHubClient, nil
 }
 
-func (client *GitHubClient) GetSshKeys(user resources.User) ([]string, error) {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) GetSshKeys(user resources.User) ([]string, error) {
+	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -68,13 +78,13 @@ func (client *GitHubClient) GetSshKeys(user resources.User) ([]string, error) {
 	return sshKeys, nil
 }
 
-func (client *GitHubClient) AddKoalitySshKeyToUser(user resources.User) error {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) AddKoalitySshKeyToUser(user resources.User) error {
+	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return err
 	}
 
-	keyPair, err := client.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
+	keyPair, err := connection.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
 	if err != nil {
 		return err
 	}
@@ -86,8 +96,8 @@ func (client *GitHubClient) AddKoalitySshKeyToUser(user resources.User) error {
 	return err
 }
 
-func (client *GitHubClient) GetRepositories(user resources.User) ([]GitHubRepository, error) {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) GetRepositories(user resources.User) ([]GitHubRepository, error) {
+	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +132,8 @@ func (client *GitHubClient) GetRepositories(user resources.User) ([]GitHubReposi
 	return gitHubRepositories, nil
 }
 
-func (client *GitHubClient) AddRepositoryHook(user resources.User, repository resources.Repository, hookTypes []string, hookSecret string) (int64, error) {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) AddRepositoryHook(user resources.User, repository resources.Repository, hookTypes []string, hookSecret string) (int64, error) {
+	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return 0, err
 	}
@@ -146,12 +156,28 @@ func (client *GitHubClient) AddRepositoryHook(user resources.User, repository re
 	return int64(*createdHook.ID), nil
 }
 
-func (client *GitHubClient) RemoveRepositoryHook(user resources.User, repository resources.Repository) error {
-	gitHubClient, err := client.getGitHubClient(user.GitHubOAuth)
+func (connection *gitHubConnection) RemoveRepositoryHook(user resources.User, repository resources.Repository) error {
+	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
 	if err != nil {
 		return err
 	}
 
 	_, err = gitHubClient.Repositories.DeleteHook(repository.GitHub.Owner, repository.GitHub.Name, int(repository.GitHub.HookId))
+	return err
+}
+
+func (connection *gitHubConnection) SetChangeStatus(user resources.User, repository resources.Repository, sha, status, description, url string) error {
+	gitHubClient, err := connection.getGitHubClient(user.GitHubOAuth)
+	if err != nil {
+		return err
+	}
+
+	repoStatus := github.RepoStatus{
+		State:       &status,
+		Description: &description,
+		TargetURL:   &url,
+	}
+
+	_, _, err = gitHubClient.Repositories.CreateStatus(repository.GitHub.Owner, repository.GitHub.Name, sha, &repoStatus)
 	return err
 }
