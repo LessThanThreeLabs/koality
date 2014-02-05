@@ -20,7 +20,7 @@ func NewStandardGitHubOAuthConnection() GitHubOAuthConnection {
 }
 
 func (connection standardGitHubOAuthConnection) GetAuthorizationUrl(action string) (string, error) {
-	baseUrl := "http://127.0.0.1:1080"
+	baseUrl := "https://127.0.0.1:10443"
 	redirectUrl := baseUrl + "/oAuth/gitHub/token"
 	return fmt.Sprintf("https://koalitycode.com/gitHub/authenticate?redirectUri=%s&action=%s", redirectUrl, action), nil
 }
