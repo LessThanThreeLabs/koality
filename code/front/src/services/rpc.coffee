@@ -135,13 +135,13 @@ angular.module('koality.service.rpc', []).
 				if @_noMoreLinesToRequest
 					@_shiftConsoleLinesRequest()
 				else
-					stageRunId = @_currentQuery.stageRunId
+					stageRunId = @_currentQuery.id
 					offset = @_currentQuery.startIndex
 					results = @_currentQuery.numToRetrieve
-					request = $http.get("/app/stageRuns/#{stageRunId}/lines?offset=#{offset}&results=#{results}")
+					request = $http.get("/app/stageRuns/#{stageRunId}/lines?offset=#{offset}&results=#{results}&from=tail")
 					request.success (data, status, headers, config) =>
 						@_noMoreLinesToRequest = Object.keys(data).length < @_numLinesToRequest
-						@_currentCallback error,
+						@_currentCallback null,
 							requestId: @_currentQuery.requestId
 							lines: data
 						@_shiftConsoleLinesRequest()

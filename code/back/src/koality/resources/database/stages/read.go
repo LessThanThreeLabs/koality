@@ -168,8 +168,19 @@ func (readHandler *ReadHandler) GetConsoleLinesTail(stageRunId uint64, offset, r
 		return nil, err
 	}
 
-	lowerBound := maxLineNumber - offset - results
+	if maxLineNumber < offset {
+		return map[uint64]string{}, nil
+	}
+
+	var lowerBound uint32
+	if maxLineNumber < offset+results {
+		lowerBound = 0
+	} else {
+		lowerBound = maxLineNumber - offset - results
+	}
+
 	upperBound := maxLineNumber - offset
+
 	consoleTextQuery := "SELECT number, text FROM console_lines WHERE run_id=$1 AND number > $2 AND number <= $3 ORDER BY id ASC"
 	return readHandler.getConsoleLines(consoleTextQuery, stageRunId, lowerBound, upperBound)
 }

@@ -280,7 +280,7 @@ func addConsoleLines(connection *resources.Connection, stageRunId uint64) error 
 	textToTextMap := func(text []string) map[uint64]string {
 		textMap := make(map[uint64]string, len(text))
 		for lineNumber, line := range text {
-			textMap[uint64(lineNumber)] = line
+			textMap[uint64(lineNumber+1)] = line
 		}
 		return textMap
 	}

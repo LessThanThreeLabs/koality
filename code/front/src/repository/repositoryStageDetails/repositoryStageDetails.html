@@ -128,13 +128,13 @@
 				</table>
 			</div>
 
-			<!-- <div id="console" ng-show="output.type == 'console'">
-				<div auto-scroll-to-bottom="consoleTextManager.getNewLines()" auto-scroll-to-bottom-buffer="40" start-at-bottom on-scroll-to-top="consoleTextManager.retrieveMoreLines()" fading-content>
-					<console-text class="consoleText" new-lines="consoleTextManager.getNewLines()" old-lines="consoleTextManager.getOldLines()" remove-lines="consoleTextManager.removeLines(startIndex, numLines)" listener="contentTextManager.lastUpdateTime"></console-text>
+			<div id="console" ng-show="output.type == 'console'">
+				<div auto-scroll-to-bottom="consoleLinesManager.getNewLines()" auto-scroll-to-bottom-buffer="40" start-at-bottom on-scroll-to-top="consoleLinesManager.retrieveMoreLines()" fading-content>
+					<console-text class="consoleText" new-lines="consoleLinesManager.getNewLines()" old-lines="consoleLinesManager.getOldLines()" remove-lines="consoleLinesManager.removeLines(startIndex, numLines)" listener="contentTextManager.lastUpdateTime"></console-text>
 				</div>
 			</div>
 
-			<div id="xunit" ng-show="output.type == 'xunit'">
+			<!-- <div id="xunit" ng-show="output.type == 'xunit'">
 				<div on-scroll-to-bottom="xunit.maxResults = xunit.maxResults + 100" fading-content>
 					<table class="delineated tbodyHack">
 						<tbody>
@@ -193,7 +193,7 @@
 						</tbody>
 					</table>
 				</div>
-			</div>
+			</div> -->
 
 			<div id="skipped" ng-show="selectedStage.isSkipped()">
 				<div id="skippedMessage">
@@ -217,7 +217,7 @@
 				<div id="debugInstructions">
 					Contact your administrator to correct the issue.
 				</div>
-			</div> -->
+			</div>
 		</panel-body>
 	</panel>
 </div>

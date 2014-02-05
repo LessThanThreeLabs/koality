@@ -114,6 +114,9 @@ window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'Cons
 		$scope.clearLaunchDebugInstance()
 
 	$scope.$watch 'selectedStage.getInformation()', (() ->
+		console.log '...need to actually get output types somehow'
+		$scope.selectedStage?.getInformation()?.outputTypes = ['console']
+
 		return if not $scope.selectedStage.getInformation()?.outputTypes?
 
 		$scope.output.hasConsole = 'console' in $scope.selectedStage.getInformation().outputTypes
@@ -137,7 +140,7 @@ window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'Cons
 
 		if $scope.output.type is 'console'
 			$scope.consoleLinesManager.setStageId $scope.selectedStage.getId()
-			# $scope.consoleLinesManager.listenToEvents()
+			$scope.consoleLinesManager.listenToEvents()
 			$scope.consoleLinesManager.retrieveInitialLines()
 
 		if $scope.output.type is 'xunit'
