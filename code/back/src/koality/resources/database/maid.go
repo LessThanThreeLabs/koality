@@ -8,37 +8,37 @@ import (
 )
 
 const (
-	defaultNumVerificationsToRetain = 250
+	defaultNumBuildsToRetain = 250
 )
 
 var (
 	cleanTimerSync sync.Once
 )
 
-func Clean(connection *resources.Connection, numVerificationsToRetain uint32) error {
+func Clean(connection *resources.Connection, numBuildsToRetain uint32) error {
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		return err
 	}
 
-	verificationCount := 0
+	buildCount := 0
 	errorChannel := make(chan error, 100)
 	for _, repository := range repositories {
-		oldVerifications, err := connection.Verifications.Read.GetTail(repository.Id, numVerificationsToRetain, math.MaxUint32)
+		oldBuilds, err := connection.Builds.Read.GetTail(repository.Id, numBuildsToRetain, math.MaxUint32)
 		if err != nil {
 			return err
 		}
 
-		for _, oldVerification := range oldVerifications {
-			verificationCount++
-			go func(verificationId uint64) {
-				err := cleanVerification(connection, verificationId)
+		for _, oldBuild := range oldBuilds {
+			buildCount++
+			go func(buildId uint64) {
+				err := cleanBuild(connection, buildId)
 				errorChannel <- err
-			}(oldVerification.Id)
+			}(oldBuild.Id)
 		}
 	}
 
-	for index := 0; index < verificationCount; index++ {
+	for index := 0; index < buildCount; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err
@@ -47,8 +47,8 @@ func Clean(connection *resources.Connection, numVerificationsToRetain uint32) er
 	return nil
 }
 
-func cleanVerification(connection *resources.Connection, verificationId uint64) error {
-	stages, err := connection.Stages.Read.GetAll(verificationId)
+func cleanBuild(connection *resources.Connection, buildId uint64) error {
+	stages, err := connection.Stages.Read.GetAll(buildId)
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func createStartCleanTimer(connection *resources.Connection) func() {
 	startCleanTimer := func() {
 		timer := time.NewTimer(getDurationUntilNextClean())
 		for _ = range timer.C {
-			err := Clean(connection, defaultNumVerificationsToRetain)
+			err := Clean(connection, defaultNumBuildsToRetain)
 			if err != nil {
 				panic(err)
 			}

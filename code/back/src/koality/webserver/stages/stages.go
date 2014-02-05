@@ -9,12 +9,12 @@ import (
 )
 
 type sanitizedStage struct {
-	Id             uint64              `json:"id"`
-	VerificationId uint64              `json:"verificationId"`
-	SectionNumber  uint64              `json:"sectionNumber"`
-	Name           string              `json:"name"`
-	OrderNumber    uint64              `json:"orderNumber"`
-	Runs           []sanitizedStageRun `json:"runs"`
+	Id            uint64              `json:"id"`
+	BuildId       uint64              `json:"buildId"`
+	SectionNumber uint64              `json:"sectionNumber"`
+	Name          string              `json:"name"`
+	OrderNumber   uint64              `json:"orderNumber"`
+	Runs          []sanitizedStageRun `json:"runs"`
 }
 
 type sanitizedStageRun struct {
@@ -93,12 +93,12 @@ func (stagesHandler *StagesHandler) WireStageRunsApiSubroutes(subrouter *mux.Rou
 
 func getSanitizedStage(stage *resources.Stage) *sanitizedStage {
 	return &sanitizedStage{
-		Id:             stage.Id,
-		VerificationId: stage.VerificationId,
-		SectionNumber:  stage.SectionNumber,
-		Name:           stage.Name,
-		OrderNumber:    stage.OrderNumber,
-		Runs:           getSanitizedStageRuns(stage.Runs),
+		Id:            stage.Id,
+		BuildId:       stage.BuildId,
+		SectionNumber: stage.SectionNumber,
+		Name:          stage.Name,
+		OrderNumber:   stage.OrderNumber,
+		Runs:          getSanitizedStageRuns(stage.Runs),
 	}
 }
 

@@ -69,4 +69,3 @@ angular.module('koality.service', []).
 			error: (text, durationInSeconds=8) -> add 'error', text, durationInSeconds
 		return toReturn
 	])
-	

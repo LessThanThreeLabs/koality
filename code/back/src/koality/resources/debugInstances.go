@@ -5,11 +5,11 @@ import (
 )
 
 type DebugInstance struct {
-	Id             uint64
-	PoolId         uint64
-	VerificationId uint64
-	InstanceId     string
-	Expires        time.Time
+	Id         uint64
+	PoolId     uint64
+	BuildId    uint64
+	InstanceId string
+	Expires    time.Time
 }
 
 type DebugInstancesHandler struct {
@@ -19,7 +19,7 @@ type DebugInstancesHandler struct {
 }
 
 type DebugInstancesCreateHandler interface {
-	Create(poolId uint64, instanceId string, expiration *time.Time, verification *CoreVerificationInformation) (*DebugInstance, error)
+	Create(poolId uint64, instanceId string, expiration *time.Time, build *CoreBuildInformation) (*DebugInstance, error)
 }
 
 type DebugInstancesReadHandler interface {

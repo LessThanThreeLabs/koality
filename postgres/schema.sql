@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS debug_instances (
 	expires				timestamp with time zone NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS verifications (
+CREATE TABLE IF NOT EXISTS builds (
 	id 					serial PRIMARY KEY,
 	repository_id		integer NOT NULL references repositories(id) ON DELETE CASCADE,
 	snapshot_id			integer references snapshots(id) ON DELETE CASCADE,
@@ -140,12 +140,12 @@ CREATE TABLE IF NOT EXISTS verifications (
 
 CREATE TABLE IF NOT EXISTS stages (
 	id 					serial PRIMARY KEY,
-	verification_id		integer NOT NULL references verifications(id) ON DELETE CASCADE,
+	build_id		integer NOT NULL references builds(id) ON DELETE CASCADE,
 	section_number		integer NOT NULL,
 	name 				varchar(1024) NOT NULL,
 	order_number 		integer NOT NULL,
 
-	UNIQUE (verification_id, section_number, name)
+	UNIQUE (build_id, section_number, name)
 );
 
 CREATE TABLE IF NOT EXISTS stage_runs (

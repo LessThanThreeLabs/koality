@@ -40,10 +40,10 @@ window.D3Binner.clazz = class D3Binner
 			assert change.endTime?
 			index = @binner @interval.floor new Date(change.endTime)
 
-			if change.verificationStatus is 'failed' or change.mergeStatus is 'failed'
+			if change.buildStatus is 'failed' or change.mergeStatus is 'failed'
 				allHistogram[index]++
 				failedHistogram[index]++
-			else if change.verificationStatus is 'passed'
+			else if change.buildStatus is 'passed'
 				allHistogram[index]++
 				passedHistogram[index]++
 

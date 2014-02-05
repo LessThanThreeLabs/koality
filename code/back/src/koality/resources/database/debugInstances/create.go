@@ -7,19 +7,19 @@ import (
 )
 
 type CreateHandler struct {
-	database             *sql.DB
-	readHandler          resources.DebugInstancesReadHandler
-	verificationsHandler *resources.VerificationsHandler
-	subscriptionHandler  resources.InternalDebugInstancesSubscriptionHandler
+	database            *sql.DB
+	readHandler         resources.DebugInstancesReadHandler
+	buildsHandler       *resources.BuildsHandler
+	subscriptionHandler resources.InternalDebugInstancesSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, readHandler resources.DebugInstancesReadHandler, verificationsHandler *resources.VerificationsHandler,
+func NewCreateHandler(database *sql.DB, readHandler resources.DebugInstancesReadHandler, buildsHandler *resources.BuildsHandler,
 	subscriptionHandler resources.InternalDebugInstancesSubscriptionHandler) (resources.DebugInstancesCreateHandler, error) {
-	return &CreateHandler{database, readHandler, verificationsHandler, subscriptionHandler}, nil
+	return &CreateHandler{database, readHandler, buildsHandler, subscriptionHandler}, nil
 }
 
 func (createHandler *CreateHandler) Create(poolId uint64, instanceId string, expiration *time.Time,
-	repositoryInformation *resources.CoreVerificationInformation) (*resources.DebugInstance, error) {
+	repositoryInformation *resources.CoreBuildInformation) (*resources.DebugInstance, error) {
 	id := uint64(0)
 	query := "INSERT INTO debug_instances (pool_id, instance_id, expires)" +
 		" VALUES ($1, $2, $3) RETURNING id"
@@ -28,7 +28,7 @@ func (createHandler *CreateHandler) Create(poolId uint64, instanceId string, exp
 		return nil, err
 	}
 
-	_, err = createHandler.verificationsHandler.Create.CreateForDebugInstance(
+	_, err = createHandler.buildsHandler.Create.CreateForDebugInstance(
 		repositoryInformation.RepositoryId, id, repositoryInformation.HeadSha, repositoryInformation.BaseSha,
 		repositoryInformation.HeadMessage, repositoryInformation.HeadUsername, repositoryInformation.HeadEmail,
 		repositoryInformation.EmailToNotify)

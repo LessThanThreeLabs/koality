@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestCreateInvalidVerification(test *testing.T) {
+func TestCreateInvalidBuild(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -32,33 +32,33 @@ func TestCreateInvalidVerification(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	_, err = connection.Verifications.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when providing invalid repository id")
 	}
 
-	_, err = connection.Verifications.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify)
+	_, err = connection.Builds.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify)
 	if _, ok := err.(resources.NoSuchSnapshotError); !ok {
 		test.Fatal("Expected NoSuchSnapshotError")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid head sha")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid base sha")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid email to notify")
 	}
 }
 
-func TestCreateVerification(test *testing.T) {
+func TestCreateBuild(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -70,12 +70,12 @@ func TestCreateVerification(test *testing.T) {
 	defer connection.Close()
 
 	createdEventReceived := make(chan bool, 1)
-	var createdEventVerification *resources.Verification
-	verificationCreatedHandler := func(verification *resources.Verification) {
-		createdEventVerification = verification
+	var createdEventBuild *resources.Build
+	buildCreatedHandler := func(build *resources.Build) {
+		createdEventBuild = build
 		createdEventReceived <- true
 	}
-	_, err = connection.Verifications.Subscription.SubscribeToCreatedEvents(verificationCreatedHandler)
+	_, err = connection.Builds.Subscription.SubscribeToCreatedEvents(buildCreatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -94,84 +94,84 @@ func TestCreateVerification(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	verification, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if verification.RepositoryId != firstRepository.Id {
-		test.Fatal("verification.RepositoryId mismatch")
-	} else if verification.MergeTarget != mergeTarget {
-		test.Fatal("verification.MergeTarget mismatch")
-	} else if verification.EmailToNotify != emailToNotify {
-		test.Fatal("verification.EmailToNotify mismatch")
-	} else if verification.Changeset.HeadSha != headSha {
-		test.Fatal("verification.Changeset.HeadSha mismatch")
-	} else if verification.Changeset.BaseSha != baseSha {
-		test.Fatal("verification.Changeset.BaseSha mismatch")
-	} else if verification.Changeset.HeadMessage != headMessage {
-		test.Fatal("verification.Changeset.HeadMessage mismatch")
-	} else if verification.Changeset.HeadUsername != headUsername {
-		test.Fatal("verification.Changeset.HeadUsername mismatch")
-	} else if verification.Changeset.HeadEmail != headEmail {
-		test.Fatal("verification.Changeset.HeadEmail mismatch")
+	if build.RepositoryId != firstRepository.Id {
+		test.Fatal("build.RepositoryId mismatch")
+	} else if build.MergeTarget != mergeTarget {
+		test.Fatal("build.MergeTarget mismatch")
+	} else if build.EmailToNotify != emailToNotify {
+		test.Fatal("build.EmailToNotify mismatch")
+	} else if build.Changeset.HeadSha != headSha {
+		test.Fatal("build.Changeset.HeadSha mismatch")
+	} else if build.Changeset.BaseSha != baseSha {
+		test.Fatal("build.Changeset.BaseSha mismatch")
+	} else if build.Changeset.HeadMessage != headMessage {
+		test.Fatal("build.Changeset.HeadMessage mismatch")
+	} else if build.Changeset.HeadUsername != headUsername {
+		test.Fatal("build.Changeset.HeadUsername mismatch")
+	} else if build.Changeset.HeadEmail != headEmail {
+		test.Fatal("build.Changeset.HeadEmail mismatch")
 	}
 
 	select {
 	case <-createdEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear verification creation event")
+		test.Fatal("Failed to hear build creation event")
 	}
 
-	if createdEventVerification.Id != verification.Id {
-		test.Fatal("Bad verification.Id in verification creation event")
-	} else if createdEventVerification.RepositoryId != verification.RepositoryId {
-		test.Fatal("Bad verification.RepositoryId in verification creation event")
-	} else if createdEventVerification.MergeTarget != verification.MergeTarget {
-		test.Fatal("Bad verification.MergeTarget in verification creation event")
-	} else if createdEventVerification.EmailToNotify != verification.EmailToNotify {
-		test.Fatal("Bad verification.EmailToNotify in verification creation event")
-	} else if createdEventVerification.Changeset.HeadSha != verification.Changeset.HeadSha {
-		test.Fatal("Bad verification.Changeset.HeadSha in verification creation event")
-	} else if createdEventVerification.Changeset.BaseSha != verification.Changeset.BaseSha {
-		test.Fatal("Bad verification.Changeset.BaseSha in verification creation event")
-	} else if createdEventVerification.Changeset.HeadMessage != verification.Changeset.HeadMessage {
-		test.Fatal("Bad verification.Changeset.HeadMessage in verification creation event")
-	} else if createdEventVerification.Changeset.HeadUsername != verification.Changeset.HeadUsername {
-		test.Fatal("Bad verification.Changeset.HeadUsername in verification creation event")
-	} else if createdEventVerification.Changeset.HeadEmail != verification.Changeset.HeadEmail {
-		test.Fatal("Bad verification.Changeset.HeadEmail in verification creation event")
+	if createdEventBuild.Id != build.Id {
+		test.Fatal("Bad build.Id in build creation event")
+	} else if createdEventBuild.RepositoryId != build.RepositoryId {
+		test.Fatal("Bad build.RepositoryId in build creation event")
+	} else if createdEventBuild.MergeTarget != build.MergeTarget {
+		test.Fatal("Bad build.MergeTarget in build creation event")
+	} else if createdEventBuild.EmailToNotify != build.EmailToNotify {
+		test.Fatal("Bad build.EmailToNotify in build creation event")
+	} else if createdEventBuild.Changeset.HeadSha != build.Changeset.HeadSha {
+		test.Fatal("Bad build.Changeset.HeadSha in build creation event")
+	} else if createdEventBuild.Changeset.BaseSha != build.Changeset.BaseSha {
+		test.Fatal("Bad build.Changeset.BaseSha in build creation event")
+	} else if createdEventBuild.Changeset.HeadMessage != build.Changeset.HeadMessage {
+		test.Fatal("Bad build.Changeset.HeadMessage in build creation event")
+	} else if createdEventBuild.Changeset.HeadUsername != build.Changeset.HeadUsername {
+		test.Fatal("Bad build.Changeset.HeadUsername in build creation event")
+	} else if createdEventBuild.Changeset.HeadEmail != build.Changeset.HeadEmail {
+		test.Fatal("Bad build.Changeset.HeadEmail in build creation event")
 	}
 
-	verificationAgain, err := connection.Verifications.Read.Get(verification.Id)
+	buildAgain, err := connection.Builds.Read.Get(build.Id)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if verification.RepositoryId != verificationAgain.RepositoryId {
-		test.Fatal("verification.RepositoryId mismatch")
-	} else if verification.MergeTarget != verificationAgain.MergeTarget {
-		test.Fatal("verification.MergeTarget mismatch")
-	} else if verification.EmailToNotify != verificationAgain.EmailToNotify {
-		test.Fatal("verification.EmailToNotify mismatch")
-	} else if verification.Changeset.HeadSha != verificationAgain.Changeset.HeadSha {
-		test.Fatal("verification.Changeset.HeadSha mismatch")
-	} else if verification.Changeset.BaseSha != verificationAgain.Changeset.BaseSha {
-		test.Fatal("verification.Changeset.BaseSha mismatch")
-	} else if verification.Changeset.HeadMessage != verificationAgain.Changeset.HeadMessage {
-		test.Fatal("verification.Changeset.HeadMessage mismatch")
-	} else if verification.Changeset.HeadUsername != verificationAgain.Changeset.HeadUsername {
-		test.Fatal("verification.Changeset.HeadUsername mismatch")
-	} else if verification.Changeset.HeadEmail != verificationAgain.Changeset.HeadEmail {
-		test.Fatal("verification.Changeset.HeadEmail mismatch")
+	if build.RepositoryId != buildAgain.RepositoryId {
+		test.Fatal("build.RepositoryId mismatch")
+	} else if build.MergeTarget != buildAgain.MergeTarget {
+		test.Fatal("build.MergeTarget mismatch")
+	} else if build.EmailToNotify != buildAgain.EmailToNotify {
+		test.Fatal("build.EmailToNotify mismatch")
+	} else if build.Changeset.HeadSha != buildAgain.Changeset.HeadSha {
+		test.Fatal("build.Changeset.HeadSha mismatch")
+	} else if build.Changeset.BaseSha != buildAgain.Changeset.BaseSha {
+		test.Fatal("build.Changeset.BaseSha mismatch")
+	} else if build.Changeset.HeadMessage != buildAgain.Changeset.HeadMessage {
+		test.Fatal("build.Changeset.HeadMessage mismatch")
+	} else if build.Changeset.HeadUsername != buildAgain.Changeset.HeadUsername {
+		test.Fatal("build.Changeset.HeadUsername mismatch")
+	} else if build.Changeset.HeadEmail != buildAgain.Changeset.HeadEmail {
+		test.Fatal("build.Changeset.HeadEmail mismatch")
 	}
 
-	_, err = connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
-		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add verification with same changeset params twice")
+		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add build with same changeset params twice")
 	}
 
-	verification2, err := connection.Verifications.Create.CreateFromChangeset(firstRepository.Id, verification.Changeset.Id, mergeTarget, emailToNotify)
+	build2, err := connection.Builds.Create.CreateFromChangeset(firstRepository.Id, build.Changeset.Id, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -179,31 +179,31 @@ func TestCreateVerification(test *testing.T) {
 	select {
 	case <-createdEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear verification creation event")
+		test.Fatal("Failed to hear build creation event")
 	}
 
-	if createdEventVerification.Id != verification2.Id {
-		test.Fatal("Bad verification.Id in verification creation event")
-	} else if createdEventVerification.RepositoryId != verification2.RepositoryId {
-		test.Fatal("Bad verification.RepositoryId in verification creation event")
-	} else if createdEventVerification.MergeTarget != verification2.MergeTarget {
-		test.Fatal("Bad verification.MergeTarget in verification creation event")
-	} else if createdEventVerification.EmailToNotify != verification2.EmailToNotify {
-		test.Fatal("Bad verification.EmailToNotify in verification creation event")
-	} else if createdEventVerification.Changeset.HeadSha != verification2.Changeset.HeadSha {
-		test.Fatal("Bad verification.Changeset.HeadSha in verification creation event")
-	} else if createdEventVerification.Changeset.BaseSha != verification2.Changeset.BaseSha {
-		test.Fatal("Bad verification.Changeset.BaseSha in verification creation event")
-	} else if createdEventVerification.Changeset.HeadMessage != verification2.Changeset.HeadMessage {
-		test.Fatal("Bad verification.Changeset.HeadMessage in verification creation event")
-	} else if createdEventVerification.Changeset.HeadUsername != verification2.Changeset.HeadUsername {
-		test.Fatal("Bad verification.Changeset.HeadUsername in verification creation event")
-	} else if createdEventVerification.Changeset.HeadEmail != verification2.Changeset.HeadEmail {
-		test.Fatal("Bad verification.Changeset.HeadEmail in verification creation event")
+	if createdEventBuild.Id != build2.Id {
+		test.Fatal("Bad build.Id in build creation event")
+	} else if createdEventBuild.RepositoryId != build2.RepositoryId {
+		test.Fatal("Bad build.RepositoryId in build creation event")
+	} else if createdEventBuild.MergeTarget != build2.MergeTarget {
+		test.Fatal("Bad build.MergeTarget in build creation event")
+	} else if createdEventBuild.EmailToNotify != build2.EmailToNotify {
+		test.Fatal("Bad build.EmailToNotify in build creation event")
+	} else if createdEventBuild.Changeset.HeadSha != build2.Changeset.HeadSha {
+		test.Fatal("Bad build.Changeset.HeadSha in build creation event")
+	} else if createdEventBuild.Changeset.BaseSha != build2.Changeset.BaseSha {
+		test.Fatal("Bad build.Changeset.BaseSha in build creation event")
+	} else if createdEventBuild.Changeset.HeadMessage != build2.Changeset.HeadMessage {
+		test.Fatal("Bad build.Changeset.HeadMessage in build creation event")
+	} else if createdEventBuild.Changeset.HeadUsername != build2.Changeset.HeadUsername {
+		test.Fatal("Bad build.Changeset.HeadUsername in build creation event")
+	} else if createdEventBuild.Changeset.HeadEmail != build2.Changeset.HeadEmail {
+		test.Fatal("Bad build.Changeset.HeadEmail in build creation event")
 	}
 }
 
-func TestVerificationStatuses(test *testing.T) {
+func TestBuildStatuses(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -214,28 +214,28 @@ func TestVerificationStatuses(test *testing.T) {
 	}
 	defer connection.Close()
 
-	verificationStatusEventReceived := make(chan bool, 1)
-	verificationStatusEventId := uint64(0)
-	verificationStatusEventStatus := ""
-	verificationStatusUpdatedHandler := func(verificationId uint64, status string) {
-		verificationStatusEventId = verificationId
-		verificationStatusEventStatus = status
-		verificationStatusEventReceived <- true
+	buildStatusEventReceived := make(chan bool, 1)
+	buildStatusEventId := uint64(0)
+	buildStatusEventStatus := ""
+	buildStatusUpdatedHandler := func(buildId uint64, status string) {
+		buildStatusEventId = buildId
+		buildStatusEventStatus = status
+		buildStatusEventReceived <- true
 	}
-	_, err = connection.Verifications.Subscription.SubscribeToStatusUpdatedEvents(verificationStatusUpdatedHandler)
+	_, err = connection.Builds.Subscription.SubscribeToStatusUpdatedEvents(buildStatusUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	verificationMergeStatusEventReceived := make(chan bool, 1)
-	verificationMergeStatusEventId := uint64(0)
-	verificationMergeStatusEventStatus := ""
-	verificationMergeStatusUpdatedHandler := func(verificationId uint64, mergeStatus string) {
-		verificationMergeStatusEventId = verificationId
-		verificationMergeStatusEventStatus = mergeStatus
-		verificationMergeStatusEventReceived <- true
+	buildMergeStatusEventReceived := make(chan bool, 1)
+	buildMergeStatusEventId := uint64(0)
+	buildMergeStatusEventStatus := ""
+	buildMergeStatusUpdatedHandler := func(buildId uint64, mergeStatus string) {
+		buildMergeStatusEventId = buildId
+		buildMergeStatusEventStatus = mergeStatus
+		buildMergeStatusEventReceived <- true
 	}
-	_, err = connection.Verifications.Subscription.SubscribeToMergeStatusUpdatedEvents(verificationMergeStatusUpdatedHandler)
+	_, err = connection.Builds.Subscription.SubscribeToMergeStatusUpdatedEvents(buildMergeStatusUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -254,75 +254,75 @@ func TestVerificationStatuses(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	verification, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if verification.Status != "declared" {
-		test.Fatal("Expected initial verification status to be 'declared'")
+	if build.Status != "declared" {
+		test.Fatal("Expected initial build status to be 'declared'")
 	}
 
-	err = connection.Verifications.Update.SetStatus(verification.Id, "passed")
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	select {
-	case <-verificationStatusEventReceived:
-	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear verification status updated event")
-	}
-
-	if verificationStatusEventId != verification.Id {
-		test.Fatal("Bad verification.Id in status updated event")
-	} else if verificationStatusEventStatus != "passed" {
-		test.Fatal("Bad verification status in status updated event")
-	}
-
-	verification, err = connection.Verifications.Read.Get(verification.Id)
-	if err != nil {
-		test.Fatal(err)
-	} else if verification.Status != "passed" {
-		test.Fatal("Failed to update verification status")
-	}
-
-	err = connection.Verifications.Update.SetStatus(verification.Id, "bad-status")
-	if _, ok := err.(resources.InvalidVerificationStatusError); !ok {
-		test.Fatal("Expected InvalidVerificationStatusError when trying to set status")
-	}
-
-	err = connection.Verifications.Update.SetMergeStatus(verification.Id, "failed")
+	err = connection.Builds.Update.SetStatus(build.Id, "passed")
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	select {
-	case <-verificationMergeStatusEventReceived:
+	case <-buildStatusEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear verification merge status updated event")
+		test.Fatal("Failed to hear build status updated event")
 	}
 
-	if verificationMergeStatusEventId != verification.Id {
-		test.Fatal("Bad verification.Id in merge status updated event")
-	} else if verificationMergeStatusEventStatus != "failed" {
-		test.Fatal("Bad verification merge status in merge status updated event")
+	if buildStatusEventId != build.Id {
+		test.Fatal("Bad build.Id in status updated event")
+	} else if buildStatusEventStatus != "passed" {
+		test.Fatal("Bad build status in status updated event")
 	}
 
-	verification, err = connection.Verifications.Read.Get(verification.Id)
+	build, err = connection.Builds.Read.Get(build.Id)
 	if err != nil {
 		test.Fatal(err)
-	} else if verification.MergeStatus != "failed" {
-		test.Fatal("Failed to update verification merge status")
+	} else if build.Status != "passed" {
+		test.Fatal("Failed to update build status")
 	}
 
-	err = connection.Verifications.Update.SetMergeStatus(verification.Id, "bad-merge-status")
-	if _, ok := err.(resources.InvalidVerificationMergeStatusError); !ok {
-		test.Fatal("Expected InvalidVerificationMergeStatusError when trying to set merge status")
+	err = connection.Builds.Update.SetStatus(build.Id, "bad-status")
+	if _, ok := err.(resources.InvalidBuildStatusError); !ok {
+		test.Fatal("Expected InvalidBuildStatusError when trying to set status")
+	}
+
+	err = connection.Builds.Update.SetMergeStatus(build.Id, "failed")
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-buildMergeStatusEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear build merge status updated event")
+	}
+
+	if buildMergeStatusEventId != build.Id {
+		test.Fatal("Bad build.Id in merge status updated event")
+	} else if buildMergeStatusEventStatus != "failed" {
+		test.Fatal("Bad build merge status in merge status updated event")
+	}
+
+	build, err = connection.Builds.Read.Get(build.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if build.MergeStatus != "failed" {
+		test.Fatal("Failed to update build merge status")
+	}
+
+	err = connection.Builds.Update.SetMergeStatus(build.Id, "bad-merge-status")
+	if _, ok := err.(resources.InvalidBuildMergeStatusError); !ok {
+		test.Fatal("Expected InvalidBuildMergeStatusError when trying to set merge status")
 	}
 }
 
-func TestVerificationTimes(test *testing.T) {
+func TestBuildTimes(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -333,28 +333,28 @@ func TestVerificationTimes(test *testing.T) {
 	}
 	defer connection.Close()
 
-	verificationStartTimeEventReceived := make(chan bool, 1)
-	verificationStartTimeEventId := uint64(0)
-	verificationStartTimeEventTime := time.Now()
-	verificationStartTimeUpdatedHandler := func(verificationId uint64, startTime time.Time) {
-		verificationStartTimeEventId = verificationId
-		verificationStartTimeEventTime = startTime
-		verificationStartTimeEventReceived <- true
+	buildStartTimeEventReceived := make(chan bool, 1)
+	buildStartTimeEventId := uint64(0)
+	buildStartTimeEventTime := time.Now()
+	buildStartTimeUpdatedHandler := func(buildId uint64, startTime time.Time) {
+		buildStartTimeEventId = buildId
+		buildStartTimeEventTime = startTime
+		buildStartTimeEventReceived <- true
 	}
-	_, err = connection.Verifications.Subscription.SubscribeToStartTimeUpdatedEvents(verificationStartTimeUpdatedHandler)
+	_, err = connection.Builds.Subscription.SubscribeToStartTimeUpdatedEvents(buildStartTimeUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	verificationEndTimeEventReceived := make(chan bool, 1)
-	verificationEndTimeEventId := uint64(0)
-	verificationEndTimeEventTime := time.Now()
-	verificationEndTimeUpdatedHandler := func(verificationId uint64, endTime time.Time) {
-		verificationEndTimeEventId = verificationId
-		verificationEndTimeEventTime = endTime
-		verificationEndTimeEventReceived <- true
+	buildEndTimeEventReceived := make(chan bool, 1)
+	buildEndTimeEventId := uint64(0)
+	buildEndTimeEventTime := time.Now()
+	buildEndTimeUpdatedHandler := func(buildId uint64, endTime time.Time) {
+		buildEndTimeEventId = buildId
+		buildEndTimeEventTime = endTime
+		buildEndTimeEventReceived <- true
 	}
-	_, err = connection.Verifications.Subscription.SubscribeToEndTimeUpdatedEvents(verificationEndTimeUpdatedHandler)
+	_, err = connection.Builds.Subscription.SubscribeToEndTimeUpdatedEvents(buildEndTimeUpdatedHandler)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -373,70 +373,70 @@ func TestVerificationTimes(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	verification, err := connection.Verifications.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	err = connection.Verifications.Update.SetEndTime(verification.Id, time.Now())
+	err = connection.Builds.Update.SetEndTime(build.Id, time.Now())
 	if err == nil {
 		test.Fatal("Expected error when setting end time without start time")
 	}
 
-	err = connection.Verifications.Update.SetStartTime(verification.Id, time.Unix(0, 0))
+	err = connection.Builds.Update.SetStartTime(build.Id, time.Unix(0, 0))
 	if err == nil {
 		test.Fatal("Expected error when setting start time before create time")
 	}
 
 	startTime := time.Now()
-	err = connection.Verifications.Update.SetStartTime(verification.Id, startTime)
+	err = connection.Builds.Update.SetStartTime(build.Id, startTime)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	select {
-	case <-verificationStartTimeEventReceived:
+	case <-buildStartTimeEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear verification start time event")
+		test.Fatal("Failed to hear build start time event")
 	}
 
-	if verificationStartTimeEventId != verification.Id {
-		test.Fatal("Bad verification.Id in start time event")
-	} else if verificationStartTimeEventTime != startTime {
-		test.Fatal("Bad verification start time in start time event")
+	if buildStartTimeEventId != build.Id {
+		test.Fatal("Bad build.Id in start time event")
+	} else if buildStartTimeEventTime != startTime {
+		test.Fatal("Bad build start time in start time event")
 	}
 
-	err = connection.Verifications.Update.SetStartTime(0, time.Now())
-	if _, ok := err.(resources.NoSuchVerificationError); !ok {
-		test.Fatal("Expected NoSuchVerificationError when trying to set start time for nonexistent verification")
+	err = connection.Builds.Update.SetStartTime(0, time.Now())
+	if _, ok := err.(resources.NoSuchBuildError); !ok {
+		test.Fatal("Expected NoSuchBuildError when trying to set start time for nonexistent build")
 	}
 
-	err = connection.Verifications.Update.SetEndTime(verification.Id, time.Unix(0, 0))
+	err = connection.Builds.Update.SetEndTime(build.Id, time.Unix(0, 0))
 	if err == nil {
 		test.Fatal("Expected error when setting end time before create time")
 	}
 
 	endTime := time.Now()
-	err = connection.Verifications.Update.SetEndTime(verification.Id, endTime)
+	err = connection.Builds.Update.SetEndTime(build.Id, endTime)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	select {
-	case <-verificationEndTimeEventReceived:
+	case <-buildEndTimeEventReceived:
 	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear verification end time event")
+		test.Fatal("Failed to hear build end time event")
 	}
 
-	if verificationEndTimeEventId != verification.Id {
-		test.Fatal("Bad verification.Id in end time event")
-	} else if verificationEndTimeEventTime != endTime {
-		test.Fatal("Bad verification end time in end time event")
+	if buildEndTimeEventId != build.Id {
+		test.Fatal("Bad build.Id in end time event")
+	} else if buildEndTimeEventTime != endTime {
+		test.Fatal("Bad build end time in end time event")
 	}
 
-	err = connection.Verifications.Update.SetEndTime(0, time.Now())
-	if _, ok := err.(resources.NoSuchVerificationError); !ok {
-		test.Fatal("Expected NoSuchVerificationError when trying to set end time for nonexistent verification")
+	err = connection.Builds.Update.SetEndTime(0, time.Now())
+	if _, ok := err.(resources.NoSuchBuildError); !ok {
+		test.Fatal("Expected NoSuchBuildError when trying to set end time for nonexistent build")
 	}
 }
 
@@ -457,29 +457,29 @@ func TestGetTail(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
-	} else if len(verifications) != 1 {
-		test.Fatal("Expected only one verification")
+	} else if len(builds) != 1 {
+		test.Fatal("Expected only one build")
 	}
 
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
-	verifications, err = connection.Verifications.Read.GetTail(firstRepository.Id, 1, 4)
+	builds, err = connection.Builds.Read.GetTail(firstRepository.Id, 1, 4)
 	if err != nil {
 		test.Fatal(err)
-	} else if len(verifications) != 4 {
-		test.Fatal("Expected four verifications")
+	} else if len(builds) != 4 {
+		test.Fatal("Expected four builds")
 	}
 
-	if firstVerification.Id == verifications[0].Id {
-		test.Fatal("Same verification id twice")
+	if firstBuild.Id == builds[0].Id {
+		test.Fatal("Same build id twice")
 	}
 
-	verifications, err = connection.Verifications.Read.GetTail(firstRepository.Id, 14, 0)
+	builds, err = connection.Builds.Read.GetTail(firstRepository.Id, 14, 0)
 	if err == nil {
-		test.Fatal("Expected error when requesting 0 verifications")
+		test.Fatal("Expected error when requesting 0 builds")
 	}
 }
 
@@ -500,29 +500,29 @@ func TestGetChangesetFromShas(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
-	changeset, err := connection.Verifications.Read.GetChangesetFromShas(firstVerification.Changeset.HeadSha, firstVerification.Changeset.BaseSha)
+	changeset, err := connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, firstBuild.Changeset.BaseSha)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	if changeset.HeadSha != firstVerification.Changeset.HeadSha {
+	if changeset.HeadSha != firstBuild.Changeset.HeadSha {
 		test.Fatal("changeset.HeadSha mismatch")
-	} else if changeset.BaseSha != firstVerification.Changeset.BaseSha {
+	} else if changeset.BaseSha != firstBuild.Changeset.BaseSha {
 		test.Fatal("changeset.BaseSha mismatch")
 	}
 
-	_, err = connection.Verifications.Read.GetChangesetFromShas("some-bad-head-sha", firstVerification.Changeset.BaseSha)
+	_, err = connection.Builds.Read.GetChangesetFromShas("some-bad-head-sha", firstBuild.Changeset.BaseSha)
 	if _, ok := err.(resources.NoSuchChangesetError); !ok {
 		test.Fatal("Expected NoSuchChangesetError when providing invalid head sha")
 	}
 
-	_, err = connection.Verifications.Read.GetChangesetFromShas(firstVerification.Changeset.HeadSha, "some-bad-base-sha")
+	_, err = connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, "some-bad-base-sha")
 	if _, ok := err.(resources.NoSuchChangesetError); !ok {
 		test.Fatal("Expected NoSuchChangesetError when providing invalid base sha")
 	}

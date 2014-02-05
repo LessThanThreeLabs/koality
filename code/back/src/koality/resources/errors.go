@@ -122,29 +122,29 @@ func (err NoSuchDebugInstanceError) Error() string {
 	return err.Message
 }
 
-//-------------------- Verifications --------------------
+//-------------------- Builds --------------------
 
-type NoSuchVerificationError struct {
+type NoSuchBuildError struct {
 	Message string
 }
 
-func (err NoSuchVerificationError) Error() string {
+func (err NoSuchBuildError) Error() string {
 	return err.Message
 }
 
-type InvalidVerificationStatusError struct {
+type InvalidBuildStatusError struct {
 	Message string
 }
 
-func (err InvalidVerificationStatusError) Error() string {
+func (err InvalidBuildStatusError) Error() string {
 	return err.Message
 }
 
-type InvalidVerificationMergeStatusError struct {
+type InvalidBuildMergeStatusError struct {
 	Message string
 }
 
-func (err InvalidVerificationMergeStatusError) Error() string {
+func (err InvalidBuildMergeStatusError) Error() string {
 	return err.Message
 }
 

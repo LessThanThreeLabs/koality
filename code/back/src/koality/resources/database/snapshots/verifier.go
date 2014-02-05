@@ -31,8 +31,8 @@ func (verifier *Verifier) verifyImageType(imageType string) error {
 }
 
 func (verifier *Verifier) verifyStatus(status string) error {
-	for _, allowedVerificationStatus := range allowedStatuses {
-		if status == allowedVerificationStatus {
+	for _, allowedBuildStatus := range allowedStatuses {
+		if status == allowedBuildStatus {
 			return nil
 		}
 	}

@@ -25,7 +25,7 @@ type SnapshotsHandler struct {
 }
 
 type SnapshotsCreateHandler interface {
-	Create(poolId uint64, imageType string, repositoryInformation []*CoreVerificationInformation) (*Snapshot, error)
+	Create(poolId uint64, imageType string, repositoryInformation []*CoreBuildInformation) (*Snapshot, error)
 }
 
 type SnapshotsReadHandler interface {

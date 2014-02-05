@@ -38,7 +38,7 @@ func (suite *DebugInstancesSuite) TearDownTest(check *gocheck.C) {
 	}
 }
 
-func getVerificationInfo() *resources.CoreVerificationInformation {
+func getBuildInfo() *resources.CoreBuildInformation {
 	createSha := func() string {
 		shaChars := "0123456789ABCDEF"
 		sha := ""
@@ -48,7 +48,7 @@ func getVerificationInfo() *resources.CoreVerificationInformation {
 		}
 		return sha
 	}
-	return &resources.CoreVerificationInformation{
+	return &resources.CoreBuildInformation{
 		2, createSha(), createSha(), "headmessage", "headuser", "heademail@foo.com", "foo@foo.foo",
 	}
 }
@@ -63,9 +63,9 @@ func (suite *DebugInstancesSuite) TestCreateGet(check *gocheck.C) {
 
 	instanceId := "instanceIdentifier"
 	expireTime := time.Now().Add(1 * time.Minute)
-	verificationInfo := getVerificationInfo()
+	buildInfo := getBuildInfo()
 	debugInstance, err := suite.resourcesConnection.DebugInstances.Create.Create(
-		suite.firstPool.Id, instanceId, &expireTime, verificationInfo)
+		suite.firstPool.Id, instanceId, &expireTime, buildInfo)
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(debugInstance, gocheck.Not(gocheck.IsNil))
 
@@ -84,9 +84,9 @@ func (suite *DebugInstancesSuite) TestCreateGet(check *gocheck.C) {
 func (suite *DebugInstancesSuite) TestGetAllRunning(check *gocheck.C) {
 	instanceId := "instanceIdentifier"
 	expireTime := time.Now().Add(1 * time.Minute)
-	verificationInfo := getVerificationInfo()
+	buildInfo := getBuildInfo()
 	debugInstance, err := suite.resourcesConnection.DebugInstances.Create.Create(
-		suite.firstPool.Id, instanceId, &expireTime, verificationInfo)
+		suite.firstPool.Id, instanceId, &expireTime, buildInfo)
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(debugInstance, gocheck.Not(gocheck.IsNil))
 
@@ -94,10 +94,10 @@ func (suite *DebugInstancesSuite) TestGetAllRunning(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(debugInstances, gocheck.DeepEquals, []resources.DebugInstance{*debugInstance})
 
-	err = suite.resourcesConnection.Verifications.Update.SetStartTime(debugInstance.VerificationId, time.Now())
+	err = suite.resourcesConnection.Builds.Update.SetStartTime(debugInstance.BuildId, time.Now())
 	check.Assert(err, gocheck.IsNil)
 
-	err = suite.resourcesConnection.Verifications.Update.SetEndTime(debugInstance.VerificationId, time.Now())
+	err = suite.resourcesConnection.Builds.Update.SetEndTime(debugInstance.BuildId, time.Now())
 	check.Assert(err, gocheck.IsNil)
 
 	debugInstances, err = suite.resourcesConnection.DebugInstances.Read.GetAllRunning()

@@ -17,20 +17,20 @@ func TestMaid(test *testing.T) {
 	}
 	defer connection.Close()
 
-	err = addVerifications(connection, 10)
+	err = addBuilds(connection, 10)
 	if err != nil {
 		test.Fatal(err)
 	}
 
-	numVerificationsToRetain := uint32(10)
-	Clean(connection, numVerificationsToRetain)
-	err = checkVerificationsCleaned(connection, numVerificationsToRetain)
+	numBuildsToRetain := uint32(10)
+	Clean(connection, numBuildsToRetain)
+	err = checkBuildsCleaned(connection, numBuildsToRetain)
 	if err != nil {
 		test.Fatal(err)
 	}
 }
 
-func addVerifications(connection *resources.Connection, numVerificationsToCreatePerRepository int) error {
+func addBuilds(connection *resources.Connection, numBuildsToCreatePerRepository int) error {
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func addVerifications(connection *resources.Connection, numVerificationsToCreate
 	errorChannel := make(chan error)
 	for _, repository := range repositories {
 		go func(repositoryId uint64) {
-			err := createVerifications(connection, repositoryId, numVerificationsToCreatePerRepository)
+			err := createBuilds(connection, repositoryId, numBuildsToCreatePerRepository)
 			errorChannel <- err
 		}(repository.Id)
 	}
@@ -53,41 +53,41 @@ func addVerifications(connection *resources.Connection, numVerificationsToCreate
 	return nil
 }
 
-func checkVerificationsCleaned(connection *resources.Connection, numVerificationsToRetain uint32) error {
+func checkBuildsCleaned(connection *resources.Connection, numBuildsToRetain uint32) error {
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		return err
 	}
 
-	verificationCount := 0
+	buildCount := 0
 	errorChannel := make(chan error)
 	for _, repository := range repositories {
-		verifications, err := connection.Verifications.Read.GetTail(repository.Id, 0, 1000000)
+		builds, err := connection.Builds.Read.GetTail(repository.Id, 0, 1000000)
 		if err != nil {
 			return err
 		}
-		verificationCount += len(verifications)
+		buildCount += len(builds)
 
-		for index, verification := range verifications {
-			go func(index int, verificationId uint64) {
-				containsOutput, err := doesVerificationContainOutput(connection, verificationId)
+		for index, build := range builds {
+			go func(index int, buildId uint64) {
+				containsOutput, err := doesBuildContainOutput(connection, buildId)
 				if err != nil {
 					errorChannel <- err
 					return
 				}
 
-				if index < int(numVerificationsToRetain) && !containsOutput {
-					errorChannel <- fmt.Errorf("Expected output for verification #%d with id: %d\n", index, verificationId)
-				} else if index >= int(numVerificationsToRetain) && containsOutput {
-					errorChannel <- fmt.Errorf("Expected no output for verification #%d with id: %d\n", index, verificationId)
+				if index < int(numBuildsToRetain) && !containsOutput {
+					errorChannel <- fmt.Errorf("Expected output for build #%d with id: %d\n", index, buildId)
+				} else if index >= int(numBuildsToRetain) && containsOutput {
+					errorChannel <- fmt.Errorf("Expected no output for build #%d with id: %d\n", index, buildId)
 				} else {
 					errorChannel <- nil
 				}
-			}(index, verification.Id)
+			}(index, build.Id)
 		}
 	}
 
-	for index := 0; index < verificationCount; index++ {
+	for index := 0; index < buildCount; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err
@@ -96,8 +96,8 @@ func checkVerificationsCleaned(connection *resources.Connection, numVerification
 	return nil
 }
 
-func doesVerificationContainOutput(connection *resources.Connection, verificationId uint64) (bool, error) {
-	stages, err := connection.Stages.Read.GetAll(verificationId)
+func doesBuildContainOutput(connection *resources.Connection, buildId uint64) (bool, error) {
+	stages, err := connection.Stages.Read.GetAll(buildId)
 	if err != nil {
 		return false, err
 	}

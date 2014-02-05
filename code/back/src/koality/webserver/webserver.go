@@ -9,6 +9,7 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
+	"koality/webserver/builds"
 	"koality/webserver/github"
 	"koality/webserver/google"
 	"koality/webserver/middleware"
@@ -17,7 +18,6 @@ import (
 	"koality/webserver/stages"
 	"koality/webserver/templates"
 	"koality/webserver/users"
-	"koality/webserver/verifications"
 	"net/http"
 	"strings"
 )
@@ -119,7 +119,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	verificationsHandler, err := verifications.New(webserver.resourcesConnection, webserver.repositoryManager)
+	buildsHandler, err := builds.New(webserver.resourcesConnection, webserver.repositoryManager)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +159,8 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		repositoriesSubrouter := appSubrouter.PathPrefix("/repositories").Subrouter()
 		repositoriesHandler.WireAppSubroutes(repositoriesSubrouter)
 
-		verificationsSubrouter := appSubrouter.PathPrefix("/verifications").Subrouter()
-		verificationsHandler.WireAppSubroutes(verificationsSubrouter)
+		buildsSubrouter := appSubrouter.PathPrefix("/builds").Subrouter()
+		buildsHandler.WireAppSubroutes(buildsSubrouter)
 
 		stagesSubrouter := appSubrouter.PathPrefix("/stages").Subrouter()
 		stagesHandler.WireStagesAppSubroutes(stagesSubrouter)
@@ -181,8 +181,8 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		repositoriesSubrouter := apiSubrouter.PathPrefix("/repositories").Subrouter()
 		repositoriesHandler.WireApiSubroutes(repositoriesSubrouter)
 
-		verificationsSubrouter := apiSubrouter.PathPrefix("/verifications").Subrouter()
-		verificationsHandler.WireApiSubroutes(verificationsSubrouter)
+		buildsSubrouter := apiSubrouter.PathPrefix("/builds").Subrouter()
+		buildsHandler.WireApiSubroutes(buildsSubrouter)
 
 		stagesSubrouter := apiSubrouter.PathPrefix("/stages").Subrouter()
 		stagesHandler.WireStagesApiSubroutes(stagesSubrouter)
