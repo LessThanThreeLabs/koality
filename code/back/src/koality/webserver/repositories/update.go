@@ -35,6 +35,12 @@ func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.R
 		return
 	}
 
+	if repository.GitHub == nil {
+		writer.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(writer, "Forbidden request, repository was not added from GitHub")
+		return
+	}
+
 	hookSecret := generateSecret()
 	hookId, err := repositoriesHandler.gitHubConnection.AddRepositoryHook(repository, hookTypes, hookSecret)
 	if err != nil {
@@ -43,13 +49,22 @@ func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.R
 		return
 	}
 
-	fmt.Println("...make sure to delete old hooks, if there are any")
 	err = repositoriesHandler.resourcesConnection.Repositories.Update.SetGitHubHook(repositoryId, hookId, hookSecret, hookTypes)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
+
+	if repository.GitHub.HookId != 0 {
+		err = repositoriesHandler.gitHubConnection.RemoveRepositoryHook(repository)
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		}
+	}
+
 	fmt.Fprint(writer, "ok")
 }
 
@@ -75,7 +90,26 @@ func (repositoriesHandler *RepositoriesHandler) clearGitHubHook(writer http.Resp
 		return
 	}
 
-	fmt.Println("...need to actually remove hooks from github")
+	if repository.GitHub.HookId == 0 {
+		writer.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(writer, "Forbidden request, repository does not have a GitHub hook")
+		return
+	}
+
+	err = repositoriesHandler.gitHubConnection.RemoveRepositoryHook(repository)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	err = repositoriesHandler.resourcesConnection.Repositories.Update.ClearGitHubHook(repository.Id)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
 	fmt.Fprint(writer, "ok")
 }
 
