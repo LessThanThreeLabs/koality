@@ -171,7 +171,7 @@ angular.module('koality.service.managers', []).
 				@_stagesCache = {}
 				@_gettingStages = true
 
-				request = $http.get("/app/stages/?verificationId=#{@_buildId}")
+				request = $http.get("/app/stages/?buildId=#{@_buildId}")
 				request.success (data, status, headers, config) =>
 					@_stagesRetrievedHandler null, data
 				request.error (data, status, headers, config) =>

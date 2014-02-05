@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"database/sql"
@@ -99,12 +99,12 @@ func (verifier *Verifier) verifyEmailToNotify(emailToNotify string) error {
 }
 
 func (verifier *Verifier) verifyStatus(status string) error {
-	for _, allowedVerificationStatus := range allowedStatuses {
-		if status == allowedVerificationStatus {
+	for _, allowedBuildStatus := range allowedStatuses {
+		if status == allowedBuildStatus {
 			return nil
 		}
 	}
-	return resources.InvalidVerificationStatusError{"Unexpected verification status: " + status}
+	return resources.InvalidBuildStatusError{"Unexpected build status: " + status}
 }
 
 func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {
@@ -113,7 +113,7 @@ func (verifier *Verifier) verifyMergeStatus(mergeStatus string) error {
 			return nil
 		}
 	}
-	return resources.InvalidVerificationMergeStatusError{"Unexpected merge status: " + mergeStatus}
+	return resources.InvalidBuildMergeStatusError{"Unexpected merge status: " + mergeStatus}
 }
 
 func (verifier *Verifier) verifyStartTime(created, started time.Time) error {

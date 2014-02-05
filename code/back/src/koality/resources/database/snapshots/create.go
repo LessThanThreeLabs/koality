@@ -11,20 +11,20 @@ const (
 )
 
 type CreateHandler struct {
-	database             *sql.DB
-	verifier             *Verifier
-	readHandler          resources.SnapshotsReadHandler
-	verificationsHandler *resources.VerificationsHandler
-	subscriptionHandler  resources.InternalSnapshotsSubscriptionHandler
+	database            *sql.DB
+	verifier            *Verifier
+	readHandler         resources.SnapshotsReadHandler
+	buildsHandler       *resources.BuildsHandler
+	subscriptionHandler resources.InternalSnapshotsSubscriptionHandler
 }
 
-func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resources.SnapshotsReadHandler, verificationHandler *resources.VerificationsHandler,
+func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resources.SnapshotsReadHandler, buildHandler *resources.BuildsHandler,
 	subscriptionHandler resources.InternalSnapshotsSubscriptionHandler) (resources.SnapshotsCreateHandler, error) {
 
-	return &CreateHandler{database, verifier, readHandler, verificationHandler, subscriptionHandler}, nil
+	return &CreateHandler{database, verifier, readHandler, buildHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repositoryInformation []*resources.CoreVerificationInformation) (*resources.Snapshot, error) {
+func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repositoryInformation []*resources.CoreBuildInformation) (*resources.Snapshot, error) {
 	err := createHandler.getSnapshotParamsError(poolId, imageType)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repo
 	}
 
 	for _, repositoryInformationElement := range repositoryInformation {
-		createHandler.verificationsHandler.Create.CreateForSnapshot(repositoryInformationElement.RepositoryId, id, repositoryInformationElement.HeadSha, repositoryInformationElement.BaseSha,
+		createHandler.buildsHandler.Create.CreateForSnapshot(repositoryInformationElement.RepositoryId, id, repositoryInformationElement.HeadSha, repositoryInformationElement.BaseSha,
 			repositoryInformationElement.HeadMessage, repositoryInformationElement.HeadUsername, repositoryInformationElement.HeadEmail, repositoryInformationElement.EmailToNotify)
 	}
 

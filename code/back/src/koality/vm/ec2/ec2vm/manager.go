@@ -227,7 +227,7 @@ func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
 	}
 	imageFilter := ec2.NewFilter()
 	imageFilter.Add("owner-id", "600991114254") // must be changed if our ec2 info changes
-	imageFilter.Add("name", "koality_verification_precise_0.4")
+	imageFilter.Add("name", "koality_build_precise_0.4")
 	imageFilter.Add("state", "available")
 	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {
@@ -251,7 +251,7 @@ func (manager *Ec2VirtualMachineManager) getSecurityGroups() ([]ec2.SecurityGrou
 	var securityGroup ec2.SecurityGroup
 	var securityGroups []ec2.SecurityGroup
 	defaultSecurityGroup := ec2.SecurityGroup{
-		Name: "koality_verification",
+		Name: "koality_build",
 	}
 	if manager.Ec2Pool.SecurityGroupId == "" {
 		securityGroup = defaultSecurityGroup
@@ -273,9 +273,9 @@ func (manager *Ec2VirtualMachineManager) getSecurityGroups() ([]ec2.SecurityGrou
 
 	if len(securityGroupsResp.Groups) == 0 {
 		securityGroup = ec2.SecurityGroup{
-			Name: "koality_verification",
+			Name: "koality_build",
 		}
-		_, err := manager.ec2Cache.EC2.CreateSecurityGroup("koality_verification", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
+		_, err := manager.ec2Cache.EC2.CreateSecurityGroup("koality_build", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
 		if err != nil {
 			return nil, err
 		}

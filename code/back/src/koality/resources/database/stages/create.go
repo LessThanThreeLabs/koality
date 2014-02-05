@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	initialVerificationStatus = "queued"
+	initialBuildStatus = "queued"
 )
 
 type CreateHandler struct {
@@ -22,16 +22,16 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(verificationId, sectionNumber uint64, name string, orderNumber uint64) (*resources.Stage, error) {
-	err := createHandler.getStageParamsError(verificationId, sectionNumber, name, orderNumber)
+func (createHandler *CreateHandler) Create(buildId, sectionNumber uint64, name string, orderNumber uint64) (*resources.Stage, error) {
+	err := createHandler.getStageParamsError(buildId, sectionNumber, name, orderNumber)
 	if err != nil {
 		return nil, err
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO stages (verification_id, section_number, name, order_number)" +
+	query := "INSERT INTO stages (build_id, section_number, name, order_number)" +
 		" VALUES ($1, $2, $3, $4) RETURNING id"
-	err = createHandler.database.QueryRow(query, verificationId, sectionNumber, name, orderNumber).Scan(&id)
+	err = createHandler.database.QueryRow(query, buildId, sectionNumber, name, orderNumber).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -67,12 +67,12 @@ func (createHandler *CreateHandler) CreateRun(stageId uint64) (*resources.StageR
 	return stageRun, nil
 }
 
-func (createHandler *CreateHandler) getStageParamsError(verificationId, sectionNumber uint64, name string, orderNumber uint64) error {
+func (createHandler *CreateHandler) getStageParamsError(buildId, sectionNumber uint64, name string, orderNumber uint64) error {
 	if err := createHandler.verifier.verifyName(name); err != nil {
 		return err
-	} else if err := createHandler.verifier.verifyVerificationExists(verificationId); err != nil {
+	} else if err := createHandler.verifier.verifyBuildExists(buildId); err != nil {
 		return err
-	} else if err := createHandler.verifier.verifyStageDoesNotExistWithSectionAndName(verificationId, sectionNumber, name); err != nil {
+	} else if err := createHandler.verifier.verifyStageDoesNotExistWithSectionAndName(buildId, sectionNumber, name); err != nil {
 		return err
 	}
 	return nil

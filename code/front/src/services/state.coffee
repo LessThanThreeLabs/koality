@@ -95,7 +95,7 @@ angular.module('koality.service.state', []).
 				assert.ok @_repositoryId?
 				assert.ok @_id?
 
-				request = $http.get("/app/verifications/#{@_id}")
+				request = $http.get("/app/builds/#{@_id}")
 				request.success (data, status, headers, config) =>
 					@_information = data
 					# @_listenToEvents()

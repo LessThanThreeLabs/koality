@@ -55,7 +55,7 @@ angular.module('koality.service.rpc', []).
 					# repositoryIds = @_currentQuery.repositoryIds.join ','
 					offset = @_currentQuery.startIndex
 					results = @_currentQuery.numToRetrieve
-					request = $http.get("/app/verifications/tail?repositoryId=#{repositoryId}&offset=#{offset}&results=#{results}")
+					request = $http.get("/app/builds/tail?repositoryId=#{repositoryId}&offset=#{offset}&results=#{results}")
 					request.success (data, status, headers, config) =>
 						@_noMoreBuildsToRequest = data.length < @_numBuildsToRequest
 						@_currentCallback null,

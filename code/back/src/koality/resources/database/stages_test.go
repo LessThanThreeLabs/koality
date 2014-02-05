@@ -24,21 +24,21 @@ func TestCreateInvalidStage(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
 	_, err = connection.Stages.Create.Create(0, stageSectionNumber, stageName, stageOrderNumber)
-	if _, ok := err.(resources.NoSuchVerificationError); !ok {
-		test.Fatal("Expected NoSuchVerificationError when providing invalid verification id")
+	if _, ok := err.(resources.NoSuchBuildError); !ok {
+		test.Fatal("Expected NoSuchBuildError when providing invalid build id")
 	}
-	_, err = connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, "", stageOrderNumber)
+	_, err = connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, "", stageOrderNumber)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid stage name")
 	}
@@ -83,17 +83,17 @@ func TestCreateStage(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stage, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	stage, err := connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -137,21 +137,21 @@ func TestCreateStage(test *testing.T) {
 		test.Fatal("stage.OrderNumber mismatch")
 	}
 
-	stage, err = connection.Stages.Read.GetBySectionNumberAndName(stage.VerificationId, stage.SectionNumber, stage.Name)
+	stage, err = connection.Stages.Read.GetBySectionNumberAndName(stage.BuildId, stage.SectionNumber, stage.Name)
 	if err != nil {
 		test.Fatal(err)
 	} else if stage == nil {
 		test.Fatal("Unable to find stage")
 	}
 
-	stages, err := connection.Stages.Read.GetAll(firstVerification.Id)
+	stages, err := connection.Stages.Read.GetAll(firstBuild.Id)
 	if err != nil {
 		test.Fatal(err)
 	} else if len(stages) == 0 {
 		test.Fatal("Unexpected number of stages")
 	}
 
-	_, err = connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	_, err = connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if _, ok := err.(resources.StageAlreadyExistsError); !ok {
 		test.Fatal("Expected StageAlreadyExistsError when trying to add same stage twice")
 	}
@@ -244,17 +244,17 @@ func TestStageReturnCode(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stage, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	stage, err := connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -338,17 +338,17 @@ func TestStageTimes(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stage, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	stage, err := connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -450,17 +450,17 @@ func TestConsoleLines(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stage, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	stage, err := connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -574,17 +574,17 @@ func TestXunit(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stage, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	stage, err := connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -686,17 +686,17 @@ func TestExport(test *testing.T) {
 	}
 	firstRepository := repositories[0]
 
-	verifications, err := connection.Verifications.Read.GetTail(firstRepository.Id, 0, 1)
+	builds, err := connection.Builds.Read.GetTail(firstRepository.Id, 0, 1)
 	if err != nil {
 		test.Fatal(err)
 	}
-	firstVerification := verifications[0]
+	firstBuild := builds[0]
 
 	stageSectionNumber := uint64(4)
 	stageName := "awesome stage"
 	stageOrderNumber := uint64(17)
 
-	stage, err := connection.Stages.Create.Create(firstVerification.Id, stageSectionNumber, stageName, stageOrderNumber)
+	stage, err := connection.Stages.Create.Create(firstBuild.Id, stageSectionNumber, stageName, stageOrderNumber)
 	if err != nil {
 		test.Fatal(err)
 	}

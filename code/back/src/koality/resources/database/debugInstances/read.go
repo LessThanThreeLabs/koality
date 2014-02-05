@@ -21,7 +21,7 @@ func NewReadHandler(database *sql.DB, subscriptionHandler resources.InternalDebu
 func (readHandler *ReadHandler) scanDebugInstance(scannable Scannable) (*resources.DebugInstance, error) {
 	debugInstance := new(resources.DebugInstance)
 
-	err := scannable.Scan(&debugInstance.Id, &debugInstance.PoolId, &debugInstance.InstanceId, &debugInstance.Expires, &debugInstance.VerificationId)
+	err := scannable.Scan(&debugInstance.Id, &debugInstance.PoolId, &debugInstance.InstanceId, &debugInstance.Expires, &debugInstance.BuildId)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchDebugInstanceError{"Unable to find debug instance"}
 	} else if err != nil {
@@ -33,7 +33,7 @@ func (readHandler *ReadHandler) scanDebugInstance(scannable Scannable) (*resourc
 
 func (readHandler *ReadHandler) Get(debugInstanceId uint64) (*resources.DebugInstance, error) {
 	query := "SELECT D.id, D.pool_id, D.instance_id, D.expires, V.id" +
-		" FROM debug_instances D JOIN verifications V" +
+		" FROM debug_instances D JOIN builds V" +
 		" ON V.debug_instance_id=D.id WHERE D.id=$1"
 	row := readHandler.database.QueryRow(query, debugInstanceId)
 	return readHandler.scanDebugInstance(row)
@@ -41,7 +41,7 @@ func (readHandler *ReadHandler) Get(debugInstanceId uint64) (*resources.DebugIns
 
 func (readHandler *ReadHandler) GetAllRunning() ([]resources.DebugInstance, error) {
 	query := "SELECT D.id, D.pool_id, D.instance_id, D.expires, V.id" +
-		" FROM debug_instances D JOIN verifications V" +
+		" FROM debug_instances D JOIN builds V" +
 		" ON V.debug_instance_id=D.id WHERE V.ended IS NULL"
 	rows, err := readHandler.database.Query(query)
 	if err != nil {

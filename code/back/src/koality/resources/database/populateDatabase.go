@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	numRepositories               = 2
-	numVerificationsPerRepository = 15
-	numPools                      = 1
-	parallelizationLevel          = 2
+	numRepositories        = 2
+	numBuildsPerRepository = 15
+	numPools               = 1
+	parallelizationLevel   = 2
 )
 
 var (
@@ -141,7 +141,7 @@ func createRepositories(connection *resources.Connection) error {
 				return
 			}
 
-			err = createVerifications(connection, repository.Id, numVerificationsPerRepository)
+			err = createBuilds(connection, repository.Id, numBuildsPerRepository)
 			errorChannel <- err
 		}(index)
 	}
@@ -155,7 +155,7 @@ func createRepositories(connection *resources.Connection) error {
 	return nil
 }
 
-func createVerifications(connection *resources.Connection, repositoryId uint64, numVerifications int) error {
+func createBuilds(connection *resources.Connection, repositoryId uint64, numBuilds int) error {
 	userNames := []string{"Jonathan Chu", "Jordan Potter", "Brian Bland", "Andrey Kostov"}
 	userEmails := []string{"jchu@koalitycode.com", "jpotter@koalitycode.com", "bbland@koalitycode.com", "akostov@koalitycode.com"}
 	mergeTargets := []string{"master", "development", "feature_branch_1", "feature_branch_2"}
@@ -178,11 +178,11 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 		}
 	}
 
-	errorChannel := make(chan error, numVerifications)
-	for index := 0; index < numVerifications; index++ {
+	errorChannel := make(chan error, numBuilds)
+	for index := 0; index < numBuilds; index++ {
 		go func(index int) {
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
-			verification, err := connection.Verifications.Create.Create(repositoryId, createSha(), createSha(),
+			build, err := connection.Builds.Create.Create(repositoryId, createSha(), createSha(),
 				headMessage, userNames[index%len(userNames)], userEmails[index%len(userEmails)],
 				mergeTargets[index%len(mergeTargets)], userEmails[rand.Intn(len(userEmails))])
 			if err != nil {
@@ -190,18 +190,18 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 				return
 			}
 
-			err = connection.Verifications.Update.SetStatus(verification.Id, getStatus())
+			err = connection.Builds.Update.SetStatus(build.Id, getStatus())
 			if err != nil {
 				errorChannel <- err
 				return
 			}
 
-			err = createStages(connection, verification.Id)
+			err = createStages(connection, build.Id)
 			errorChannel <- err
 		}(index)
 	}
 
-	for index := 0; index < numVerifications; index++ {
+	for index := 0; index < numBuilds; index++ {
 		err := <-errorChannel
 		if err != nil {
 			return err
@@ -210,11 +210,11 @@ func createVerifications(connection *resources.Connection, repositoryId uint64, 
 	return nil
 }
 
-func createStages(connection *resources.Connection, verificationId uint64) error {
+func createStages(connection *resources.Connection, buildId uint64) error {
 	stageNames := []string{"install dependencies", "prepare database", "frontend tests", "backend tests"}
 
 	for index, stageName := range stageNames {
-		stage, err := connection.Stages.Create.Create(verificationId, uint64(index/2), stageName, uint64(index%2))
+		stage, err := connection.Stages.Create.Create(buildId, uint64(index/2), stageName, uint64(index%2))
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func (verificationsHandler *VerificationsHandler) create(writer http.ResponseWriter, request *http.Request) {
+func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := request.PostFormValue("repositoryId")
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
@@ -20,14 +20,14 @@ func (verificationsHandler *VerificationsHandler) create(writer http.ResponseWri
 
 	ref := request.PostFormValue("ref")
 
-	repository, err := verificationsHandler.resourcesConnection.Repositories.Read.Get(repositoryId)
+	repository, err := buildsHandler.resourcesConnection.Repositories.Read.Get(repositoryId)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	headSha, headMessage, headUsername, headEmail, err := verificationsHandler.repositoryManager.GetCommitAttributes(repository, ref)
+	headSha, headMessage, headUsername, headEmail, err := buildsHandler.repositoryManager.GetCommitAttributes(repository, ref)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -36,24 +36,24 @@ func (verificationsHandler *VerificationsHandler) create(writer http.ResponseWri
 
 	baseSha := headSha
 
-	if err = verificationsHandler.repositoryManager.StorePending(repository, headSha); err != nil {
+	if err = buildsHandler.repositoryManager.StorePending(repository, headSha); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	changeset, err := verificationsHandler.resourcesConnection.Verifications.Read.GetChangesetFromShas(headSha, baseSha)
+	changeset, err := buildsHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha)
 	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	var verification *resources.Verification
+	var build *resources.Build
 	if changeset != nil {
-		verification, err = verificationsHandler.resourcesConnection.Verifications.Create.CreateFromChangeset(repositoryId, changeset.Id, "", headEmail)
+		build, err = buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repositoryId, changeset.Id, "", headEmail)
 	} else {
-		verification, err = verificationsHandler.resourcesConnection.Verifications.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, "", headEmail)
+		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, "", headEmail)
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -61,8 +61,8 @@ func (verificationsHandler *VerificationsHandler) create(writer http.ResponseWri
 		return
 	}
 
-	sanitizedVerification := getSanitizedVerification(verification)
-	jsonedVerification, err := json.Marshal(sanitizedVerification)
+	sanitizedBuild := getSanitizedBuild(build)
+	jsonedBuild, err := json.Marshal(sanitizedBuild)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
@@ -70,35 +70,35 @@ func (verificationsHandler *VerificationsHandler) create(writer http.ResponseWri
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "%s", jsonedVerification)
+	fmt.Fprintf(writer, "%s", jsonedBuild)
 }
 
-func (verificationsHandler *VerificationsHandler) retrigger(writer http.ResponseWriter, request *http.Request) {
-	verificationIdString := mux.Vars(request)["verificationId"]
-	verificationId, err := strconv.ParseUint(verificationIdString, 10, 64)
+func (buildsHandler *BuildsHandler) retrigger(writer http.ResponseWriter, request *http.Request) {
+	buildIdString := mux.Vars(request)["buildId"]
+	buildId, err := strconv.ParseUint(buildIdString, 10, 64)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse verificationId: %v", err)
+		fmt.Fprintf(writer, "Unable to parse buildId: %v", err)
 		return
 	}
 
-	verification, err := verificationsHandler.resourcesConnection.Verifications.Read.Get(verificationId)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
-		return
-	}
-
-	newVerification, err := verificationsHandler.resourcesConnection.Verifications.Create.CreateFromChangeset(verification.RepositoryId,
-		verification.Changeset.Id, verification.MergeTarget, verification.EmailToNotify)
+	build, err := buildsHandler.resourcesConnection.Builds.Read.Get(buildId)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	sanitizedVerification := getSanitizedVerification(newVerification)
-	jsonedVerification, err := json.Marshal(sanitizedVerification)
+	newBuild, err := buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(build.RepositoryId,
+		build.Changeset.Id, build.MergeTarget, build.EmailToNotify)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedBuild := getSanitizedBuild(newBuild)
+	jsonedBuild, err := json.Marshal(sanitizedBuild)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
@@ -106,5 +106,5 @@ func (verificationsHandler *VerificationsHandler) retrigger(writer http.Response
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "%s", jsonedVerification)
+	fmt.Fprintf(writer, "%s", jsonedBuild)
 }

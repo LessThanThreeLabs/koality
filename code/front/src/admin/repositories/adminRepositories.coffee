@@ -28,9 +28,9 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$timeout', '
 
 	addRepositoryEditFields = (repository) ->
 		repository.newForwardUrl = repository.forwardUrl
-		repository.verification.newPre = repository.verification.pre
-		repository.verification.newPush = repository.verification.push
-		repository.verification.newPullRequest = repository.verification.pullRequest
+		repository.build.newPre = repository.build.pre
+		repository.build.newPush = repository.build.push
+		repository.build.newPullRequest = repository.build.pullRequest
 		return repository
 
 	getRepositories = () ->
@@ -157,16 +157,16 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$timeout', '
 					repository.forwardUrl = repository.newForwardUrl
 					callback null, true
 
-		updateVerificationHook = (callback) ->
+		updateBuildHook = (callback) ->
 			requestParams =
 				id: repository.id
-				pushEnabled: repository.verification.newPush
-				pullRequestEnabled: repository.verification.newPullRequest
-			rpc 'repositories', 'update', 'setGitHubVerificationHook', requestParams, (error) ->
+				pushEnabled: repository.build.newPush
+				pullRequestEnabled: repository.build.newPullRequest
+			rpc 'repositories', 'update', 'setGitHubBuildHook', requestParams, (error) ->
 				if error? then callback error, false
 				else
-					repository.verification.push = repository.verification.newPush
-					repository.verification.pullRequest = repository.verification.newPullRequest
+					repository.build.push = repository.build.newPush
+					repository.build.pullRequest = repository.build.newPullRequest
 					callback null, true
 
 		return if repository.saving
@@ -176,18 +176,18 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$timeout', '
 			if repository.forwardUrl isnt repository.newForwardUrl
 				updateForwardUrl defer forwardUrlError, forwardUrlSuccess
 
-			if repository.verification.push isnt repository.verification.newPost or 
-				repository.verification.pullRequest isnt repository.verification.newPullRequest
-					updateVerificationHook defer verificationHookError, verificationHookSuccess
+			if repository.build.push isnt repository.build.newPost or 
+				repository.build.pullRequest isnt repository.build.newPullRequest
+					updateBuildHook defer buildHookError, buildHookSuccess
 
 		repository.saving = false
 		$scope.currentlyEditingRepositoryId = null
 
 		if forwardUrlError? then notification.error forwardUrlError
-		else if verificationHookError?
-			if verificationHookError.redirect? then window.location.href = verificationHookError.redirect
-			else notification.error verificationHookError
-		else if forwardUrlSuccess or verificationHookSuccess
+		else if buildHookError?
+			if buildHookError.redirect? then window.location.href = buildHookError.redirect
+			else notification.error buildHookError
+		else if forwardUrlSuccess or buildHookSuccess
 			notification.success "Repository #{repository.name} successfully updated"
 
 

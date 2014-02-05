@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"database/sql"
@@ -11,14 +11,14 @@ import (
 type UpdateHandler struct {
 	database            *sql.DB
 	verifier            *Verifier
-	subscriptionHandler resources.InternalVerificationsSubscriptionHandler
+	subscriptionHandler resources.InternalBuildsSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalVerificationsSubscriptionHandler) (resources.VerificationsUpdateHandler, error) {
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalBuildsSubscriptionHandler) (resources.BuildsUpdateHandler, error) {
 	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
 }
 
-func (updateHandler *UpdateHandler) updateVerification(query string, params ...interface{}) error {
+func (updateHandler *UpdateHandler) updateBuild(query string, params ...interface{}) error {
 	result, err := updateHandler.database.Exec(query, params...)
 	if err != nil {
 		return err
@@ -28,53 +28,53 @@ func (updateHandler *UpdateHandler) updateVerification(query string, params ...i
 	if err != nil {
 		return err
 	} else if count != 1 {
-		return resources.NoSuchVerificationError{"Unable to find verification"}
+		return resources.NoSuchBuildError{"Unable to find build"}
 	}
 	return nil
 }
 
-func (updateHandler *UpdateHandler) SetStatus(verificationId uint64, status string) error {
+func (updateHandler *UpdateHandler) SetStatus(buildId uint64, status string) error {
 	if err := updateHandler.verifier.verifyStatus(status); err != nil {
 		return err
 	}
 
-	query := "UPDATE verifications SET status=$1 WHERE id=$2"
-	err := updateHandler.updateVerification(query, status, verificationId)
+	query := "UPDATE builds SET status=$1 WHERE id=$2"
+	err := updateHandler.updateBuild(query, status, buildId)
 	if err != nil {
 		return err
 	}
 
-	updateHandler.subscriptionHandler.FireStatusUpdatedEvent(verificationId, status)
+	updateHandler.subscriptionHandler.FireStatusUpdatedEvent(buildId, status)
 	return nil
 }
 
-func (updateHandler *UpdateHandler) SetMergeStatus(verificationId uint64, mergeStatus string) error {
+func (updateHandler *UpdateHandler) SetMergeStatus(buildId uint64, mergeStatus string) error {
 	if err := updateHandler.verifier.verifyMergeStatus(mergeStatus); err != nil {
 		return err
 	}
 
-	query := "UPDATE verifications SET merge_status=$1 WHERE id=$2"
-	err := updateHandler.updateVerification(query, mergeStatus, verificationId)
+	query := "UPDATE builds SET merge_status=$1 WHERE id=$2"
+	err := updateHandler.updateBuild(query, mergeStatus, buildId)
 	if err != nil {
 		return err
 	}
 
-	updateHandler.subscriptionHandler.FireMergeStatusUpdatedEvent(verificationId, mergeStatus)
+	updateHandler.subscriptionHandler.FireMergeStatusUpdatedEvent(buildId, mergeStatus)
 	return nil
 }
 
-func (updateHandler *UpdateHandler) getTimes(verificationId uint64) (createTime, startTime, endTime *time.Time, err error) {
-	query := "SELECT created, started, ended FROM verifications WHERE id=$1"
-	err = updateHandler.database.QueryRow(query, verificationId).Scan(&createTime, &startTime, &endTime)
+func (updateHandler *UpdateHandler) getTimes(buildId uint64) (createTime, startTime, endTime *time.Time, err error) {
+	query := "SELECT created, started, ended FROM builds WHERE id=$1"
+	err = updateHandler.database.QueryRow(query, buildId).Scan(&createTime, &startTime, &endTime)
 	if err == sql.ErrNoRows {
-		errorText := fmt.Sprintf("Unable to find verification with id: %d", verificationId)
-		err = resources.NoSuchVerificationError{errorText}
+		errorText := fmt.Sprintf("Unable to find build with id: %d", buildId)
+		err = resources.NoSuchBuildError{errorText}
 	}
 	return
 }
 
-func (updateHandler *UpdateHandler) SetStartTime(verificationId uint64, startTime time.Time) error {
-	createTime, _, _, err := updateHandler.getTimes(verificationId)
+func (updateHandler *UpdateHandler) SetStartTime(buildId uint64, startTime time.Time) error {
+	createTime, _, _, err := updateHandler.getTimes(buildId)
 	if err != nil {
 		return err
 	} else if createTime == nil {
@@ -85,18 +85,18 @@ func (updateHandler *UpdateHandler) SetStartTime(verificationId uint64, startTim
 		return err
 	}
 
-	query := "UPDATE verifications SET started=$1 WHERE id=$2"
-	err = updateHandler.updateVerification(query, startTime, verificationId)
+	query := "UPDATE builds SET started=$1 WHERE id=$2"
+	err = updateHandler.updateBuild(query, startTime, buildId)
 	if err != nil {
 		return err
 	}
 
-	updateHandler.subscriptionHandler.FireStartTimeUpdatedEvent(verificationId, startTime)
+	updateHandler.subscriptionHandler.FireStartTimeUpdatedEvent(buildId, startTime)
 	return nil
 }
 
-func (updateHandler *UpdateHandler) SetEndTime(verificationId uint64, endTime time.Time) error {
-	createTime, startTime, _, err := updateHandler.getTimes(verificationId)
+func (updateHandler *UpdateHandler) SetEndTime(buildId uint64, endTime time.Time) error {
+	createTime, startTime, _, err := updateHandler.getTimes(buildId)
 	if err != nil {
 		return err
 	} else if createTime == nil {
@@ -109,12 +109,12 @@ func (updateHandler *UpdateHandler) SetEndTime(verificationId uint64, endTime ti
 		return err
 	}
 
-	query := "UPDATE verifications SET ended=$1 WHERE id=$2"
-	err = updateHandler.updateVerification(query, endTime, verificationId)
+	query := "UPDATE builds SET ended=$1 WHERE id=$2"
+	err = updateHandler.updateBuild(query, endTime, buildId)
 	if err != nil {
 		return err
 	}
 
-	updateHandler.subscriptionHandler.FireEndTimeUpdatedEvent(verificationId, endTime)
+	updateHandler.subscriptionHandler.FireEndTimeUpdatedEvent(buildId, endTime)
 	return nil
 }

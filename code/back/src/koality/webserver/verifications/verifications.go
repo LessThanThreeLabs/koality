@@ -1,4 +1,4 @@
-package verifications
+package builds
 
 import (
 	"github.com/gorilla/mux"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type sanitizedVerification struct {
+type sanitizedBuild struct {
 	Id           uint64             `json:"id"`
 	RepositoryId uint64             `json:"repositoryId"`
 	MergeTarget  string             `json:"mergeTarget"`
@@ -31,47 +31,47 @@ type sanitizedChangeset struct {
 	Created      *time.Time `json:"created"`
 }
 
-type VerificationsHandler struct {
+type BuildsHandler struct {
 	resourcesConnection *resources.Connection
 	repositoryManager   repositorymanager.RepositoryManager
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*VerificationsHandler, error) {
-	return &VerificationsHandler{resourcesConnection, repositoryManager}, nil
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*BuildsHandler, error) {
+	return &BuildsHandler{resourcesConnection, repositoryManager}, nil
 }
 
-func (verificationsHandler *VerificationsHandler) WireAppSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{verificationId:[0-9]+}",
-		middleware.IsLoggedInWrapper(verificationsHandler.get)).
+func (buildsHandler *BuildsHandler) WireAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{buildId:[0-9]+}",
+		middleware.IsLoggedInWrapper(buildsHandler.get)).
 		Methods("GET")
 	subrouter.HandleFunc("/tail",
-		middleware.IsLoggedInWrapper(verificationsHandler.getTail)).
+		middleware.IsLoggedInWrapper(buildsHandler.getTail)).
 		Methods("GET")
 
-	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger",
-		middleware.IsLoggedInWrapper(verificationsHandler.retrigger)).
+	subrouter.HandleFunc("/{buildId:[0-9]+}/retrigger",
+		middleware.IsLoggedInWrapper(buildsHandler.retrigger)).
 		Methods("POST")
 }
 
-func (verificationsHandler *VerificationsHandler) WireApiSubroutes(subrouter *mux.Router) {
-	subrouter.HandleFunc("/{verificationId:[0-9]+}", verificationsHandler.get).Methods("GET")
-	subrouter.HandleFunc("/tail", verificationsHandler.getTail).Methods("GET")
+func (buildsHandler *BuildsHandler) WireApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{buildId:[0-9]+}", buildsHandler.get).Methods("GET")
+	subrouter.HandleFunc("/tail", buildsHandler.getTail).Methods("GET")
 
-	subrouter.HandleFunc("/", verificationsHandler.create).Methods("POST")
-	subrouter.HandleFunc("/{verificationId:[0-9]+}/retrigger", verificationsHandler.retrigger).Methods("POST")
+	subrouter.HandleFunc("/", buildsHandler.create).Methods("POST")
+	subrouter.HandleFunc("/{buildId:[0-9]+}/retrigger", buildsHandler.retrigger).Methods("POST")
 }
 
-func getSanitizedVerification(verification *resources.Verification) *sanitizedVerification {
-	return &sanitizedVerification{
-		Id:           verification.Id,
-		RepositoryId: verification.RepositoryId,
-		MergeTarget:  verification.MergeTarget,
-		Status:       verification.Status,
-		MergeStatus:  verification.MergeStatus,
-		Created:      verification.Created,
-		Started:      verification.Started,
-		Ended:        verification.Ended,
-		Changeset:    getSanitizedChangeset(verification.Changeset),
+func getSanitizedBuild(build *resources.Build) *sanitizedBuild {
+	return &sanitizedBuild{
+		Id:           build.Id,
+		RepositoryId: build.RepositoryId,
+		MergeTarget:  build.MergeTarget,
+		Status:       build.Status,
+		MergeStatus:  build.MergeStatus,
+		Created:      build.Created,
+		Started:      build.Started,
+		Ended:        build.Ended,
+		Changeset:    getSanitizedChangeset(build.Changeset),
 	}
 }
 

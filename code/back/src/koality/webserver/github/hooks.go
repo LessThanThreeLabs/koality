@@ -32,7 +32,7 @@ func (gitHubHandler *GitHubHandler) handlePullRequest(pullRequestPayload PullReq
 		return
 	}
 	gitHubRepository := pullRequestPayload.PullRequest.Base.Repository
-	gitHubHandler.triggerVerification(gitHubRepository.Owner.Login, gitHubRepository.Name,
+	gitHubHandler.triggerBuild(gitHubRepository.Owner.Login, gitHubRepository.Name,
 		pullRequestPayload.PullRequest.Head.Sha, pullRequestPayload.PullRequest.Base.Sha,
 		writer, request)
 }
@@ -43,12 +43,12 @@ func (gitHubHandler *GitHubHandler) handlePush(pushPayload PushHookPayload, writ
 		fmt.Fprint(writer, "ok")
 		return
 	}
-	gitHubHandler.triggerVerification(pushPayload.Repository.Owner.Name, pushPayload.Repository.Name,
+	gitHubHandler.triggerBuild(pushPayload.Repository.Owner.Name, pushPayload.Repository.Name,
 		pushPayload.After, pushPayload.Before,
 		writer, request)
 }
 
-func (gitHubHandler *GitHubHandler) triggerVerification(repositoryOwner, repositoryName, headSha, baseSha string, writer http.ResponseWriter, request *http.Request) {
+func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName, headSha, baseSha string, writer http.ResponseWriter, request *http.Request) {
 	repository, err := gitHubHandler.resourcesConnection.Repositories.Read.GetByGitHubInfo(repositoryOwner, repositoryName)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -75,7 +75,7 @@ func (gitHubHandler *GitHubHandler) triggerVerification(repositoryOwner, reposit
 		return
 	}
 
-	changeset, err := gitHubHandler.resourcesConnection.Verifications.Read.GetChangesetFromShas(headSha, baseSha)
+	changeset, err := gitHubHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha)
 	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -83,9 +83,9 @@ func (gitHubHandler *GitHubHandler) triggerVerification(repositoryOwner, reposit
 	}
 
 	if changeset != nil {
-		_, err = gitHubHandler.resourcesConnection.Verifications.Create.CreateFromChangeset(repository.Id, changeset.Id, "", headEmail)
+		_, err = gitHubHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repository.Id, changeset.Id, "", headEmail)
 	} else {
-		_, err = gitHubHandler.resourcesConnection.Verifications.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, "", headEmail)
+		_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, "", headEmail)
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

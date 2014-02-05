@@ -41,8 +41,8 @@ func (verifier *Verifier) verifyName(name string) error {
 }
 
 func (verifier *Verifier) verifyStatus(status string) error {
-	for _, allowedVerificationStatus := range allowedStatuses {
-		if status == allowedVerificationStatus {
+	for _, allowedBuildStatus := range allowedStatuses {
+		if status == allowedBuildStatus {
 			return nil
 		}
 	}
