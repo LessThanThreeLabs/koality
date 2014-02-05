@@ -2,8 +2,8 @@ package section
 
 import (
 	"fmt"
-	"koality/verification"
-	"koality/verification/config/commandgroup"
+	"koality/build"
+	"koality/build/config/commandgroup"
 )
 
 // mandatory
@@ -37,7 +37,7 @@ type Section interface {
 	ContinueOnFailure() bool
 	FactoryCommands(readOnlyCopy bool) commandgroup.CommandGroup
 	Commands(readOnlyCopy bool) commandgroup.CommandGroup
-	AppendCommand(verification.Command) (verification.Command, error)
+	AppendCommand(build.Command) (build.Command, error)
 	Exports() []string
 }
 
@@ -69,7 +69,7 @@ func (section *section) ContinueOnFailure() bool {
 
 func (section *section) FactoryCommands(readOnlyCopy bool) commandgroup.CommandGroup {
 	if section.factoryCommands == nil {
-		return commandgroup.New([]verification.Command{})
+		return commandgroup.New([]build.Command{})
 	}
 	if readOnlyCopy {
 		return section.factoryCommands.Copy()
@@ -86,7 +86,7 @@ func (section *section) FactoryCommands(readOnlyCopy bool) commandgroup.CommandG
 func (section *section) Commands(readOnlyCopy bool) commandgroup.CommandGroup {
 	commands := section.commands
 	if commands == nil {
-		commands = commandgroup.New([]verification.Command{})
+		commands = commandgroup.New([]build.Command{})
 	}
 
 	if readOnlyCopy {
@@ -106,9 +106,9 @@ func (section *section) Commands(readOnlyCopy bool) commandgroup.CommandGroup {
 	panic(fmt.Sprintf("Unexpected runOn value: %s\n", section.runOn))
 }
 
-func (section *section) AppendCommand(command verification.Command) (verification.Command, error) {
+func (section *section) AppendCommand(command build.Command) (build.Command, error) {
 	if section.commands == nil {
-		section.commands = commandgroup.New([]verification.Command{})
+		section.commands = commandgroup.New([]build.Command{})
 	}
 	return section.commands.Append(command)
 }

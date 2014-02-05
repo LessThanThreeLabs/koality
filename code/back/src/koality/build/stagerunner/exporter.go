@@ -20,8 +20,8 @@ func (exporter S3Exporter) ExportAndGetResults(stageId, stageRunId uint64, stage
 		return nil, nil
 	}
 
-	exportPrefix := fmt.Sprintf("repository/%d/verification/%d/stage/%d/stageRun/%d",
-		stageRunner.verification.Changeset.RepositoryId, stageRunner.verification.Id, stageId, stageRunId)
+	exportPrefix := fmt.Sprintf("repository/%d/build/%d/stage/%d/stageRun/%d",
+		stageRunner.build.Changeset.RepositoryId, stageRunner.build.Id, stageId, stageRunId)
 	s3ExporterSettings, err := stageRunner.resourcesConnection.Settings.Read.GetS3ExporterSettings()
 	if err != nil {
 		return nil, err

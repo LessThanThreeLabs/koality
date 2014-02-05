@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"github.com/LessThanThreeLabs/gocheck"
 	"io/ioutil"
+	"koality/build"
+	"koality/build/config/commandgroup"
+	"koality/build/config/remotecommand"
+	"koality/build/config/section"
 	"koality/resources"
 	"koality/resources/database"
 	"koality/shell"
 	"koality/util/xunit"
-	"koality/verification"
-	"koality/verification/config/commandgroup"
-	"koality/verification/config/remotecommand"
-	"koality/verification/config/section"
 	"koality/vm"
 	"koality/vm/localmachine"
 	"os"
@@ -47,7 +47,7 @@ type StageRunnerSuite struct {
 	resourcesConnection *resources.Connection
 	virtualMachine      vm.VirtualMachine
 	repository          *resources.Repository
-	verification        *resources.Verification
+	build               *resources.Build
 	stageRunner         *StageRunner
 }
 
@@ -66,7 +66,7 @@ func (suite *StageRunnerSuite) SetUpTest(check *gocheck.C) {
 	suite.repository, err = suite.resourcesConnection.Repositories.Create.Create("repositoryName", "git", "remote@Uri")
 	check.Assert(err, gocheck.IsNil)
 
-	suite.verification, err = suite.resourcesConnection.Verifications.Create.Create(suite.repository.Id,
+	suite.build, err = suite.resourcesConnection.Builds.Create.Create(suite.repository.Id,
 		"1234567890123456789012345678901234567890", "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", "mergeTarget", "a@b.com")
 	check.Assert(err, gocheck.IsNil)
@@ -103,12 +103,12 @@ func (exporter *MockExporter) ExportAndGetResults(stageId, stageRunId uint64, st
 
 func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
 	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
-		suite.verification, new(MockNoExportsExporter))
+		suite.build, new(MockNoExportsExporter))
 
 	var err error
-	commands := []verification.Command{verification.NewShellCommand("pass", shell.Command("true"))}
+	commands := []build.Command{build.NewShellCommand("pass", shell.Command("true"))}
 	for index, command := range commands {
-		_, err = suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))
+		_, err = suite.resourcesConnection.Stages.Create.Create(suite.build.Id, 0, command.Name(), uint64(index))
 		check.Assert(err, gocheck.IsNil)
 	}
 
@@ -135,13 +135,13 @@ func (suite *StageRunnerSuite) TestSimplePassingStages(check *gocheck.C) {
 
 func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
-		suite.verification, new(MockExporter))
-	commands := []verification.Command{verification.NewShellCommand("pass", shell.Command("true"))}
+		suite.build, new(MockExporter))
+	commands := []build.Command{build.NewShellCommand("pass", shell.Command("true"))}
 	for index, command := range commands {
-		_, err := suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))
+		_, err := suite.resourcesConnection.Stages.Create.Create(suite.build.Id, 0, command.Name(), uint64(index))
 		check.Assert(err, gocheck.IsNil)
 	}
-	_, err := suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, "test.export", uint64(len(commands)))
+	_, err := suite.resourcesConnection.Stages.Create.Create(suite.build.Id, 0, "test.export", uint64(len(commands)))
 	check.Assert(err, gocheck.IsNil)
 
 	commandGroup := commandgroup.New(commands)
@@ -161,7 +161,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 	err = suite.stageRunner.RunStages([]section.Section{testSection}, nil, nil)
 	check.Assert(err, gocheck.IsNil)
 
-	stage, err := suite.resourcesConnection.Stages.Read.GetBySectionNumberAndName(suite.verification.Id, 0, "test.export")
+	stage, err := suite.resourcesConnection.Stages.Read.GetBySectionNumberAndName(suite.build.Id, 0, "test.export")
 	check.Assert(err, gocheck.IsNil)
 
 	stageRuns, err := suite.resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
@@ -180,7 +180,7 @@ func (suite *StageRunnerSuite) TestExporting(check *gocheck.C) {
 
 func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
-		suite.verification, new(MockNoExportsExporter))
+		suite.build, new(MockNoExportsExporter))
 
 	copyExec, err := suite.virtualMachine.FileCopy(path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "*.xml"), "xunitPath/")
 	check.Assert(err, gocheck.IsNil)
@@ -192,11 +192,11 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	err = compileCmd.Run()
 	check.Assert(err, gocheck.IsNil)
 
-	commands := []verification.Command{
+	commands := []build.Command{
 		remotecommand.NewRemoteCommand(false, ".", "command name!!", 1000, []string{"xunitPath"}, []string{"true"}),
 	}
 	for index, command := range commands {
-		_, err := suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))
+		_, err := suite.resourcesConnection.Stages.Create.Create(suite.build.Id, 0, command.Name(), uint64(index))
 		check.Assert(err, gocheck.IsNil)
 	}
 
@@ -217,7 +217,7 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	err = suite.stageRunner.RunStages([]section.Section{testSection}, nil, nil)
 	check.Assert(err, gocheck.IsNil)
 
-	stage, err := suite.resourcesConnection.Stages.Read.GetBySectionNumberAndName(suite.verification.Id, 0, "command name!!")
+	stage, err := suite.resourcesConnection.Stages.Read.GetBySectionNumberAndName(suite.build.Id, 0, "command name!!")
 	check.Assert(err, gocheck.IsNil)
 
 	stageRuns, err := suite.resourcesConnection.Stages.Read.GetAllRuns(stage.Id)
@@ -249,11 +249,11 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 
 func (suite *StageRunnerSuite) TestSimpleFailingStages(check *gocheck.C) {
 	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
-		suite.verification, new(MockNoExportsExporter))
+		suite.build, new(MockNoExportsExporter))
 
-	commands := []verification.Command{verification.NewShellCommand("fail", shell.Command("false"))}
+	commands := []build.Command{build.NewShellCommand("fail", shell.Command("false"))}
 	for index, command := range commands {
-		_, err := suite.resourcesConnection.Stages.Create.Create(suite.verification.Id, 0, command.Name(), uint64(index))
+		_, err := suite.resourcesConnection.Stages.Create.Create(suite.build.Id, 0, command.Name(), uint64(index))
 		check.Assert(err, gocheck.IsNil)
 	}
 

@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"koality/build/debuginstancerunner"
+	"koality/build/testrunner"
 	"koality/github"
 	"koality/internalapi"
 	"koality/mail"
@@ -9,8 +11,6 @@ import (
 	"koality/resources"
 	"koality/resources/database"
 	"koality/resources/database/migrate"
-	"koality/verification/debuginstancerunner"
-	"koality/verification/testrunner"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
 	"koality/vm/localmachine"

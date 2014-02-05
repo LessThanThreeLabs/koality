@@ -7,13 +7,13 @@ import (
 	"github.com/LessThanThreeLabs/go.crypto/ssh"
 	"github.com/dchest/goyaml"
 	"io"
+	"koality/build"
+	"koality/build/config"
+	"koality/build/config/commandgroup"
+	"koality/build/config/section"
 	"koality/resources"
 	"koality/shell"
 	"koality/util/pathtranslator"
-	"koality/verification"
-	"koality/verification/config"
-	"koality/verification/config/commandgroup"
-	"koality/verification/config/section"
 	"koality/vm"
 	"os"
 	"os/exec"
@@ -23,20 +23,20 @@ import (
 )
 
 type StageRunner struct {
-	ResultsChan         chan verification.SectionResult
+	ResultsChan         chan build.SectionResult
 	resourcesConnection *resources.Connection
 	virtualMachine      vm.VirtualMachine
-	verification        *resources.Verification
+	build               *resources.Build
 	exporter            Exporter
 }
 
-func New(resourcesConnection *resources.Connection, virtualMachine vm.VirtualMachine, currentVerification *resources.Verification, exporter Exporter) *StageRunner {
+func New(resourcesConnection *resources.Connection, virtualMachine vm.VirtualMachine, currentBuild *resources.Build, exporter Exporter) *StageRunner {
 	// exporter.
 	return &StageRunner{
-		ResultsChan:         make(chan verification.SectionResult),
+		ResultsChan:         make(chan build.SectionResult),
 		resourcesConnection: resourcesConnection,
 		virtualMachine:      virtualMachine,
-		verification:        currentVerification,
+		build:               currentBuild,
 		exporter:            exporter,
 	}
 }
@@ -45,7 +45,7 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 	for sectionNumber, section := range sections {
 		shouldContinue, err := stageRunner.runSection(uint64(sectionNumber), section, environment)
 		if err != nil {
-			stageRunner.ResultsChan <- verification.SectionResult{
+			stageRunner.ResultsChan <- build.SectionResult{
 				Section:       section.Name(),
 				Final:         section.IsFinal(),
 				FailSectionOn: section.FailOn(),
@@ -61,17 +61,17 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 		return nil
 	}
 	// TODO (bbland): do something smarter than just sleep and poll
-	for stageRunner.verification.Status == "running" {
+	for stageRunner.build.Status == "running" {
 		time.Sleep(time.Second)
 	}
-	if stageRunner.verification.Status == "cancelled" {
+	if stageRunner.build.Status == "cancelled" {
 		return nil
 	}
 	if environment == nil {
 		environment = make(map[string]string)
 	}
-	environment["KOALITY_STATUS"] = stageRunner.verification.Status
-	environment["KOALITY_MERGE_STATUS"] = stageRunner.verification.MergeStatus
+	environment["KOALITY_STATUS"] = stageRunner.build.Status
+	environment["KOALITY_MERGE_STATUS"] = stageRunner.build.MergeStatus
 	for finalSectionNumber, finalSection := range finalSections {
 		shouldContinue, err := stageRunner.runSection(uint64(finalSectionNumber+len(sections)), finalSection, environment)
 		if err != nil {
@@ -104,7 +104,7 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	}
 
 	if factorySuccess && commandsSuccess && exportSucess {
-		stageRunner.ResultsChan <- verification.SectionResult{
+		stageRunner.ResultsChan <- build.SectionResult{
 			Section:       section.Name(),
 			Final:         section.IsFinal(),
 			FailSectionOn: section.FailOn(),
@@ -148,7 +148,7 @@ func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName s
 	return writeBuffer, nil
 }
 
-func (stageRunner *StageRunner) getXunitResults(stageRunId uint64, command verification.Command, environment map[string]string) ([]resources.XunitResult, error) {
+func (stageRunner *StageRunner) getXunitResults(stageRunId uint64, command build.Command, environment map[string]string) ([]resources.XunitResult, error) {
 	directories := command.XunitPaths()
 	if len(directories) == 0 {
 		return nil, nil
@@ -169,17 +169,17 @@ func (stageRunner *StageRunner) getXunitResults(stageRunId uint64, command verif
 
 func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, sectionToRun section.Section, environment map[string]string) (bool, error) {
 	var err error
-	var command verification.Command
+	var command build.Command
 	sectionFailed := false
 
 	factoryCommands := sectionToRun.FactoryCommands(false)
 
 	for command, err = factoryCommands.Next(); err == nil; command, err = factoryCommands.Next() {
-		if stageRunner.verification.Status == "cancelled" {
+		if stageRunner.build.Status == "cancelled" {
 			return false, nil
 		}
 
-		stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
+		stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.build.Id)
 		if err != nil {
 			return false, err
 		}
@@ -219,7 +219,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 		stageFailed := returnCode != 0 || runErr != nil
 		if stageFailed && !sectionFailed {
 			sectionFailed = true
-			stageRunner.ResultsChan <- verification.SectionResult{
+			stageRunner.ResultsChan <- build.SectionResult{
 				Section:       sectionToRun.Name(),
 				Final:         sectionToRun.IsFinal(),
 				FailSectionOn: sectionToRun.FailOn(),
@@ -254,7 +254,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			return false, err
 		}
 
-		repository, err := stageRunner.resourcesConnection.Repositories.Read.Get(stageRunner.verification.RepositoryId)
+		repository, err := stageRunner.resourcesConnection.Repositories.Read.Get(stageRunner.build.RepositoryId)
 		if err != nil {
 			// TODO (bbland): this is a fatal error.
 			return false, err
@@ -265,7 +265,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 			// TODO (bbland): display the error to the user
 			return false, err
 		}
-		stages, err = stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
+		stages, err = stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.build.Id)
 		if err != nil {
 			return false, err
 		}
@@ -283,7 +283,7 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 				return false, err
 			}
 
-			_, err = stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.verification.Id, sectionNumber, command.Name(), orderNumber)
+			_, err = stageRunner.resourcesConnection.Stages.Create.Create(stageRunner.build.Id, sectionNumber, command.Name(), orderNumber)
 			if err != nil {
 				return false, err
 			}
@@ -299,16 +299,16 @@ func (stageRunner *StageRunner) runFactoryCommands(sectionNumber uint64, section
 
 func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectionNumber uint64, sectionToRun section.Section, environment map[string]string) (bool, error) {
 	var err error
-	var command verification.Command
+	var command build.Command
 	sectionFailed := false
 
 	commands := sectionToRun.Commands(false)
 	for command, err = commands.Next(); err == nil; command, err = commands.Next() {
-		if stageRunner.verification.Status == "cancelled" {
+		if stageRunner.build.Status == "cancelled" {
 			return false, nil
 		}
 
-		stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
+		stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.build.Id)
 		if err != nil {
 			return false, err
 		}
@@ -345,7 +345,7 @@ func (stageRunner *StageRunner) runCommands(sectionPreviouslyFailed bool, sectio
 		stageFailed := returnCode != 0 || runErr != nil
 		if stageFailed && !sectionFailed && !sectionPreviouslyFailed {
 			sectionFailed = true
-			stageRunner.ResultsChan <- verification.SectionResult{
+			stageRunner.ResultsChan <- build.SectionResult{
 				Section:       sectionToRun.Name(),
 				Final:         sectionToRun.IsFinal(),
 				FailSectionOn: sectionToRun.FailOn(),
@@ -393,11 +393,11 @@ func (stageRunner *StageRunner) runExports(sectionNumber uint64, sectionToRun se
 	if len(exportPaths) == 0 {
 		return true, nil
 	}
-	if stageRunner.verification.Status == "cancelled" {
+	if stageRunner.build.Status == "cancelled" {
 		return false, nil
 	}
 
-	stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.verification.Id)
+	stages, err := stageRunner.resourcesConnection.Stages.Read.GetAll(stageRunner.build.Id)
 	if err != nil {
 		return false, err
 	}
@@ -444,7 +444,7 @@ func (stageRunner *StageRunner) runExports(sectionNumber uint64, sectionToRun se
 	return true, nil
 }
 
-func (stageRunner *StageRunner) runCommand(command verification.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (int, error) {
+func (stageRunner *StageRunner) runCommand(command build.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (int, error) {
 	shellCommand := command.ShellCommand()
 	executable, err := stageRunner.virtualMachine.MakeExecutable(shellCommand, stdin, stdout, stderr, environment)
 	if err != nil {

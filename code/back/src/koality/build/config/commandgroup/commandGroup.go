@@ -1,12 +1,12 @@
 package commandgroup
 
 import (
-	"koality/verification"
+	"koality/build"
 	"sync"
 )
 
 type CommandGroup interface {
-	Next() (verification.Command, error)
+	Next() (build.Command, error)
 	Done() error
 	Wait() error
 	HasStarted() bool
@@ -17,18 +17,18 @@ type CommandGroup interface {
 type AppendableCommandGroup interface {
 	CommandGroup
 	// TODO (bbland): rename this because it's strange behavior now?
-	Append(verification.Command) (verification.Command, error)
+	Append(build.Command) (build.Command, error)
 }
 
 type appendableCommandGroup struct {
-	commands     []verification.Command
+	commands     []build.Command
 	commandIndex uint
 	locker       sync.Locker
 	waitGroup    *sync.WaitGroup
 	hasStarted   bool
 }
 
-func New(commands []verification.Command) *appendableCommandGroup {
+func New(commands []build.Command) *appendableCommandGroup {
 	waitGroup := new(sync.WaitGroup)
 	waitGroup.Add(len(commands))
 	return &appendableCommandGroup{
@@ -38,7 +38,7 @@ func New(commands []verification.Command) *appendableCommandGroup {
 	}
 }
 
-func (group *appendableCommandGroup) Next() (verification.Command, error) {
+func (group *appendableCommandGroup) Next() (build.Command, error) {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 
@@ -88,7 +88,7 @@ func (group *appendableCommandGroup) Remaining() CommandGroup {
 	return remainingGroup
 }
 
-func (group *appendableCommandGroup) Append(command verification.Command) (verification.Command, error) {
+func (group *appendableCommandGroup) Append(command build.Command) (build.Command, error) {
 	group.locker.Lock()
 	defer group.locker.Unlock()
 

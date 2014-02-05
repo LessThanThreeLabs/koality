@@ -2,12 +2,12 @@ package commandgroup
 
 import (
 	"fmt"
+	"koality/build"
 	"koality/shell"
-	"koality/verification"
 )
 
-func dedupeCommands(commands []verification.Command) []verification.Command {
-	newCommands := make([]verification.Command, len(commands))
+func dedupeCommands(commands []build.Command) []build.Command {
+	newCommands := make([]build.Command, len(commands))
 	nameCounts := make(map[string]int, len(commands))
 
 	for index, command := range commands {
@@ -28,7 +28,7 @@ func dedupeCommands(commands []verification.Command) []verification.Command {
 }
 
 type dedupedCommand struct {
-	command      verification.Command
+	command      build.Command
 	suffixNumber int
 }
 
