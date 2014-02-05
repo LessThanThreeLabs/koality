@@ -9,7 +9,6 @@ import (
 	"koality/util/pathtranslator"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -71,17 +70,6 @@ func installKoality() error {
 	moveCommand.Stdout, moveCommand.Stderr = moveStdout, moveStderr
 	if err := moveCommand.Run(); err != nil {
 		return fmt.Errorf("Failed to move Koality to the install directory at %s\nError: %v", installDirectory, err)
-	}
-
-	if _, err := user.Lookup("nginx"); err != nil {
-		addNginxUserCommand := exec.Command("bash", "-c", string(shell.Sudo(
-			shell.Commandf("useradd nginx"),
-		)))
-		addNginxUserStdout, addNginxUserStderr := new(bytes.Buffer), new(bytes.Buffer)
-		addNginxUserCommand.Stdout, addNginxUserCommand.Stderr = addNginxUserStdout, addNginxUserStderr
-		if err = addNginxUserCommand.Run(); err != nil {
-			return fmt.Errorf("Failed to add nginx user\nStdout: %s\nStderr: %s\nError: %v", addNginxUserStdout.String(), addNginxUserStderr.String(), err)
-		}
 	}
 
 	installDependenciesCommand := exec.Command("bash", "-c", string(shell.Sudo(
