@@ -14,8 +14,7 @@ func (settingsHandler *SettingsHandler) resetApiKey(writer http.ResponseWriter, 
 		return
 	}
 
-	sanitizedApiKey := getSanitizedApiKey(apiKey)
-	jsonedApiKey, err := json.Marshal(sanitizedApiKey)
+	jsonedApiKey, err := json.Marshal(apiKey)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)

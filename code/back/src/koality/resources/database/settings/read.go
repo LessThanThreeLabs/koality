@@ -20,8 +20,8 @@ func NewReadHandler(database *sql.DB, verifier *Verifier, encrypter *Encrypter, 
 
 func (readHandler *ReadHandler) getSetting(locator SettingLocator, destination interface{}) error {
 	var value []byte
-	query := "SELECT value FROM settings WHERE resource=$1 AND key=$2"
-	row := readHandler.database.QueryRow(query, locator.Resource, locator.Key)
+	query := "SELECT value FROM settings WHERE key=$1"
+	row := readHandler.database.QueryRow(query, locator.String())
 	err := row.Scan(&value)
 	if err == sql.ErrNoRows {
 		errorText := fmt.Sprintf("Unable to find setting with locator %v", locator)
@@ -36,6 +36,14 @@ func (readHandler *ReadHandler) getSetting(locator SettingLocator, destination i
 	}
 
 	return json.Unmarshal(decryptedValue, destination)
+}
+
+func (readHandler *ReadHandler) GetDomainName() (resources.DomainName, error) {
+	var domainName resources.DomainName
+	if err := readHandler.getSetting(domainNameLocator, &domainName); err != nil {
+		return "", err
+	}
+	return domainName, nil
 }
 
 func (readHandler *ReadHandler) GetRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
@@ -78,10 +86,10 @@ func (readHandler *ReadHandler) GetGitHubEnterpriseSettings() (*resources.GitHub
 	return gitHubEnterpriseSettings, nil
 }
 
-func (readHandler *ReadHandler) GetApiKey() (*resources.ApiKey, error) {
-	apiKey := new(resources.ApiKey)
-	if err := readHandler.getSetting(apiKeyLocator, apiKey); err != nil {
-		return nil, err
+func (readHandler *ReadHandler) GetApiKey() (resources.ApiKey, error) {
+	var apiKey resources.ApiKey
+	if err := readHandler.getSetting(apiKeyLocator, &apiKey); err != nil {
+		return "", err
 	}
 	return apiKey, nil
 }

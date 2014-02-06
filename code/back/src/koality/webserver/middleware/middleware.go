@@ -91,7 +91,7 @@ func HasApiKeyWrapper(resourcesConnection *resources.Connection, router *mux.Rou
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprint(writer, err)
-		} else if apiKey.Key != apiKeyToVerify {
+		} else if apiKey.String() != apiKeyToVerify {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(writer, "Forbidden request, invalid api key")
 		} else {

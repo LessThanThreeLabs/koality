@@ -219,11 +219,10 @@ CREATE TABLE IF NOT EXISTS exports (
 
 CREATE TABLE IF NOT EXISTS settings (
 	id 					serial PRIMARY KEY,
-	resource			varchar(256) NOT NULL,
 	key 				varchar(256) NOT NULL,
 	value 				bytea NOT NULL,
 
-	UNIQUE (resource, key)
+	UNIQUE (key)
 );
 
 CREATE TABLE IF NOT EXISTS version (

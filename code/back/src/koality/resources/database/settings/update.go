@@ -24,8 +24,8 @@ func NewUpdateHandler(database *sql.DB, verifier *Verifier, encrypter *Encrypter
 
 func (updateHandler *UpdateHandler) setSetting(locator SettingLocator, value interface{}) error {
 	doesSettingExist := func(locator SettingLocator) (bool, error) {
-		query := "SELECT value FROM settings WHERE resource=$1 AND key=$2"
-		row := updateHandler.database.QueryRow(query, locator.Resource, locator.Key)
+		query := "SELECT value FROM settings WHERE key=$1"
+		row := updateHandler.database.QueryRow(query, locator.String())
 		var tempBytes []byte
 		err := row.Scan(&tempBytes)
 		if err == sql.ErrNoRows {
@@ -54,16 +54,30 @@ func (updateHandler *UpdateHandler) setSetting(locator SettingLocator, value int
 
 	var query string
 	if settingExists {
-		query = "UPDATE settings SET value=$3 WHERE resource=$1 AND key=$2"
+		query = "UPDATE settings SET value=$2 WHERE key=$1"
 	} else {
-		query = "INSERT INTO settings (resource, key, value) VALUES ($1, $2, $3)"
+		query = "INSERT INTO settings (key, value) VALUES ($1, $2)"
 	}
 
-	_, err = updateHandler.database.Exec(query, locator.Resource, locator.Key, encryptedValue)
+	_, err = updateHandler.database.Exec(query, locator.String(), encryptedValue)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (updateHandler *UpdateHandler) SetDomainName(domainName string) (resources.DomainName, error) {
+	if err := updateHandler.verifier.verifyDomainName(domainName); err != nil {
+		return "", err
+	}
+
+	domainNameSetting := resources.DomainName(domainName)
+	if err := updateHandler.setSetting(domainNameLocator, domainNameSetting); err != nil {
+		return "", err
+	}
+
+	updateHandler.subscriptionHandler.FireDomainNameUpdatedEvent(domainNameSetting)
+	return domainNameSetting, nil
 }
 
 func (updateHandler *UpdateHandler) ResetRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
@@ -172,19 +186,22 @@ func (updateHandler *UpdateHandler) SetGitHubEnterpriseSettings(baseUrl, oAuthCl
 	return gitHubEnterpriseSettings, nil
 }
 
-func (updateHandler *UpdateHandler) ResetApiKey() (*resources.ApiKey, error) {
-	apiKey := new(resources.ApiKey)
+func (updateHandler *UpdateHandler) ResetApiKey() (resources.ApiKey, error) {
+	var apiKey resources.ApiKey
 
 	var apiKeyBuffer bytes.Buffer
 	_, err := io.CopyN(&apiKeyBuffer, rand.Reader, 15)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	apiKey.Key = base32.StdEncoding.EncodeToString(apiKeyBuffer.Bytes())
+
+	// See http://en.wikipedia.org/wiki/Base32#Crockford.27s_Base32
+	crockfordsBase32Alphabet := "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+	apiKey = resources.ApiKey(base32.NewEncoding(crockfordsBase32Alphabet).EncodeToString(apiKeyBuffer.Bytes()))
 
 	err = updateHandler.setSetting(apiKeyLocator, apiKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	updateHandler.subscriptionHandler.FireApiKeyUpdatedEvent(apiKey)

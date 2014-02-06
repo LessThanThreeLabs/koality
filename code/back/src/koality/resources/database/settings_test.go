@@ -7,6 +7,58 @@ import (
 	"time"
 )
 
+func TestSettingsDomainName(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	domainNameEventReceived := make(chan bool, 1)
+	var domainNameUpdatedEventDomainName resources.DomainName
+	domainNameUpdatedHandler := func(domainName resources.DomainName) {
+		domainNameUpdatedEventDomainName = domainName
+		domainNameEventReceived <- true
+	}
+	if _, err = connection.Settings.Subscription.SubscribeToDomainNameUpdatedEvents(domainNameUpdatedHandler); err != nil {
+		test.Fatal(err)
+	}
+
+	domainName := "koality.yourcompany.com"
+
+	domainNameSetting, err := connection.Settings.Update.SetDomainName(domainName)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if domainNameSetting.String() != domainName {
+		test.Fatalf("Domain name setting corrupted, was %s, expected %s", domainNameSetting, domainName)
+	}
+
+	select {
+	case <-domainNameEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear domain name updated event")
+	}
+
+	if domainNameSetting != domainNameUpdatedEventDomainName {
+		test.Fatal("Bad domainName in domain name updated event")
+	}
+
+	domainNameSetting2, err := connection.Settings.Read.GetDomainName()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if domainNameSetting != domainNameSetting2 {
+		test.Fatal("Received bad domain name setting from read method")
+	}
+}
+
 func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
@@ -31,8 +83,7 @@ func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 		keyPairUpdatedEventKeyPair = keyPair
 		keyPairUpdatedEventReceived <- true
 	}
-	_, err = connection.Settings.Subscription.SubscribeToRepositoryKeyPairUpdatedEvents(keyPairUpdatedHandler)
-	if err != nil {
+	if _, err = connection.Settings.Subscription.SubscribeToRepositoryKeyPairUpdatedEvents(keyPairUpdatedHandler); err != nil {
 		test.Fatal(err)
 	}
 
@@ -470,8 +521,8 @@ func TestSettingsApiKey(test *testing.T) {
 	}
 
 	keyUpdatedEventReceived := make(chan bool, 1)
-	var keyUpdatedEventKey *resources.ApiKey
-	keyUpdatedHandler := func(key *resources.ApiKey) {
+	var keyUpdatedEventKey resources.ApiKey
+	keyUpdatedHandler := func(key resources.ApiKey) {
 		keyUpdatedEventKey = key
 		keyUpdatedEventReceived <- true
 	}
@@ -491,8 +542,8 @@ func TestSettingsApiKey(test *testing.T) {
 		test.Fatal("Failed to hear api key updated event")
 	}
 
-	if keyUpdatedEventKey.Key != apiKey.Key {
-		test.Fatal("Bad apiKey.Key in api key updated event")
+	if keyUpdatedEventKey != apiKey {
+		test.Fatal("Bad apiKey in api key updated event")
 	}
 
 	apiKey2, err := connection.Settings.Read.GetApiKey()
@@ -500,7 +551,7 @@ func TestSettingsApiKey(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if apiKey.Key != apiKey2.Key {
+	if apiKey != apiKey2 {
 		test.Fatal("Key mismatch")
 	}
 
@@ -509,7 +560,7 @@ func TestSettingsApiKey(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if apiKey.Key == apiKey3.Key {
+	if apiKey == apiKey3 {
 		test.Fatal("Expected new Key")
 	}
 }

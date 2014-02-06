@@ -1,58 +1,66 @@
 package resources
 
+type DomainName string
+
+func (domainName DomainName) String() string {
+	return string(domainName)
+}
+
 type RepositoryKeyPair struct {
-	PrivateKey string `json:"privateKey"`
-	PublicKey  string `json:"publicKey"`
+	PrivateKey string
+	PublicKey  string
 }
 
 type S3ExporterSettings struct {
-	AccessKey  string `json:"accessKey"`
-	SecretKey  string `json:"secretKey"`
-	BucketName string `json:"bucketName"`
+	AccessKey  string
+	SecretKey  string
+	BucketName string
 }
 
 type CookieStoreKeys struct {
-	Authentication []byte `json:"authentication"`
-	Encryption     []byte `json:"encryption"`
+	Authentication []byte
+	Encryption     []byte
 }
 
 type SmtpServerSettings struct {
-	Hostname string           `json:"hostname"`
-	Port     uint16           `json:"port"`
-	Auth     SmtpAuthSettings `json:"auth"`
+	Hostname string
+	Port     uint16
+	Auth     SmtpAuthSettings
 }
 
 type SmtpAuthSettings struct {
-	Plain   *SmtpPlainAuthSettings   `json:"plain"`
-	CramMd5 *SmtpCramMd5AuthSettings `json:"cram-md5"`
-	Login   *SmtpLoginAuthSettings   `json:"login"`
+	Plain   *SmtpPlainAuthSettings
+	CramMd5 *SmtpCramMd5AuthSettings
+	Login   *SmtpLoginAuthSettings
 }
 
 type SmtpPlainAuthSettings struct {
-	Identity string `json:"identity"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Host     string `json:"host"`
+	Identity string
+	Username string
+	Password string
+	Host     string
 }
 
 type SmtpCramMd5AuthSettings struct {
-	Username string `json:"username"`
-	Secret   string `json:"secret"`
+	Username string
+	Secret   string
 }
 
 type SmtpLoginAuthSettings struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string
+	Password string
 }
 
 type GitHubEnterpriseSettings struct {
-	BaseUrl           string `json:"baseUrl"`
-	OAuthClientId     string `json:"oAuthClientId"`
-	OAuthClientSecret string `json:"oAuthClientSecret"`
+	BaseUrl           string
+	OAuthClientId     string
+	OAuthClientSecret string
 }
 
-type ApiKey struct {
-	Key string `json:"key"`
+type ApiKey string
+
+func (apiKey ApiKey) String() string {
+	return string(apiKey)
 }
 
 type SettingsHandler struct {
@@ -63,15 +71,17 @@ type SettingsHandler struct {
 }
 
 type SettingsReadHandler interface {
+	GetDomainName() (DomainName, error)
 	GetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	GetS3ExporterSettings() (*S3ExporterSettings, error)
 	GetCookieStoreKeys() (*CookieStoreKeys, error)
 	GetSmtpServerSettings() (*SmtpServerSettings, error)
 	GetGitHubEnterpriseSettings() (*GitHubEnterpriseSettings, error)
-	GetApiKey() (*ApiKey, error)
+	GetApiKey() (ApiKey, error)
 }
 
 type SettingsUpdateHandler interface {
+	SetDomainName(domainName string) (DomainName, error)
 	ResetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	SetS3ExporterSettings(accessKey, secretKey, bucketName string) (*S3ExporterSettings, error)
 	ResetCookieStoreKeys() (*CookieStoreKeys, error)
@@ -79,7 +89,7 @@ type SettingsUpdateHandler interface {
 	SetSmtpAuthCramMd5(hostname string, port uint16, username, secret string) (*SmtpServerSettings, error)
 	SetSmtpAuthLogin(hostname string, port uint16, username, password string) (*SmtpServerSettings, error)
 	SetGitHubEnterpriseSettings(baseUrl, oAuthClientId, oAuthClientSecret string) (*GitHubEnterpriseSettings, error)
-	ResetApiKey() (*ApiKey, error)
+	ResetApiKey() (ApiKey, error)
 }
 
 type SettingsDeleteHandler interface {
@@ -87,6 +97,7 @@ type SettingsDeleteHandler interface {
 	ClearGitHubEnterpriseSettings() error
 }
 
+type DomainNameUpdatedHandler func(domainName DomainName)
 type RepositoryKeyPairUpdatedHandler func(keyPair *RepositoryKeyPair)
 type S3ExporterSettingsUpdatedHandler func(s3Settings *S3ExporterSettings)
 type S3ExporterSettingsClearedHandler func()
@@ -94,9 +105,11 @@ type CookieStoreKeysUpdatedHandler func(keys *CookieStoreKeys)
 type SmtpServerSettingsUpdatedHandler func(auth *SmtpServerSettings)
 type GitHubEnterpriseSettingsUpdatedHandler func(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
 type GitHubEnterpriseSettingsClearedHandler func()
-type ApiKeyUpdatedHandler func(key *ApiKey)
+type ApiKeyUpdatedHandler func(key ApiKey)
 
 type SettingsSubscriptionHandler interface {
+	SubscribeToDomainNameUpdatedEvents(updateHandler DomainNameUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromDomainNameUpdatedEvents(subscriptionId SubscriptionId) error
 	SubscribeToRepositoryKeyPairUpdatedEvents(updateHandler RepositoryKeyPairUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromRepositoryKeyPairUpdatedEvents(subscriptionId SubscriptionId) error
 	SubscribeToS3ExporterSettingsUpdatedEvents(updateHandler S3ExporterSettingsUpdatedHandler) (SubscriptionId, error)
@@ -116,6 +129,7 @@ type SettingsSubscriptionHandler interface {
 }
 
 type InternalSettingsSubscriptionHandler interface {
+	FireDomainNameUpdatedEvent(domainName DomainName)
 	FireRepositoryKeyPairUpdatedEvent(keyPair *RepositoryKeyPair)
 	FireS3ExporterSettingsUpdatedEvent(s3ExporterSettings *S3ExporterSettings)
 	FireS3ExporterSettingsClearedEvent()
@@ -123,6 +137,6 @@ type InternalSettingsSubscriptionHandler interface {
 	FireSmtpServerSettingsUpdatedEvent(auth *SmtpServerSettings)
 	FireGitHubEnterpriseSettingsUpdatedEvent(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
 	FireGitHubEnterpriseSettingsClearedEvent()
-	FireApiKeyUpdatedEvent(key *ApiKey)
+	FireApiKeyUpdatedEvent(key ApiKey)
 	SettingsSubscriptionHandler
 }

@@ -16,10 +16,6 @@ type sanitizedS3ExporterSettings struct {
 	BucketName string `json:"bucketName"`
 }
 
-type sanitizedApiKey struct {
-	Key string `json:"key"`
-}
-
 type SettingsHandler struct {
 	resourcesConnection *resources.Connection
 }
@@ -73,11 +69,5 @@ func getSanitizedS3ExporterSettings(sshKey *resources.S3ExporterSettings) *sanit
 		AccessKey:  sshKey.AccessKey,
 		SecretKey:  sshKey.SecretKey,
 		BucketName: sshKey.BucketName,
-	}
-}
-
-func getSanitizedApiKey(sshKey *resources.ApiKey) *sanitizedApiKey {
-	return &sanitizedApiKey{
-		Key: sshKey.Key,
 	}
 }

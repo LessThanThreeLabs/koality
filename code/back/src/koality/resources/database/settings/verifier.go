@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	domainNameRegex       = "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+$"
 	awsAccessKeyLength    = 20
 	awsSecretKeyLength    = 40
 	minS3BucketNameLength = 3
@@ -20,6 +21,13 @@ type Verifier struct {
 
 func NewVerifier(database *sql.DB) (*Verifier, error) {
 	return &Verifier{database}, nil
+}
+
+func (verifier *Verifier) verifyDomainName(domainName string) error {
+	if ok, err := regexp.MatchString(domainNameRegex, domainName); !ok || err != nil {
+		return errors.New("Domain name must match regex: " + domainNameRegex)
+	}
+	return nil
 }
 
 func (verifier *Verifier) verifyAwsAccessKey(accessKey string) error {

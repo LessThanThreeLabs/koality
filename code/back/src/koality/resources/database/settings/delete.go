@@ -16,8 +16,8 @@ func NewDeleteHandler(database *sql.DB, subscriptionHandler resources.InternalSe
 }
 
 func (updateHandler *DeleteHandler) removeSetting(locator SettingLocator) error {
-	query := "DELETE FROM settings WHERE resource=$1 AND key=$2"
-	result, err := updateHandler.database.Exec(query, locator.Resource, locator.Key)
+	query := "DELETE FROM settings WHERE key=$1"
+	result, err := updateHandler.database.Exec(query, locator.String())
 	if err != nil {
 		return err
 	}

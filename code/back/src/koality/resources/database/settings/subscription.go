@@ -5,6 +5,7 @@ import (
 )
 
 type SubscriptionHandler struct {
+	domainNameUpdatedSubscriptionManager               resources.SubscriptionManager
 	repositoryKeyPairUpdatedSubscriptionManager        resources.SubscriptionManager
 	s3ExporterSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
 	s3ExporterSettingsClearedSubscriptionManager       resources.SubscriptionManager
@@ -17,6 +18,18 @@ type SubscriptionHandler struct {
 
 func NewInternalSubscriptionHandler() (resources.InternalSettingsSubscriptionHandler, error) {
 	return &SubscriptionHandler{}, nil
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToDomainNameUpdatedEvents(updateHandler resources.DomainNameUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.domainNameUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromDomainNameUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.domainNameUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireDomainNameUpdatedEvent(domainName resources.DomainName) {
+	subscriptionHandler.domainNameUpdatedSubscriptionManager.Fire(domainName)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToRepositoryKeyPairUpdatedEvents(updateHandler resources.RepositoryKeyPairUpdatedHandler) (resources.SubscriptionId, error) {
@@ -110,6 +123,6 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromApiKeyUpdatedEven
 	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
-func (subscriptionHandler *SubscriptionHandler) FireApiKeyUpdatedEvent(key *resources.ApiKey) {
+func (subscriptionHandler *SubscriptionHandler) FireApiKeyUpdatedEvent(key resources.ApiKey) {
 	subscriptionHandler.apiKeyUpdatedSubscriptionManager.Fire(key)
 }

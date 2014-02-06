@@ -9,18 +9,20 @@ const (
 	encryptionKey = "e36d0e19bbc78ca123540f7334896c71"
 )
 
-type SettingLocator struct {
-	Resource string
-	Key      string
+type SettingLocator string
+
+func (locator SettingLocator) String() string {
+	return string(locator)
 }
 
 var (
-	repositoryKeyPairLocator        SettingLocator = SettingLocator{"Repository", "KeyPair"}
-	s3ExporterSettingsLocator       SettingLocator = SettingLocator{"Exporter", "S3Settings"}
-	cookieStoreKeysLocator          SettingLocator = SettingLocator{"CookieStore", "Keys"}
-	smtpServerSettingsLocator       SettingLocator = SettingLocator{"Smtp", "ServerSettings"}
-	gitHubEnterpriseSettingsLocator SettingLocator = SettingLocator{"GitHub", "EnterpriseSettings"}
-	apiKeyLocator                   SettingLocator = SettingLocator{"Api", "Key"}
+	domainNameLocator               = SettingLocator("DomainName")
+	repositoryKeyPairLocator        = SettingLocator("RepositoryKeyPair")
+	s3ExporterSettingsLocator       = SettingLocator("S3ExporterSettings")
+	cookieStoreKeysLocator          = SettingLocator("CookieStoreKeys")
+	smtpServerSettingsLocator       = SettingLocator("SmtpServerSettings")
+	gitHubEnterpriseSettingsLocator = SettingLocator("GitHubEnterpriseSettings")
+	apiKeyLocator                   = SettingLocator("ApiKey")
 )
 
 func New(database *sql.DB) (*resources.SettingsHandler, error) {
