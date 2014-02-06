@@ -18,6 +18,7 @@ window.Login = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'not
 
 		request = $http.post("/app/accounts/login", $scope.account)
 		request.success (data, status, headers, config) =>
+			# this will force a refresh, rather than do html5 pushstate
 			window.location.href = '/'
 		request.error (data, status, headers, config) =>
 			$scope.account.password = ''

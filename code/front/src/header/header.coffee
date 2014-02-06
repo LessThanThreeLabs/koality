@@ -65,7 +65,7 @@ window.Header = ['$scope', '$window', '$location', '$http', 'events', 'notificat
 	$scope.performLogout = () ->
 		return if not $scope.loggedIn
 
-		request = $http.post('/app/account/logout')
+		request = $http.post('/app/accounts/logout')
 		request.success (data, status, headers, config) ->
 			# this will force a refresh, rather than do html5 pushstate
 			window.location.href = '/'
