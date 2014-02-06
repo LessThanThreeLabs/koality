@@ -129,26 +129,10 @@ angular.module('koality.service.managers', []).
 			# _stageUpdatedListener: null
 			# _stageOutputTypesListener: null
 
-			_getStatusForStage: (stage) =>
-				return "running" if stage.runs.length is 0
-
-				anyRunFailed = stage.runs.some (stageRun) -> return stageRun.status is 'failed'
-				return "failed" if anyRunFailed
-
-				anyRunsRunning = stage.runs.some (stageRun) -> return stageRun.status is 'running'
-				return "running" if anyRunsRunning
-
-				allRunsPassed = stage.runs.every (stageRun) -> return stageRun.status is 'passed'
-				return "passed" if allRunsPassed
-
-				console.error 'Unable to determine status for stage'
-				return "unknown"
-
 			_stagesRetrievedHandler: (error, stagesToAdd) =>
 				if error? then console.error error
 				else
 					stagesToAdd = stagesToAdd.filter (stage) => return not @_stagesCache[stage.id]?
-					stage.status = @_getStatusForStage(stage) for stage in stagesToAdd
 					@_stagesCache[stage.id] = stage for stage in stagesToAdd
 					@_stages = @_stages.concat stagesToAdd
 					@_gettingStages = false

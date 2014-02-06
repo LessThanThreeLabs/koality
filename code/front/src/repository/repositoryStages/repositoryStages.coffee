@@ -61,6 +61,21 @@ window.RepositoryStages = ['$scope', '$routeParams', 'StagesManager', 'currentRe
 		return not $scope.stagesManager.getStages().some (stage) -> 
 			return stage.status is 'failed'
 
+	$scope.getStageStatus = (stage) ->
+		return "running" if stage.runs.length is 0
+
+		anyRunFailed = stage.runs.some (stageRun) -> return stageRun.status is 'failed'
+		return "failed" if anyRunFailed
+
+		anyRunsRunning = stage.runs.some (stageRun) -> return stageRun.status is 'running'
+		return "running" if anyRunsRunning
+
+		allRunsPassed = stage.runs.every (stageRun) -> return stageRun.status is 'passed'
+		return "passed" if allRunsPassed
+
+		console.error 'Unable to determine status for stage'
+		return "unknown"
+
 	$scope.selectStage = (stage) ->
 		$scope.selectedStage.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), stage.id
 		$scope.selectedStage.setInformation stage

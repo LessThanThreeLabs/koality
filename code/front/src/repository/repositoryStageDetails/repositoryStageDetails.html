@@ -16,6 +16,16 @@
 				<a ng-click="toggleDrawer('launchDebugInstance')">Launch Debug Instance</a>
 			</div>
 
+			<div class="right" ng-show="selectedStage.getInformation().runs.length > 1">
+				<dropdown right light>
+					<span>Run #{{getStageRunNumber(selectedStage.getInformation(), selectedStageRun.getInformation())}}</span>
+					<div class="triangle down white"></div>
+					<dropdown-options>
+						<dropdown-option ng-repeat="stageRun in selectedStage.getInformation().runs | orderBy:getStageRunNumber(selectedStage.getInformation(), stageRun)" ng-click="selectStageRun(stageRun)" ng-class="{disabled: stageRun.id == selectedStageRun.getId()}">#{{getStageRunNumber(selectedStage.getInformation(), stageRun)}}</dropdown-option>
+					</dropdown-options>
+				</dropdown>
+			</div>
+
 			<div class="right" ng-show="selectedStage.getInformation().outputTypes.length > 1">
 				<dropdown right light>
 					<span ng-show="output.type == 'console'">Text</span>
@@ -126,6 +136,10 @@
 						</td>
 					</tr>
 				</table>
+			</div>
+
+			<div id="noRunSelectedMessage" ng-show="selectedStageRun.getId() == null">
+				This stage has not yet been processed
 			</div>
 
 			<div id="console" ng-show="output.type == 'console'">
