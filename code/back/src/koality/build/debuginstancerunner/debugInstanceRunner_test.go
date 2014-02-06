@@ -110,6 +110,11 @@ func (suite *DebugInstanceRunnerSuite) SetUpTest(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 
 	suite.mailer = MockMailer{}
+
+	domainName := "koality.yourcompany.com"
+	domainNameSetting, err := suite.resourcesConnection.Settings.Update.SetDomainName(domainName)
+	check.Assert(err, gocheck.IsNil)
+	check.Assert(domainNameSetting.String(), gocheck.Equals, domainName)
 }
 
 func (suite *DebugInstanceRunnerSuite) TearDownTest(check *gocheck.C) {
