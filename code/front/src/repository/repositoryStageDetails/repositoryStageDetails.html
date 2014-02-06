@@ -21,7 +21,7 @@
 					<span>Run #{{getStageRunNumber(selectedStage.getInformation(), selectedStageRun.getInformation())}}</span>
 					<div class="triangle down white"></div>
 					<dropdown-options>
-						<dropdown-option ng-repeat="stageRun in selectedStage.getInformation().runs | orderBy:getStageRunNumber(selectedStage.getInformation(), stageRun)" ng-click="selectStageRun(stageRun)" ng-class="{disabled: stageRun.id == selectedStageRun.getId()}">#{{getStageRunNumber(selectedStage.getInformation(), stageRun)}}</dropdown-option>
+						<dropdown-option ng-repeat="stageRun in selectedStage.getInformation().runs | orderBy:getStageRunNumber(selectedStage.getInformation(), stageRun)" ng-click="selectStageRun(stageRun)" ng-class="{red: stageRun.status == 'failed', disabled: stageRun.id == selectedStageRun.getId()}">#{{getStageRunNumber(selectedStage.getInformation(), stageRun)}}</dropdown-option>
 					</dropdown-options>
 				</dropdown>
 			</div>
