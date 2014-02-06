@@ -1,0 +1,168 @@
+package google
+
+import (
+	"crypto/rand"
+	"encoding/json"
+	"fmt"
+	"github.com/gorilla/sessions"
+	"koality/resources"
+	"net/http"
+	"net/url"
+	"strconv"
+)
+
+type BadAuthenticationError struct {
+	message string
+}
+
+func (err BadAuthenticationError) Error() string {
+	return err.message
+}
+
+func (googleHandler *GoogleHandler) handleOAuthToken(writer http.ResponseWriter, request *http.Request) {
+	oAuthToken := request.FormValue("token")
+	action := request.FormValue("action")
+
+	var redirectUrl string
+
+	if oAuthToken == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(writer, "No oAuth token provided")
+		return
+	} else if action == "" {
+		writer.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(writer, "No action provided")
+		return
+	} else if action == "login" {
+		user, err := googleHandler.handleLogin(oAuthToken)
+		if _, ok := err.(BadAuthenticationError); err != nil && ok {
+			queryValues := url.Values{}
+			queryValues.Set("googleLoginError", err.Error())
+			redirectUrl = "/login?" + queryValues.Encode()
+		} else if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		} else {
+			googleHandler.login(user, writer, request)
+			redirectUrl = "/"
+		}
+	} else if action == "createAccount" {
+		user, err := googleHandler.handleCreateAccount(oAuthToken)
+		if _, ok := err.(BadAuthenticationError); err != nil && ok {
+			queryValues := url.Values{}
+			queryValues.Set("googleCreateAccountError", err.Error())
+			redirectUrl = "/create/account?" + queryValues.Encode()
+		} else if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		} else {
+			googleHandler.login(user, writer, request)
+			redirectUrl = "/"
+		}
+	} else {
+		writer.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(writer, "Unknown action provided: %s", action)
+		return
+	}
+
+	http.Redirect(writer, request, redirectUrl, http.StatusSeeOther)
+}
+
+func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.User, error) {
+	userInformation, err := googleHandler.getGoogleUserInformation(oAuthToken)
+	if err != nil {
+		return nil, err
+	}
+
+	if userInformation.Email == "" {
+		return nil, BadAuthenticationError{"No email address provided"}
+	} else if verifiedEmail, err := strconv.ParseBool(fmt.Sprint(userInformation.VerifiedEmail)); verifiedEmail && err != nil {
+		return nil, BadAuthenticationError{"Email address not verified"}
+	}
+
+	user, err := googleHandler.resourcesConnection.Users.Read.GetByEmail(userInformation.Email)
+	if _, ok := err.(resources.NoSuchUserError); err != nil && ok {
+		return nil, BadAuthenticationError{fmt.Sprintf("No user found with email address %s", userInformation.Email)}
+	} else if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*resources.User, error) {
+	userInformation, err := googleHandler.getGoogleUserInformation(oAuthToken)
+	if err != nil {
+		return nil, err
+	}
+
+	if userInformation.Email == "" {
+		return nil, BadAuthenticationError{"No email address provided"}
+	} else if verifiedEmail, err := strconv.ParseBool(fmt.Sprint(userInformation.VerifiedEmail)); verifiedEmail && err != nil {
+		return nil, BadAuthenticationError{"Email address not verified"}
+	} else if userInformation.GivenName == "" {
+		return nil, BadAuthenticationError{"No first name provided"}
+	} else if userInformation.FamilyName == "" {
+		return nil, BadAuthenticationError{"No last name provided"}
+	}
+
+	passwordHash := make([]byte, 32)
+	passwordSalt := make([]byte, 16)
+
+	_, err = rand.Read(passwordHash)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = rand.Read(passwordSalt)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := googleHandler.resourcesConnection.Users.Create.Create(userInformation.Email, userInformation.GivenName, userInformation.FamilyName, passwordHash, passwordSalt, false)
+	if _, ok := err.(resources.UserAlreadyExistsError); err != nil && ok {
+		return nil, BadAuthenticationError{fmt.Sprintf("User already exists with email address %s", userInformation.Email)}
+	} else if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (googleHandler *GoogleHandler) getGoogleUserInformation(oAuthToken string) (*UserInformation, error) {
+	httpClient := new(http.Client)
+
+	requestQueryValues := url.Values{}
+	requestQueryValues.Set("access_token", oAuthToken)
+	requestUrl := "https://www.googleapis.com/oauth2/v2/userinfo?" + requestQueryValues.Encode()
+	response, err := httpClient.Get(requestUrl)
+	if err != nil {
+		return nil, err
+	} else if response.StatusCode != http.StatusOK {
+		return nil, BadAuthenticationError{fmt.Sprintf("Received http status %d (%s) while trying to check oAuth token", response.StatusCode, response.Status)}
+	}
+
+	userInformation := new(UserInformation)
+
+	decoder := json.NewDecoder(response.Body)
+	err = decoder.Decode(userInformation)
+	if err != nil {
+		return nil, err
+	}
+
+	return userInformation, nil
+}
+
+func (googleHandler *GoogleHandler) login(user *resources.User, writer http.ResponseWriter, request *http.Request) {
+	session, _ := googleHandler.sessionStore.Get(request, googleHandler.sessionName)
+	session.Values["userId"] = user.Id
+	session.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   0,
+		HttpOnly: true,
+		Secure:   true,
+	}
+	session.Save(request, writer)
+}

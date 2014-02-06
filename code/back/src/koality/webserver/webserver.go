@@ -10,6 +10,7 @@ import (
 	"koality/resources"
 	"koality/webserver/accounts"
 	"koality/webserver/github"
+	"koality/webserver/google"
 	"koality/webserver/middleware"
 	"koality/webserver/repositories"
 	"koality/webserver/settings"
@@ -50,11 +51,12 @@ func (webserver *Webserver) Start() error {
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
-		// set to zero if can't find!!
-		// context.Set(request, "userId", session.Values["userId"])
-		var _ = session
-		context.Set(request, "userId", uint64(1000))
-		// context.Set(request, "userId", uint64(0))
+		userId, ok := session.Values["userId"]
+		if !ok {
+			fmt.Println("Not logged in... Setting userId to 1000, but it really should be 0")
+			userId = uint64(1000)
+		}
+		context.Set(request, "userId", userId)
 
 		if request.URL.Path == "/" || request.URL.Path == "/dashboard" ||
 			strings.HasPrefix(request.URL.Path, "/repository/") ||
@@ -137,6 +139,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	googleHandler, err := google.New(webserver.resourcesConnection, sessionStore, webserver.sessionName)
+	if err != nil {
+		return nil, err
+	}
+
 	wireRootSubroutes := func() {
 		templatesHandler.WireRootSubroutes(router)
 	}
@@ -199,6 +206,9 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 		gitHubSubrouter := oAuthSubrouter.PathPrefix("/gitHub").Subrouter()
 		gitHubHandler.WireOAuthSubroutes(gitHubSubrouter)
+
+		googleSubrouter := oAuthSubrouter.PathPrefix("/google").Subrouter()
+		googleHandler.WireOAuthSubroutes(googleSubrouter)
 	}
 
 	wireRootSubroutes()
