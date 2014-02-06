@@ -28,6 +28,7 @@ type DebugInstanceRunnerSuite struct {
 	debugInstance       *resources.DebugInstance
 	debugInstanceRunner *DebugInstanceRunner
 	repositoryManager   repositorymanager.RepositoryManager
+	mailer              MockMailer
 	tmpDir              string
 	repoPath            string
 	instanceId          string
@@ -77,6 +78,23 @@ var (
 	}
 )
 
+type MockMailer struct {
+	sendCount int
+}
+
+func (mockMailer *MockMailer) SendMail(fromAddress string, toAddresses []string, subject, body string) error {
+	mockMailer.sendCount += 1
+	return nil
+}
+
+func (mockMailer MockMailer) SubscribeToEvents(resourcesConnection *resources.Connection) error {
+	return nil
+}
+
+func (mockMailer MockMailer) UnsubscribeFromEvents(resourcesConnection *resources.Connection) error {
+	return nil
+}
+
 func (suite *DebugInstanceRunnerSuite) SetUpTest(check *gocheck.C) {
 	err := database.PopulateDatabase()
 	check.Assert(err, gocheck.IsNil)
@@ -90,6 +108,8 @@ func (suite *DebugInstanceRunnerSuite) SetUpTest(check *gocheck.C) {
 	suite.repoPath = path.Join(suite.tmpDir, "testRepo")
 	err = exec.Command("git", "init", suite.repoPath).Run()
 	check.Assert(err, gocheck.IsNil)
+
+	suite.mailer = MockMailer{}
 }
 
 func (suite *DebugInstanceRunnerSuite) TearDownTest(check *gocheck.C) {
@@ -148,7 +168,7 @@ func (suite *DebugInstanceRunnerSuite) runDebugInstanceWithYaml(check *gocheck.C
 	vmPool := vm.NewPool(1, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	debugInstanceRunner := New(suite.resourcesConnection, poolManager, suite.repositoryManager)
+	debugInstanceRunner := New(suite.resourcesConnection, poolManager, suite.repositoryManager, &suite.mailer)
 	expires := time.Now() // don't run the debug instance any longer after running the stages
 	suite.debugInstance, err = suite.resourcesConnection.DebugInstances.Create.Create(
 		vmPool.Id(), suite.instanceId, &expires, &resources.CoreBuildInformation{
@@ -215,6 +235,19 @@ func (suite *DebugInstanceRunnerSuite) TestDebugInstanceRunsNormalStages2(check 
 	})
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(success, gocheck.Equals, true)
+}
+
+func (suite *DebugInstanceRunnerSuite) TestDebugInstanceSendsEmail(check *gocheck.C) {
+	success, err := suite.runDebugInstanceWithYaml(check, map[string]interface{}{
+		"parameters": map[string]interface{}{
+			"nodes": 8,
+		},
+		"sections": []interface{}{failingSection},
+	})
+	check.Assert(err, gocheck.IsNil)
+	check.Assert(success, gocheck.Equals, false)
+	time.Sleep(50 * time.Millisecond)
+	check.Assert(suite.mailer.sendCount, gocheck.Equals, 1)
 }
 
 func (suite *DebugInstanceRunnerSuite) TestDebugInstanceDoesntRunFinalStages(check *gocheck.C) {

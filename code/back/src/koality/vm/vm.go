@@ -12,6 +12,7 @@ type VirtualMachine interface {
 	Patcher
 	shell.FileCopier
 
+	Id() string
 	GetStartShellCommand() Command
 	Terminate() error
 }

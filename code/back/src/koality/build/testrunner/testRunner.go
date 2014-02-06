@@ -7,6 +7,7 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/util/log"
+	"koality/vm"
 	"koality/vm/poolmanager"
 )
 
@@ -71,7 +72,7 @@ func (testRunner *TestRunner) RunBuild(currentBuild *resources.Build) (bool, err
 	log.Debugf("Using %d nodes for build: %v", numNodes, currentBuild)
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
-	emptyFinishFunc := func() {}
+	emptyFinishFunc := func(vm vm.VirtualMachine) {}
 
 	testRunner.buildRunner.RunStagesOnNewMachines(
 		numNodes, buildData, currentBuild, newStageRunnersChan, emptyFinishFunc)

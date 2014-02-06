@@ -109,7 +109,7 @@ func (suite *SshSuite) TestGitShell(check *gocheck.C) {
 
 func (suite *SshSuite) TestSSHForwardingShell(check *gocheck.C) {
 	userId := uint64(69)
-	command := []string{"ssh", "instanceid", "555"}
+	command := []string{"ssh", "555", "instanceid"}
 	shell := restrictedSSHForwardingShell{userId, command, suite.client}
 	commandToExec, err := shell.GetCommand()
 	check.Assert(err, gocheck.IsNil)

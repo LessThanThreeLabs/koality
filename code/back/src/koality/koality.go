@@ -87,7 +87,7 @@ func main() {
 		panic(err)
 	}
 
-	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager)
+	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, mailer)
 	if err = debugInstanceRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
