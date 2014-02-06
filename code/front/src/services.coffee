@@ -4,15 +4,6 @@ angular.module('koality.service', []).
 	factory('localStorage', ['$window', ($window) ->
 		return window.localStorage
 	]).
-	factory('initialState', ['$window', ($window) ->
-		toReturn =
-			csrfToken: $window.csrfToken
-			user:
-				id: $window.userId
-				isAdmin: $window.isAdmin
-		toReturn.loggedIn = toReturn.user.id?
-		return Object.freeze toReturn
-	]).
 	factory('integerConverter', [() ->
 		return toInteger: (integerAsString) ->
 			if typeof integerAsString is 'number'

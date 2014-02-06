@@ -1,9 +1,9 @@
 'use strict'
 
-window.Login = ['$scope', '$location', '$routeParams', '$timeout', 'initialState', 'rpc', 'cookieExtender', 'notification', ($scope, $location, $routeParams, $timeout, initialState, rpc, cookieExtender, notification) ->
+window.Login = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'notification', ($scope, $location, $routeParams, $http, $timeout, notification) ->
 	$scope.loginConfig = 
-		type: initialState.userConnectionType
-		defaultType: initialState.userConnectionType
+		type: 'default'
+		defaultType: 'default'
 	$scope.account = {}
 	$scope.makingRequest = false
 
@@ -12,41 +12,26 @@ window.Login = ['$scope', '$location', '$routeParams', '$timeout', 'initialState
 		$location.search 'googleLoginError', null
 		$timeout (() -> notification.error googleLoginError), 100
 
-	redirectToHome = () ->
-		# this will force a refresh, rather than do html5 pushstate
-		window.location.href = '/'
-
 	$scope.login = () ->
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		rpc 'users', 'update', 'login', $scope.account, (error, result) ->
+		request = $http.post("/app/accounts/login", $scope.account)
+		request.success (data, status, headers, config) =>
+			window.location.href = '/'
+		request.error (data, status, headers, config) =>
+			$scope.account.password = ''
+			notification.error data
 			$scope.makingRequest = false
-			
-			if error?
-				$scope.account.password = ''
-				notification.error error
-			else
-				if $scope.account.rememberMe is 'yes'
-					cookieExtender.extendCookie (error) ->
-						console.error error if error?
-						redirectToHome()
-				else
-					redirectToHome()
 
 	$scope.googleLogin = () ->
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		rpc 'users', 'read', 'getGoogleLoginRedirect', null, (error, redirectUri) ->
+		request = $http.get("/app/accounts/googleLoginRedirect")
+		request.success (data, status, headers, config) =>
+			window.location.href = data
+		request.error (data, status, headers, config) =>
+			notification.error data
 			$scope.makingRequest = false
-			
-			if error? then notification.error error
-			else
-				if $scope.account.rememberMe is 'yes'
-					cookieExtender.extendOAuthCookie (error) ->
-						console.error error if error?
-						window.location.href = redirectUri
-				else
-					window.location.href = redirectUri
 ]

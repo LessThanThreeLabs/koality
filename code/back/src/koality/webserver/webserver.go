@@ -53,13 +53,13 @@ func (webserver *Webserver) Start() error {
 		session, _ := sessionStore.Get(request, webserver.sessionName)
 		userId, ok := session.Values["userId"]
 		if !ok {
-			fmt.Println("Not logged in... Setting userId to 1000, but it really should be 0")
-			userId = uint64(1000)
+			userId = uint64(0)
 		}
 		context.Set(request, "userId", userId)
 
 		if request.URL.Path == "/" || request.URL.Path == "/dashboard" ||
 			strings.HasPrefix(request.URL.Path, "/repository/") ||
+			strings.HasPrefix(request.URL.Path, "/login") ||
 			strings.HasPrefix(request.URL.Path, "/hooks/") ||
 			strings.HasPrefix(request.URL.Path, "/oAuth/") {
 			router.ServeHTTP(writer, request)
@@ -85,6 +85,7 @@ func (webserver *Webserver) createSessionStore() (sessions.Store, error) {
 	sessionStore := sessions.NewCookieStore(cookieStoreKeys.Authentication, cookieStoreKeys.Encryption)
 	sessionStore.Options = &sessions.Options{
 		Path:     "/",
+		MaxAge:   0,
 		HttpOnly: true,
 		Secure:   true,
 	}

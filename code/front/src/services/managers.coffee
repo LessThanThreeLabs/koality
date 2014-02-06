@@ -1,7 +1,7 @@
 'use strict'
 
 angular.module('koality.service.managers', []).
-	factory('BuildsManager', ['initialState', 'BuildsRpc', 'events', (initialState, BuildsRpc, events) ->
+	factory('BuildsManager', ['BuildsRpc', 'events', (BuildsRpc, events) ->
 		class BuildsManager
 			_builds: []
 			_buildsCache: {}

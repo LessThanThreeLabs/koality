@@ -12,6 +12,12 @@ const (
 	rememberMeDuration = 2592000
 )
 
+type LoginRequestData struct {
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	RememberMe bool   `json:"rememberMe"`
+}
+
 type AccountsHandler struct {
 	resourcesConnection *resources.Connection
 	sessionStore        sessions.Store
@@ -25,6 +31,11 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 
 func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) {
 	fmt.Println("...need to add functionality to reset password")
+
+	subrouter.HandleFunc("/googleLoginRedirect",
+		middleware.IsLoggedOutWrapper(accountsHandler.getGoogleLoginRedirect)).
+		Methods("GET")
+
 	subrouter.HandleFunc("/login",
 		middleware.IsLoggedOutWrapper(accountsHandler.login)).
 		Methods("POST")

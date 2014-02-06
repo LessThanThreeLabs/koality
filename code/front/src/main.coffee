@@ -1,7 +1,7 @@
 'use strict'
 
 
-window.Main = ['$scope', '$http', '$timeout', 'initialState', 'notification', ($scope, $http, $timeou,initialState, notification) ->
+window.Main = ['$scope', '$http', '$timeout', 'notification', ($scope, $http, $timeout, notification) ->
 	# repositories = []
 
 	# checkSshKeyExists = () ->

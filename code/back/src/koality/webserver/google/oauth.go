@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/sessions"
 	"koality/resources"
 	"net/http"
 	"net/url"
@@ -156,11 +155,5 @@ func (googleHandler *GoogleHandler) getGoogleUserInformation(oAuthToken string) 
 func (googleHandler *GoogleHandler) login(user *resources.User, writer http.ResponseWriter, request *http.Request) {
 	session, _ := googleHandler.sessionStore.Get(request, googleHandler.sessionName)
 	session.Values["userId"] = user.Id
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   0,
-		HttpOnly: true,
-		Secure:   true,
-	}
 	session.Save(request, writer)
 }

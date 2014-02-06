@@ -1,8 +1,8 @@
 'use strict'
 
-window.Header = ['$scope', '$location', '$http', 'initialState', 'events', 'notification', ($scope, $location, $http, initialState, events, notification) ->
-	$scope.loggedIn = initialState.loggedIn
-	$scope.isAdmin = initialState.user.isAdmin
+window.Header = ['$scope', '$window', '$location', '$http', 'events', 'notification', ($scope, $window, $location, $http, events, notification) ->
+	$scope.loggedIn = $window.userId?
+	$scope.isAdmin = $window.isAdmin
 	$scope.feedback = open: false
 
 	getRepositories = () ->

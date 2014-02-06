@@ -35,7 +35,7 @@ type TemplatesHandler struct {
 }
 
 var (
-	pathsToHandle []string = []string{"index", "dashboard", "repository"}
+	pathsToHandle []string = []string{"index", "login", "dashboard", "repository/{repositoryId:[0-9]+}"}
 )
 
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string) (*TemplatesHandler, error) {
@@ -83,14 +83,10 @@ func getCssAndJsFiles() ([]string, []string, error) {
 func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/", templatesHandler.getRoot).Methods("GET")
 
-	subrouter.HandleFunc("/index", templatesHandler.getRoot).Methods("GET")
-	subrouter.HandleFunc("/index.html", templatesHandler.getRoot).Methods("GET")
-
-	subrouter.HandleFunc("/dashboard", templatesHandler.getRoot).Methods("GET")
-	subrouter.HandleFunc("/dashboard.html", templatesHandler.getRoot).Methods("GET")
-
-	subrouter.HandleFunc("/repository/{repositoryId:[0-9]+}", templatesHandler.getRoot).Methods("GET")
-	subrouter.HandleFunc("/repository/{repositoryId:[0-9]+}.html", templatesHandler.getRoot).Methods("GET")
+	for _, pathToHandle := range pathsToHandle {
+		subrouter.HandleFunc(fmt.Sprintf("/%s", pathToHandle), templatesHandler.getRoot).Methods("GET")
+		subrouter.HandleFunc(fmt.Sprintf("/%s.html", pathToHandle), templatesHandler.getRoot).Methods("GET")
+	}
 }
 
 func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {
@@ -124,7 +120,6 @@ func (templatesHandler *TemplatesHandler) getCsrfFromSession(writer http.Respons
 			return "", err
 		}
 		newCsrfToken := base32.StdEncoding.EncodeToString(csrfTokenBuffer.Bytes())
-
 		session.Values["csrfToken"] = newCsrfToken
 		session.Save(request, writer)
 		return newCsrfToken, nil

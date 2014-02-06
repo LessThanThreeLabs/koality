@@ -2,10 +2,9 @@ package accounts
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/gorilla/sessions"
 	"net/http"
-	"strconv"
 )
 
 func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
@@ -17,24 +16,21 @@ func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
 }
 
 func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, request *http.Request) {
-	email := request.PostFormValue("email")
-	password := request.PostFormValue("password")
-	rememberMeString := request.PostFormValue("rememberMe")
-	rememberMe, err := strconv.ParseBool(rememberMeString)
-	if err != nil {
+	loginRequestData := new(LoginRequestData)
+	if err := json.NewDecoder(request.Body).Decode(loginRequestData); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse rememberMe: %v", err)
+		fmt.Fprint(writer, err)
 		return
 	}
 
-	user, err := accountsHandler.resourcesConnection.Users.Read.GetByEmail(email)
+	user, err := accountsHandler.resourcesConnection.Users.Read.GetByEmail(loginRequestData.Email)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	passwordHash, err := accountsHandler.passwordHasher.ComputeHash(password, user.PasswordSalt)
+	passwordHash, err := accountsHandler.passwordHasher.ComputeHash(loginRequestData.Password, user.PasswordSalt)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -49,23 +45,16 @@ func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, reques
 
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
 	session.Values["userId"] = user.Id
-	session.Options = &sessions.Options{
-		// Path:   "/",
-		MaxAge: accountsHandler.getMaxSessionAge(rememberMe),
-		// HttpOnly: true,
-		// Secure:   true,
-	}
+	session.Options.MaxAge = accountsHandler.getMaxSessionAge(loginRequestData.RememberMe)
 	session.Save(request, writer)
 
-	http.Redirect(writer, request, "/", http.StatusFound)
+	fmt.Fprint(writer, "ok")
 }
 
 func (accountsHandler *AccountsHandler) logout(writer http.ResponseWriter, request *http.Request) {
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
-	session.Options = &sessions.Options{
-		MaxAge: -1,
-	}
+	session.Options.MaxAge = -1
 	session.Save(request, writer)
 
-	http.Redirect(writer, request, "/", http.StatusFound)
+	fmt.Fprint(writer, "ok")
 }

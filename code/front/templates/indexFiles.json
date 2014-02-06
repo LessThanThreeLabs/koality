@@ -92,6 +92,8 @@
 		"/js/src/header/header.js",
 		"/js/src/dashboard/dashboard.js",
 
+		"/js/src/login/login.js",
+		
 		"/js/src/repository/repository.js",
 		"/js/src/repository/repositoryBuilds/repositoryBuilds.js",
 		"/js/src/repository/repositoryStages/repositoryStages.js",

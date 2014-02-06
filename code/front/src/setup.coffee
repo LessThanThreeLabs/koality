@@ -6,11 +6,11 @@ angular.module('koality', ['ngSanitize',
 		'koality.directive', 'koality.directive.buildsMenu', 'koality.directive.panel', 'koality.directive.dropdown', 'koality.d3.directive']).
 	config(['$routeProvider', ($routeProvider) ->
 		$routeProvider.
-			# when('/login',
-			# 	templateUrl: "/html/login/login.html"
-			# 	controller: Login
-			# 	redirectTo: if window.userId? then '/' else null
-			# ).
+			when('/login',
+				templateUrl: "/html/login/login.html"
+				controller: Login
+				redirectTo: if window.userId? then '/' else null
+			).
 			# when('/account',
 			# 	templateUrl: "/html/account/account.html"
 			# 	controller: Account
