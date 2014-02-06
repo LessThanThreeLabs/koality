@@ -77,7 +77,11 @@ func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *
 		return false, err
 	}
 
-	masterDomainName := "need.master.ip"
+	domainName, err := debugInstanceRunner.resourcesConnection.Settings.Read.GetDomainName()
+	if err != nil {
+		return false, err
+	}
+
 	currentUser, err := user.Current()
 	if err != nil {
 		// TODO(dhuang) definitely need error handler here or in SubscribeToEvents
@@ -85,8 +89,8 @@ func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *
 	}
 
 	finishFunc := func(vm vm.VirtualMachine) {
-		sshString := fmt.Sprintf("ssh %s@%s 'ssh %lu %s'", currentUser.Username, masterDomainName, buildData.BuildConfig.Params.PoolId, vm.Id())
-		emailFrom := fmt.Sprintf("%s@%s", currentUser.Username, masterDomainName)
+		sshString := fmt.Sprintf("ssh %s@%s 'ssh %lu %s'", currentUser.Username, domainName, buildData.BuildConfig.Params.PoolId, vm.Id())
+		emailFrom := fmt.Sprintf("%s@%s", currentUser.Username, domainName)
 		err = debugInstanceRunner.mailer.SendMail(emailFrom, []string{build.EmailToNotify}, sshString, sshString)
 		if err != nil {
 			// TODO(dhuang) what do...
