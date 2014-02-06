@@ -213,7 +213,7 @@ func (buildRunner *BuildRunner) CreateStages(currentBuild *resources.Build, buil
 	return nil
 }
 
-func (buildRunner *BuildRunner) RunStagesOnNewMachines(numNodes uint64, buildData *BuildData, currentBuild *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func()) {
+func (buildRunner *BuildRunner) RunStagesOnNewMachines(numNodes uint64, buildData *BuildData, currentBuild *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func(vm.VirtualMachine)) {
 	newMachinesChan, errorChan := buildData.Pool.GetReady(numNodes)
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
@@ -236,7 +236,7 @@ func (buildRunner *BuildRunner) RunStagesOnNewMachines(numNodes uint64, buildDat
 	}(errorChan)
 }
 
-func (buildRunner *BuildRunner) RunStages(virtualMachine vm.VirtualMachine, buildData *BuildData, build *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func()) {
+func (buildRunner *BuildRunner) RunStages(virtualMachine vm.VirtualMachine, buildData *BuildData, build *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func(vm.VirtualMachine)) {
 	stageRunner := stagerunner.New(
 		buildRunner.resourcesConnection, virtualMachine, build,
 		new(stagerunner.S3Exporter))
@@ -253,7 +253,7 @@ func (buildRunner *BuildRunner) RunStages(virtualMachine vm.VirtualMachine, buil
 		log.Errorf("Failed to run stages for build: %v\nConfig: %#v\nError: %v\n%s", build,
 			buildData.BuildConfig, err, stacktrace)
 	}
-	finishFunc()
+	finishFunc(virtualMachine)
 }
 
 func (buildRunner *BuildRunner) combineResults(currentBuild *resources.Build, newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan build.SectionResult {

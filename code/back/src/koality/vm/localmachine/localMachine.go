@@ -48,6 +48,10 @@ func FromDir(rootDir string) (*LocalMachine, error) {
 	return &localMachine, nil
 }
 
+func (localMachine LocalMachine) Id() string {
+	return "localhost"
+}
+
 func (localMachine LocalMachine) GetStartShellCommand() vm.Command {
 	return vm.Command{Argv: []string{"/bin/bash"}}
 }

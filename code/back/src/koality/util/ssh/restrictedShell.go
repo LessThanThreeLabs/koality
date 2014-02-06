@@ -36,7 +36,7 @@ func HandleSSHCommand(userId uint64, origCommand string) error {
 		// true
 		shellCommand = vm.Command{Argv: []string{"true"}}
 	case "ssh":
-		// ssh vmId poolId
+		// ssh poolId instanceId
 		shell := &restrictedSSHForwardingShell{userId, command, client}
 		shellCommand, err = shell.GetCommand()
 	default:
