@@ -138,7 +138,7 @@
 				</table>
 			</div>
 
-			<div id="noRunSelectedMessage" ng-show="selectedStageRun.getId() == null">
+			<div id="noRunSelectedMessage" ng-show="selectedStage.getId() != null && selectedStageRun.getId() == null">
 				This stage has not yet been processed
 			</div>
 
