@@ -62,8 +62,7 @@ func (buildRunner *BuildRunner) GetBuildData(build *resources.Build) (*BuildData
 	return &BuildData{repository, buildConfig, virtualMachinePool}, nil
 }
 
-func (buildRunner *BuildRunner) ProcessResults(currentBuild *resources.Build,
-	newStageRunnersChan chan *stagerunner.StageRunner, buildData *BuildData) (bool, error) {
+func (buildRunner *BuildRunner) ProcessResults(currentBuild *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, buildData *BuildData) (bool, error) {
 
 	resultsChan := buildRunner.combineResults(currentBuild, newStageRunnersChan)
 	receivedResult := make(map[string]bool)
@@ -214,9 +213,7 @@ func (buildRunner *BuildRunner) CreateStages(currentBuild *resources.Build, buil
 	return nil
 }
 
-func (buildRunner *BuildRunner) RunStagesOnNewMachines(
-	numNodes uint64, buildData *BuildData, currentBuild *resources.Build,
-	newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func()) {
+func (buildRunner *BuildRunner) RunStagesOnNewMachines(numNodes uint64, buildData *BuildData, currentBuild *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func()) {
 	newMachinesChan, errorChan := buildData.Pool.GetReady(numNodes)
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
@@ -239,9 +236,7 @@ func (buildRunner *BuildRunner) RunStagesOnNewMachines(
 	}(errorChan)
 }
 
-func (buildRunner *BuildRunner) RunStages(virtualMachine vm.VirtualMachine,
-	buildData *BuildData, build *resources.Build,
-	newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func()) {
+func (buildRunner *BuildRunner) RunStages(virtualMachine vm.VirtualMachine, buildData *BuildData, build *resources.Build, newStageRunnersChan chan *stagerunner.StageRunner, finishFunc func()) {
 	stageRunner := stagerunner.New(
 		buildRunner.resourcesConnection, virtualMachine, build,
 		new(stagerunner.S3Exporter))
@@ -261,8 +256,7 @@ func (buildRunner *BuildRunner) RunStages(virtualMachine vm.VirtualMachine,
 	finishFunc()
 }
 
-func (buildRunner *BuildRunner) combineResults(
-	currentBuild *resources.Build, newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan build.SectionResult {
+func (buildRunner *BuildRunner) combineResults(currentBuild *resources.Build, newStageRunnersChan <-chan *stagerunner.StageRunner) <-chan build.SectionResult {
 	resultsChan := make(chan build.SectionResult)
 	go func(newStageRunnersChan <-chan *stagerunner.StageRunner) {
 		isStarted := false

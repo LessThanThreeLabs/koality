@@ -18,8 +18,7 @@ type TestRunner struct {
 	buildRunner                    *runner.BuildRunner
 }
 
-func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager,
-	repositoryManager repositorymanager.RepositoryManager) *TestRunner {
+func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager) *TestRunner {
 	return &TestRunner{
 		resourcesConnection: resourcesConnection,
 		poolManager:         poolManager,
