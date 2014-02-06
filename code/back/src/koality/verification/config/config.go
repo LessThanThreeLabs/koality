@@ -209,19 +209,21 @@ func FromYaml(yamlContents, directory string) (verificationConfig VerificationCo
 
 			verificationConfig.Params = params
 
-			provisionShellCommand := verification.NewShellCommand("provision", provisionCommand)
-			provisionSection := section.New(
-				"provision",
-				false,
-				section.RunOnAll,
-				section.FailOnFirst,
-				false,
-				commandgroup.New([]verification.Command{}),
-				commandgroup.New([]verification.Command{provisionShellCommand}),
-				[]string{},
-			)
-			provisionShellCommand = provisionShellCommand
-			verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
+			if provisionCommand != nil {
+				provisionShellCommand := verification.NewShellCommand("provision", *provisionCommand)
+				provisionSection := section.New(
+					"provision",
+					false,
+					section.RunOnAll,
+					section.FailOnFirst,
+					false,
+					commandgroup.New([]verification.Command{}),
+					commandgroup.New([]verification.Command{provisionShellCommand}),
+					[]string{},
+				)
+				provisionShellCommand = provisionShellCommand
+				verificationConfig.Sections = append([]section.Section{provisionSection}, verificationConfig.Sections...)
+			}
 		case "sections":
 			sections, err := parseSections(config, directory, false)
 			if err != nil {
@@ -267,7 +269,7 @@ func FromYaml(yamlContents, directory string) (verificationConfig VerificationCo
 	return
 }
 
-func convertParameters(config interface{}) (provisionCommand shell.Command, params Params, err error) {
+func convertParameters(config interface{}) (provisionCommand *shell.Command, params Params, err error) {
 	// TODO(akostov): handle pool id/name defaults to 1, should be default pool
 	params.PoolId = 1
 

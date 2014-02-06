@@ -230,5 +230,5 @@ func (suite *DebugInstanceRunnerSuite) TestDebugInstanceDoesntRunFinalStages(che
 
 	stages, err := suite.resourcesConnection.Stages.Read.GetAll(suite.debugInstance.VerificationId)
 	check.Assert(err, gocheck.IsNil)
-	check.Assert(stages, gocheck.HasLen, 3) // git, provision, pwd
+	check.Assert(stages, gocheck.HasLen, 2) // git, pwd
 }

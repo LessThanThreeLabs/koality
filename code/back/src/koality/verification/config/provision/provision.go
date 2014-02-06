@@ -85,7 +85,7 @@ func installPackages(packageStrings []string, platformSpecific map[string]([]str
 }
 
 //TODO(akostov) debug
-func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionCommand shell.Command, err error) {
+func ParseLanguages(languageConfig map[interface{}]interface{}) (*shell.Command, error) {
 	languageDispatcher := map[string]func(string) (shell.Command, shell.Command){
 		"python": parsePython,
 		"ruby":   parseRuby,
@@ -120,10 +120,14 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionComman
 
 	// TODO(akostov) environment - do we still need it?
 
+	if len(languageConfig) == 0 {
+		return nil, nil
+	}
+
 	for language, version := range languageConfig {
 		languageString, ok := language.(string)
 		if !ok {
-			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The language specifying variable %v is not a string.", language)}
+			return nil, UnexpectedLanguageError{fmt.Sprintf("The language specifying variable %v is not a string.", language)}
 		}
 
 		versionString := fmt.Sprintf("%v", version)
@@ -133,14 +137,14 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionComman
 			languageSteps = append(languageSteps, languageCommand)
 			setupSteps = append(setupSteps, versionCommand)
 		} else {
-			return provisionCommand, UnexpectedLanguageError{fmt.Sprintf("The language %s is not currently supported by our system. Please contact us.", language)}
+			return nil, UnexpectedLanguageError{fmt.Sprintf("The language %s is not currently supported by our system. Please contact us.", language)}
 		}
 	}
 
 	languageCommand := shell.And(languageSteps...)
 	setupCommand := shell.And(setupSteps...)
 
-	return shell.And(
+	provisionCommand := shell.And(
 		shell.Or(
 			shell.Login(shell.Sudo(languageCommand)),
 			shell.And(
@@ -155,7 +159,8 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (provisionComman
 				shell.Command("false"),
 			),
 		),
-	), err
+	)
+	return &provisionCommand, nil
 }
 
 func parsePython(version string) (languageCommand, versionCommand shell.Command) {
