@@ -31,6 +31,7 @@ func (gitHubHandler *GitHubHandler) handlePullRequest(pullRequestPayload PullReq
 		fmt.Fprint(writer, "ok")
 		return
 	}
+
 	gitHubRepository := pullRequestPayload.PullRequest.Base.Repository
 	gitHubHandler.triggerVerification(gitHubRepository.Owner.Login, gitHubRepository.Name,
 		pullRequestPayload.PullRequest.Head.Sha, pullRequestPayload.PullRequest.Base.Sha,

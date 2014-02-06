@@ -47,8 +47,7 @@ func (connection standardGitHubOAuthConnection) CheckValidOAuthToken(oAuthToken 
 	defer response.Body.Close()
 	if err != nil {
 		return false, err
-	}
-	if response.StatusCode != http.StatusOK {
+	} else if response.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("Failed to check OAuthToken, received http status: %d (%s)", response.StatusCode, response.Status)
 	}
 
@@ -103,8 +102,7 @@ func (connection *gitHubEnterpriseOAuthConnection) CheckValidOAuthToken(oAuthTok
 	defer response.Body.Close()
 	if err != nil {
 		return false, err
-	}
-	if response.StatusCode != http.StatusOK {
+	} else if response.StatusCode != http.StatusOK {
 		return false, fmt.Errorf("Failed to check OAuthToken, received http status: %d (%s)", response.StatusCode, response.Status)
 	}
 

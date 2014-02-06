@@ -36,7 +36,6 @@ func (gitHubHandler *GitHubHandler) handleOAuthToken(writer http.ResponseWriter,
 	}
 
 	var redirectUrl string
-
 	switch action {
 	case "sshKeys":
 		redirectUrl = "/account?view=sshKeys&importGitHubKeys"
@@ -45,6 +44,5 @@ func (gitHubHandler *GitHubHandler) handleOAuthToken(writer http.ResponseWriter,
 	default:
 		redirectUrl = "/"
 	}
-
 	http.Redirect(writer, request, redirectUrl, http.StatusSeeOther)
 }

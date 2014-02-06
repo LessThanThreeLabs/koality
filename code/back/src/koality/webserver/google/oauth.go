@@ -23,51 +23,54 @@ func (googleHandler *GoogleHandler) handleOAuthToken(writer http.ResponseWriter,
 	oAuthToken := request.FormValue("token")
 	action := request.FormValue("action")
 
-	var redirectUrl string
-
 	if oAuthToken == "" {
 		writer.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(writer, "No oAuth token provided")
 		return
-	} else if action == "" {
+	}
+
+	if action == "" {
 		writer.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(writer, "No action provided")
-		return
 	} else if action == "login" {
-		user, err := googleHandler.handleLogin(oAuthToken)
-		if _, ok := err.(BadAuthenticationError); err != nil && ok {
-			queryValues := url.Values{}
-			queryValues.Set("googleLoginError", err.Error())
-			redirectUrl = "/login?" + queryValues.Encode()
-		} else if err != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(writer, err)
-			return
-		} else {
-			googleHandler.login(user, writer, request)
-			redirectUrl = "/"
-		}
+		googleHandler.processLoginAction(oAuthToken, writer, request)
 	} else if action == "createAccount" {
-		user, err := googleHandler.handleCreateAccount(oAuthToken)
-		if _, ok := err.(BadAuthenticationError); err != nil && ok {
-			queryValues := url.Values{}
-			queryValues.Set("googleCreateAccountError", err.Error())
-			redirectUrl = "/create/account?" + queryValues.Encode()
-		} else if err != nil {
-			writer.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(writer, err)
-			return
-		} else {
-			googleHandler.login(user, writer, request)
-			redirectUrl = "/"
-		}
+		googleHandler.processCreateAccountAction(oAuthToken, writer, request)
 	} else {
 		writer.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintf(writer, "Unknown action provided: %s", action)
-		return
 	}
+}
 
-	http.Redirect(writer, request, redirectUrl, http.StatusSeeOther)
+func (googleHandler *GoogleHandler) processLoginAction(oAuthToken string, writer http.ResponseWriter, request *http.Request) {
+	user, err := googleHandler.handleLogin(oAuthToken)
+	if _, ok := err.(BadAuthenticationError); err != nil && ok {
+		queryValues := url.Values{}
+		queryValues.Set("googleLoginError", err.Error())
+		http.Redirect(writer, request, "/login?"+queryValues.Encode(), http.StatusSeeOther)
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+	} else {
+		googleHandler.login(user, writer, request)
+		http.Redirect(writer, request, "/", http.StatusSeeOther)
+	}
+}
+
+func (googleHandler *GoogleHandler) processCreateAccountAction(oAuthToken string, writer http.ResponseWriter, request *http.Request) {
+	user, err := googleHandler.handleCreateAccount(oAuthToken)
+	if _, ok := err.(BadAuthenticationError); err != nil && ok {
+		queryValues := url.Values{}
+		queryValues.Set("googleCreateAccountError", err.Error())
+		http.Redirect(writer, request, "/create/account?"+queryValues.Encode(), http.StatusSeeOther)
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	} else {
+		googleHandler.login(user, writer, request)
+		http.Redirect(writer, request, "/", http.StatusSeeOther)
+	}
 }
 
 func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.User, error) {
@@ -88,7 +91,6 @@ func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.U
 	} else if err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
@@ -111,13 +113,11 @@ func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*res
 	passwordHash := make([]byte, 32)
 	passwordSalt := make([]byte, 16)
 
-	_, err = rand.Read(passwordHash)
-	if err != nil {
+	if _, err = rand.Read(passwordHash); err != nil {
 		return nil, err
 	}
 
-	_, err = rand.Read(passwordSalt)
-	if err != nil {
+	if _, err = rand.Read(passwordSalt); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +127,6 @@ func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*res
 	} else if err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
@@ -151,7 +150,6 @@ func (googleHandler *GoogleHandler) getGoogleUserInformation(oAuthToken string) 
 	if err != nil {
 		return nil, err
 	}
-
 	return userInformation, nil
 }
 
