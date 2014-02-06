@@ -28,29 +28,24 @@ func New(resourcesConnection *resources.Connection, poolManager *poolmanager.Poo
 	}
 }
 
-func (debugInstanceRunner *DebugInstanceRunner) SubscribeToEvents() error {
+func (debugInstanceRunner *DebugInstanceRunner) SubscribeToEvents() (err error) {
 	onDebugInstanceCreated := func(debugInstance *resources.DebugInstance) {
 		debugInstanceRunner.RunDebugInstance(debugInstance)
 	}
-	var err error
 	debugInstanceRunner.debugInstanceCreatedSubscriptionId, err = debugInstanceRunner.resourcesConnection.DebugInstances.Subscription.SubscribeToCreatedEvents(onDebugInstanceCreated)
-	return err
+	return
 }
 
-func (debugInstanceRunner *DebugInstanceRunner) UnsubscribeFromEvents() error {
-	var err error
-
+func (debugInstanceRunner *DebugInstanceRunner) UnsubscribeFromEvents() (err error) {
 	if debugInstanceRunner.debugInstanceCreatedSubscriptionId == 0 {
 		return fmt.Errorf("Debug instance created events not subscribed to")
 	} else {
-		unsubscribeError := debugInstanceRunner.resourcesConnection.DebugInstances.Subscription.UnsubscribeFromCreatedEvents(debugInstanceRunner.debugInstanceCreatedSubscriptionId)
-		if unsubscribeError != nil {
-			err = unsubscribeError
-		} else {
+		err = debugInstanceRunner.resourcesConnection.DebugInstances.Subscription.UnsubscribeFromCreatedEvents(debugInstanceRunner.debugInstanceCreatedSubscriptionId)
+		if err == nil {
 			debugInstanceRunner.debugInstanceCreatedSubscriptionId = 0
 		}
 	}
-	return err
+	return
 }
 
 func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *resources.DebugInstance) (bool, error) {
