@@ -21,9 +21,10 @@ type sanitizedRepository struct {
 }
 
 type sanitizedRepositoryGitHubMetadata struct {
-	Owner     string   `json:"owner"`
-	Name      string   `json:"name"`
-	HookTypes []string `json:"hookTypes"`
+	Owner         string   `json:"owner"`
+	Name          string   `json:"name"`
+	HookTypes     []string `json:"hookTypes"`
+	HasOAuthToken bool     `json:"hasOAuthToken"`
 }
 
 type RepositoriesHandler struct {
@@ -87,8 +88,9 @@ func getSanitizedRepositoryGitHubMetadata(repositoryGitHubMetadata *resources.Re
 	}
 
 	return &sanitizedRepositoryGitHubMetadata{
-		Owner:     repositoryGitHubMetadata.Owner,
-		Name:      repositoryGitHubMetadata.Name,
-		HookTypes: repositoryGitHubMetadata.HookTypes,
+		Owner:         repositoryGitHubMetadata.Owner,
+		Name:          repositoryGitHubMetadata.Name,
+		HookTypes:     repositoryGitHubMetadata.HookTypes,
+		HasOAuthToken: repositoryGitHubMetadata.OAuthToken != "",
 	}
 }
