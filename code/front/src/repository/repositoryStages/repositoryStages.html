@@ -23,7 +23,7 @@
 				<span>summary</span>
 			</builds-menu-option>
 
-			<builds-menu-option ng-repeat="stage in stagesManager.getStages() | orderBy:stageSort" menu-option-spinning="{{stage.status == 'running'}}" ng-click="selectStage(stage)" ng-class="{selected: stage.id == selectedStage.getId(), green: stage.status == 'passed', red: stage.status == 'failed'}">
+			<builds-menu-option ng-repeat="stage in stagesManager.getStages() | orderBy:stageSort" menu-option-spinning="{{getStageStatus(stage) == 'running'}}" ng-click="selectStage(stage)" ng-class="{selected: stage.id == selectedStage.getId(), green: getStageStatus(stage) == 'passed', red: getStageStatus(stage) == 'failed'}">
 				<span>{{stage.name}}</span>
 			</builds-menu-option>
 

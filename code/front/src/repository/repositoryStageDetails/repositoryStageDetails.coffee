@@ -105,6 +105,19 @@ window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'Cons
 		$scope.debugInstance.durationInMinutes = 60
 		$scope.currentlyOpenDrawer = null
 
+	$scope.getStageRunNumber = (stage, stageRun) ->
+		return 0 if not stage?.runs? or not stageRun?
+
+		for potentialStageRun, index in stage.runs
+			return index + 1 if potentialStageRun.id is stageRun.id
+
+		console.error 'Unable to determine number for stage run'
+		return 10000
+
+	$scope.selectStageRun = (stageRun) ->
+		$scope.selectedStageRun.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), $scope.selectedStage.getId(), stageRun.id
+		$scope.selectedStageRun.setInformation stageRun
+
 	$scope.$watch 'selectedBuild.getId()', () ->
 		# updateExportUrisAddedListener()
 		# retrieveCurrentChangeExportUris()
@@ -114,33 +127,41 @@ window.RepositoryStageDetails = ['$scope', '$location', '$http', 'events', 'Cons
 		$scope.output.type = null
 		$scope.clearLaunchDebugInstance()
 
-	$scope.$watch 'selectedStage.getInformation()', (() ->
-		return if not $scope.selectedStage.getInformation()?
+	$scope.$watch 'selectedStage.getInformation().runs', (() ->
+		if not $scope.selectedStage.getInformation()?.runs?
+			$scope.selectedStageRun.clear()
+		else if $scope.selectedStage.getInformation().runs.length is 0
+			$scope.selectedStageRun.clear()
+		else
+			selectedStageRunExists = $scope.selectedStage.getInformation().runs.some (stageRun) -> 
+				return stageRun.id is $scope.selectedStageRun.getId()
+			if not selectedStageRunExists
+				firstStageRun = $scope.selectedStage.getInformation().runs[0]
+				$scope.selectedStageRun.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), $scope.selectedStage.getId(), firstStageRun.id
+				$scope.selectedStageRun.setInformation firstStageRun
+	), true
 
-		stageRun = $scope.selectedStage.getInformation().runs?[0]
-		$scope.selectedStageRun.setId $scope.selectedRepository.getId(), $scope.selectedBuild.getId(), $scope.selectedStage.getId(), stageRun.id
-		$scope.selectedStageRun.setInformation stageRun
-
+	$scope.$watch 'selectedStageRun.getInformation()', (() ->
 		console.log '...need to actually get output types somehow'
-		$scope.selectedStage?.getInformation()?.outputTypes = ['console']
+		$scope.selectedStageRun?.getInformation()?.outputTypes = ['console']
 
-		return if not $scope.selectedStage.getInformation()?.outputTypes?
+		return if not $scope.selectedStageRun.getInformation()?.outputTypes?
 
-		$scope.output.hasConsole = 'console' in $scope.selectedStage.getInformation().outputTypes
-		$scope.output.hasXUnit = 'xunit' in $scope.selectedStage.getInformation().outputTypes
+		$scope.output.hasConsole = 'console' in $scope.selectedStageRun.getInformation().outputTypes
+		$scope.output.hasXUnit = 'xunit' in $scope.selectedStageRun.getInformation().outputTypes
 
 		return if $scope.output.type?
 
-		if 'xunit' in $scope.selectedStage.getInformation().outputTypes
+		if 'xunit' in $scope.selectedStageRun.getInformation().outputTypes
 			$scope.output.type = 'xunit'
-		else if 'console' in $scope.selectedStage.getInformation().outputTypes
+		else if 'console' in $scope.selectedStageRun.getInformation().outputTypes
 			$scope.output.type = 'console'
 		else
 			console.error 'No output type provided'
 	), true
 
-	$scope.$watch 'selectedStage.getId() + output.type', () ->
-		return if not $scope.selectedStage.getId()?
+	$scope.$watch 'selectedStageRun.getId() + output.type', () ->
+		return if not $scope.selectedStageRun.getId()?
 
 		$scope.consoleLinesManager.clear()
 		$scope.xunit.testCases = []
