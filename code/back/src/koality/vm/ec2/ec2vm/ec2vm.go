@@ -53,6 +53,10 @@ func New(instance ec2.Instance, cache *ec2broker.Ec2Cache, username, privateKey 
 	return &ec2Vm, nil
 }
 
+func (ec2vm Ec2VirtualMachine) Id() string {
+	return ec2vm.instance.InstanceId
+}
+
 func (ec2vm Ec2VirtualMachine) GetStartShellCommand() vm.Command {
 	return vm.Command{
 		Argv: ec2vm.sshConfig.SshArgs(""),

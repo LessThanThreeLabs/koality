@@ -21,11 +21,11 @@ func (shell *restrictedSSHForwardingShell) GetCommand() (command vm.Command, err
 		return
 	}
 
-	vmInstanceId := shell.command[1]
-	poolId, err := strconv.ParseUint(shell.command[2], 10, 64)
+	poolId, err := strconv.ParseUint(shell.command[1], 10, 64)
 	if err != nil {
 		return
 	}
+	vmInstanceId := shell.command[2]
 
 	args := internalapi.VmReaderArg{vmInstanceId, poolId}
 	err = shell.client.Call("VmReader.GetShellCommandFromId", &args, &command)
