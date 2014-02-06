@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"koality/resources"
 	"net/http"
+	"net/url"
 )
 
 type GitHubOAuthConnection interface {
@@ -22,7 +23,10 @@ func NewStandardGitHubOAuthConnection() GitHubOAuthConnection {
 func (connection standardGitHubOAuthConnection) GetAuthorizationUrl(action string) (string, error) {
 	baseUrl := "https://127.0.0.1:10443"
 	redirectUrl := baseUrl + "/oAuth/gitHub/token"
-	return fmt.Sprintf("https://koalitycode.com/gitHub/authenticate?redirectUri=%s&action=%s", redirectUrl, action), nil
+	queryValues := url.Values{}
+	queryValues.Set("redirectUri", redirectUrl)
+	queryValues.Set("action", action)
+	return "https://koalitycode.com/gitHub/authenticate?" + queryValues.Encode(), nil
 }
 
 func (connection standardGitHubOAuthConnection) CheckValidOAuthToken(oAuthToken string) (bool, error) {
@@ -72,7 +76,11 @@ func (connection *gitHubEnterpriseOAuthConnection) GetAuthorizationUrl(action st
 		return "", err
 	}
 
-	return fmt.Sprintf("%s/login/oauth/authorize?client_id=%s&scope=user,repo&state=%s", gitHubEnterpriseSettings.BaseUrl, gitHubEnterpriseSettings.OAuthClientId, action), nil
+	queryValues := url.Values{}
+	queryValues.Set("client_id", gitHubEnterpriseSettings.OAuthClientId)
+	queryValues.Set("scope", "user,repo")
+	queryValues.Set("state", action)
+	return gitHubEnterpriseSettings.BaseUrl + "/login/oauth/authorize?" + queryValues.Encode(), nil
 }
 
 func (connection *gitHubEnterpriseOAuthConnection) CheckValidOAuthToken(oAuthToken string) (bool, error) {
