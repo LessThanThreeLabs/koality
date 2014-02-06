@@ -5,7 +5,9 @@ import (
 	"github.com/LessThanThreeLabs/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"koality/resources"
+	"koality/util/log"
 	"net/url"
+	"runtime"
 )
 
 type GitHubRepository struct {
@@ -25,10 +27,84 @@ type GitHubConnection interface {
 type gitHubConnection struct {
 	resourcesConnection *resources.Connection
 	oAuthConnection     GitHubOAuthConnection
+	subscriptionId      resources.SubscriptionId
 }
 
 func NewConnection(resourcesConnection *resources.Connection, oAuthConnection GitHubOAuthConnection) *gitHubConnection {
-	return &gitHubConnection{resourcesConnection, oAuthConnection}
+	return &gitHubConnection{
+		resourcesConnection: resourcesConnection,
+		oAuthConnection:     oAuthConnection,
+	}
+}
+
+func (connection *gitHubConnection) SubscribeToEvents() error {
+	if connection.subscriptionId != 0 {
+		return fmt.Errorf("GitHubConnection already subscribed to events")
+	}
+
+	onStatusUpdated := func(buildId uint64, status string) {
+		build, err := connection.resourcesConnection.Builds.Read.Get(buildId)
+		if err != nil {
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Failed to update status for build with id: %d\n%v\n%s", buildId, err, stacktrace)
+		}
+
+		repository, err := connection.resourcesConnection.Repositories.Read.Get(build.RepositoryId)
+		if err != nil {
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Failed to update status for build with id: %d\n%v\n%s", buildId, err, stacktrace)
+		}
+
+		if repository.GitHub == nil {
+			return
+		}
+
+		var state string
+		var description string
+		switch status {
+		case "passed":
+			state = "success"
+			description = "Koality verified this change successfully"
+		case "failed":
+			state = "failure"
+			description = "Koality found errors with this change"
+		default:
+			state = "pending"
+			description = "Koality is verifying this change"
+		}
+
+		url := fmt.Sprintf("https://127.0.0.1:10443/repository/%s?change=%s", repository.Id, buildId)
+		if err = connection.SetChangeStatus(repository, build.Changeset.HeadSha, state, description, url); err != nil {
+			stacktrace := make([]byte, 4096)
+			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+			log.Errorf("Failed to update status for build with id: %d\n%v\n%s", buildId, err, stacktrace)
+
+			if err = connection.resourcesConnection.Repositories.Update.ClearGitHubOAuthToken(repository.Id); err != nil {
+				stacktrace := make([]byte, 4096)
+				stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
+				log.Errorf("Failed to remove GitHub OAuth token from repository: %v\n%v\n%s", repository, err, stacktrace)
+			}
+		}
+	}
+
+	subscriptionId, err := connection.resourcesConnection.Builds.Subscription.SubscribeToStatusUpdatedEvents(onStatusUpdated)
+	if err != nil {
+		return err
+	}
+
+	connection.subscriptionId = subscriptionId
+	return nil
+}
+
+func (connection *gitHubConnection) UnsubscribeFromEvents() error {
+	if connection.subscriptionId == 0 {
+		return fmt.Errorf("GitHubConnection not subscribed to events")
+	}
+
+	err := connection.resourcesConnection.Builds.Subscription.UnsubscribeFromStatusUpdatedEvents(connection.subscriptionId)
+	return err
 }
 
 // TODO (bbland): there's no way this works

@@ -61,7 +61,7 @@ func (poolManager *PoolManager) SubscribeToEvents(resourcesConnection *resources
 		if err != nil {
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
-			log.Errorf("Failed to construct new ec2 launcher with pool parameters: %v\n%s", ec2Pool, stacktrace)
+			log.Errorf("Failed to construct new ec2 launcher with pool parameters: %v\n%v\n%s", ec2Pool, err, stacktrace)
 		}
 
 		ec2VirtualMachinePool := ec2vm.NewPool(ec2Manager)

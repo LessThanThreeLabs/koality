@@ -49,22 +49,19 @@ func main() {
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{virtualMachinePool})
 
 	ec2Broker := ec2broker.New()
-	err = poolManager.SubscribeToEvents(resourcesConnection, ec2Broker)
-	if err != nil {
+	if err = poolManager.SubscribeToEvents(resourcesConnection, ec2Broker); err != nil {
 		panic(err)
 	}
 
 	repositoryManager := repositorymanager.New(repositoriesPath, resourcesConnection)
 
 	testRunner := testrunner.New(resourcesConnection, poolManager, repositoryManager)
-	err = testRunner.SubscribeToEvents()
-	if err != nil {
+	if err = testRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 
 	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager)
-	err = debugInstanceRunner.SubscribeToEvents()
-	if err != nil {
+	if err = debugInstanceRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 
@@ -73,6 +70,9 @@ func main() {
 
 	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
 	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
+	if err = gitHubConnection.SubscribeToEvents(); err != nil {
+		panic(err)
+	}
 
 	webserver, err := webserver.New(resourcesConnection, repositoryManager, gitHubConnection, webserverPort)
 	if err != nil {
@@ -82,8 +82,7 @@ func main() {
 	fmt.Println("Koality successfully started!")
 
 	// This will block
-	err = webserver.Start()
-	if err != nil {
+	if err = webserver.Start(); err != nil {
 		panic(err)
 	}
 }
