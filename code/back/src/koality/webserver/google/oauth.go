@@ -168,6 +168,7 @@ func (googleHandler *GoogleHandler) getGoogleUserInformation(oAuthToken string) 
 	requestQueryValues.Set("access_token", oAuthToken)
 	requestUrl := "https://www.googleapis.com/oauth2/v2/userinfo?" + requestQueryValues.Encode()
 	response, err := httpClient.Get(requestUrl)
+	defer response.Body.Close()
 	if err != nil {
 		return nil, err
 	} else if response.StatusCode != http.StatusOK {

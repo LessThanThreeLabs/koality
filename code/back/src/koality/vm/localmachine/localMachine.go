@@ -1,19 +1,15 @@
 package localmachine
 
 import (
-	"io"
 	"io/ioutil"
 	"koality/shell"
 	"koality/vm"
 	"os"
-	"path"
 )
 
 type LocalMachine struct {
-	rootDir         string
-	executableMaker shell.ExecutableMaker
-	copier          *localCopier
-	patcher         vm.Patcher
+	rootDir  string
+	executor shell.Executor
 }
 
 func New() (*LocalMachine, error) {
@@ -25,22 +21,21 @@ func New() (*LocalMachine, error) {
 }
 
 func FromDir(rootDir string) (*LocalMachine, error) {
-	executableMaker := shell.ShellExecutableMaker
-	copier := &localCopier{executableMaker}
-
 	localMachine := LocalMachine{
-		rootDir:         rootDir,
-		executableMaker: executableMaker,
-		copier:          copier,
-		patcher:         vm.NewPatcher(copier, executableMaker),
+		rootDir:  rootDir,
+		executor: shell.ShellExecutor,
 	}
 
-	setupExec, err := executableMaker.MakeExecutable(shell.Advertised(shell.Commandf("mkdir -p %s", rootDir)), nil, nil, nil, nil)
+	setupExecutable := shell.Executable{
+		Command: shell.Commandf("mkdir -p %s", shell.Quote(rootDir)),
+	}
+
+	setupExecution, err := localMachine.Execute(setupExecutable)
 	if err != nil {
 		os.RemoveAll(rootDir)
 		return nil, err
 	}
-	if err = setupExec.Run(); err != nil {
+	if err = setupExecution.Wait(); err != nil {
 		os.RemoveAll(rootDir)
 		return nil, err
 	}
@@ -59,40 +54,20 @@ func (localMachine LocalMachine) GetStartShellCommand() vm.Command {
 	}}
 }
 
-func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {
-	fullCommand := shell.And(
+func (localMachine *LocalMachine) Execute(executable shell.Executable) (shell.Execution, error) {
+	executable.Command = shell.And(
 		shell.Commandf("cd %s", localMachine.rootDir),
-		command,
+		executable.Command,
 	)
-	if environment == nil {
-		environment = make(map[string]string)
-	}
-	environment["HOME"] = localMachine.rootDir
-	return localMachine.executableMaker.MakeExecutable(fullCommand, stdin, stdout, stderr, environment)
-}
 
-func (localMachine *LocalMachine) Patch(patchConfig *vm.PatchConfig) (shell.Executable, error) {
-	return localMachine.patcher.Patch(patchConfig)
-}
-
-func (localMachine *LocalMachine) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
-	destPath := path.Join(localMachine.rootDir, destFilePath)
-	if destFilePath[len(destFilePath)-1] == '/' {
-		destPath += "/"
+	if executable.Environment == nil {
+		executable.Environment = make(map[string]string)
 	}
-	return localMachine.copier.FileCopy(sourceFilePath, destPath)
+	executable.Environment["HOME"] = localMachine.rootDir
+
+	return localMachine.executor.Execute(executable)
 }
 
 func (localMachine *LocalMachine) Terminate() error {
 	return os.RemoveAll(localMachine.rootDir)
-}
-
-type localCopier struct {
-	executableMaker shell.ExecutableMaker
-}
-
-func (copier *localCopier) FileCopy(sourceFilePath, destFilePath string) (shell.Executable, error) {
-	command := shell.Advertised(shell.And(shell.Commandf("mkdir -p %s", path.Dir(destFilePath)),
-		shell.Commandf("cp %s %s", sourceFilePath, destFilePath)))
-	return copier.executableMaker.MakeExecutable(command, nil, nil, nil, nil)
 }

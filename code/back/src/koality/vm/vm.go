@@ -8,9 +8,7 @@ import (
 )
 
 type VirtualMachine interface {
-	shell.ExecutableMaker
-	Patcher
-	shell.FileCopier
+	shell.Executor
 
 	Id() string
 	GetStartShellCommand() Command

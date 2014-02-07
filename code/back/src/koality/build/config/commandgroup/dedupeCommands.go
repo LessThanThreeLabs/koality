@@ -36,8 +36,8 @@ func (command dedupedCommand) Name() string {
 	return fmt.Sprintf("%s #%d", command.command.Name(), command.suffixNumber)
 }
 
-func (command dedupedCommand) ShellCommand() shell.Command {
-	return command.command.ShellCommand()
+func (command dedupedCommand) Executable() shell.Executable {
+	return command.command.Executable()
 }
 
 func (command dedupedCommand) XunitPaths() []string {
