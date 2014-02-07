@@ -82,7 +82,7 @@ type MockMailer struct {
 	sendCount int
 }
 
-func (mockMailer *MockMailer) SendMail(fromAddress string, toAddresses []string, subject, body string) error {
+func (mockMailer *MockMailer) SendMail(fromAddress string, replyTo, toAddresses []string, subject, body string) error {
 	mockMailer.sendCount += 1
 	return nil
 }
