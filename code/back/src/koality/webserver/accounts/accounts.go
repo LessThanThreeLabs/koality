@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"koality/mail"
 	"koality/resources"
 	"koality/webserver/middleware"
 )
@@ -23,10 +24,11 @@ type AccountsHandler struct {
 	sessionStore        sessions.Store
 	sessionName         string
 	passwordHasher      *resources.PasswordHasher
+	mailer              mail.Mailer
 }
 
-func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher) (*AccountsHandler, error) {
-	return &AccountsHandler{resourcesConnection, sessionStore, sessionName, passwordHasher}, nil
+func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, mailer mail.Mailer) (*AccountsHandler, error) {
+	return &AccountsHandler{resourcesConnection, sessionStore, sessionName, passwordHasher, mailer}, nil
 }
 
 func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) {

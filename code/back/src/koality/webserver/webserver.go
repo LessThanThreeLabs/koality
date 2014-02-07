@@ -107,12 +107,12 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	accountsHandler, err := accounts.New(webserver.resourcesConnection, sessionStore, webserver.sessionName, passwordHasher)
+	accountsHandler, err := accounts.New(webserver.resourcesConnection, sessionStore, webserver.sessionName, passwordHasher, webserver.mailer)
 	if err != nil {
 		return nil, err
 	}
 
-	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher)
+	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher, webserver.mailer)
 	if err != nil {
 		return nil, err
 	}
