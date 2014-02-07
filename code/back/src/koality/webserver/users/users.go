@@ -23,6 +23,11 @@ type sanitizedSshKey struct {
 	Created   *time.Time `json:"created,omitempty"`
 }
 
+type setNameRequestData struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
 type UsersHandler struct {
 	resourcesConnection *resources.Connection
 	passwordHasher      *resources.PasswordHasher

@@ -1,6 +1,7 @@
 package users
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -9,10 +10,16 @@ import (
 )
 
 func (usersHandler *UsersHandler) setName(writer http.ResponseWriter, request *http.Request) {
+	setNameRequestData := new(setNameRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(setNameRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
 	userId := context.Get(request, "userId").(uint64)
-	firstName := request.PostFormValue("firstName")
-	lastName := request.PostFormValue("lastName")
-	err := usersHandler.resourcesConnection.Users.Update.SetName(userId, firstName, lastName)
+	err := usersHandler.resourcesConnection.Users.Update.SetName(userId, setNameRequestData.FirstName, setNameRequestData.LastName)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

@@ -93,6 +93,11 @@
 		"/js/src/dashboard/dashboard.js",
 
 		"/js/src/login/login.js",
+
+		"/js/src/account/account.js",
+		"/js/src/account/basic/accountBasic.js",
+		"/js/src/account/password/accountPassword.js",
+		"/js/src/account/sshKeys/accountSshKeys.js",
 		
 		"/js/src/repository/repository.js",
 		"/js/src/repository/repositoryBuilds/repositoryBuilds.js",

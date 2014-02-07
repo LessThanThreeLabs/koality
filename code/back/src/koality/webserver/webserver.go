@@ -63,6 +63,7 @@ func (webserver *Webserver) Start() error {
 		if request.URL.Path == "/" || request.URL.Path == "/dashboard" ||
 			strings.HasPrefix(request.URL.Path, "/repository/") ||
 			strings.HasPrefix(request.URL.Path, "/login") ||
+			strings.HasPrefix(request.URL.Path, "/account") ||
 			strings.HasPrefix(request.URL.Path, "/hooks/") ||
 			strings.HasPrefix(request.URL.Path, "/oAuth/") ||
 			strings.HasPrefix(request.URL.Path, "/wizard") {
