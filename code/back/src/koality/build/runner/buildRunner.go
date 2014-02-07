@@ -219,10 +219,10 @@ func (buildRunner *BuildRunner) RunStagesOnNewMachines(numNodes uint64, buildDat
 		for newMachine := range newMachinesChan {
 			if currentBuild.Status != "passed" && currentBuild.Status != "failed" && currentBuild.Status != "cancelled" {
 				go func() {
+					defer newMachine.Terminate()
+					defer buildData.Pool.Free()
 					buildRunner.RunStages(
 						newMachine, buildData, currentBuild, newStageRunnersChan, finishFunc)
-					buildData.Pool.Free()
-					newMachine.Terminate()
 				}()
 			} else {
 				buildData.Pool.Return(newMachine)
