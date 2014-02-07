@@ -45,10 +45,11 @@ window.Header = ['$scope', '$window', '$location', '$http', 'events', 'notificat
 		requestParams =
 			feedback: $scope.feedback.message
 			userAgent: navigator.userAgent
-			screen: window.screen
+			windowWidth: $(window).width()
+			windowHeight: $(window).height()
 
 		$scope.feedback.makingRequest = true
-		request = $http.post('/app/account/leaveFeedback', requestParams)
+		request = $http.post('/app/feedback/', requestParams)
 		request.success (data, status, headers, config) ->
 			$scope.feedback.makingRequest = false
 			$scope.feedback.message = ''

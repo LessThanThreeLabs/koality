@@ -11,6 +11,7 @@ import (
 	"koality/resources"
 	"koality/webserver/accounts"
 	"koality/webserver/builds"
+	"koality/webserver/feedback"
 	"koality/webserver/github"
 	"koality/webserver/google"
 	"koality/webserver/middleware"
@@ -112,7 +113,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher, webserver.mailer)
+	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher)
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +148,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	feedbackHandler, err := feedback.New(webserver.resourcesConnection, webserver.mailer)
+	if err != nil {
+		return nil, err
+	}
+
 	wireRootSubroutes := func() {
 		templatesHandler.WireRootSubroutes(router)
 	}
@@ -173,6 +179,9 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 		settingsSubrouter := appSubrouter.PathPrefix("/settings").Subrouter()
 		settingsHandler.WireAppSubroutes(settingsSubrouter)
+
+		feedbackSubrouter := appSubrouter.PathPrefix("/feedback").Subrouter()
+		feedbackHandler.WireAppSubroutes(feedbackSubrouter)
 	}
 
 	wireApiSubroutes := func() {

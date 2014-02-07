@@ -2,7 +2,6 @@ package users
 
 import (
 	"github.com/gorilla/mux"
-	"koality/mail"
 	"koality/resources"
 	"koality/webserver/middleware"
 	"time"
@@ -27,11 +26,10 @@ type sanitizedSshKey struct {
 type UsersHandler struct {
 	resourcesConnection *resources.Connection
 	passwordHasher      *resources.PasswordHasher
-	mailer              mail.Mailer
 }
 
-func New(resourcesConnection *resources.Connection, passwordHasher *resources.PasswordHasher, mailer mail.Mailer) (*UsersHandler, error) {
-	return &UsersHandler{resourcesConnection, passwordHasher, mailer}, nil
+func New(resourcesConnection *resources.Connection, passwordHasher *resources.PasswordHasher) (*UsersHandler, error) {
+	return &UsersHandler{resourcesConnection, passwordHasher}, nil
 }
 
 func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {

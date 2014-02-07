@@ -17,6 +17,7 @@ func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
 
 func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, request *http.Request) {
 	loginRequestData := new(LoginRequestData)
+	defer request.Body.Close()
 	if err := json.NewDecoder(request.Body).Decode(loginRequestData); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
