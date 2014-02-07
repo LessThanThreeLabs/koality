@@ -18,6 +18,7 @@ type sanitizedUser struct {
 }
 
 type sanitizedSshKey struct {
+	Id        uint64     `json:"id"`
 	Name      string     `json:"name"`
 	PublicKey string     `json:"publicKey"`
 	Created   *time.Time `json:"created,omitempty"`
@@ -31,6 +32,15 @@ type setNameRequestData struct {
 type setPasswordRequestData struct {
 	OldPassword string `json:"oldPassword"`
 	NewPassword string `json:"newPassword"`
+}
+
+type addKeyRequestData struct {
+	Name      string `json:"name"`
+	PublicKey string `json:"publicKey"`
+}
+
+type removeKeyRequestData struct {
+	Id uint64 `json:"id"`
 }
 
 type UsersHandler struct {
@@ -95,6 +105,7 @@ func getSanitizedUser(user *resources.User) *sanitizedUser {
 
 func getSanitizedSshKey(sshKey *resources.SshKey) *sanitizedSshKey {
 	return &sanitizedSshKey{
+		Id:        sshKey.Id,
 		Name:      sshKey.Name,
 		PublicKey: sshKey.PublicKey,
 		Created:   sshKey.Created,

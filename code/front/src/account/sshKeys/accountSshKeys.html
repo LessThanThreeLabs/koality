@@ -16,11 +16,11 @@
 					<tr>
 						<td class="addKeyAliasColumn">
 							<label>Alias<span class="sublabel">Only letters and numbers</span></label>
-							<input type="text" ng-model="addKey.alias" name="alias" ng-maxlength="64" required>
+							<input type="text" ng-model="addKey.name" name="name" ng-maxlength="64" required>
 						</td>
 						<td class="addKeyValueColumn">
 							<label>SSH Key</label>
-							<textarea type="text" ng-model="addKey.key" name="key" ng-maxlength="8192" required></textarea>
+							<textarea type="text" ng-model="addKey.publicKey" name="publicKey" ng-maxlength="8192" required></textarea>
 						</td>
 						<td class="addKeySubmitColumn">
 							<busy-button busy="addKey.makingRequest" click="submitKey()" disabled="addKeyForm.$invalid">Add Key</busy-button>
@@ -54,8 +54,8 @@
 				</tr>
 
 				<tr ng-repeat="key in keys | orderBy:orderByPredicate:orderByReverse">
-					<td class="aliasColumn" text-selectable>{{key.alias}}</td>
-					<td class="createdColumn" text-selectable>{{key.timestamp | date:'MM/dd/yyyy'}}</td>
+					<td class="aliasColumn" text-selectable>{{key.name}}</td>
+					<td class="createdColumn" text-selectable>{{key.created | date:'MM/dd/yyyy'}}</td>
 					<td class="removeColumn"><a class="red" ng-click="removeKey(key)">Delete</a></td>
 				</tr>
 			</table>

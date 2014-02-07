@@ -110,31 +110,36 @@ func (usersHandler *UsersHandler) setAdmin(writer http.ResponseWriter, request *
 }
 
 func (usersHandler *UsersHandler) addKey(writer http.ResponseWriter, request *http.Request) {
-	userId := context.Get(request, "userId").(uint64)
-	name := request.PostFormValue("name")
-	publicKey := request.PostFormValue("publicKey")
-	keyId, err := usersHandler.resourcesConnection.Users.Update.AddKey(userId, name, publicKey)
-	if err != nil {
+	addKeyRequestData := new(addKeyRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(addKeyRequestData); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "{id:%d}", keyId)
+	userId := context.Get(request, "userId").(uint64)
+	keyId, err := usersHandler.resourcesConnection.Users.Update.AddKey(userId, addKeyRequestData.Name, addKeyRequestData.PublicKey)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, keyId)
 }
 
 func (usersHandler *UsersHandler) removeKey(writer http.ResponseWriter, request *http.Request) {
-	userId := context.Get(request, "userId").(uint64)
-	keyIdString := request.PostFormValue("id")
-	keyId, err := strconv.ParseUint(keyIdString, 10, 64)
-	if err != nil {
+	removeKeyRequestData := new(removeKeyRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(removeKeyRequestData); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse id: %v", err)
+		fmt.Fprint(writer, err)
 		return
 	}
 
-	err = usersHandler.resourcesConnection.Users.Update.RemoveKey(userId, keyId)
+	userId := context.Get(request, "userId").(uint64)
+	fmt.Println(userId, removeKeyRequestData.Id)
+	err := usersHandler.resourcesConnection.Users.Update.RemoveKey(userId, removeKeyRequestData.Id)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

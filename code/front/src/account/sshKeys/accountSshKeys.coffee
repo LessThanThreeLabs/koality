@@ -1,23 +1,26 @@
 'use strict'
 
-window.AccountSshKeys = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'events', 'initialState', 'notification', ($scope, $location, $routeParams, $http, $timeout, events, initialState, notification) ->
-	# $scope.orderByPredicate = 'alias'
-	# $scope.orderByReverse = false
+window.AccountSshKeys = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'events', 'notification', ($scope, $location, $routeParams, $http, $timeout, events, notification) ->
+	$scope.orderByPredicate = 'alias'
+	$scope.orderByReverse = false
 
-	# $scope.currentlyOpenDrawer = null
-	# $scope.waitingOnGitHubImportRequest = false
+	$scope.currentlyOpenDrawer = null
+	$scope.waitingOnGitHubImportRequest = false
 
-	# $scope.addKey =
-	# 	makingRequest: false
-	# 	drawerOpen: false
+	$scope.addKey =
+		makingRequest: false
+		drawerOpen: false
 
-	# if $routeParams.importGitHubKeys
-	# 	$location.search 'importGitHubKeys', null
-	# 	$timeout (() -> $scope.importFromGitHub()), 100
+	if $routeParams.importGitHubKeys
+		$location.search 'importGitHubKeys', null
+		$timeout (() -> $scope.importFromGitHub()), 100
 
-	# getKeys = () ->
-	# 	rpc 'users', 'read', 'getSshKeys', null, (error, keys) ->
-	# 		$scope.keys = keys
+	getKeys = () ->
+		request = $http.get "/app/users/keys"
+		request.success (data, status, headers, config) =>
+			$scope.keys = data
+		request.error (data, status, headers, config) =>
+			notification.error data
 
 	# handleAddedKey = (data) ->
 	# 	return if data.resourceId isnt initialState.user.id
@@ -33,32 +36,38 @@ window.AccountSshKeys = ['$scope', '$location', '$routeParams', '$http', '$timeo
 	# $scope.$on '$destroy', addKeyEvents.unsubscribe
 	# $scope.$on '$destroy', removeKeyEvents.unsubscribe
 
-	# getKeys()
+	getKeys()
 
-	# $scope.toggleDrawer = (drawerName) ->
-	# 	if $scope.currentlyOpenDrawer is drawerName
-	# 		$scope.currentlyOpenDrawer = null
-	# 	else
-	# 		$scope.currentlyOpenDrawer = drawerName
+	$scope.toggleDrawer = (drawerName) ->
+		if $scope.currentlyOpenDrawer is drawerName
+			$scope.currentlyOpenDrawer = null
+		else
+			$scope.currentlyOpenDrawer = drawerName
 
-	# $scope.removeKey = (key) ->
-	# 	rpc 'users', 'update', 'removeSshKey', id: key.id
+	$scope.removeKey = (key) ->
+		request = $http.post "/app/users/removeKey", key
+		request.success (data, status, headers, config) =>
+			notification.success 'SSH Key has been removed'
+		request.error (data, status, headers, config) =>
+			notification.error data
 
-	# $scope.submitKey = () ->
-	# 	return if $scope.addKey.makingRequest
-	# 	$scope.addKey.makingRequest = true
+	$scope.submitKey = () ->
+		return if $scope.addKey.makingRequest
+		$scope.addKey.makingRequest = true
 
-	# 	rpc 'users', 'update', 'addSshKey', $scope.addKey, (error) ->
-	# 		$scope.addKey.makingRequest = false
-	# 		if error? then notification.error error
-	# 		else 
-	# 			notification.success 'Added SSH key: ' + $scope.addKey.alias
-	# 			$scope.clearAddKey()
+		request = $http.post "/app/users/addKey", $scope.addKey
+		request.success (data, status, headers, config) =>
+			$scope.addKey.makingRequest = false
+			notification.success 'Added SSH key: ' + $scope.addKey.name
+			$scope.clearAddKey()
+		request.error (data, status, headers, config) =>
+			$scope.addKey.makingRequest = false
+			notification.error data
 
-	# $scope.clearAddKey = () ->
-	# 	$scope.addKey.alias = ''
-	# 	$scope.addKey.key = ''
-	# 	$scope.currentlyOpenDrawer = null
+	$scope.clearAddKey = () ->
+		$scope.addKey.name = ''
+		$scope.addKey.publicKey = ''
+		$scope.currentlyOpenDrawer = null
 
 	# $scope.importFromGitHub = () ->
 	# 	return if $scope.waitingOnGitHubImportRequest
