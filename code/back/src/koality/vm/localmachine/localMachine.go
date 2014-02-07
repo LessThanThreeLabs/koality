@@ -53,7 +53,10 @@ func (localMachine LocalMachine) Id() string {
 }
 
 func (localMachine LocalMachine) GetStartShellCommand() vm.Command {
-	return vm.Command{Argv: []string{"/bin/bash"}}
+	return vm.Command{Argv: []string{
+		"/bin/bash",
+		"/bin/bash -c " + shell.Quote("cd "+localMachine.rootDir+" && /bin/bash"),
+	}}
 }
 
 func (localMachine *LocalMachine) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {

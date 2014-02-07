@@ -8,6 +8,7 @@ import (
 	"koality/github"
 	"koality/internalapi"
 	"koality/mail"
+	"koality/notify"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/resources/database"
@@ -51,7 +52,7 @@ func main() {
 		panic(err)
 	}
 
-	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, mailer)
+	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, notify.New(resourcesConnection, mailer))
 	if err := debugInstanceRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}

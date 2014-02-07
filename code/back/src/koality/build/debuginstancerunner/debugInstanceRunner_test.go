@@ -4,6 +4,7 @@ import (
 	"github.com/LessThanThreeLabs/gocheck"
 	"github.com/dchest/goyaml"
 	"io/ioutil"
+	"koality/build/runner"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/resources/database"
@@ -28,7 +29,7 @@ type DebugInstanceRunnerSuite struct {
 	debugInstance       *resources.DebugInstance
 	debugInstanceRunner *DebugInstanceRunner
 	repositoryManager   repositorymanager.RepositoryManager
-	mailer              MockMailer
+	notifier            MockNotifier
 	tmpDir              string
 	repoPath            string
 	instanceId          string
@@ -41,6 +42,7 @@ var (
 			"run on":  "split",
 			"fail on": "any",
 			"scripts": []interface{}{
+				"touch foofile",
 				"true",
 			},
 		},
@@ -50,6 +52,7 @@ var (
 			"run on":  "split",
 			"fail on": "any",
 			"scripts": []interface{}{
+				"touch foofile",
 				"foo",
 			},
 		},
@@ -59,6 +62,7 @@ var (
 			"run on":  "split",
 			"fail on": "any",
 			"scripts": []interface{}{
+				"touch foofile",
 				"pwd",
 			},
 		},
@@ -69,6 +73,7 @@ var (
 				"run on":  "single",
 				"fail on": "any",
 				"scripts": []interface{}{
+					"touch foofile",
 					"echo $KOALITY_STATUS",
 					"printenv",
 					"false",
@@ -78,20 +83,19 @@ var (
 	}
 )
 
-type MockMailer struct {
+type MockNotifier struct {
 	sendCount int
+	check     *gocheck.C
 }
 
-func (mockMailer *MockMailer) SendMail(fromAddress string, replyTo, toAddresses []string, subject, body string) error {
-	mockMailer.sendCount += 1
-	return nil
-}
+func (mockNotifier *MockNotifier) Notify(vm vm.VirtualMachine, build *resources.Build, buildData *runner.BuildData) error {
+	mockNotifier.sendCount += 1
 
-func (mockMailer MockMailer) SubscribeToEvents(resourcesConnection *resources.Connection) error {
-	return nil
-}
-
-func (mockMailer MockMailer) UnsubscribeFromEvents(resourcesConnection *resources.Connection) error {
+	shellCommand := vm.GetStartShellCommand()
+	myShellCommand := exec.Command("/bin/bash", "-c", "echo 'ls repositoryName/foofile' | "+shellCommand.Argv[1])
+	shellOutput, err := myShellCommand.CombinedOutput()
+	mockNotifier.check.Assert(string(shellOutput), gocheck.Equals, "repositoryName/foofile\n")
+	mockNotifier.check.Assert(err, gocheck.IsNil)
 	return nil
 }
 
@@ -108,8 +112,6 @@ func (suite *DebugInstanceRunnerSuite) SetUpTest(check *gocheck.C) {
 	suite.repoPath = path.Join(suite.tmpDir, "testRepo")
 	err = exec.Command("git", "init", suite.repoPath).Run()
 	check.Assert(err, gocheck.IsNil)
-
-	suite.mailer = MockMailer{}
 
 	domainName := "koality.yourcompany.com"
 	domainNameSetting, err := suite.resourcesConnection.Settings.Update.SetDomainName(domainName)
@@ -173,8 +175,9 @@ func (suite *DebugInstanceRunnerSuite) runDebugInstanceWithYaml(check *gocheck.C
 	vmPool := vm.NewPool(1, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	debugInstanceRunner := New(suite.resourcesConnection, poolManager, suite.repositoryManager, &suite.mailer)
-	expires := time.Now() // don't run the debug instance any longer after running the stages
+	suite.notifier = MockNotifier{check: check}
+	debugInstanceRunner := New(suite.resourcesConnection, poolManager, suite.repositoryManager, &suite.notifier)
+	expires := time.Now().Add(4 * time.Second) // run the debug instance for like 2 seconds
 	suite.debugInstance, err = suite.resourcesConnection.DebugInstances.Create.Create(
 		vmPool.Id(), suite.instanceId, &expires, &resources.CoreBuildInformation{
 			suite.repository.Id, sha, "1234567890123456789012345678901234567890", "headMessage",
@@ -252,7 +255,7 @@ func (suite *DebugInstanceRunnerSuite) TestDebugInstanceSendsEmail(check *gochec
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(success, gocheck.Equals, false)
 	time.Sleep(50 * time.Millisecond)
-	check.Assert(suite.mailer.sendCount, gocheck.Equals, 1)
+	check.Assert(suite.notifier.sendCount, gocheck.Equals, 1)
 }
 
 func (suite *DebugInstanceRunnerSuite) TestDebugInstanceDoesntRunFinalStages(check *gocheck.C) {
@@ -268,5 +271,5 @@ func (suite *DebugInstanceRunnerSuite) TestDebugInstanceDoesntRunFinalStages(che
 
 	stages, err := suite.resourcesConnection.Stages.Read.GetAll(suite.debugInstance.BuildId)
 	check.Assert(err, gocheck.IsNil)
-	check.Assert(stages, gocheck.HasLen, 2) // git, pwd
+	check.Assert(stages, gocheck.HasLen, 3) // git, pwd, touch foofile
 }

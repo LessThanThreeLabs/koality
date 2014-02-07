@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"koality/build/runner"
 	"koality/build/stagerunner"
-	"koality/mail"
+	"koality/notify"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/vm"
 	"koality/vm/poolmanager"
-	"os/user"
 	"time"
 )
 
@@ -18,16 +17,16 @@ type DebugInstanceRunner struct {
 	poolManager                        *poolmanager.PoolManager
 	repositoryManager                  repositorymanager.RepositoryManager
 	debugInstanceCreatedSubscriptionId resources.SubscriptionId
-	mailer                             mail.Mailer
+	notifier                           notify.Notifier
 	buildRunner                        *runner.BuildRunner
 }
 
-func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer) *DebugInstanceRunner {
+func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager, notifier notify.Notifier) *DebugInstanceRunner {
 	return &DebugInstanceRunner{
 		resourcesConnection: resourcesConnection,
 		poolManager:         poolManager,
 		repositoryManager:   repositoryManager,
-		mailer:              mailer,
+		notifier:            notifier,
 		buildRunner:         runner.New(resourcesConnection, poolManager, repositoryManager),
 	}
 }
@@ -77,26 +76,12 @@ func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *
 		return false, err
 	}
 
-	domainName, err := debugInstanceRunner.resourcesConnection.Settings.Read.GetDomainName()
-	if err != nil {
-		return false, err
-	}
-
-	currentUser, err := user.Current()
-	if err != nil {
-		// TODO(dhuang) definitely need error handler here or in SubscribeToEvents
-		return false, err
-	}
-
 	finishFunc := func(vm vm.VirtualMachine) {
-		sshString := fmt.Sprintf("ssh %s@%s 'ssh %d %s'", currentUser.Username, domainName, buildData.BuildConfig.Params.PoolId, vm.Id())
-		emailFrom := fmt.Sprintf("koality@%s", domainName)
-		err = debugInstanceRunner.mailer.SendMail(emailFrom, []string{"noreply@koalitycode.com"}, []string{build.EmailToNotify}, sshString, sshString)
+		err := debugInstanceRunner.notifier.Notify(vm, build, buildData)
 		if err != nil {
 			// TODO(dhuang) what do...
-		} else {
-			time.Sleep(debugInstance.Expires.Sub(time.Now()))
 		}
+		time.Sleep(debugInstance.Expires.Sub(time.Now()))
 	}
 
 	newStageRunnersChan := make(chan *stagerunner.StageRunner, numNodes)
