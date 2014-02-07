@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	githubconnection "koality/github"
+	"koality/mail"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/webserver/accounts"
@@ -26,13 +27,14 @@ type Webserver struct {
 	resourcesConnection *resources.Connection
 	repositoryManager   repositorymanager.RepositoryManager
 	gitHubConnection    githubconnection.GitHubConnection
+	mailer              mail.Mailer
 	sessionName         string
 	address             string
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection githubconnection.GitHubConnection, port int) (*Webserver, error) {
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection githubconnection.GitHubConnection, mailer mail.Mailer, port int) (*Webserver, error) {
 	address := fmt.Sprintf(":%d", port)
-	return &Webserver{resourcesConnection, repositoryManager, gitHubConnection, "koality", address}, nil
+	return &Webserver{resourcesConnection, repositoryManager, gitHubConnection, mailer, "koality", address}, nil
 }
 
 func (webserver *Webserver) Start() error {

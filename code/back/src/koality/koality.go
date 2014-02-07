@@ -59,7 +59,7 @@ func main() {
 	internalapi.Start(resourcesConnection, poolManager, koalityRoot, internalapi.RpcSocket)
 
 	fmt.Println("Koality successfully started!")
-	startWebserverAndBlock(resourcesConnection, repositoryManager)
+	startWebserverAndBlock(resourcesConnection, repositoryManager, mailer)
 }
 
 func getResourcesConnection() *resources.Connection {
@@ -111,14 +111,14 @@ func getVirtualMachinePools(resourcesConnection *resources.Connection, ec2Broker
 	}
 }
 
-func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) {
+func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer) {
 	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
 	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
 	if err := gitHubConnection.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 
-	webserver, err := webserver.New(resourcesConnection, repositoryManager, gitHubConnection, webserverPort)
+	webserver, err := webserver.New(resourcesConnection, repositoryManager, gitHubConnection, mailer, webserverPort)
 	if err != nil {
 		panic(err)
 	}
