@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 )
 
 type BadAuthenticationError struct {
@@ -43,7 +44,7 @@ func (googleHandler *GoogleHandler) handleOAuthToken(writer http.ResponseWriter,
 
 func (googleHandler *GoogleHandler) processLoginAction(oAuthToken string, writer http.ResponseWriter, request *http.Request) {
 	user, err := googleHandler.handleLogin(oAuthToken)
-	if _, ok := err.(BadAuthenticationError); err != nil && ok {
+	if _, ok := err.(BadAuthenticationError); ok {
 		queryValues := url.Values{}
 		queryValues.Set("googleLoginError", err.Error())
 		http.Redirect(writer, request, "/login?"+queryValues.Encode(), http.StatusSeeOther)
@@ -58,9 +59,10 @@ func (googleHandler *GoogleHandler) processLoginAction(oAuthToken string, writer
 
 func (googleHandler *GoogleHandler) processCreateAccountAction(oAuthToken string, writer http.ResponseWriter, request *http.Request) {
 	user, err := googleHandler.handleCreateAccount(oAuthToken)
-	if _, ok := err.(BadAuthenticationError); err != nil && ok {
+	if _, ok := err.(BadAuthenticationError); ok {
 		queryValues := url.Values{}
 		queryValues.Set("googleCreateAccountError", err.Error())
+		fmt.Println(queryValues.Encode())
 		http.Redirect(writer, request, "/create/account?"+queryValues.Encode(), http.StatusSeeOther)
 	} else if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -73,6 +75,15 @@ func (googleHandler *GoogleHandler) processCreateAccountAction(oAuthToken string
 }
 
 func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.User, error) {
+	authenticationSettings, err := googleHandler.resourcesConnection.Settings.Read.GetAuthenticationSettings()
+	if err != nil {
+		return nil, err
+	}
+
+	if !authenticationSettings.GoogleLoginAllowed {
+		return nil, BadAuthenticationError{"The administrator has disabled Google Account login"}
+	}
+
 	userInformation, err := googleHandler.getGoogleUserInformation(oAuthToken)
 	if err != nil {
 		return nil, err
@@ -85,7 +96,7 @@ func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.U
 	}
 
 	user, err := googleHandler.resourcesConnection.Users.Read.GetByEmail(userInformation.Email)
-	if _, ok := err.(resources.NoSuchUserError); err != nil && ok {
+	if _, ok := err.(resources.NoSuchUserError); ok {
 		return nil, BadAuthenticationError{fmt.Sprintf("No user found with email address %s", userInformation.Email)}
 	} else if err != nil {
 		return nil, err
@@ -94,6 +105,15 @@ func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.U
 }
 
 func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*resources.User, error) {
+	authenticationSettings, err := googleHandler.resourcesConnection.Settings.Read.GetAuthenticationSettings()
+	if err != nil {
+		return nil, err
+	}
+
+	if !authenticationSettings.GoogleLoginAllowed {
+		return nil, BadAuthenticationError{"The administrator has disabled Google Account login"}
+	}
+
 	userInformation, err := googleHandler.getGoogleUserInformation(oAuthToken)
 	if err != nil {
 		return nil, err
@@ -109,6 +129,19 @@ func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*res
 		return nil, BadAuthenticationError{"No last name provided"}
 	}
 
+	emailAllowed := len(authenticationSettings.AllowedDomains) == 0
+
+	for _, allowedDomain := range authenticationSettings.AllowedDomains {
+		if strings.HasSuffix(userInformation.Email, "@"+allowedDomain) {
+			emailAllowed = true
+			break
+		}
+	}
+
+	if !emailAllowed {
+		return nil, BadAuthenticationError{"The email address you provided has not been authorized by the administrator"}
+	}
+
 	passwordHash := make([]byte, 32)
 	passwordSalt := make([]byte, 16)
 
@@ -121,7 +154,7 @@ func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*res
 	}
 
 	user, err := googleHandler.resourcesConnection.Users.Create.Create(userInformation.Email, userInformation.GivenName, userInformation.FamilyName, passwordHash, passwordSalt, false)
-	if _, ok := err.(resources.UserAlreadyExistsError); err != nil && ok {
+	if _, ok := err.(resources.UserAlreadyExistsError); ok {
 		return nil, BadAuthenticationError{fmt.Sprintf("User already exists with email address %s", userInformation.Email)}
 	} else if err != nil {
 		return nil, err

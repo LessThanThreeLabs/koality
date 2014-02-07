@@ -89,9 +89,9 @@ func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *
 	}
 
 	finishFunc := func(vm vm.VirtualMachine) {
-		sshString := fmt.Sprintf("ssh %s@%s 'ssh %lu %s'", currentUser.Username, domainName, buildData.BuildConfig.Params.PoolId, vm.Id())
-		emailFrom := fmt.Sprintf("%s@%s", currentUser.Username, domainName)
-		err = debugInstanceRunner.mailer.SendMail(emailFrom, []string{build.EmailToNotify}, sshString, sshString)
+		sshString := fmt.Sprintf("ssh %s@%s 'ssh %d %s'", currentUser.Username, domainName, buildData.BuildConfig.Params.PoolId, vm.Id())
+		emailFrom := fmt.Sprintf("koality@%s", domainName)
+		err = debugInstanceRunner.mailer.SendMail(emailFrom, []string{"noreply@koalitycode.com"}, []string{build.EmailToNotify}, sshString, sshString)
 		if err != nil {
 			// TODO(dhuang) what do...
 		} else {
