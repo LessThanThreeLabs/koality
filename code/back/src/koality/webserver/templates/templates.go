@@ -25,11 +25,15 @@ type indexTemplateValues struct {
 	JsFiles   []string
 }
 
+type wizardTemplateValues struct {
+}
+
 type TemplatesHandler struct {
 	resourcesConnection *resources.Connection
 	sessionStore        sessions.Store
 	sessionName         string
 	indexTemplate       *template.Template
+	wizardTemplate      *template.Template
 	cssFiles            []string
 	jsFiles             []string
 }
@@ -44,15 +48,29 @@ func New(resourcesConnection *resources.Connection, sessionStore sessions.Store,
 		return nil, err
 	}
 
+	wizardTemplate, err := getWizardTemplate()
+	if err != nil {
+		return nil, err
+	}
+
 	cssFiles, jsFiles, err := getCssAndJsFiles()
 	if err != nil {
 		panic(err)
 	}
-	return &TemplatesHandler{resourcesConnection, sessionStore, sessionName, indexTemplate, cssFiles, jsFiles}, nil
+	return &TemplatesHandler{resourcesConnection, sessionStore, sessionName, indexTemplate, wizardTemplate, cssFiles, jsFiles}, nil
 }
 
 func getIndexTemplate() (*template.Template, error) {
 	relativePath := path.Join("code", "front", "templates", "index.html")
+	filePath, err := pathtranslator.TranslatePathAndCheckExists(relativePath)
+	if err != nil {
+		return nil, err
+	}
+	return template.ParseFiles(filePath)
+}
+
+func getWizardTemplate() (*template.Template, error) {
+	relativePath := path.Join("code", "front", "templates", "wizard.html")
 	filePath, err := pathtranslator.TranslatePathAndCheckExists(relativePath)
 	if err != nil {
 		return nil, err
@@ -80,13 +98,15 @@ func getCssAndJsFiles() ([]string, []string, error) {
 	return cssAndJsFiles["css"], cssAndJsFiles["js"], nil
 }
 
-func (templatesHandler *TemplatesHandler) WireRootSubroutes(subrouter *mux.Router) {
+func (templatesHandler *TemplatesHandler) WireTemplateSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/", templatesHandler.getRoot).Methods("GET")
-
 	for _, pathToHandle := range pathsToHandle {
 		subrouter.HandleFunc(fmt.Sprintf("/%s", pathToHandle), templatesHandler.getRoot).Methods("GET")
 		subrouter.HandleFunc(fmt.Sprintf("/%s.html", pathToHandle), templatesHandler.getRoot).Methods("GET")
 	}
+
+	subrouter.HandleFunc("/wizard", templatesHandler.getWizard).Methods("GET")
+	subrouter.HandleFunc("/wizard.html", templatesHandler.getWizard).Methods("GET")
 }
 
 func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, request *http.Request) {
@@ -107,6 +127,11 @@ func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, re
 
 	templateValues := indexTemplateValues{user, csrfToken, templatesHandler.cssFiles, templatesHandler.jsFiles}
 	templatesHandler.indexTemplate.Execute(writer, templateValues)
+}
+
+func (templatesHandler *TemplatesHandler) getWizard(writer http.ResponseWriter, request *http.Request) {
+	templateValues := wizardTemplateValues{}
+	templatesHandler.wizardTemplate.Execute(writer, templateValues)
 }
 
 func (templatesHandler *TemplatesHandler) getCsrfFromSession(writer http.ResponseWriter, request *http.Request) (string, error) {

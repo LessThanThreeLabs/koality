@@ -64,7 +64,8 @@ func (webserver *Webserver) Start() error {
 			strings.HasPrefix(request.URL.Path, "/repository/") ||
 			strings.HasPrefix(request.URL.Path, "/login") ||
 			strings.HasPrefix(request.URL.Path, "/hooks/") ||
-			strings.HasPrefix(request.URL.Path, "/oAuth/") {
+			strings.HasPrefix(request.URL.Path, "/oAuth/") ||
+			strings.HasPrefix(request.URL.Path, "/wizard") {
 			router.ServeHTTP(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/app/") {
 			hasCsrfTokenWrapper(writer, request)
@@ -153,8 +154,8 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	wireRootSubroutes := func() {
-		templatesHandler.WireRootSubroutes(router)
+	wireTemplateSubroutes := func() {
+		templatesHandler.WireTemplateSubroutes(router)
 	}
 
 	wireAppSubroutes := func() {
@@ -223,7 +224,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		googleHandler.WireOAuthSubroutes(googleSubrouter)
 	}
 
-	wireRootSubroutes()
+	wireTemplateSubroutes()
 	wireAppSubroutes()
 	wireApiSubroutes()
 	wireHooksSubroutes()
