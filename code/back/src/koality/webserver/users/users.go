@@ -28,6 +28,11 @@ type setNameRequestData struct {
 	LastName  string `json:"lastName"`
 }
 
+type setPasswordRequestData struct {
+	OldPassword string `json:"oldPassword"`
+	NewPassword string `json:"newPassword"`
+}
+
 type UsersHandler struct {
 	resourcesConnection *resources.Connection
 	passwordHasher      *resources.PasswordHasher

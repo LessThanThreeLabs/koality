@@ -1,6 +1,7 @@
 package users
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/context"
@@ -29,9 +30,36 @@ func (usersHandler *UsersHandler) setName(writer http.ResponseWriter, request *h
 }
 
 func (usersHandler *UsersHandler) setPassword(writer http.ResponseWriter, request *http.Request) {
+	setPasswordRequestData := new(setPasswordRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(setPasswordRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
 	userId := context.Get(request, "userId").(uint64)
-	password := request.PostFormValue("password")
-	passwordHash, passwordSalt, err := usersHandler.passwordHasher.GenerateHashAndSalt(password)
+	user, err := usersHandler.resourcesConnection.Users.Read.Get(userId)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	passwordHashToCheck, err := usersHandler.passwordHasher.ComputeHash(setPasswordRequestData.OldPassword, user.PasswordSalt)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	if bytes.Compare(user.PasswordHash, passwordHashToCheck) != 0 {
+		writer.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(writer, "Forbidden request, invalid old password")
+		return
+	}
+
+	passwordHash, passwordSalt, err := usersHandler.passwordHasher.GenerateHashAndSalt(setPasswordRequestData.NewPassword)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

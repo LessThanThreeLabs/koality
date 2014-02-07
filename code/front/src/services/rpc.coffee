@@ -55,7 +55,7 @@ angular.module('koality.service.rpc', []).
 					# repositoryIds = @_currentQuery.repositoryIds.join ','
 					offset = @_currentQuery.startIndex
 					results = @_currentQuery.numToRetrieve
-					request = $http.get("/app/builds/tail?repositoryId=#{repositoryId}&offset=#{offset}&results=#{results}")
+					request = $http.get "/app/builds/tail?repositoryId=#{repositoryId}&offset=#{offset}&results=#{results}"
 					request.success (data, status, headers, config) =>
 						@_noMoreBuildsToRequest = data.length < @_numBuildsToRequest
 						@_currentCallback null,
@@ -138,7 +138,7 @@ angular.module('koality.service.rpc', []).
 					stageRunId = @_currentQuery.id
 					offset = @_currentQuery.startIndex
 					results = @_currentQuery.numToRetrieve
-					request = $http.get("/app/stageRuns/#{stageRunId}/lines?offset=#{offset}&results=#{results}&from=tail")
+					request = $http.get "/app/stageRuns/#{stageRunId}/lines?offset=#{offset}&results=#{results}&from=tail"
 					request.success (data, status, headers, config) =>
 						@_noMoreLinesToRequest = Object.keys(data).length < @_numLinesToRequest
 						@_currentCallback null,

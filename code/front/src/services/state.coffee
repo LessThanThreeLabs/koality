@@ -25,7 +25,7 @@ angular.module('koality.service.state', []).
 			retrieveInformation: () =>
 				assert.ok @_id
 
-				request = $http.get("/app/repositories/#{@_id}")
+				request = $http.get "/app/repositories/#{@_id}"
 				request.success (data, status, headers, config) =>
 					@_information = data
 				request.error (data, status, headers, config) =>
@@ -95,7 +95,7 @@ angular.module('koality.service.state', []).
 				assert.ok @_repositoryId?
 				assert.ok @_id?
 
-				request = $http.get("/app/builds/#{@_id}")
+				request = $http.get "/app/builds/#{@_id}"
 				request.success (data, status, headers, config) =>
 					@_information = data
 					# @_listenToEvents()
@@ -176,7 +176,7 @@ angular.module('koality.service.state', []).
 				assert.ok @_buildId?
 				assert.ok @_id?
 
-				request = $http.get("/app/stages/#{@_id}")
+				request = $http.get "/app/stages/#{@_id}"
 				request.success (data, status, headers, config) =>
 					@_information = data
 					# @_listenToEvents()
@@ -271,7 +271,7 @@ angular.module('koality.service.state', []).
 				assert.ok @_stageId?
 				assert.ok @_id?
 
-				request = $http.get("/app/stageRuns/#{@_id}")
+				request = $http.get "/app/stageRuns/#{@_id}"
 				request.success (data, status, headers, config) =>
 					@_information = data
 					# @_listenToEvents()

@@ -11,7 +11,7 @@ window.AccountBasic = ['$scope', '$window', '$http', 'events', 'notification', (
 		infoChanged: false
 
 	getUser = () ->
-		request = $http.get("/app/users/" + $window.userId)
+		request = $http.get "/app/users/" + $window.userId
 		request.success (data, status, headers, config) =>
 			processUserInformation data
 		request.error (data, status, headers, config) =>
