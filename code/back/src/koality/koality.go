@@ -26,33 +26,68 @@ const (
 	koalityRoot   = "/etc/koality"
 )
 
+// TODO(bbland): remove this
 var useEc2Flag = flag.Bool("ec2", false, "Use EC2 pool instead of the fake vm pool")
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 
+	resourcesConnection := getResourcesConnection()
+
+	mailer := getMailer(resourcesConnection)
+
+	ec2Broker := ec2broker.New()
+
+	poolManager := poolmanager.New(getVirtualMachinePools(resourcesConnection, ec2Broker))
+	if err := poolManager.SubscribeToEvents(resourcesConnection, ec2Broker); err != nil {
+		panic(err)
+	}
+
+	repositoryManager := repositorymanager.New(koalityRoot, resourcesConnection)
+
+	testRunner := testrunner.New(resourcesConnection, poolManager, repositoryManager)
+	if err := testRunner.SubscribeToEvents(); err != nil {
+		panic(err)
+	}
+
+	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, mailer)
+	if err := debugInstanceRunner.SubscribeToEvents(); err != nil {
+		panic(err)
+	}
+
+	internalapi.Start(resourcesConnection, poolManager, koalityRoot, internalapi.RpcSocket)
+
+	fmt.Println("Koality successfully started!")
+	startWebserverAndBlock(resourcesConnection, repositoryManager)
+}
+
+func getResourcesConnection() *resources.Connection {
 	resourcesConnection, err := database.New()
 	if err != nil {
 		panic(err)
 	}
-	defer resourcesConnection.Close()
 
 	if err := database.Migrate(migrate.Migrations); err != nil {
 		panic(err)
 	}
 
 	database.KeepClean(resourcesConnection)
+	return resourcesConnection
+}
 
+func getMailer(resourcesConnection *resources.Connection) mail.Mailer {
 	smtpServerSettings, err := resourcesConnection.Settings.Read.GetSmtpServerSettings()
-	// Ignore error for now
+	if _, ok := err.(resources.NoSuchSettingError); !ok && err != nil {
+		panic(err)
+	}
+
 	mailer := mail.NewMailer(smtpServerSettings)
 	mailer.SubscribeToEvents(resourcesConnection)
+	return mailer
+}
 
-	ec2Broker := ec2broker.New()
-
-	// TODO (bbland): use the real pool configuration
-	var virtualMachinePools []vm.VirtualMachinePool
+func getVirtualMachinePools(resourcesConnection *resources.Connection, ec2Broker *ec2broker.Ec2Broker) []vm.VirtualMachinePool {
 	if *useEc2Flag {
 		ec2Pools, err := resourcesConnection.Pools.Read.GetAllEc2Pools()
 		if err != nil {
@@ -61,7 +96,7 @@ func main() {
 			panic("No ec2 pools configured")
 		}
 
-		virtualMachinePools = make([]vm.VirtualMachinePool, len(ec2Pools))
+		virtualMachinePools := make([]vm.VirtualMachinePool, len(ec2Pools))
 		for index, ec2Pool := range ec2Pools {
 			ec2Manager, err := ec2vm.NewManager(ec2Broker, &ec2Pool, resourcesConnection)
 			if err != nil {
@@ -70,34 +105,16 @@ func main() {
 
 			virtualMachinePools[index] = ec2vm.NewPool(ec2Manager)
 		}
+		return virtualMachinePools
 	} else {
-		virtualMachinePools = []vm.VirtualMachinePool{vm.NewPool(0, localmachine.Manager, 0, 3)}
+		return []vm.VirtualMachinePool{vm.NewPool(0, localmachine.Manager, 0, 3)}
 	}
+}
 
-	poolManager := poolmanager.New(virtualMachinePools)
-
-	if err = poolManager.SubscribeToEvents(resourcesConnection, ec2Broker); err != nil {
-		panic(err)
-	}
-
-	repositoryManager := repositorymanager.New(koalityRoot, resourcesConnection)
-
-	testRunner := testrunner.New(resourcesConnection, poolManager, repositoryManager)
-	if err = testRunner.SubscribeToEvents(); err != nil {
-		panic(err)
-	}
-
-	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, mailer)
-	if err = debugInstanceRunner.SubscribeToEvents(); err != nil {
-		panic(err)
-	}
-
-	// TODO: initialize more components here
-	internalapi.Start(resourcesConnection, poolManager, koalityRoot, internalapi.RpcSocket)
-
+func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) {
 	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
 	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
-	if err = gitHubConnection.SubscribeToEvents(); err != nil {
+	if err := gitHubConnection.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 
@@ -106,14 +123,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Koality successfully started!")
-
-	// This will block
 	if err = webserver.Start(); err != nil {
 		panic(err)
 	}
-}
-
-func setupResourcesConnection(resourcesConnection *resources.Connection) {
-
 }
