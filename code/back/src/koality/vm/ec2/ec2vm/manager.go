@@ -169,9 +169,12 @@ func (manager *Ec2VirtualMachineManager) waitForSsh(instance ec2.Instance, usern
 				time.Sleep(3 * time.Second)
 				continue
 			}
-			sshAttempt, err := ec2Vm.MakeExecutable(shell.Command("true"), nil, nil, nil, nil)
+			checkExecutable := shell.Executable{
+				Command: "true",
+			}
+			sshAttempt, err := ec2Vm.Execute(checkExecutable)
 			if err == nil {
-				err = sshAttempt.Run()
+				err = sshAttempt.Wait()
 				if err == nil {
 					return ec2Vm, nil
 				}

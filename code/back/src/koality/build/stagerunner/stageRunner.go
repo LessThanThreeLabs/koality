@@ -13,6 +13,7 @@ import (
 	"koality/build/config/section"
 	"koality/resources"
 	"koality/shell"
+	"koality/shell/shellutil"
 	"koality/util/pathtranslator"
 	"koality/vm"
 	"os"
@@ -114,18 +115,23 @@ func (stageRunner *StageRunner) runSection(sectionNumber uint64, section section
 	return commandsSuccess || section.ContinueOnFailure(), nil
 }
 
-func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) (*bytes.Buffer, error) {
+func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName string, args []string, environment map[string]string) ([]byte, error) {
 	binaryPath, err := pathtranslator.TranslatePathWithCheckFunc(pathtranslator.BinaryPath(execName), pathtranslator.CheckExecutable)
 	if err != nil {
 		return nil, err
 	}
 
-	copyExec, err := stageRunner.virtualMachine.FileCopy(binaryPath, execName)
+	copyExecutable, err := shellutil.CreateScpExecutable(binaryPath, execName)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = copyExec.Run(); err != nil {
+	copyExecution, err := stageRunner.virtualMachine.Execute(copyExecutable)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = copyExecution.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -136,16 +142,23 @@ func (stageRunner *StageRunner) copyAndRunExecOnVm(stageRunId uint64, execName s
 		return nil, err
 	}
 
-	runExec, err := stageRunner.virtualMachine.MakeExecutable(cmd, nil, writeBuffer, io.MultiWriter(consoleTextWriter, os.Stderr), environment)
+	runExecutable := shell.Executable{
+		Command:     cmd,
+		Stdout:      writeBuffer,
+		Stderr:      io.MultiWriter(consoleTextWriter, os.Stderr),
+		Environment: environment,
+	}
+
+	runExecution, err := stageRunner.virtualMachine.Execute(runExecutable)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = runExec.Run(); err != nil {
+	if err = runExecution.Wait(); err != nil {
 		return nil, err
 	}
 
-	return writeBuffer, nil
+	return writeBuffer.Bytes(), nil
 }
 
 func (stageRunner *StageRunner) getXunitResults(stageRunId uint64, command build.Command, environment map[string]string) ([]resources.XunitResult, error) {
@@ -154,13 +167,13 @@ func (stageRunner *StageRunner) getXunitResults(stageRunId uint64, command build
 		return nil, nil
 	}
 	args := []string{shell.Quote("*.xml"), strings.Join(directories, " ")}
-	writeBuffer, err := stageRunner.copyAndRunExecOnVm(stageRunId, "getXunitResults", args, environment)
+	output, err := stageRunner.copyAndRunExecOnVm(stageRunId, "getXunitResults", args, environment)
 	if err != nil {
 		return nil, err
 	}
 
 	var res []resources.XunitResult
-	if err = json.Unmarshal(writeBuffer.Bytes(), &res); err != nil {
+	if err = json.Unmarshal(output, &res); err != nil {
 		return nil, err
 	}
 
@@ -445,13 +458,45 @@ func (stageRunner *StageRunner) runExports(sectionNumber uint64, sectionToRun se
 }
 
 func (stageRunner *StageRunner) runCommand(command build.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (int, error) {
-	shellCommand := command.ShellCommand()
-	executable, err := stageRunner.virtualMachine.MakeExecutable(shellCommand, stdin, stdout, stderr, environment)
+	executable := command.Executable()
+
+	if stdin != nil {
+		if executable.Stdin != nil {
+			executable.Stdin = io.MultiReader(executable.Stdin, stdin)
+		} else {
+			executable.Stdin = stdin
+		}
+	}
+	if stdout != nil {
+		if executable.Stdout != nil {
+			executable.Stdout = io.MultiWriter(executable.Stdout, stdout)
+		} else {
+			executable.Stdout = stdout
+		}
+	}
+	if stderr != nil {
+		if executable.Stderr != nil {
+			executable.Stderr = io.MultiWriter(executable.Stderr, stderr)
+		} else {
+			executable.Stderr = stderr
+		}
+	}
+	if environment != nil {
+		if executable.Environment == nil {
+			executable.Environment = environment
+		} else {
+			for key, value := range environment {
+				executable.Environment[key] = value
+			}
+		}
+	}
+
+	execution, err := stageRunner.virtualMachine.Execute(executable)
 	if err != nil {
 		return 255, err
 	}
 
-	exitErr := executable.Run()
+	exitErr := execution.Wait()
 	if exitErr != nil {
 		switch exitErr.(type) {
 		case *ssh.ExitError:

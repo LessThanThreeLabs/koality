@@ -22,13 +22,15 @@ func TestInputOuputStreams(test *testing.T) {
 	outBuffer := new(bytes.Buffer)
 
 	command := shell.Command("cat")
-
-	executable, err := vm.MakeExecutable(command, stdin, outBuffer, outBuffer, nil)
+	executable := shell.Executable{command, stdin, outBuffer, outBuffer, nil}
+	execution, err := vm.Execute(executable)
 	if err != nil {
-		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Logf("Failed to execute command:\n%s\n", command)
 		test.Fatal(err)
 	}
-	executable.Run()
+	if err = execution.Wait(); err != nil {
+		test.Fatal(err)
+	}
 
 	outputString := strings.TrimSpace(outBuffer.String())
 	if outputString != inputString {
@@ -55,12 +57,15 @@ func TestStdoutStderrStreams(test *testing.T) {
 		shell.Redirect(shell.Commandf("echo %s", shell.Quote(stderrString)), "/dev/stderr", false),
 	)
 
-	executable, err := vm.MakeExecutable(command, nil, stdoutBuffer, stderrBuffer, nil)
+	executable := shell.Executable{command, nil, stdoutBuffer, stderrBuffer, nil}
+	execution, err := vm.Execute(executable)
 	if err != nil {
-		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Logf("Failed to execute command:\n%s\n", command)
 		test.Fatal(err)
 	}
-	executable.Run()
+	if err = execution.Wait(); err != nil {
+		test.Fatal(err)
+	}
 
 	stdout := strings.TrimSpace(stdoutBuffer.String())
 	stderr := strings.TrimSpace(stderrBuffer.String())
@@ -86,14 +91,13 @@ func TestEnvironment(test *testing.T) {
 
 	command := shell.Command("echo $USER")
 
-	executable, err := vm.MakeExecutable(command, nil, buffer, nil, nil)
+	executable := shell.Executable{command, nil, buffer, nil, nil}
+	execution, err := vm.Execute(executable)
 	if err != nil {
-		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Logf("Failed to execute command:\n%s\n", command)
 		test.Fatal(err)
 	}
-	err = executable.Run()
-	if err != nil {
-		test.Logf("Expected command to pass:\n%s\n", command)
+	if err = execution.Wait(); err != nil {
 		test.Fatal(err)
 	}
 
@@ -107,14 +111,13 @@ func TestEnvironment(test *testing.T) {
 
 	fakeUserVar := "one two three"
 
-	executable, err = vm.MakeExecutable(command, nil, buffer, nil, map[string]string{"USER": fakeUserVar})
+	executable = shell.Executable{command, nil, buffer, nil, map[string]string{"USER": fakeUserVar}}
+	execution, err = vm.Execute(executable)
 	if err != nil {
-		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Logf("Failed to execute command:\n%s\n", command)
 		test.Fatal(err)
 	}
-	err = executable.Run()
-	if err != nil {
-		test.Logf("Expected command to pass:\n%s\n", command)
+	if err = execution.Wait(); err != nil {
 		test.Fatal(err)
 	}
 

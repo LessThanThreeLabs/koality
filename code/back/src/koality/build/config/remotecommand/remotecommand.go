@@ -28,8 +28,10 @@ func (remoteCommand RemoteCommand) Name() string {
 	return remoteCommand.name
 }
 
-func (remoteCommand RemoteCommand) ShellCommand() shell.Command {
-	return remoteCommand.toScript()
+func (remoteCommand RemoteCommand) Executable() shell.Executable {
+	return shell.Executable{
+		Command: remoteCommand.toScript(),
+	}
 }
 
 func (remoteCommand RemoteCommand) XunitPaths() []string {

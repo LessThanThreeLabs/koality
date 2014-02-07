@@ -182,10 +182,15 @@ func (suite *StageRunnerSuite) TestXunitParser(check *gocheck.C) {
 	suite.stageRunner = New(suite.resourcesConnection, suite.virtualMachine,
 		suite.build, new(MockNoExportsExporter))
 
-	copyExec, err := suite.virtualMachine.FileCopy(path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "*.xml"), "xunitPath/")
+	copyExecutable := shell.Executable{
+		Command: shell.And(
+			shell.Command("mkdir -p xunitPath/"),
+			shell.Commandf("cp %s %s", path.Join(os.Getenv("GOPATH"), "src", "koality", "util", "xunitsamples", "*.xml"), "xunitPath/"),
+		),
+	}
+	copyExecution, err := suite.virtualMachine.Execute(copyExecutable)
 	check.Assert(err, gocheck.IsNil)
-
-	err = copyExec.Run()
+	err = copyExecution.Wait()
 	check.Assert(err, gocheck.IsNil)
 
 	compileCmd := exec.Command("go", "install", path.Join("koality", "util", "xunit", "getXunitResults"))

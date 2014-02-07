@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -12,16 +11,14 @@ import (
 	"io"
 	"koality/shell"
 	"os"
-	"path"
 	"strconv"
 )
 
-type SshExecutableMaker struct {
+type SshExecutor struct {
 	sshClient *ssh.ClientConn
 }
 
-type sshExecutable struct {
-	shell.Command
+type sshExecution struct {
 	*ssh.Session
 }
 
@@ -29,7 +26,7 @@ type keychain struct {
 	key *rsa.PrivateKey
 }
 
-func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
+func NewSshExecutor(sshConfig SshConfig) (*SshExecutor, error) {
 	block, _ := pem.Decode([]byte(sshConfig.PrivateKey))
 	rsaKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
@@ -45,17 +42,17 @@ func NewSshExecutableMaker(sshConfig SshConfig) (*SshExecutableMaker, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SshExecutableMaker{sshClient}, nil
+	return &SshExecutor{sshClient}, nil
 }
 
-func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer, environment map[string]string) (shell.Executable, error) {
-	session, err := sshExecutableMaker.sshClient.NewSession()
+func (executor *SshExecutor) Execute(executable shell.Executable) (shell.Execution, error) {
+	session, err := executor.sshClient.NewSession()
 	if err != nil {
 		return nil, err
 	}
-	session.Stdin = stdin
-	session.Stdout = stdout
-	session.Stderr = stderr
+	session.Stdin = executable.Stdin
+	session.Stdout = executable.Stdout
+	session.Stderr = executable.Stderr
 
 	terminalHeight, terminalWidth, err := terminal.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
@@ -73,32 +70,33 @@ func (sshExecutableMaker *SshExecutableMaker) MakeExecutable(command shell.Comma
 		return nil, err
 	}
 
-	envCommands := make([]shell.Command, 0, len(environment))
-	for key, value := range environment {
+	envCommands := make([]shell.Command, 0, len(executable.Environment))
+	for key, value := range executable.Environment {
 		envCommands = append(envCommands, shell.Commandf("export %s=%s", key, shell.Quote(value)))
 	}
 
-	commandWithEnv := shell.Chain(append(envCommands, command)...)
+	commandWithEnv := shell.Chain(append(envCommands, executable.Command)...)
 
-	return &sshExecutable{commandWithEnv, session}, nil
+	err = session.Start(string(commandWithEnv))
+	if err != nil {
+		session.Close()
+		return nil, err
+	}
+
+	return &sshExecution{session}, nil
 }
 
-func (sshExecutableMaker *SshExecutableMaker) Close() error {
-	return sshExecutableMaker.sshClient.Close()
+func (sshExecutor *SshExecutor) Close() error {
+	return sshExecutor.sshClient.Close()
 }
 
-func (executable *sshExecutable) Start() error {
-	return executable.Session.Start(string(executable.Command))
-}
-
-func (executable *sshExecutable) Run() error {
-	defer executable.Session.Close()
-	return executable.Session.Run(string(executable.Command))
-}
-
-func (executable *sshExecutable) Wait() error {
-	defer executable.Session.Close()
-	return executable.Session.Wait()
+func (execution *sshExecution) Wait() error {
+	waitErr := execution.Session.Wait()
+	closeErr := execution.Session.Close()
+	if waitErr != nil {
+		return waitErr
+	}
+	return closeErr
 }
 
 func (k *keychain) Key(i int) (ssh.PublicKey, error) {
@@ -116,44 +114,6 @@ func (k *keychain) Sign(i int, rand io.Reader, data []byte) (sig []byte, err err
 	return rsa.SignPKCS1v15(rand, k.key, hashFunc, digest)
 }
 
-type Scper interface {
-	Scp(localFilePath, remoteFilePath string) (shell.Executable, error)
-}
-
-type sshScper struct {
-	*SshExecutableMaker
-}
-
-func NewScper(config ScpConfig) (Scper, error) {
-	sshExecutableMaker, err := NewSshExecutableMaker(SshConfig(config))
-	if err != nil {
-		return nil, err
-	}
-	return &sshScper{sshExecutableMaker}, nil
-}
-
-func (scper *sshScper) Scp(localFilePath, remoteFilePath string) (shell.Executable, error) {
-	localFile, err := os.Open(localFilePath)
-	if err != nil {
-		return nil, err
-	}
-	defer localFile.Close()
-
-	fileInfo, err := localFile.Stat()
-	if err != nil {
-		return nil, err
-	}
-	headerBuffer := bytes.NewBufferString(fmt.Sprintf("C%#o %d %s\n", fileInfo.Mode()&os.ModePerm, fileInfo.Size(), path.Base(remoteFilePath)))
-	scpStdin := io.MultiReader(headerBuffer, localFile, bytes.NewReader([]byte{0}))
-
-	// Note: this is more powerful than standard scp, as it will actually create the destination directory for you
-	remoteCommand := shell.And(
-		shell.Commandf("mkdir -p %s", path.Dir(remoteFilePath)),
-		shell.Commandf("scp -qrt %s", path.Dir(remoteFilePath)),
-	)
-	return scper.SshExecutableMaker.MakeExecutable(remoteCommand, scpStdin, nil, nil, nil)
-}
-
 type SshConfig struct {
 	Username   string
 	Hostname   string
@@ -161,8 +121,6 @@ type SshConfig struct {
 	PrivateKey string
 	Options    map[string]string
 }
-
-type ScpConfig SshConfig
 
 func toOptionsList(options map[string]string) []string {
 	optionsList := make([]string, len(options))
@@ -182,18 +140,4 @@ func (sshConfig SshConfig) SshArgs(remoteCommand string) []string {
 	args := append(options, login, "-p", strconv.Itoa(sshConfig.Port), shell.Quote(remoteCommand))
 
 	return append([]string{"ssh"}, args...)
-}
-
-func (scpConfig ScpConfig) ScpArgs(localFilePath, remoteFilePath string) []string {
-	options := toOptionsList(scpConfig.Options)
-	remotePath := fmt.Sprintf("%s@%s:%s", scpConfig.Username, scpConfig.Hostname, remoteFilePath)
-	return append(append([]string{"scp"}, options...), "-P", strconv.Itoa(scpConfig.Port), shell.Quote(localFilePath), shell.Quote(remotePath))
-}
-
-type ScpFileCopier struct {
-	Scper
-}
-
-func (fileCopier *ScpFileCopier) FileCopy(localFilePath, remoteFilePath string) (shell.Executable, error) {
-	return fileCopier.Scper.Scp(localFilePath, remoteFilePath)
 }

@@ -512,12 +512,15 @@ func executeAndAssert(test *testing.T, command shell.Command, expectSuccess bool
 
 	defer vm.Terminate()
 
-	executable, err := vm.MakeExecutable(command, nil, nil, nil, nil)
+	executable := shell.Executable{
+		Command: command,
+	}
+	execution, err := vm.Execute(executable)
 	if err != nil {
-		test.Logf("Failed to create executable from command:\n%s\n", command)
+		test.Logf("Failed to execute command:\n%s\n", command)
 		test.Error(err)
 	}
-	err = executable.Run()
+	err = execution.Wait()
 	if expectSuccess {
 		if err != nil {
 			test.Logf("Expected command to pass:\n%s\n", command)

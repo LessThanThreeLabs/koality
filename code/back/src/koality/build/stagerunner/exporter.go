@@ -36,13 +36,13 @@ func (exporter S3Exporter) ExportAndGetResults(stageId, stageRunId uint64, stage
 		exportPrefix,
 		"us-east-1", // US Standard
 	}, exportPaths...)
-	writeBuffer, err := stageRunner.copyAndRunExecOnVm(stageRunId, "exportPaths", args, environment)
+	output, err := stageRunner.copyAndRunExecOnVm(stageRunId, "exportPaths", args, environment)
 	if err != nil {
 		return nil, err
 	}
 
 	var exportOutput export.ExportOutput
-	if err = json.Unmarshal(writeBuffer.Bytes(), &exportOutput); err != nil {
+	if err = json.Unmarshal(output, &exportOutput); err != nil {
 		return nil, err
 	}
 
