@@ -62,8 +62,7 @@ func (googleHandler *GoogleHandler) processCreateAccountAction(oAuthToken string
 	if _, ok := err.(BadAuthenticationError); ok {
 		queryValues := url.Values{}
 		queryValues.Set("googleCreateAccountError", err.Error())
-		fmt.Println(queryValues.Encode())
-		http.Redirect(writer, request, "/create/account?"+queryValues.Encode(), http.StatusSeeOther)
+		http.Redirect(writer, request, "/login?"+queryValues.Encode(), http.StatusSeeOther)
 	} else if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

@@ -37,6 +37,9 @@ func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/googleLoginRedirect",
 		middleware.IsLoggedOutWrapper(accountsHandler.getGoogleLoginRedirect)).
 		Methods("GET")
+	subrouter.HandleFunc("/googleCreateAccountRedirect",
+		middleware.IsLoggedOutWrapper(accountsHandler.getGoogleCreateAccountRedirect)).
+		Methods("GET")
 
 	subrouter.HandleFunc("/login",
 		middleware.IsLoggedOutWrapper(accountsHandler.login)).
