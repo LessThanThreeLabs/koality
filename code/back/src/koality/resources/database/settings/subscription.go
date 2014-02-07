@@ -6,6 +6,7 @@ import (
 
 type SubscriptionHandler struct {
 	domainNameUpdatedSubscriptionManager               resources.SubscriptionManager
+	authenticationSettingsUpdatedSubscriptionManager   resources.SubscriptionManager
 	repositoryKeyPairUpdatedSubscriptionManager        resources.SubscriptionManager
 	s3ExporterSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
 	s3ExporterSettingsClearedSubscriptionManager       resources.SubscriptionManager
@@ -30,6 +31,18 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromDomainNameUpdated
 
 func (subscriptionHandler *SubscriptionHandler) FireDomainNameUpdatedEvent(domainName resources.DomainName) {
 	subscriptionHandler.domainNameUpdatedSubscriptionManager.Fire(domainName)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToAuthenticationSettingsUpdatedEvents(updateHandler resources.AuthenticationSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.authenticationSettingsUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromAuthenticationSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.authenticationSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireAuthenticationSettingsUpdatedEvent(authenticationSettings *resources.AuthenticationSettings) {
+	subscriptionHandler.authenticationSettingsUpdatedSubscriptionManager.Fire(authenticationSettings)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToRepositoryKeyPairUpdatedEvents(updateHandler resources.RepositoryKeyPairUpdatedHandler) (resources.SubscriptionId, error) {

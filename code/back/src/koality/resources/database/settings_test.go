@@ -59,6 +59,83 @@ func TestSettingsDomainName(test *testing.T) {
 	}
 }
 
+func TestSettingsAuthenticationSettings(test *testing.T) {
+	allowedDomainsEqual := func(domains1, domains2 []string) bool {
+		if len(domains1) != len(domains2) {
+			return false
+		}
+		for index := range domains1 {
+			if domains1[index] != domains2[index] {
+				return false
+			}
+		}
+		return true
+	}
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	authenticationSettingsEventReceived := make(chan bool, 1)
+	var authenticationSettingsUpdatedEventSettings *resources.AuthenticationSettings
+	authenticationSettingsUpdatedHandler := func(authenticationSettings *resources.AuthenticationSettings) {
+		authenticationSettingsUpdatedEventSettings = authenticationSettings
+		authenticationSettingsEventReceived <- true
+	}
+	if _, err = connection.Settings.Subscription.SubscribeToAuthenticationSettingsUpdatedEvents(authenticationSettingsUpdatedHandler); err != nil {
+		test.Fatal(err)
+	}
+
+	manualAllowed := true
+	googleAllowed := false
+	allowedDomains := []string{"koality.yourcompany.com", "127.0.0.1", "local-host"}
+
+	authenticationSettings, err := connection.Settings.Update.SetAuthenticationSettings(manualAllowed, googleAllowed, allowedDomains)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-authenticationSettingsEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear authentication settings updated event")
+	}
+
+	if authenticationSettingsUpdatedEventSettings.ManualLoginAllowed != authenticationSettings.ManualLoginAllowed {
+		test.Fatal("Bad authenticationSettings.ManualLoginAllowed in authentication settings updated event")
+	} else if authenticationSettingsUpdatedEventSettings.GoogleLoginAllowed != authenticationSettings.GoogleLoginAllowed {
+		test.Fatal("Bad authenticationSettings.GoogleLoginAllowed in authentication settings updated event")
+	} else if !allowedDomainsEqual(authenticationSettingsUpdatedEventSettings.AllowedDomains, authenticationSettings.AllowedDomains) {
+		test.Fatal("Bad authenticationSettings.AllowedDomains in authentication settings updated event")
+	}
+
+	if authenticationSettings.ManualLoginAllowed != manualAllowed {
+		test.Fatal("ManualLoginAllowed mismatch")
+	} else if authenticationSettings.GoogleLoginAllowed != googleAllowed {
+		test.Fatal("GoogleLoginAllowed mismatch")
+	} else if !allowedDomainsEqual(authenticationSettings.AllowedDomains, allowedDomains) {
+		test.Fatal("AllowedDomains mismatch")
+	}
+
+	authenticationSettings2, err := connection.Settings.Read.GetAuthenticationSettings()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if authenticationSettings.ManualLoginAllowed != authenticationSettings2.ManualLoginAllowed {
+		test.Fatal("Bad authenticationSettings.ManualLoginAllowed in authentication settings updated event")
+	} else if authenticationSettings.GoogleLoginAllowed != authenticationSettings2.GoogleLoginAllowed {
+		test.Fatal("Bad authenticationSettings.GoogleLoginAllowed in authentication settings updated event")
+	} else if !allowedDomainsEqual(authenticationSettings.AllowedDomains, authenticationSettings2.AllowedDomains) {
+		test.Fatal("Bad authenticationSettings.AllowedDomains in authentication settings updated event")
+	}
+}
+
 func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)

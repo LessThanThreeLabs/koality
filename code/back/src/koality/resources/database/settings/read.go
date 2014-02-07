@@ -46,6 +46,14 @@ func (readHandler *ReadHandler) GetDomainName() (resources.DomainName, error) {
 	return domainName, nil
 }
 
+func (readHandler *ReadHandler) GetAuthenticationSettings() (*resources.AuthenticationSettings, error) {
+	authenticationSettings := new(resources.AuthenticationSettings)
+	if err := readHandler.getSetting(authenticationSettingsLocator, authenticationSettings); err != nil {
+		return nil, err
+	}
+	return authenticationSettings, nil
+}
+
 func (readHandler *ReadHandler) GetRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
 	repositoryKeyPair := new(resources.RepositoryKeyPair)
 	if err := readHandler.getSetting(repositoryKeyPairLocator, repositoryKeyPair); err != nil {

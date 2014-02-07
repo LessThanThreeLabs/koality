@@ -17,6 +17,7 @@ func (locator SettingLocator) String() string {
 
 var (
 	domainNameLocator               = SettingLocator("DomainName")
+	authenticationSettingsLocator   = SettingLocator("AuthenticationSettings")
 	repositoryKeyPairLocator        = SettingLocator("RepositoryKeyPair")
 	s3ExporterSettingsLocator       = SettingLocator("S3ExporterSettings")
 	cookieStoreKeysLocator          = SettingLocator("CookieStoreKeys")

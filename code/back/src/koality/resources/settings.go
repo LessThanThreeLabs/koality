@@ -6,6 +6,12 @@ func (domainName DomainName) String() string {
 	return string(domainName)
 }
 
+type AuthenticationSettings struct {
+	ManualLoginAllowed bool
+	GoogleLoginAllowed bool
+	AllowedDomains     []string
+}
+
 type RepositoryKeyPair struct {
 	PrivateKey string
 	PublicKey  string
@@ -72,6 +78,7 @@ type SettingsHandler struct {
 
 type SettingsReadHandler interface {
 	GetDomainName() (DomainName, error)
+	GetAuthenticationSettings() (*AuthenticationSettings, error)
 	GetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	GetS3ExporterSettings() (*S3ExporterSettings, error)
 	GetCookieStoreKeys() (*CookieStoreKeys, error)
@@ -82,6 +89,7 @@ type SettingsReadHandler interface {
 
 type SettingsUpdateHandler interface {
 	SetDomainName(domainName string) (DomainName, error)
+	SetAuthenticationSettings(manualAllowed, googleAllowed bool, allowedDomainNames []string) (*AuthenticationSettings, error)
 	ResetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	SetS3ExporterSettings(accessKey, secretKey, bucketName string) (*S3ExporterSettings, error)
 	ResetCookieStoreKeys() (*CookieStoreKeys, error)
@@ -98,6 +106,7 @@ type SettingsDeleteHandler interface {
 }
 
 type DomainNameUpdatedHandler func(domainName DomainName)
+type AuthenticationSettingsUpdatedHandler func(authenticationSettings *AuthenticationSettings)
 type RepositoryKeyPairUpdatedHandler func(keyPair *RepositoryKeyPair)
 type S3ExporterSettingsUpdatedHandler func(s3Settings *S3ExporterSettings)
 type S3ExporterSettingsClearedHandler func()
@@ -110,31 +119,43 @@ type ApiKeyUpdatedHandler func(key ApiKey)
 type SettingsSubscriptionHandler interface {
 	SubscribeToDomainNameUpdatedEvents(updateHandler DomainNameUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromDomainNameUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToAuthenticationSettingsUpdatedEvents(updateHandler AuthenticationSettingsUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromAuthenticationSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToRepositoryKeyPairUpdatedEvents(updateHandler RepositoryKeyPairUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromRepositoryKeyPairUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToS3ExporterSettingsUpdatedEvents(updateHandler S3ExporterSettingsUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromS3ExporterSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToS3ExporterSettingsClearedEvents(updateHandler S3ExporterSettingsClearedHandler) (SubscriptionId, error)
 	UnsubscribeFromS3ExporterSettingsClearedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToCookieStoreKeysUpdatedEvents(updateHandler CookieStoreKeysUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromCookieStoreKeysUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToSmtpServerSettingsUpdatedEvents(updateHandler SmtpServerSettingsUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromSmtpServerSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToGitHubEnterpriseSettingsUpdatedEvents(updateHandler GitHubEnterpriseSettingsUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromGitHubEnterpriseSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToGitHubEnterpriseSettingsClearedEvents(updateHandler GitHubEnterpriseSettingsClearedHandler) (SubscriptionId, error)
 	UnsubscribeFromGitHubEnterpriseSettingsClearedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToApiKeyUpdatedEvents(updateHandler ApiKeyUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromApiKeyUpdatedEvents(subscriptionId SubscriptionId) error
 }
 
 type InternalSettingsSubscriptionHandler interface {
 	FireDomainNameUpdatedEvent(domainName DomainName)
+	FireAuthenticationSettingsUpdatedEvent(authenticationSettings *AuthenticationSettings)
 	FireRepositoryKeyPairUpdatedEvent(keyPair *RepositoryKeyPair)
 	FireS3ExporterSettingsUpdatedEvent(s3ExporterSettings *S3ExporterSettings)
 	FireS3ExporterSettingsClearedEvent()
 	FireCookieStoreKeysUpdatedEvent(keys *CookieStoreKeys)
-	FireSmtpServerSettingsUpdatedEvent(auth *SmtpServerSettings)
+	FireSmtpServerSettingsUpdatedEvent(smtpServerSettings *SmtpServerSettings)
 	FireGitHubEnterpriseSettingsUpdatedEvent(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
 	FireGitHubEnterpriseSettingsClearedEvent()
 	FireApiKeyUpdatedEvent(key ApiKey)

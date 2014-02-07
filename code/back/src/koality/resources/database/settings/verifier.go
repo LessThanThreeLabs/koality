@@ -8,11 +8,10 @@ import (
 )
 
 const (
-	domainNameRegex       = "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+$"
+	domainNameRegex       = "^[a-zA-Z0-9]+([-_]+[a-zA-Z0-9]+)*(\\.[a-zA-Z0-9]+([-_]+[a-zA-Z0-9]+)*)*$"
 	awsAccessKeyLength    = 20
 	awsSecretKeyLength    = 40
 	minS3BucketNameLength = 3
-	s3BucketNameRegex     = "^[-_a-zA-Z0-9\\.]+$"
 )
 
 type Verifier struct {
@@ -47,8 +46,8 @@ func (verifier *Verifier) verifyAwsSecretKey(secretKey string) error {
 func (verifier *Verifier) verifyS3BucketName(bucketName string) error {
 	if len(bucketName) < minS3BucketNameLength {
 		return fmt.Errorf("Bucket name must be %d characters long", minS3BucketNameLength)
-	} else if ok, err := regexp.MatchString(s3BucketNameRegex, bucketName); !ok || err != nil {
-		return errors.New("Bucket name must match regex: " + s3BucketNameRegex)
+	} else if ok, err := regexp.MatchString(domainNameRegex, bucketName); !ok || err != nil {
+		return errors.New("Bucket name must match regex: " + domainNameRegex)
 	}
 	return nil
 }

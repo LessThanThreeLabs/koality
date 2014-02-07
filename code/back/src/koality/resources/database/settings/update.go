@@ -80,14 +80,30 @@ func (updateHandler *UpdateHandler) SetDomainName(domainName string) (resources.
 	return domainNameSetting, nil
 }
 
+func (updateHandler *UpdateHandler) SetAuthenticationSettings(manualAllowed, googleAllowed bool, allowedDomains []string) (*resources.AuthenticationSettings, error) {
+	for _, domainName := range allowedDomains {
+		if err := updateHandler.verifier.verifyDomainName(domainName); err != nil {
+			return nil, err
+		}
+	}
+
+	authenticationSettings := &resources.AuthenticationSettings{manualAllowed, googleAllowed, allowedDomains}
+
+	if err := updateHandler.setSetting(authenticationSettingsLocator, authenticationSettings); err != nil {
+		return nil, err
+	}
+
+	updateHandler.subscriptionHandler.FireAuthenticationSettingsUpdatedEvent(authenticationSettings)
+	return authenticationSettings, nil
+}
+
 func (updateHandler *UpdateHandler) ResetRepositoryKeyPair() (*resources.RepositoryKeyPair, error) {
 	repositoryKeyPair, err := updateHandler.keyPairGenerator.GenerateRepositoryKeyPair()
 	if err != nil {
 		return nil, err
 	}
 
-	err = updateHandler.setSetting(repositoryKeyPairLocator, repositoryKeyPair)
-	if err != nil {
+	if err = updateHandler.setSetting(repositoryKeyPairLocator, repositoryKeyPair); err != nil {
 		return nil, err
 	}
 
