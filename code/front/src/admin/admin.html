@@ -1,6 +1,6 @@
 <div id="admin">
 	<panel>
-		<panel-options ng-show="cloudProvider != null && gitHubEnterpriseAllowed != null">
+		<panel-options>
 			<panel-option selected="view == 'users'" ng-click="selectView('users')">Users</panel-option>
 			<panel-option selected="view == 'repositories'" ng-click="selectView('repositories')">Repositories</panel-option>
 			<panel-option selected="view == 'aws'" ng-click="selectView('aws')">AWS</panel-option>
@@ -18,7 +18,7 @@
 
 		<div ng-switch="view">
 			<div ng-switch-when="users" ng-include="'html/admin/users/adminUsers.html'"></div>
-			<div ng-switch-when="repositories" ng-include="html/admin/repositories/adminRepositories.html"></div>
+			<div ng-switch-when="repositories" ng-include="'html/admin/repositories/adminRepositories.html'"></div>
 			<div ng-switch-when="aws" ng-include="html/admin/aws/adminAws.html"></div>
 			<div ng-switch-when="hpCloud" ng-include="html/admin/hpCloud/adminHpCloud.html"></div>
 			<div ng-switch-when="exporter" ng-include="html/admin/exporter/adminExporter.html"></div>

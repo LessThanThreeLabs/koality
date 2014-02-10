@@ -27,6 +27,17 @@ type sanitizedRepositoryGitHubMetadata struct {
 	HasOAuthToken bool     `json:"hasOAuthToken"`
 }
 
+type createRequestData struct {
+	Name      string `json:"name"`
+	VcsType   string `json:"vcsType"`
+	RemoteUri string `json:"remoteUri"`
+}
+
+type createWithGitHubRequestData struct {
+	Owner string `json:"owner"`
+	Name  string `json:"name"`
+}
+
 type RepositoriesHandler struct {
 	resourcesConnection *resources.Connection
 	repositoryManager   repositorymanager.RepositoryManager
@@ -52,6 +63,9 @@ func (repositoriesHandler *RepositoriesHandler) WireAppSubroutes(subrouter *mux.
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.createWithGitHub)).
 		Methods("POST")
 
+	subrouter.HandleFunc("/{repositoryId:[0-9]+}/remoteUri",
+		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.setRemoteUri)).
+		Methods("PUT")
 	subrouter.HandleFunc("/{repositoryId:[0-9]+}/gitHub/setHook",
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.setGitHubHookTypes)).
 		Methods("PUT")

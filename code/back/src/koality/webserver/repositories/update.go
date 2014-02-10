@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.ResponseWriter, request *http.Request) {
+func (repositoriesHandler *RepositoriesHandler) setRemoteUri(writer http.ResponseWriter, request *http.Request) {
 	repositoryIdString := mux.Vars(request)["repositoryId"]
 	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
 	if err != nil {
@@ -19,12 +20,37 @@ func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.R
 		return
 	}
 
-	hookTypesString := request.PostFormValue("hookTypes")
-	var hookTypes []string
-	err = json.Unmarshal([]byte(hookTypesString), &hookTypes)
+	remoteUriBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to parse repositoryId: %v", err)
+		return
+	}
+
+	remoteUri := string(remoteUriBytes)
+	err = repositoriesHandler.resourcesConnection.Repositories.Update.SetRemoteUri(repositoryId, remoteUri)
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, "ok")
+}
+
+func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.ResponseWriter, request *http.Request) {
+	hookTypes := make([]string, 0, 2)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(hookTypes); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	repositoryIdString := mux.Vars(request)["repositoryId"]
+	repositoryId, err := strconv.ParseUint(repositoryIdString, 10, 64)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to parse repositoryId: %v", err)
 		return
 	}
 

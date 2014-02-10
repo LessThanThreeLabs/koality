@@ -5,7 +5,7 @@
 		</div>
 		<div class="right">
 			<a ng-click="toggleDrawer('publicKey')">Show SSH Key</a>
-			<button ng-click="toggleDrawer('addRepository')" ng-disabled="exceededMaxRepositoryCount == null || exceededMaxRepositoryCount">Add a New Repository</button>
+			<button ng-click="toggleDrawer('addRepository')">Add a New Repository</button>
 		</div>
 	</panel-header>
 
@@ -30,13 +30,13 @@
 											<label>Name</label>
 											<input type="text" ng-model="addRepository.manual.name" name="name" ng-maxlength=64 focused required>
 										</td>
-										<td class="manualForwardUrlColumn">
-											<label>Forward Url</label>
-											<input type="text" ng-model="addRepository.manual.forwardUrl" name="forwardUrl" ng-maxlength=256 required>
+										<td class="manualRemoteUriColumn">
+											<label>Remote Uri</label>
+											<input type="text" ng-model="addRepository.manual.remoteUri" name="remoteUri" ng-maxlength=256 required>
 										</td>
 										<td class="manualTypeColumn">
 											<label>Type</label>
-											<select ng-model="addRepository.manual.type" required>
+											<select ng-model="addRepository.manual.vcsType" required>
 												<option value="git">Git</option>
 												<option value="hg">Hg</option>
 											</select>
@@ -104,9 +104,9 @@
 						<div class="triangle gray" ng-class="{right: orderByPredicate != 'name', up: orderByPredicate == 'name' && !orderByReverse, down: orderByPredicate == 'name' && orderByReverse}"></div>
 						Name
 					</th>
-					<th class="forwardUrlColumn sortableColumn unselectable" ng-click="orderByPredicate = 'forwardUrl'; orderByReverse = !orderByReverse">
-						<div class="triangle gray" ng-class="{right: orderByPredicate != 'forwardUrl', up: orderByPredicate == 'forwardUrl' && !orderByReverse, down: orderByPredicate == 'forwardUrl' && orderByReverse}"></div>
-						Forward URL
+					<th class="remoteUriColumn sortableColumn unselectable" ng-click="orderByPredicate = 'remoteUri'; orderByReverse = !orderByReverse">
+						<div class="triangle gray" ng-class="{right: orderByPredicate != 'remoteUri', up: orderByPredicate == 'remoteUri' && !orderByReverse, down: orderByPredicate == 'remoteUri' && orderByReverse}"></div>
+						Remote Uri
 					</th>
 					<th class="buildColumn unselectable">Build Type &nbsp;<a href="https://koalitycode.com/documentation?view=adminRepositories">[?]</a></th>
 					<th class="editColumn unselectable">Actions</th>
@@ -126,52 +126,51 @@
 						</div>
 					</td>
 
-					<td class="forwardUrlColumn">
-						<span ng-show="repository.id != currentlyEditingRepositoryId">{{repository.forwardUrl}}</span>
+					<td class="remoteUriColumn">
+						<span ng-show="repository.id != currentlyEditingRepositoryId">{{repository.remoteUri}}</span>
 
 						<div ng-show="repository.id == currentlyEditingRepositoryId">
-							<label>Forward Url</label>
-							<input type="text" ng-model="repository.newForwardUrl" ng-maxlength=256>
+							<label>Remote Uri</label>
+							<input type="text" ng-model="repository.newRemoteUri" ng-maxlength=256>
 						</div>
 					</td>
 
 					<td class="buildColumn" ng-show="!repository.deleting">
-						<div class="preBuild" ng-show="repository.build.preAllowed">
+						<div class="preBuild">
 							<div ng-show="repository.id != currentlyEditingRepositoryId">
-								<span class="check" ng-show="true">&#x2713;</span>
-								<span class="cross" ng-show="false">&#x2718;</span>
-								<span ng-class="{white: repository.build.pre, gray: !repository.build.pre}">Pre</span>
+								<span class="check">&#x2713;</span>
+								<span class="white">Pre</span>
 							</div>
 
 							<div ng-show="repository.id == currentlyEditingRepositoryId">
-								<input type="checkbox" ng-checked="repository.build.newPre" ng-disabled="true">
-								<span ng-class="{white: repository.build.newPre, gray: !repository.build.newPre}">Pre</span>
+								<input type="checkbox" ng-checked="true" ng-disabled="true">
+								<span class="white">Pre</span>
 							</div>
 						</div>
 
-						<div class="postBuild" ng-show="repository.build.pushAllowed">
+						<div class="postBuild" ng-show="repository.gitHub != null">
 							<div ng-show="repository.id != currentlyEditingRepositoryId">
-								<span class="check" ng-show="repository.build.push">&#x2713;</span>
-								<span class="cross" ng-show="!repository.build.push">&#x2718;</span>
-								<span ng-class="{white: repository.build.push, gray: !repository.build.push}">Push</span>
+								<span class="check" ng-show="repository.gitHub.push">&#x2713;</span>
+								<span class="cross" ng-show="!repository.gitHub.push">&#x2718;</span>
+								<span ng-class="{white: repository.gitHub.push, gray: !repository.gitHub.push}">Push</span>
 							</div>
 
-							<div ng-show="repository.id == currentlyEditingRepositoryId" ng-click="repository.build.newPush = !repository.build.newPush">
-								<input type="checkbox" ng-checked="repository.build.newPush">
-								<span ng-class="{white: repository.build.newPush, gray: !repository.build.newPush}">Push</span>
+							<div ng-show="repository.id == currentlyEditingRepositoryId" ng-click="repository.gitHub.newPush = !repository.gitHub.newPush">
+								<input type="checkbox" ng-checked="repository.gitHub.newPush">
+								<span ng-class="{white: repository.gitHub.newPush, gray: !repository.gitHub.newPush}">Push</span>
 							</div>
 						</div>
 
-						<div class="pullRequestBuild" ng-show="repository.build.pullRequestAllowed">
+						<div class="pullRequestBuild" ng-show="repository.gitHub != null">
 							<div ng-show="repository.id != currentlyEditingRepositoryId">
-								<span class="check" ng-show="repository.build.pullRequest">&#x2713;</span>
-								<span class="cross" ng-show="!repository.build.pullRequest">&#x2718;</span>
-								<span ng-class="{white: repository.build.pullRequest, gray: !repository.build.pullRequest}">Pull Request</span>
+								<span class="check" ng-show="repository.gitHub.pullRequest">&#x2713;</span>
+								<span class="cross" ng-show="!repository.gitHub.pullRequest">&#x2718;</span>
+								<span ng-class="{white: repository.gitHub.pullRequest, gray: !repository.gitHub.pullRequest}">Pull Request</span>
 							</div>
 
-							<div ng-show="repository.id == currentlyEditingRepositoryId" ng-click="repository.build.newPullRequest = !repository.build.newPullRequest">
-								<input type="checkbox" ng-checked="repository.build.newPullRequest">
-								<span ng-class="{white: repository.build.newPullRequest, gray: !repository.build.newPullRequest}">Pull Request</span>
+							<div ng-show="repository.id == currentlyEditingRepositoryId" ng-click="repository.gitHub.newPullRequest = !repository.gitHub.newPullRequest">
+								<input type="checkbox" ng-checked="repository.gitHub.newPullRequest">
+								<span ng-class="{white: repository.gitHub.newPullRequest, gray: !repository.gitHub.newPullRequest}">Pull Request</span>
 							</div>
 						</div>
 					</td>
@@ -188,9 +187,9 @@
 					</td>
 
 					<td class="deleteColumn" colspan="2" ng-show="repository.deleting">
-						<label class="red">Are you sure? Enter your password</label>
+						<label class="red">Are you sure? Enter the repository name to continue</label>
 						<div class="deleteRepositoryActions">
-							<input type="password" ng-model="repository.password">
+							<input type="text" ng-model="repository.deleteName">
 							<a class="red" ng-click="deleteRepository(repository)">Delete</a>
 							<a ng-click="repository.deleting = false">Cancel</a>
 						</div>

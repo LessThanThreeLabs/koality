@@ -8,11 +8,15 @@ import (
 )
 
 func (repositoriesHandler *RepositoriesHandler) create(writer http.ResponseWriter, request *http.Request) {
-	name := request.PostFormValue("name")
-	vcsType := request.PostFormValue("vcsType")
-	remoteUri := request.PostFormValue("remoteUri")
+	createRequestData := new(createRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(createRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
 
-	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.Create(name, vcsType, remoteUri)
+	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.Create(createRequestData.Name, createRequestData.VcsType, createRequestData.RemoteUri)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -44,6 +48,14 @@ func (repositoriesHandler *RepositoriesHandler) create(writer http.ResponseWrite
 }
 
 func (repositoriesHandler *RepositoriesHandler) createWithGitHub(writer http.ResponseWriter, request *http.Request) {
+	createWithGitHubRequestData := new(createWithGitHubRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(createWithGitHubRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
 	userId := context.Get(request, "userId").(uint64)
 	user, err := repositoriesHandler.resourcesConnection.Users.Read.Get(userId)
 	if err != nil {
@@ -55,12 +67,8 @@ func (repositoriesHandler *RepositoriesHandler) createWithGitHub(writer http.Res
 		return
 	}
 
-	owner := request.PostFormValue("owner")
-	name := request.PostFormValue("name")
-
-	remoteUri := fmt.Sprintf("git@github.com:%s/%s.git", owner, name)
-
-	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.CreateWithGitHub(name, remoteUri, owner, name, user.GitHubOAuth)
+	remoteUri := fmt.Sprintf("git@github.com:%s/%s.git", createWithGitHubRequestData.Owner, createWithGitHubRequestData.Name)
+	repository, err := repositoriesHandler.resourcesConnection.Repositories.Create.CreateWithGitHub(createWithGitHubRequestData.Name, remoteUri, createWithGitHubRequestData.Owner, createWithGitHubRequestData.Name, user.GitHubOAuth)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
