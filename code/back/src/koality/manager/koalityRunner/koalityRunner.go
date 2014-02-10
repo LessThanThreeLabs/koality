@@ -22,8 +22,8 @@ func main() {
 		panic("Could not find the nginx binary")
 	}
 
-	koalityErrorChan := runDaemon("koality", koalityBinary)
-	nginxErrorChan := runDaemon("root", nginxBinary, "-c", path.Join(path.Dir(nginxBinary), "nginx.conf"))
+	koalityErrorChan := runDaemon(koalityBinary)
+	nginxErrorChan := runDaemon(nginxBinary, "-c", path.Join(path.Dir(nginxBinary), "nginx.conf"))
 
 	select {
 	case err := <-koalityErrorChan:
@@ -33,12 +33,12 @@ func main() {
 	}
 }
 
-func runDaemon(username, binary string, args ...string) <-chan error {
+func runDaemon(binary string, args ...string) <-chan error {
 	errorChan := make(chan error)
 	go func(errorChan chan<- error) {
 		startTime := time.Now()
 		for {
-			shellCommand := shell.AsUser(username, shell.Command(strings.Join(append([]string{binary}, args...), " ")))
+			shellCommand := shell.Command(strings.Join(append([]string{binary}, args...), " "))
 			command := exec.Command("bash", "-c", string(shellCommand))
 			command.Stdout, command.Stderr = os.Stdout, os.Stderr
 			if err := command.Start(); err != nil {
