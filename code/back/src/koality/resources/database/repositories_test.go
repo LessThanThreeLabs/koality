@@ -329,6 +329,83 @@ func TestCreateGitHubRepository(test *testing.T) {
 	}
 }
 
+func TestRepositoryRemoteUri(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	repositoryEventReceived := make(chan bool, 1)
+	repositoryEventId := uint64(0)
+	repositoryEventRemoteUri := ""
+	repositoryRemoteUriUpdatedHandler := func(repositoryId uint64, remoteUri string) {
+		repositoryEventId = repositoryId
+		repositoryEventRemoteUri = remoteUri
+		repositoryEventReceived <- true
+	}
+	_, err = connection.Repositories.Subscription.SubscribeToRemoteUriUpdatedEvents(repositoryRemoteUriUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	remoteUri1 := "hg@remote.uri.com/name"
+	repository, err := connection.Repositories.Create.Create("repository-name", "hg", remoteUri1)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	remoteUri2 := "hg@remote.uri.com/name2"
+	err = connection.Repositories.Update.SetRemoteUri(repository.Id, remoteUri2)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-repositoryEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear repository remote uri updated event")
+	}
+
+	if repositoryEventId != repository.Id {
+		test.Fatal("Bad repositoryId in remote uri updated event")
+	} else if repositoryEventRemoteUri != remoteUri2 {
+		test.Fatal("Bad repository remote uri in remote uri updated event")
+	}
+
+	remoteUri3 := "hg@remote.uri.com/name3"
+	err = connection.Repositories.Update.SetRemoteUri(repository.Id, remoteUri3)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-repositoryEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear remote uri event")
+	}
+
+	if repositoryEventId != repository.Id {
+		test.Fatal("Bad repositoryId in remote uri event")
+	} else if repositoryEventRemoteUri != remoteUri3 {
+		test.Fatal("Bad repository remote uri in remote uri event")
+	}
+
+	err = connection.Repositories.Update.SetRemoteUri(repository.Id, "bad-remote-uri")
+	if _, ok := err.(resources.InvalidRepositoryRemoteUriError); !ok {
+		test.Fatal("Expected InvalidRepositoryRemoteUriError when trying to set to invalid repository remote uri")
+	}
+
+	err = connection.Repositories.Update.SetRemoteUri(0, "installed")
+	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
+		test.Fatal("Expected NoSuchRepositoryError when trying to set to remote uri for nonexistent repository")
+	}
+}
+
 func TestRepositoryStatus(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)

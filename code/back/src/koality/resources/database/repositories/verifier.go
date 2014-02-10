@@ -58,9 +58,11 @@ func (verifier *Verifier) verifyVcsType(vcsType string) error {
 
 func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 	if len(remoteUri) > repositoryMaxRemoteUriLength {
-		return fmt.Errorf("Git remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
+		errorText := fmt.Sprintf("Git remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
+		return resources.InvalidRepositoryRemoteUriError{errorText}
 	} else if ok, err := regexp.MatchString(remoteGitUriRegex, remoteUri); !ok || err != nil {
-		return errors.New("Git remote uri must match regex: " + remoteGitUriRegex)
+		errorText := fmt.Sprintf("Git remote uri must match regex: " + remoteGitUriRegex)
+		return resources.InvalidRepositoryRemoteUriError{errorText}
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
 		return err
 	}
@@ -69,9 +71,11 @@ func (verifier *Verifier) verifyRemoteGitUri(remoteUri string) error {
 
 func (verifier *Verifier) verifyRemoteHgUri(remoteUri string) error {
 	if len(remoteUri) > repositoryMaxRemoteUriLength {
-		return fmt.Errorf("Hg remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
+		errorText := fmt.Sprintf("Hg remote uri cannot exceed %d characters long", repositoryMaxRemoteUriLength)
+		return resources.InvalidRepositoryRemoteUriError{errorText}
 	} else if ok, err := regexp.MatchString(remoteHgUriRegex, remoteUri); !ok || err != nil {
-		return errors.New("Hg remote uri must match regex: " + remoteHgUriRegex)
+		errorText := fmt.Sprintf("Hg remote uri must match regex: " + remoteHgUriRegex)
+		return resources.InvalidRepositoryRemoteUriError{errorText}
 	} else if err := verifier.verifyRepositoryDoesNotExistWithRemoteUri(remoteUri); err != nil {
 		return err
 	}

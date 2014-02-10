@@ -52,6 +52,14 @@ func (err NoSuchRepositoryError) Error() string {
 	return err.Message
 }
 
+type InvalidRepositoryRemoteUriError struct {
+	Message string
+}
+
+func (err InvalidRepositoryRemoteUriError) Error() string {
+	return err.Message
+}
+
 type InvalidRepositoryStatusError struct {
 	Message string
 }

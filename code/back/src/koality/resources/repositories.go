@@ -45,6 +45,7 @@ type RepositoriesReadHandler interface {
 }
 
 type RepositoriesUpdateHandler interface {
+	SetRemoteUri(repositoryId uint64, remoteUri string) error
 	SetStatus(repositoryId uint64, status string) error
 	SetGitHubOAuthToken(repositoryId uint64, oAuthToken string) error
 	ClearGitHubOAuthToken(repositoryId uint64) error
@@ -58,6 +59,7 @@ type RepositoriesDeleteHandler interface {
 
 type RepositoryCreatedHandler func(repository *Repository)
 type RepositoryDeletedHandler func(repositoryId uint64)
+type RepositoryRemoteUriUpdatedHandler func(repositoryId uint64, remoteUri string)
 type RepositoryStatusUpdatedHandler func(repositoryId uint64, status string)
 type RepositoryGitHubOAuthTokenUpdatedHandler func(repositoryId uint64, oAuthToken string)
 type RepositoryGitHubOAuthTokenClearedHandler func(repositoryId uint64)
@@ -70,6 +72,9 @@ type RepositoriesSubscriptionHandler interface {
 
 	SubscribeToDeletedEvents(updateHandler RepositoryDeletedHandler) (SubscriptionId, error)
 	UnsubscribeFromDeletedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToRemoteUriUpdatedEvents(updateHandler RepositoryRemoteUriUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromRemoteUriUpdatedEvents(subscriptionId SubscriptionId) error
 
 	SubscribeToStatusUpdatedEvents(updateHandler RepositoryStatusUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromStatusUpdatedEvents(subscriptionId SubscriptionId) error
@@ -90,6 +95,7 @@ type RepositoriesSubscriptionHandler interface {
 type InternalRepositoriesSubscriptionHandler interface {
 	FireCreatedEvent(repository *Repository)
 	FireDeletedEvent(repositoryId uint64)
+	FireRemoteUriUpdatedEvent(repositoryId uint64, remoteUri string)
 	FireStatusUpdatedEvent(repositoryId uint64, status string)
 	FireGitHubOAuthTokenUpdatedEvent(repositoryId uint64, oAuthToken string)
 	FireGitHubOAuthTokenClearedEvent(repositoryId uint64)

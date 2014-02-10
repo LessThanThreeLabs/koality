@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"database/sql"
+	"fmt"
 	"koality/resources"
 	"strings"
 )
@@ -9,11 +10,47 @@ import (
 type UpdateHandler struct {
 	database            *sql.DB
 	verifier            *Verifier
+	readHandler         resources.RepositoriesReadHandler
 	subscriptionHandler resources.InternalRepositoriesSubscriptionHandler
 }
 
-func NewUpdateHandler(database *sql.DB, verifier *Verifier, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesUpdateHandler, error) {
-	return &UpdateHandler{database, verifier, subscriptionHandler}, nil
+func NewUpdateHandler(database *sql.DB, verifier *Verifier, readHandler resources.RepositoriesReadHandler, subscriptionHandler resources.InternalRepositoriesSubscriptionHandler) (resources.RepositoriesUpdateHandler, error) {
+	return &UpdateHandler{database, verifier, readHandler, subscriptionHandler}, nil
+}
+
+func (updateHandler *UpdateHandler) SetRemoteUri(repositoryId uint64, remoteUri string) error {
+	repository, err := updateHandler.readHandler.Get(repositoryId)
+	if err != nil {
+		return err
+	}
+
+	if repository.VcsType == "git" {
+		if err := updateHandler.verifier.verifyRemoteGitUri(remoteUri); err != nil {
+			return err
+		}
+	} else if repository.VcsType == "hg" {
+		if err := updateHandler.verifier.verifyRemoteHgUri(remoteUri); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("Unexpected vcs type: %s", repository.VcsType)
+	}
+
+	query := "UPDATE repositories SET remote_uri=$1 WHERE id=$2"
+	result, err := updateHandler.database.Exec(query, remoteUri, repositoryId)
+	if err != nil {
+		return err
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	} else if count != 1 {
+		return resources.NoSuchRepositoryError{"Unable to find repository"}
+	}
+
+	updateHandler.subscriptionHandler.FireRemoteUriUpdatedEvent(repositoryId, remoteUri)
+	return nil
 }
 
 func (updateHandler *UpdateHandler) SetStatus(repositoryId uint64, status string) error {

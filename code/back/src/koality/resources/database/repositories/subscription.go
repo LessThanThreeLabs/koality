@@ -7,6 +7,7 @@ import (
 type SubscriptionHandler struct {
 	createdSubscriptionManager                 resources.SubscriptionManager
 	deletedSubscriptionManager                 resources.SubscriptionManager
+	remoteUriUpdatedSubscriptionManager        resources.SubscriptionManager
 	statusUpdatedSubscriptionManager           resources.SubscriptionManager
 	gitHubOAuthTokenUpdatedSubscriptionManager resources.SubscriptionManager
 	gitHubOAuthTokenClearedSubscriptionManager resources.SubscriptionManager
@@ -40,6 +41,18 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromDeletedEvents(sub
 
 func (subscriptionHandler *SubscriptionHandler) FireDeletedEvent(repositoryId uint64) {
 	subscriptionHandler.deletedSubscriptionManager.Fire(repositoryId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToRemoteUriUpdatedEvents(updateHandler resources.RepositoryRemoteUriUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.remoteUriUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromRemoteUriUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.remoteUriUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireRemoteUriUpdatedEvent(repositoryId uint64, remoteUri string) {
+	subscriptionHandler.remoteUriUpdatedSubscriptionManager.Fire(repositoryId, remoteUri)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToStatusUpdatedEvents(updateHandler resources.RepositoryStatusUpdatedHandler) (resources.SubscriptionId, error) {

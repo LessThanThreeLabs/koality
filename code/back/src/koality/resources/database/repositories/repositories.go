@@ -26,7 +26,7 @@ func New(database *sql.DB) (*resources.RepositoriesHandler, error) {
 		return nil, err
 	}
 
-	updateHandler, err := NewUpdateHandler(database, verifier, internalSubscriptionHandler)
+	updateHandler, err := NewUpdateHandler(database, verifier, readHandler, internalSubscriptionHandler)
 	if err != nil {
 		return nil, err
 	}
