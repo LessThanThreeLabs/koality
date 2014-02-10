@@ -218,12 +218,12 @@ func (buildRunner *BuildRunner) RunStagesOnNewMachines(numNodes uint64, buildDat
 	go func(newMachinesChan <-chan vm.VirtualMachine) {
 		for newMachine := range newMachinesChan {
 			if currentBuild.Status != "passed" && currentBuild.Status != "failed" && currentBuild.Status != "cancelled" {
-				go func() {
-					defer newMachine.Terminate()
+				go func(virtualMachine vm.VirtualMachine) {
+					defer virtualMachine.Terminate()
 					defer buildData.Pool.Free()
 					buildRunner.RunStages(
-						newMachine, buildData, currentBuild, newStageRunnersChan, finishFunc)
-				}()
+						virtualMachine, buildData, currentBuild, newStageRunnersChan, finishFunc)
+				}(newMachine)
 			} else {
 				buildData.Pool.Return(newMachine)
 			}
