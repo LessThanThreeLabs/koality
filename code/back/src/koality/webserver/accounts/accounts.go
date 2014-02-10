@@ -53,4 +53,7 @@ func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/logout",
 		middleware.IsLoggedInWrapper(accountsHandler.logout)).
 		Methods("POST")
+	subrouter.HandleFunc("/resetPassword",
+		middleware.IsLoggedOutWrapper(accountsHandler.resetPassword)).
+		Methods("POST")
 }

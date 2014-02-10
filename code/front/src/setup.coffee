@@ -23,11 +23,11 @@ angular.module('koality', ['ngSanitize',
 				reloadOnSearch: false
 				redirectTo: if window.userId? then '/' else null
 			).
-			# when('/resetPassword',
-			# 	templateUrl: "/html/resetPassword/resetPassword.html"
-			# 	controller: ResetPassword
-			# 	redirectTo: if window.userId? then '/' else null
-			# ).
+			when('/resetPassword',
+				templateUrl: "/html/resetPassword/resetPassword.html"
+				controller: ResetPassword
+				redirectTo: if window.userId? then '/' else null
+			).
 			when('/dashboard',
 				templateUrl: "/html/dashboard/dashboard.html"
 				controller: Dashboard

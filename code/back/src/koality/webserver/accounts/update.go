@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -58,4 +59,15 @@ func (accountsHandler *AccountsHandler) logout(writer http.ResponseWriter, reque
 	session.Save(request, writer)
 
 	fmt.Fprint(writer, "ok")
+}
+
+func (accountsHandler *AccountsHandler) resetPassword(writer http.ResponseWriter, request *http.Request) {
+	emailBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	fmt.Fprint(writer, "need to reset password for "+string(emailBytes))
 }

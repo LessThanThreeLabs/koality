@@ -19,7 +19,7 @@ window.CreateAccount = ['$scope', '$window', '$location', '$routeParams', '$time
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		request = $http.post("/app/accounts/create", $scope.account)
+		request = $http.post "/app/accounts/create", $scope.account
 		request.success (data, status, headers, config) =>
 			$scope.makingRequest = false
 			$scope.showVerifyEmailSent = true
@@ -31,7 +31,7 @@ window.CreateAccount = ['$scope', '$window', '$location', '$routeParams', '$time
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		request = $http.post("/app/accounts/gitHub/create", $scope.account)
+		request = $http.post "/app/accounts/gitHub/create", $scope.account
 		request.success (data, status, headers, config) =>
 			console.log 'data'
 			# window.location.href = redirectUri

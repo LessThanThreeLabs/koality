@@ -40,7 +40,7 @@ type TemplatesHandler struct {
 }
 
 var (
-	pathsToHandle []string = []string{"index", "login", "create/account", "account", "admin", "dashboard", "repository/{repositoryId:[0-9]+}"}
+	pathsToHandle []string = []string{"index", "login", "create/account", "account", "resetPassword", "admin", "dashboard", "repository/{repositoryId:[0-9]+}"}
 )
 
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string) (*TemplatesHandler, error) {

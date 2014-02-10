@@ -96,6 +96,8 @@
 		
 		"/js/src/createAccount/createAccount.js",
 
+		"/js/src/resetPassword/resetPassword.js",
+
 		"/js/src/account/account.js",
 		"/js/src/account/basic/accountBasic.js",
 		"/js/src/account/password/accountPassword.js",
