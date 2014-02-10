@@ -61,6 +61,11 @@ func (connection *gitHubConnection) SubscribeToEvents() error {
 			return
 		}
 
+		domainName, err := connection.resourcesConnection.Settings.Read.GetDomainName()
+		if _, ok := err.(resources.NoSuchSettingError); ok {
+			domainName = "127.0.0.1:10443"
+		}
+
 		var state string
 		var description string
 		switch status {
@@ -75,7 +80,7 @@ func (connection *gitHubConnection) SubscribeToEvents() error {
 			description = "Koality is verifying this change"
 		}
 
-		url := fmt.Sprintf("https://127.0.0.1:10443/repository/%s?change=%s", repository.Id, buildId)
+		url := fmt.Sprintf("https://%s/repository/%s?change=%s", domainName, repository.Id, buildId)
 		if err = connection.SetChangeStatus(repository, build.Changeset.HeadSha, state, description, url); err != nil {
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]

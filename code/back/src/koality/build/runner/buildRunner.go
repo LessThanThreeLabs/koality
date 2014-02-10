@@ -164,7 +164,7 @@ func (buildRunner *BuildRunner) getBuildConfig(currentBuild *resources.Build, re
 		for _, filePatch := range patchSet.File {
 			if filePatch.Src == "koality.yml" && filePatch.Dst == "koality.yml" {
 				patchedYaml, err := filePatch.Apply([]byte(configYaml))
-				// TODO (bbland): log this error
+				// TODO (bbland): log this error, set Nodes=1
 				if err == nil {
 					configYaml = string(patchedYaml)
 				}
