@@ -1,7 +1,7 @@
 'use strict'
 
-window.CreateAccount = ['$scope', '$location', '$routeParams', '$timeout', 'initialState', 'rpc', 'cookieExtender', 'notification', ($scope, $location, $routeParams, $timeout, initialState, rpc, cookieExtender, notification) ->
-	$scope.createAccountType = initialState.userConnectionType
+window.CreateAccount = ['$scope', '$window', '$location', '$routeParams', '$timeout', 'notification', ($scope, $window, $location, $routeParams, $timeout, notification) ->
+	$scope.createAccountType = if $window.googleLoginAllowed then 'google' else 'default'
 	$scope.account = {}
 	$scope.makingRequest = false
 	$scope.showVerifyEmailSent = false
@@ -19,25 +19,25 @@ window.CreateAccount = ['$scope', '$location', '$routeParams', '$timeout', 'init
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		rpc 'users', 'create', 'createUser', $scope.account, (error, result) ->
+		request = $http.post("/app/accounts/create", $scope.account)
+		request.success (data, status, headers, config) =>
 			$scope.makingRequest = false
-			if error then notification.error error
-			else
-				$scope.showVerifyEmailSent = true
+			$scope.showVerifyEmailSent = true
+		request.error (data, status, headers, config) =>
+			$scope.makingRequest = false
+			notification.error data
 
 	$scope.googleCreateAccount = () ->
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		rpc 'users', 'read', 'getGoogleCreateAccountRedirect', null, (error, redirectUri) ->
+		request = $http.post("/app/accounts/gitHub/create", $scope.account)
+		request.success (data, status, headers, config) =>
+			console.log 'data'
+			# window.location.href = redirectUri
 			$scope.makingRequest = false
-			
-			if error? then notification.error error
-			else
-				if $scope.account.rememberMe is 'yes'
-					cookieExtender.extendOAuthCookie (error) ->
-						console.error error if error?
-						window.location.href = redirectUri
-				else
-					window.location.href = redirectUri
+		request.error (data, status, headers, config) =>
+			console.error data
+			$scope.makingRequest = false
+			notification.error data
 ]

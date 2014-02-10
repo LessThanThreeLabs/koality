@@ -17,12 +17,12 @@ angular.module('koality', ['ngSanitize',
 				reloadOnSearch: false
 				redirectTo: if window.userId? then null else '/login'
 			).
-			# when('/create/account',
-			# 	templateUrl: "/html/createAccount/createAccount.html"
-			# 	controller: CreateAccount
-			# 	reloadOnSearch: false
-			# 	redirectTo: if window.userId? then '/' else null
-			# ).
+			when('/create/account',
+				templateUrl: "/html/createAccount/createAccount.html"
+				controller: CreateAccount
+				reloadOnSearch: false
+				redirectTo: if window.userId? then '/' else null
+			).
 			# when('/resetPassword',
 			# 	templateUrl: "/html/resetPassword/resetPassword.html"
 			# 	controller: ResetPassword

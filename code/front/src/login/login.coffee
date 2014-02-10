@@ -1,9 +1,9 @@
 'use strict'
 
-window.Login = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'notification', ($scope, $location, $routeParams, $http, $timeout, notification) ->
+window.Login = ['$scope', '$window', '$location', '$routeParams', '$http', '$timeout', 'notification', ($scope, $window, $location, $routeParams, $http, $timeout, notification) ->
 	$scope.loginConfig =
-		type: 'google'
-		defaultType: 'default'
+		type: if $window.googleLoginAllowed then 'google' else 'default'
+		defaultType: if $window.googleLoginAllowed then 'google' else 'default'
 	$scope.account = {}
 	$scope.makingRequest = false
 

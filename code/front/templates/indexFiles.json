@@ -93,6 +93,8 @@
 		"/js/src/dashboard/dashboard.js",
 
 		"/js/src/login/login.js",
+		
+		"/js/src/createAccount/createAccount.js",
 
 		"/js/src/account/account.js",
 		"/js/src/account/basic/accountBasic.js",

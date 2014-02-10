@@ -19,10 +19,11 @@ import (
 )
 
 type indexTemplateValues struct {
-	User      *resources.User
-	CsrfToken string
-	CssFiles  []string
-	JsFiles   []string
+	User                   *resources.User
+	CsrfToken              string
+	AuthenticationSettings *resources.AuthenticationSettings
+	CssFiles               []string
+	JsFiles                []string
 }
 
 type wizardTemplateValues struct {
@@ -39,7 +40,7 @@ type TemplatesHandler struct {
 }
 
 var (
-	pathsToHandle []string = []string{"index", "login", "account", "admin", "dashboard", "repository/{repositoryId:[0-9]+}"}
+	pathsToHandle []string = []string{"index", "login", "create/account", "account", "admin", "dashboard", "repository/{repositoryId:[0-9]+}"}
 )
 
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string) (*TemplatesHandler, error) {
@@ -125,7 +126,14 @@ func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, re
 		return
 	}
 
-	templateValues := indexTemplateValues{user, csrfToken, templatesHandler.cssFiles, templatesHandler.jsFiles}
+	authenticationSettings, err := templatesHandler.resourcesConnection.Settings.Read.GetAuthenticationSettings()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	templateValues := indexTemplateValues{user, csrfToken, authenticationSettings, templatesHandler.cssFiles, templatesHandler.jsFiles}
 	templatesHandler.indexTemplate.Execute(writer, templateValues)
 }
 

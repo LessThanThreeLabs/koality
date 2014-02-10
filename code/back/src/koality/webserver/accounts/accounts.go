@@ -41,6 +41,12 @@ func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		middleware.IsLoggedOutWrapper(accountsHandler.getGoogleCreateAccountRedirect)).
 		Methods("GET")
 
+	subrouter.HandleFunc("/create",
+		middleware.IsLoggedOutWrapper(accountsHandler.create)).
+		Methods("POST")
+	subrouter.HandleFunc("/gitHub/Create",
+		middleware.IsLoggedOutWrapper(accountsHandler.createWithGitHub)).
+		Methods("POST")
 	subrouter.HandleFunc("/login",
 		middleware.IsLoggedOutWrapper(accountsHandler.login)).
 		Methods("POST")
