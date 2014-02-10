@@ -2,6 +2,7 @@ package github
 
 import (
 	"github.com/gorilla/mux"
+	"koality/github"
 	"koality/repositorymanager"
 	"koality/resources"
 )
@@ -53,10 +54,11 @@ type PushUser struct {
 type GitHubHandler struct {
 	resourcesConnection *resources.Connection
 	repositoryManager   repositorymanager.RepositoryManager
+	gitHubConnection    github.GitHubConnection
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager) (*GitHubHandler, error) {
-	return &GitHubHandler{resourcesConnection, repositoryManager}, nil
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection github.GitHubConnection) (*GitHubHandler, error) {
+	return &GitHubHandler{resourcesConnection, repositoryManager, gitHubConnection}, nil
 }
 
 func (gitHubHandler *GitHubHandler) WireHooksSubroutes(subrouter *mux.Router) {

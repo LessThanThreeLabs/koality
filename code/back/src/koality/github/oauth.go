@@ -14,22 +14,27 @@ type GitHubOAuthConnection interface {
 	CheckValidOAuthToken(oAuthToken string) (isValid bool, err error)
 }
 
-type standardGitHubOAuthConnection struct{}
-
-func NewStandardGitHubOAuthConnection() GitHubOAuthConnection {
-	return standardGitHubOAuthConnection{}
+type standardGitHubOAuthConnection struct {
+	resourcesConnection *resources.Connection
 }
 
-func (connection standardGitHubOAuthConnection) GetAuthorizationUrl(action string) (string, error) {
-	baseUrl := "https://127.0.0.1:10443"
-	redirectUrl := baseUrl + "/oAuth/gitHub/token"
+func NewStandardGitHubOAuthConnection(resourcesConnection *resources.Connection) GitHubOAuthConnection {
+	return &standardGitHubOAuthConnection{resourcesConnection}
+}
+
+func (connection *standardGitHubOAuthConnection) GetAuthorizationUrl(action string) (string, error) {
+	domainName, err := connection.resourcesConnection.Settings.Read.GetDomainName()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		domainName = "127.0.0.1:10443"
+	}
+	redirectUrl := fmt.Sprintf("https://%s/oAuth/gitHub/token", domainName)
 	queryValues := url.Values{}
 	queryValues.Set("redirectUri", redirectUrl)
 	queryValues.Set("action", action)
 	return "https://koalitycode.com/gitHub/authenticate?" + queryValues.Encode(), nil
 }
 
-func (connection standardGitHubOAuthConnection) CheckValidOAuthToken(oAuthToken string) (bool, error) {
+func (connection *standardGitHubOAuthConnection) CheckValidOAuthToken(oAuthToken string) (bool, error) {
 	oAuthCheckUrl := "https://koalitycode.com/gitHub/isValidOAuth"
 	jsonBytes, err := json.Marshal(map[string]string{"token": oAuthToken})
 	if err != nil {
@@ -125,7 +130,7 @@ type compoundGitHubOAuthConnection struct {
 
 func NewCompoundGitHubOAuthConnection(resourcesConnection *resources.Connection) GitHubOAuthConnection {
 	return &compoundGitHubOAuthConnection{
-		standard:   NewStandardGitHubOAuthConnection(),
+		standard:   NewStandardGitHubOAuthConnection(resourcesConnection),
 		enterprise: NewGitHubEnterpriseOAuthConnection(resourcesConnection),
 	}
 }

@@ -141,7 +141,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	gitHubHandler, err := github.New(webserver.resourcesConnection, webserver.repositoryManager)
+	gitHubHandler, err := github.New(webserver.resourcesConnection, webserver.repositoryManager, webserver.gitHubConnection)
 	if err != nil {
 		return nil, err
 	}
