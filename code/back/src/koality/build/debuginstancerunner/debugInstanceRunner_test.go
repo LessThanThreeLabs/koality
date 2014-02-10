@@ -181,7 +181,7 @@ func (suite *DebugInstanceRunnerSuite) runDebugInstanceWithYaml(check *gocheck.C
 	suite.debugInstance, err = suite.resourcesConnection.DebugInstances.Create.Create(
 		vmPool.Id(), suite.instanceId, &expires, &resources.CoreBuildInformation{
 			suite.repository.Id, sha, "1234567890123456789012345678901234567890", "headMessage",
-			"headUsername", "head@Ema.il", "a@b.com"})
+			"headUsername", "head@Ema.il", nil, "a@b.com"})
 	check.Assert(err, gocheck.IsNil)
 
 	return debugInstanceRunner.RunDebugInstance(suite.debugInstance)
