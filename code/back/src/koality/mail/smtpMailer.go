@@ -20,14 +20,14 @@ func NewMailer(smtpServerSettings *resources.SmtpServerSettings) Mailer {
 	}
 }
 
-func (mailer *SmtpMailer) SendMail(fromAddress string, replyTo, toAddresses []string, subject, body string) error {
+func (mailer *SmtpMailer) SendMail(fromAddress string, replyToAddresses, toAddresses []string, subject, body string) error {
 	auth, err := mailer.getAuth()
 	if err != nil {
 		return err
 	}
 
 	serverAddress := fmt.Sprintf("%s:%d", mailer.smtpServerSettings.Hostname, mailer.smtpServerSettings.Port)
-	return smtp.SendMail(serverAddress, auth, fromAddress, toAddresses, mailer.formatMessage(fromAddress, replyTo, toAddresses, subject, body))
+	return smtp.SendMail(serverAddress, auth, fromAddress, toAddresses, mailer.formatMessage(fromAddress, replyToAddresses, toAddresses, subject, body))
 }
 
 func (mailer *SmtpMailer) getAuth() (smtp.Auth, error) {
@@ -52,12 +52,12 @@ func (mailer *SmtpMailer) getAuth() (smtp.Auth, error) {
 	}
 }
 
-func (mailer *SmtpMailer) formatMessage(fromAddress string, replyTo, toAddresses []string, subject, body string) []byte {
+func (mailer *SmtpMailer) formatMessage(fromAddress string, replyToAddresses, toAddresses []string, subject, body string) []byte {
 	message := fmt.Sprintf("From: %s\r\n", fromAddress)
 	for _, toAddress := range toAddresses {
 		message += fmt.Sprintf("To: %s\r\n", toAddress)
 	}
-	for _, replyToAddress := range replyTo {
+	for _, replyToAddress := range replyToAddresses {
 		message += fmt.Sprintf("Reply-To: %s\r\n", replyToAddress)
 	}
 
