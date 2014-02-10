@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS changesets (
 	head_message		varchar(1000000) NOT NULL,  -- 1MB
 	head_username		varchar(128) NOT NULL,
 	head_email			varchar(256) NOT NULL,
+	patch_contents		bytea,
+	patch_hash			bytea NOT NULL,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 
 	UNIQUE (head_sha, base_sha)

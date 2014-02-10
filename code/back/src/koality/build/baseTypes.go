@@ -17,27 +17,31 @@ type SectionResult struct {
 	Passed        bool
 }
 
+type basicCommand struct {
+	name       string
+	executable shell.Executable
+}
+
+func NewBasicCommand(name string, executable shell.Executable) Command {
+	return &basicCommand{name, executable}
+}
+
+func (command *basicCommand) Name() string {
+	return command.name
+}
+
+func (command *basicCommand) Executable() shell.Executable {
+	return command.executable
+}
+
+func (command *basicCommand) XunitPaths() []string {
+	return nil
+}
+
 // Temporary
 
-type ShellCommand struct {
-	name    string
-	command shell.Command
-}
-
-func NewShellCommand(name string, command shell.Command) ShellCommand {
-	return ShellCommand{name, command}
-}
-
-func (shellCommand ShellCommand) Name() string {
-	return shellCommand.name
-}
-
-func (shellCommand ShellCommand) Executable() shell.Executable {
-	return shell.Executable{
-		Command: shellCommand.command,
-	}
-}
-
-func (shellCommand ShellCommand) XunitPaths() []string {
-	return nil
+func NewShellCommand(name string, command shell.Command) Command {
+	return NewBasicCommand(name, shell.Executable{
+		Command: command,
+	})
 }

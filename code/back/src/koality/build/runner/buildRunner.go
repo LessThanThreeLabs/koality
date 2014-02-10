@@ -1,7 +1,9 @@
 package runner
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/LessThanThreeLabs/go.codereview/patch"
 	"koality/build"
 	"koality/build/config"
 	"koality/build/config/commandgroup"
@@ -10,6 +12,7 @@ import (
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/shell"
+	"koality/shell/shellutil"
 	"koality/util/log"
 	"koality/vm"
 	"koality/vm/poolmanager"
@@ -153,6 +156,22 @@ func (buildRunner *BuildRunner) getBuildConfig(currentBuild *resources.Build, re
 		return emptyConfig, err
 	}
 
+	if len(currentBuild.Changeset.PatchContents) > 0 {
+		patchSet, err := patch.Parse(currentBuild.Changeset.PatchContents)
+		if err != nil {
+			return emptyConfig, err
+		}
+		for _, filePatch := range patchSet.File {
+			if filePatch.Src == "koality.yml" && filePatch.Dst == "koality.yml" {
+				patchedYaml, err := filePatch.Apply([]byte(configYaml))
+				// TODO (bbland): log this error
+				if err == nil {
+					configYaml = string(patchedYaml)
+				}
+			}
+		}
+	}
+
 	buildConfig, err := config.FromYaml(configYaml, repository.Name)
 	if err != nil {
 		return emptyConfig, err
@@ -165,6 +184,9 @@ func (buildRunner *BuildRunner) getBuildConfig(currentBuild *resources.Build, re
 	}
 
 	setupCommands := []build.Command{build.NewShellCommand(repository.VcsType, checkoutCommand)}
+	if len(currentBuild.Changeset.PatchContents) > 0 {
+		setupCommands = append(setupCommands, build.NewBasicCommand("patch", shellutil.CreatePatchExecutable(repository.Name, bytes.NewReader(currentBuild.Changeset.PatchContents))))
+	}
 	setupSection := section.New("setup", false, section.RunOnAll, section.FailOnFirst, false, nil, commandgroup.New(setupCommands), nil)
 	buildConfig.Sections = append([]section.Section{setupSection}, buildConfig.Sections...)
 	return buildConfig, nil

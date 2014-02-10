@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"koality/resources"
 	"net/http"
 	"strconv"
@@ -34,6 +35,18 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 		return
 	}
 
+	patchFile, _, _ := request.FormFile("patch")
+
+	var patchContents []byte
+	if patchFile != nil {
+		patchContents, err = ioutil.ReadAll(patchFile)
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		}
+	}
+
 	baseSha := headSha
 
 	if err = buildsHandler.repositoryManager.StorePending(repository, headSha); err != nil {
@@ -42,7 +55,7 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 		return
 	}
 
-	changeset, err := buildsHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha)
+	changeset, err := buildsHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha, patchContents)
 	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -53,7 +66,7 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 	if changeset != nil {
 		build, err = buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repositoryId, changeset.Id, "", headEmail)
 	} else {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, "", headEmail)
+		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, "", headEmail)
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

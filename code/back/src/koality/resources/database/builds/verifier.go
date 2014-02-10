@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/LessThanThreeLabs/go.codereview/patch"
 	"koality/resources"
 	"regexp"
 	"time"
@@ -80,6 +81,14 @@ func (verifier *Verifier) verifyHeadEmail(email string) error {
 		return fmt.Errorf("Head email cannot exceed %d characters long", maxHeadEmailLength)
 	}
 	return nil
+}
+
+func (verifier *Verifier) verifyPatchContents(patchContents []byte) error {
+	if len(patchContents) == 0 {
+		return nil
+	}
+	_, err := patch.Parse(patchContents)
+	return err
 }
 
 func (verifier *Verifier) verifyMergeTarget(mergeTarget string) error {

@@ -24,18 +24,20 @@ type CoreBuildInformation struct {
 	HeadMessage   string
 	HeadUsername  string
 	HeadEmail     string
+	PatchContents []byte
 	EmailToNotify string
 }
 
 type Changeset struct {
-	Id           uint64
-	RepositoryId uint64
-	HeadSha      string
-	BaseSha      string
-	HeadMessage  string
-	HeadUsername string
-	HeadEmail    string
-	Created      *time.Time
+	Id            uint64
+	RepositoryId  uint64
+	HeadSha       string
+	BaseSha       string
+	HeadMessage   string
+	HeadUsername  string
+	HeadEmail     string
+	PatchContents []byte
+	Created       *time.Time
 }
 
 type BuildsHandler struct {
@@ -46,16 +48,16 @@ type BuildsHandler struct {
 }
 
 type BuildsCreateHandler interface {
-	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*Build, error)
+	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, mergeTarget, emailToNotify string) (*Build, error)
 	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*Build, error)
-	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*Build, error)
+	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify string) (*Build, error)
 	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*Build, error)
 }
 
 type BuildsReadHandler interface {
 	Get(buildId uint64) (*Build, error)
 	GetTail(repositoryId uint64, offset, results uint32) ([]Build, error)
-	GetChangesetFromShas(headSha, baseSha string) (*Changeset, error)
+	GetChangesetFromShas(headSha, baseSha string, patchContents []byte) (*Changeset, error)
 }
 
 type BuildsUpdateHandler interface {

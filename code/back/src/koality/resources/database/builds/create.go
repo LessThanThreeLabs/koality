@@ -1,6 +1,7 @@
 package builds
 
 import (
+	"crypto/md5"
 	"database/sql"
 	"koality/resources"
 )
@@ -30,10 +31,10 @@ func nilOnZero(id uint64) interface{} {
 	}
 }
 
-func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Build, error) {
+func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, mergeTarget, emailToNotify string) (*resources.Build, error) {
 	if err := createHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
-	} else if err := createHandler.getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail); err != nil {
+	} else if err := createHandler.getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail, patchContents); err != nil {
 		return nil, err
 	} else if err := createHandler.getBuildParamsError(snapshotId, mergeTarget, emailToNotify); err != nil {
 		return nil, err
@@ -44,10 +45,12 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 		return nil, err
 	}
 
+	patchHash := md5.New().Sum(patchContents)
+
 	changesetId := uint64(0)
-	changesetQuery := "INSERT INTO changesets (repository_id, head_sha, base_sha, head_message, head_username, head_email)" +
-		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
-	err = transaction.QueryRow(changesetQuery, repositoryId, headSha, baseSha, headMessage, headUsername, headEmail).Scan(&changesetId)
+	changesetQuery := "INSERT INTO changesets (repository_id, head_sha, base_sha, head_message, head_username, head_email, patch_contents, patch_hash)" +
+		" VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
+	err = transaction.QueryRow(changesetQuery, repositoryId, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, patchHash).Scan(&changesetId)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err
@@ -73,8 +76,8 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 	return build, nil
 }
 
-func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify string) (*resources.Build, error) {
-	build, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, mergeTarget, emailToNotify string) (*resources.Build, error) {
+	build, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, mergeTarget, emailToNotify)
 	if err == nil {
 		createHandler.subscriptionHandler.FireCreatedEvent(build)
 	}
@@ -83,11 +86,11 @@ func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha
 }
 
 func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Build, error) {
-	return createHandler.create(repositoryId, snapshotId, 0, headSha, baseSha, headMessage, headUsername, headEmail, "", emailToNotify)
+	return createHandler.create(repositoryId, snapshotId, 0, headSha, baseSha, headMessage, headUsername, headEmail, nil, "", emailToNotify)
 }
 
-func (createHandler *CreateHandler) CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Build, error) {
-	return createHandler.create(repositoryId, 0, debugInstanceId, headSha, baseSha, headMessage, headUsername, headEmail, "", emailToNotify)
+func (createHandler *CreateHandler) CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify string) (*resources.Build, error) {
+	return createHandler.create(repositoryId, 0, debugInstanceId, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, "", emailToNotify)
 }
 
 func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*resources.Build, error) {
@@ -117,7 +120,7 @@ func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetI
 	return build, nil
 }
 
-func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail string) error {
+func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte) error {
 	if err := createHandler.verifier.verifyHeadSha(headSha); err != nil {
 		return err
 	} else if err := createHandler.verifier.verifyBaseSha(baseSha); err != nil {
@@ -129,6 +132,8 @@ func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, he
 	} else if err := createHandler.verifier.verifyHeadUsername(headUsername); err != nil {
 		return err
 	} else if err := createHandler.verifier.verifyHeadEmail(headEmail); err != nil {
+		return err
+	} else if err := createHandler.verifier.verifyPatchContents(patchContents); err != nil {
 		return err
 	}
 	return nil

@@ -32,7 +32,7 @@ func TestCreateInvalidBuild(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	_, err = connection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when providing invalid repository id")
 	}
@@ -42,19 +42,24 @@ func TestCreateInvalidBuild(test *testing.T) {
 		test.Fatal("Expected NoSuchSnapshotError")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid head sha")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid base sha")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, "not-an-email")
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, "not-an-email")
 	if err == nil {
 		test.Fatal("Expected error after providing invalid email to notify")
+	}
+
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, []byte("this is an invalid patch\ndiff file"), mergeTarget, emailToNotify)
+	if err == nil {
+		test.Fatal("Expected error after providing invalid patch contents")
 	}
 }
 
@@ -94,7 +99,7 @@ func TestCreateBuild(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -166,7 +171,7 @@ func TestCreateBuild(test *testing.T) {
 		test.Fatal("build.Changeset.HeadEmail mismatch")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
 		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add build with same changeset params twice")
 	}
@@ -254,7 +259,7 @@ func TestBuildStatuses(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -373,7 +378,7 @@ func TestBuildTimes(test *testing.T) {
 	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
 
-	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -506,7 +511,7 @@ func TestGetChangesetFromShas(test *testing.T) {
 	}
 	firstBuild := builds[0]
 
-	changeset, err := connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, firstBuild.Changeset.BaseSha)
+	changeset, err := connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, firstBuild.Changeset.BaseSha, firstBuild.Changeset.PatchContents)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -517,13 +522,18 @@ func TestGetChangesetFromShas(test *testing.T) {
 		test.Fatal("changeset.BaseSha mismatch")
 	}
 
-	_, err = connection.Builds.Read.GetChangesetFromShas("some-bad-head-sha", firstBuild.Changeset.BaseSha)
+	_, err = connection.Builds.Read.GetChangesetFromShas("some-bad-head-sha", firstBuild.Changeset.BaseSha, firstBuild.Changeset.PatchContents)
 	if _, ok := err.(resources.NoSuchChangesetError); !ok {
 		test.Fatal("Expected NoSuchChangesetError when providing invalid head sha")
 	}
 
-	_, err = connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, "some-bad-base-sha")
+	_, err = connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, "some-bad-base-sha", firstBuild.Changeset.PatchContents)
 	if _, ok := err.(resources.NoSuchChangesetError); !ok {
 		test.Fatal("Expected NoSuchChangesetError when providing invalid base sha")
+	}
+
+	_, err = connection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, firstBuild.Changeset.BaseSha, []byte("some-bad-patch-contents"))
+	if _, ok := err.(resources.NoSuchChangesetError); !ok {
+		test.Fatal("Expected NoSuchChangesetError when providing invalid patch contents")
 	}
 }

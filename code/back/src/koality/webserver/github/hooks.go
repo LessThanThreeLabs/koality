@@ -76,7 +76,7 @@ func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName
 		return
 	}
 
-	changeset, err := gitHubHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha)
+	changeset, err := gitHubHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha, nil)
 	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -86,7 +86,7 @@ func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName
 	if changeset != nil {
 		_, err = gitHubHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repository.Id, changeset.Id, "", headEmail)
 	} else {
-		_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, "", headEmail)
+		_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, "", headEmail)
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

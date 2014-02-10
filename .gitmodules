@@ -79,3 +79,6 @@
 [submodule "code/back/src/github.com/google/go-querystring"]
 	path = code/back/src/github.com/google/go-querystring
 	url = git@github.com:google/go-querystring
+[submodule "code/back/src/github.com/LessThanThreeLabs/go.codereview"]
+	path = code/back/src/github.com/LessThanThreeLabs/go.codereview
+	url = git@github.com:LessThanThreeLabs/go.codereview
