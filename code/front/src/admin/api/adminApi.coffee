@@ -1,25 +1,31 @@
 'use strict'
 
-window.AdminApi = ['$scope', 'rpc', 'events', 'notification', ($scope, rpc, events, notification) ->
+window.AdminApi = ['$scope', '$http', 'events', 'notification', ($scope, $http, events, notification) ->
 	$scope.mustConfirmRegenerateKey = false
 	$scope.makingRequest = false
 
 	getApiKey = () ->
-		rpc 'systemSettings', 'read', 'getAdminApiKey', null, (error, apiKey) ->
-			$scope.apiKey = apiKey
+		request = $http.get "/app/settings/apiKey"
+		request.success (data, status, headers, config) =>
+			$scope.apiKey = data
+		request.error (data, status, headers, config) =>
+			notification.error data
 
 	getDomainName = () ->
-		rpc 'systemSettings', 'read', 'getWebsiteSettings', null, (error, websiteSettings) ->
-			$scope.domainName = websiteSettings.domainName
+		request = $http.get "/app/settings/domainName"
+		request.success (data, status, headers, config) =>
+			$scope.domainName = data
+		request.error (data, status, headers, config) =>
+			notification.error data
 
-	handleApiKeyUpdated = (data) ->
-		$scope.apiKey = data
+	# handleApiKeyUpdated = (data) ->
+	# 	$scope.apiKey = data
 
 	getApiKey()
 	getDomainName()
 
-	apiKeyUpdatedEvents = events('systemSettings', 'admin api key updated', null).setCallback(handleApiKeyUpdated).subscribe()
-	$scope.$on '$destroy', apiKeyUpdatedEvents.unsubscribe
+	# apiKeyUpdatedEvents = events('systemSettings', 'admin api key updated', null).setCallback(handleApiKeyUpdated).subscribe()
+	# $scope.$on '$destroy', apiKeyUpdatedEvents.unsubscribe
 
 	$scope.regenerateKey = () ->
 		$scope.mustConfirmRegenerateKey = true

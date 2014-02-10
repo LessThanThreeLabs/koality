@@ -46,12 +46,12 @@ angular.module('koality', ['ngSanitize',
 			# 	reloadOnSearch: false
 			# 	redirectTo: if window.userId? then null else '/login'
 			# ).
-			# when('/admin',
-			# 	templateUrl: "/html/admin/admin.html"
-			# 	controller: Admin
-			# 	reloadOnSearch: false
-			# 	redirectTo: if window.isAdmin then null else '/'
-			# ).
+			when('/admin',
+				templateUrl: "/html/admin/admin.html"
+				controller: Admin
+				reloadOnSearch: false
+				redirectTo: if window.isAdmin then null else '/'
+			).
 			otherwise(
 				redirectTo: '/dashboard'
 			)

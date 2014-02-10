@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -86,7 +87,14 @@ func (usersHandler *UsersHandler) setAdmin(writer http.ResponseWriter, request *
 		return
 	}
 
-	adminStatusString := request.PostFormValue("admin")
+	adminStatusBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to parse admin: %v", err)
+		return
+	}
+
+	adminStatusString := string(adminStatusBytes)
 	adminStatus, err := strconv.ParseBool(adminStatusString)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

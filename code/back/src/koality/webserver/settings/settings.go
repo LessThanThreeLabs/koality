@@ -6,6 +6,12 @@ import (
 	"koality/webserver/middleware"
 )
 
+type sanitizedAuthenticationSettings struct {
+	ManualLoginAllowed bool     `json:"manualLoginAllowed"`
+	GoogleLoginAllowed bool     `json:"googleLoginAllowed"`
+	AllowedDomains     []string `json:"allowedDomains"`
+}
+
 type sanitizedRepositoryKeyPair struct {
 	PublicKey string `json:"publicKey"`
 }
@@ -25,6 +31,12 @@ func New(resourcesConnection *resources.Connection) (*SettingsHandler, error) {
 }
 
 func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/domainName",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getDomainName)).
+		Methods("GET")
+	subrouter.HandleFunc("/authentication",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getAuthenticationSettings)).
+		Methods("GET")
 	subrouter.HandleFunc("/apiKey",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getApiKey)).
 		Methods("GET")
@@ -48,6 +60,8 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 }
 
 func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/domainName", settingsHandler.getDomainName).Methods("GET")
+	subrouter.HandleFunc("/authentication", settingsHandler.getAuthenticationSettings).Methods("GET")
 	subrouter.HandleFunc("/apiKey", settingsHandler.getApiKey).Methods("GET")
 	subrouter.HandleFunc("/repositoryKeyPair", settingsHandler.getRepositoryKeyPair).Methods("GET")
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.getS3ExporterSettings).Methods("GET")
@@ -56,6 +70,14 @@ func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.resetRepositoryKeyPair).Methods("POST")
 
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.setS3ExporterSettings).Methods("PUT")
+}
+
+func getSanitizedAuthenticationSettings(authenticationSettings *resources.AuthenticationSettings) *sanitizedAuthenticationSettings {
+	return &sanitizedAuthenticationSettings{
+		ManualLoginAllowed: authenticationSettings.ManualLoginAllowed,
+		GoogleLoginAllowed: authenticationSettings.GoogleLoginAllowed,
+		AllowedDomains:     authenticationSettings.AllowedDomains,
+	}
 }
 
 func getSanitizedRepositoryKeyPair(repositoryKeyPair *resources.RepositoryKeyPair) *sanitizedRepositoryKeyPair {

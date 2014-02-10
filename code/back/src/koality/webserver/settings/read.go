@@ -6,15 +6,26 @@ import (
 	"net/http"
 )
 
-func (settingsHandler *SettingsHandler) getApiKey(writer http.ResponseWriter, request *http.Request) {
-	apiKey, err := settingsHandler.resourcesConnection.Settings.Read.GetApiKey()
+func (settingsHandler *SettingsHandler) getDomainName(writer http.ResponseWriter, request *http.Request) {
+	domainName, err := settingsHandler.resourcesConnection.Settings.Read.GetDomainName()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, domainName)
+}
+
+func (settingsHandler *SettingsHandler) getAuthenticationSettings(writer http.ResponseWriter, request *http.Request) {
+	authenticationSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetAuthenticationSettings()
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	jsonedApiKey, err := json.Marshal(apiKey)
+	sanitizedAuthenticationSettings := getSanitizedAuthenticationSettings(authenticationSettings)
+	jsonedAuthenticationSettings, err := json.Marshal(sanitizedAuthenticationSettings)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
@@ -22,7 +33,17 @@ func (settingsHandler *SettingsHandler) getApiKey(writer http.ResponseWriter, re
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "%s", jsonedApiKey)
+	fmt.Fprintf(writer, "%s", jsonedAuthenticationSettings)
+}
+
+func (settingsHandler *SettingsHandler) getApiKey(writer http.ResponseWriter, request *http.Request) {
+	apiKey, err := settingsHandler.resourcesConnection.Settings.Read.GetApiKey()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, apiKey)
 }
 
 func (settingsHandler *SettingsHandler) getRepositoryKeyPair(writer http.ResponseWriter, request *http.Request) {
