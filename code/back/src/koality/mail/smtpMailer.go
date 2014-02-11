@@ -62,7 +62,6 @@ func (mailer *SmtpMailer) formatMessage(fromAddress string, replyToAddresses, to
 	}
 
 	message += fmt.Sprintf("Subject: %s\r\nMIME-version: 1.0\r\nContent-Type: text/plain; charset=\"UTF-8\"\r\n\r\n%s", subject, body)
-	fmt.Printf("%q\n", message)
 	return []byte(message)
 }
 
@@ -70,7 +69,7 @@ func (mailer *SmtpMailer) updateSmtpServerSettings(smtpServerSettings *resources
 	mailer.rwLock.Lock()
 	defer mailer.rwLock.Unlock()
 
-	*mailer.smtpServerSettings = *smtpServerSettings
+	mailer.smtpServerSettings = smtpServerSettings
 }
 
 func (mailer *SmtpMailer) SubscribeToEvents(resourcesConnection *resources.Connection) error {
