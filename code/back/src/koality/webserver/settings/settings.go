@@ -30,10 +30,11 @@ type setS3ExporterRequestData struct {
 
 type SettingsHandler struct {
 	resourcesConnection *resources.Connection
+	passwordHasher      *resources.PasswordHasher
 }
 
-func New(resourcesConnection *resources.Connection) (*SettingsHandler, error) {
-	return &SettingsHandler{resourcesConnection}, nil
+func New(resourcesConnection *resources.Connection, passwordHasher *resources.PasswordHasher) (*SettingsHandler, error) {
+	return &SettingsHandler{resourcesConnection, passwordHasher}, nil
 }
 
 func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) {
@@ -70,6 +71,8 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.clearS3ExporterSettings)).
 		Methods("DELETE")
+
+	subrouter.HandleFunc("/wizard", settingsHandler.setWizard).Methods("POST")
 }
 
 func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) {

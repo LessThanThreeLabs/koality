@@ -27,6 +27,8 @@ type indexTemplateValues struct {
 }
 
 type wizardTemplateValues struct {
+	CsrfToken string
+	CssFiles  []string
 }
 
 type TemplatesHandler struct {
@@ -138,7 +140,13 @@ func (templatesHandler *TemplatesHandler) getRoot(writer http.ResponseWriter, re
 }
 
 func (templatesHandler *TemplatesHandler) getWizard(writer http.ResponseWriter, request *http.Request) {
-	templateValues := wizardTemplateValues{}
+	csrfToken, err := templatesHandler.getCsrfFromSession(writer, request)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	templateValues := wizardTemplateValues{csrfToken, templatesHandler.cssFiles}
 	templatesHandler.wizardTemplate.Execute(writer, templateValues)
 }
 

@@ -91,3 +91,27 @@ func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.Respon
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedS3ExporterSettings)
 }
+
+func (settingsHandler *SettingsHandler) setWizard(writer http.ResponseWriter, request *http.Request) {
+	licenseKey := request.PostFormValue("licenseKey")
+	_ = licenseKey // TODO(dhuang) do something with this
+	email := request.PostFormValue("email")
+	firstName := request.PostFormValue("firstName")
+	lastName := request.PostFormValue("lastName")
+	password := request.PostFormValue("password")
+	passwordHash, passwordSalt, err := settingsHandler.passwordHasher.GenerateHashAndSalt(password)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	_, err = settingsHandler.resourcesConnection.Users.Create.Create(email, firstName, lastName, passwordHash, passwordSalt, true)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	fmt.Fprintln(writer, "{success:true}")
+}

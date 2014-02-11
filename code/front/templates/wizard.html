@@ -4,8 +4,86 @@
 		<base href="/" />
 		<meta charset="utf-8">
 		<title>Koality</title>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		{{range .CssFiles}}<link rel="stylesheet" type="text/css" href="{{.}}" />
+		{{end}}
+		<style media="screen" type="text/css">
+		body {background-color: #363636;}
+		</style>
 	</head>
 	<body>
-		Hey Don!
+		<div id="notificationsContainer">
+                        <div class="notification red" unselectable="" style="z-index: 1100; display: none;">
+				<div class="notificationContent growingCentered">
+					<span class="notificationMessage"></span>
+					<span class="notificationClose">X</span>
+				</div>
+			</div>
+			<div id="contentContainer">
+				<div id="contentCenterContainer" class="growingCentered" ng-view></div>
+			</div>
+		</div>
+		<div align="center"><h1 >Wizard Setup</h1></div>
+		<form name="wizardForm">
+			<div class="formContainer centered">
+				<label>License Key</label>
+				<input type="code" name="licenseKey" placeholder="License Key" pattern="[a-zA-Z0-9]{16}" maxlength="16" autocomplete="on" required="" focused="">
+
+				<label>Admin User Information</label>
+				<label>Email</label>
+				<input name="email" type="email" placeholder="Email" maxlength="256" required="">
+				<label>Confirm Email</label>
+				<input id="confirmemail" type="email" placeholder="Confirm Email" maxlength="256" required="">
+				<label>Password</label>
+				<input name="password" type="password" placeholder="Password" maxlength="256" required="">
+
+				<label>First Name</label>
+				<input type="text" name="firstName" placeholder="First" maxlength="64" autocomplete="on" required="" focused="">
+
+				<label>Last Name</label>
+				<input type="text" name="lastName" placeholder="Last" maxlength="64" autocomplete="on" required="">
+				<br></br>
+				<button type="submit" class="centered">Setup</button>
+			</div>
+
+		</form>
+
+		<script type="text/javascript">
+var csrfToken = "{{.CsrfToken}}"
+$("form[name=wizardForm]").submit(function(event) {
+	event.preventDefault();
+	var $email = $("form input[name=email]"),
+	    $emailConfirm = $("#confirmemail"),
+	    $submit = $("form button"),
+	    $notification = $("#notificationsContainer .notification");
+	if ($email.val() !== $emailConfirm.val()) {
+		$emailConfirm[0].setCustomValidity("This field should match the above email field");
+		return;
+	}
+	$submit.prop("disabled", true);
+	$.ajax("/app/settings/wizard", {
+		method: "POST",
+		data: {
+			licenseKey: $("form input[name=licenseKey]").val(),
+			email: $email.val(),
+			firstName: $("form input[name=firstName]").val(),
+			lastName: $("form input[name=lastName]").val(),
+			password: $("form input[name=password]").val()
+		},
+		headers: { "X-XSRF-TOKEN": csrfToken}
+	}).done(function(data) {
+		// TODO(dhuang) redirect maybe?
+	}).fail(function(data, err) {
+		$notification.find(".notificationMessage").text(data.responseText);
+                $notification.show();
+		setTimeout(function() {
+			$notification.hide();
+		}, 8000);
+	}).always(function() {
+		$submit.prop("disabled", false);
+	});
+	return false;
+});
+		</script>
 	</body>
 </html>
