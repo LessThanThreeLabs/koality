@@ -94,12 +94,37 @@ func (repository *gitSubRepository) pushWithPrivateKey(remoteUri string, args ..
 	return
 }
 
+func (repository *gitSubRepository) fetchAllRefsExceptFor(remoteUri string) (err error) {
+	if err = repository.fetchWithPrivateKey(remoteUri, "+refs/*:refs/*"); err != nil {
+		return
+	}
+
+	command := Command(repository, nil, "for-each-ref", fmt.Sprintf("--format=%s", shell.Quote("%(refname)")), "refs/for")
+	if err = RunCommand(command); err != nil {
+		return
+	}
+
+	for {
+		shaLine, err := command.Stdout.ReadString('\n')
+		if err != nil {
+			break
+		}
+
+		command := Command(repository, nil, "update-ref", "-d", strings.Trim(strings.TrimSpace(shaLine), "'"))
+		if err = RunCommand(command); err != nil {
+			return err
+		}
+	}
+
+	return
+}
+
 func (repository *gitRepository) storePending(ref, remoteUri string, args ...string) (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
 
-	if err = repository.bare.fetchWithPrivateKey(remoteUri, "+refs/*:refs/*"); err != nil {
+	if err = repository.bare.fetchAllRefsExceptFor(remoteUri); err != nil {
 		return
 	}
 
@@ -127,7 +152,7 @@ func (repository *gitRepository) createRepository() (err error) {
 		return err
 	}
 
-	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/*:refs/*"); err != nil {
+	if err = repository.bare.fetchAllRefsExceptFor(repository.remoteUri); err != nil {
 		return
 	}
 
@@ -261,7 +286,7 @@ func (repository *gitRepository) getTopSha(ref string) (topSha string, err error
 		return
 	}
 
-	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/*:refs/*"); err != nil {
+	if err = repository.bare.fetchAllRefsExceptFor(repository.remoteUri); err != nil {
 		return
 	}
 
@@ -357,7 +382,7 @@ func (repository *gitRepository) getCommitAttributes(ref string) (headSha, messa
 		return
 	}
 
-	if err = repository.bare.fetchWithPrivateKey(repository.remoteUri, "+refs/*:refs/*"); err != nil {
+	if err = repository.bare.fetchAllRefsExceptFor(repository.remoteUri); err != nil {
 		return
 	}
 
