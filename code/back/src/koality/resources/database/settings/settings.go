@@ -20,6 +20,7 @@ var (
 	authenticationSettingsLocator   = SettingLocator("AuthenticationSettings")
 	repositoryKeyPairLocator        = SettingLocator("RepositoryKeyPair")
 	s3ExporterSettingsLocator       = SettingLocator("S3ExporterSettings")
+	hipChatSettingsLocator          = SettingLocator("HipChatSettings")
 	cookieStoreKeysLocator          = SettingLocator("CookieStoreKeys")
 	smtpServerSettingsLocator       = SettingLocator("SmtpServerSettings")
 	gitHubEnterpriseSettingsLocator = SettingLocator("GitHubEnterpriseSettings")

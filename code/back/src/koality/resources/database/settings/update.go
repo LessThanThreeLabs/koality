@@ -130,6 +130,21 @@ func (updateHandler *UpdateHandler) SetS3ExporterSettings(accessKey, secretKey, 
 	return s3Settings, nil
 }
 
+func (updateHandler *UpdateHandler) SetHipChatSettings(authenticationToken string, rooms []string, notifyOn string) (*resources.HipChatSettings, error) {
+	if err := updateHandler.verifier.verifyHipChatAuthenticationToken(authenticationToken); err != nil {
+		return nil, err
+	}
+
+	hipChatSettings := &resources.HipChatSettings{authenticationToken, rooms, notifyOn}
+	err := updateHandler.setSetting(hipChatSettingsLocator, hipChatSettings)
+	if err != nil {
+		return nil, err
+	}
+
+	updateHandler.subscriptionHandler.FireHipChatSettingsUpdatedEvent(hipChatSettings)
+	return hipChatSettings, nil
+}
+
 func (updateHandler *UpdateHandler) ResetCookieStoreKeys() (*resources.CookieStoreKeys, error) {
 	cookieStoreKeys := new(resources.CookieStoreKeys)
 

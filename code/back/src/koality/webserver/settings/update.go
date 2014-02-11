@@ -92,6 +92,34 @@ func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.Respon
 	fmt.Fprintf(writer, "%s", jsonedS3ExporterSettings)
 }
 
+func (settingsHandler *SettingsHandler) setHipChatSettings(writer http.ResponseWriter, request *http.Request) {
+	setHipChatRequestData := new(setHipChatRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(setHipChatRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	hipChatSettings, err := settingsHandler.resourcesConnection.Settings.Update.SetHipChatSettings(setHipChatRequestData.AuthenticationToken, setHipChatRequestData.Rooms, setHipChatRequestData.NotifyOn)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedHipChatSettings := getSanitizedHipChatSettings(hipChatSettings)
+	jsonedHipChatSettings, err := json.Marshal(sanitizedHipChatSettings)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedHipChatSettings)
+}
+
 func (settingsHandler *SettingsHandler) setWizard(writer http.ResponseWriter, request *http.Request) {
 	licenseKey := request.PostFormValue("licenseKey")
 	_ = licenseKey // TODO(dhuang) do something with this

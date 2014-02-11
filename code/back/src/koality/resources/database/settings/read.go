@@ -70,6 +70,14 @@ func (readHandler *ReadHandler) GetS3ExporterSettings() (*resources.S3ExporterSe
 	return s3Settings, nil
 }
 
+func (readHandler *ReadHandler) GetHipChatSettings() (*resources.HipChatSettings, error) {
+	hipChatSettings := new(resources.HipChatSettings)
+	if err := readHandler.getSetting(hipChatSettingsLocator, hipChatSettings); err != nil {
+		return nil, err
+	}
+	return hipChatSettings, nil
+}
+
 func (readHandler *ReadHandler) GetCookieStoreKeys() (*resources.CookieStoreKeys, error) {
 	storeKeys := new(resources.CookieStoreKeys)
 	if err := readHandler.getSetting(cookieStoreKeysLocator, storeKeys); err != nil {

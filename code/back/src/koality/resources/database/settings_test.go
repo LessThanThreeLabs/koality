@@ -295,6 +295,103 @@ func TestSettingsS3ExporterSettings(test *testing.T) {
 	}
 }
 
+func TestSettingsHipChatSettings(test *testing.T) {
+	if err := PopulateDatabase(); err != nil {
+		test.Fatal(err)
+	}
+
+	connection, err := New()
+	if err != nil {
+		test.Fatal(err)
+	}
+	defer connection.Close()
+
+	hipChatSettingsUpdatedEventReceived := make(chan bool, 1)
+	var hipChatSettingsUpdatedEventSettings *resources.HipChatSettings
+	hipChatSettingsUpdatedHandler := func(hipChatSettings *resources.HipChatSettings) {
+		hipChatSettingsUpdatedEventSettings = hipChatSettings
+		hipChatSettingsUpdatedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToHipChatSettingsUpdatedEvents(hipChatSettingsUpdatedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	hipChatSettingsClearedEventReceived := make(chan bool, 1)
+	hipChatSettingsClearedHandler := func() {
+		hipChatSettingsClearedEventReceived <- true
+	}
+	_, err = connection.Settings.Subscription.SubscribeToHipChatSettingsClearedEvents(hipChatSettingsClearedHandler)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	authenticationToken := "abcdefghijklmnopqrstuvwxyzabcd"
+	rooms := []string{"engineering", "koalas"}
+	notifyOn := "all"
+	hipChatSettings, err := connection.Settings.Update.SetHipChatSettings(authenticationToken, rooms, notifyOn)
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-hipChatSettingsUpdatedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear hipchat settings updated event")
+	}
+
+	if hipChatSettingsUpdatedEventSettings.AuthenticationToken != hipChatSettings.AuthenticationToken {
+		test.Fatal("Bad hipChatSettings.AuthenticationToken in hipchat settings updated event")
+	} else if hipChatSettingsUpdatedEventSettings.Rooms[0] != hipChatSettings.Rooms[0] {
+		test.Fatal("Bad hipChatSettings.Rooms in hipchat settings updated event")
+	} else if hipChatSettingsUpdatedEventSettings.Rooms[1] != hipChatSettings.Rooms[1] {
+		test.Fatal("Bad hipChatSettings.Rooms in hipchat settings updated event")
+	} else if hipChatSettingsUpdatedEventSettings.NotifyOn != hipChatSettings.NotifyOn {
+		test.Fatal("Bad hipChatSettings.NotifyOn in hipchat settings updated event")
+	}
+
+	if hipChatSettings.AuthenticationToken != authenticationToken {
+		test.Fatal("AuthenticationToken mismatch")
+	} else if hipChatSettings.Rooms[0] != rooms[0] {
+		test.Fatal("Rooms mismatch")
+	} else if hipChatSettings.Rooms[1] != rooms[1] {
+		test.Fatal("Rooms mismatch")
+	} else if hipChatSettings.NotifyOn != notifyOn {
+		test.Fatal("NotifyOn mismatch")
+	}
+
+	hipChatSettings2, err := connection.Settings.Read.GetHipChatSettings()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	if hipChatSettings.AuthenticationToken != hipChatSettings2.AuthenticationToken {
+		test.Fatal("AuthenticationToken mismatch")
+	} else if hipChatSettings.Rooms[0] != hipChatSettings2.Rooms[0] {
+		test.Fatal("Rooms mismatch")
+	} else if hipChatSettings.Rooms[1] != hipChatSettings2.Rooms[1] {
+		test.Fatal("Rooms mismatch")
+	} else if hipChatSettings.NotifyOn != hipChatSettings2.NotifyOn {
+		test.Fatal("NotifyOn mismatch")
+	}
+
+	err = connection.Settings.Delete.ClearHipChatSettings()
+	if err != nil {
+		test.Fatal(err)
+	}
+
+	select {
+	case <-hipChatSettingsClearedEventReceived:
+	case <-time.After(10 * time.Second):
+		test.Fatal("Failed to hear hipchat settings cleared event")
+	}
+
+	_, err = connection.Settings.Read.GetHipChatSettings()
+	if _, ok := err.(resources.NoSuchSettingError); !ok {
+		test.Fatal("Expected NoSuchSettingError when trying to get hipchat settings that have been cleared")
+	}
+}
+
 func TestSettingsResetCookieStoreKeys(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)

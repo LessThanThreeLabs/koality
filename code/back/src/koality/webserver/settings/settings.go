@@ -22,10 +22,22 @@ type sanitizedS3ExporterSettings struct {
 	BucketName string `json:"bucketName"`
 }
 
+type sanitizedHipChatSettings struct {
+	AuthenticationToken string   `json:"authenticationToken"`
+	Rooms               []string `json:"rooms"`
+	NotifyOn            string   `json:"notifyOn"`
+}
+
 type setS3ExporterRequestData struct {
 	AccessKey  string `json:"accessKey"`
 	SecretKey  string `json:"secretKey"`
 	BucketName string `json:"bucketName"`
+}
+
+type setHipChatRequestData struct {
+	AuthenticationToken string   `json:"authenticationToken"`
+	Rooms               []string `json:"rooms"`
+	NotifyOn            string   `json:"notifyOn"`
 }
 
 type SettingsHandler struct {
@@ -53,12 +65,18 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getS3ExporterSettings)).
 		Methods("GET")
+	subrouter.HandleFunc("/hipChat",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getHipChatSettings)).
+		Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetApiKey)).
 		Methods("POST")
 	subrouter.HandleFunc("/repositoryKeyPair/reset",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetRepositoryKeyPair)).
+		Methods("POST")
+	subrouter.HandleFunc("/wizard",
+		settingsHandler.setWizard). // Does not require admin
 		Methods("POST")
 
 	subrouter.HandleFunc("/domainName",
@@ -67,12 +85,16 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setS3ExporterSettings)).
 		Methods("PUT")
+	subrouter.HandleFunc("/hipChat",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setHipChatSettings)).
+		Methods("PUT")
 
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.clearS3ExporterSettings)).
 		Methods("DELETE")
-
-	subrouter.HandleFunc("/wizard", settingsHandler.setWizard).Methods("POST")
+	subrouter.HandleFunc("/hipChat",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.clearHipChatSettings)).
+		Methods("DELETE")
 }
 
 func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) {
@@ -81,12 +103,14 @@ func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/apiKey", settingsHandler.getApiKey).Methods("GET")
 	subrouter.HandleFunc("/repositoryKeyPair", settingsHandler.getRepositoryKeyPair).Methods("GET")
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.getS3ExporterSettings).Methods("GET")
+	subrouter.HandleFunc("/hipChat", settingsHandler.getHipChatSettings).Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset", settingsHandler.resetApiKey).Methods("POST")
 	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.resetRepositoryKeyPair).Methods("POST")
 
 	subrouter.HandleFunc("/domainName", settingsHandler.setDomainName).Methods("PUT")
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.setS3ExporterSettings).Methods("PUT")
+	subrouter.HandleFunc("/hipChat", settingsHandler.setHipChatSettings).Methods("PUT")
 
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.clearS3ExporterSettings).Methods("DELETE")
 }
@@ -105,10 +129,18 @@ func getSanitizedRepositoryKeyPair(repositoryKeyPair *resources.RepositoryKeyPai
 	}
 }
 
-func getSanitizedS3ExporterSettings(sshKey *resources.S3ExporterSettings) *sanitizedS3ExporterSettings {
+func getSanitizedS3ExporterSettings(settings *resources.S3ExporterSettings) *sanitizedS3ExporterSettings {
 	return &sanitizedS3ExporterSettings{
-		AccessKey:  sshKey.AccessKey,
-		SecretKey:  sshKey.SecretKey,
-		BucketName: sshKey.BucketName,
+		AccessKey:  settings.AccessKey,
+		SecretKey:  settings.SecretKey,
+		BucketName: settings.BucketName,
+	}
+}
+
+func getSanitizedHipChatSettings(settings *resources.HipChatSettings) *sanitizedHipChatSettings {
+	return &sanitizedHipChatSettings{
+		AuthenticationToken: settings.AuthenticationToken,
+		Rooms:               settings.Rooms,
+		NotifyOn:            settings.NotifyOn,
 	}
 }

@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	domainNameRegex       = "^[a-zA-Z0-9]+([-_]+[a-zA-Z0-9]+)*(\\.[a-zA-Z0-9]+([-_]+[a-zA-Z0-9]+)*)*$"
-	awsAccessKeyLength    = 20
-	awsSecretKeyLength    = 40
-	minS3BucketNameLength = 3
+	domainNameRegex                  = "^[a-zA-Z0-9]+([-_]+[a-zA-Z0-9]+)*(\\.[a-zA-Z0-9]+([-_]+[a-zA-Z0-9]+)*)*$"
+	awsAccessKeyLength               = 20
+	awsSecretKeyLength               = 40
+	minS3BucketNameLength            = 3
+	hipChatAuthenticationTokenLength = 30
 )
 
 type Verifier struct {
@@ -45,9 +46,16 @@ func (verifier *Verifier) verifyAwsSecretKey(secretKey string) error {
 
 func (verifier *Verifier) verifyS3BucketName(bucketName string) error {
 	if len(bucketName) < minS3BucketNameLength {
-		return fmt.Errorf("Bucket name must be %d characters long", minS3BucketNameLength)
+		return fmt.Errorf("Bucket name must be at least %d characters long", minS3BucketNameLength)
 	} else if ok, err := regexp.MatchString(domainNameRegex, bucketName); !ok || err != nil {
 		return errors.New("Bucket name must match regex: " + domainNameRegex)
+	}
+	return nil
+}
+
+func (verifier *Verifier) verifyHipChatAuthenticationToken(authenticationToken string) error {
+	if len(authenticationToken) != hipChatAuthenticationTokenLength {
+		return fmt.Errorf("Authentication token must be %d characters long", hipChatAuthenticationTokenLength)
 	}
 	return nil
 }

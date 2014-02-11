@@ -10,6 +10,8 @@ type SubscriptionHandler struct {
 	repositoryKeyPairUpdatedSubscriptionManager        resources.SubscriptionManager
 	s3ExporterSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
 	s3ExporterSettingsClearedSubscriptionManager       resources.SubscriptionManager
+	hipChatSettingsUpdatedSubscriptionManager          resources.SubscriptionManager
+	hipChatSettingsClearedSubscriptionManager          resources.SubscriptionManager
 	cookieStoreKeysUpdatedSubscriptionManager          resources.SubscriptionManager
 	smtpServerSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
 	gitHubEnterpriseSettingsUpdatedSubscriptionManager resources.SubscriptionManager
@@ -79,6 +81,30 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromS3ExporterSetting
 
 func (subscriptionHandler *SubscriptionHandler) FireS3ExporterSettingsClearedEvent() {
 	subscriptionHandler.s3ExporterSettingsClearedSubscriptionManager.Fire()
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToHipChatSettingsUpdatedEvents(updateHandler resources.HipChatSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.hipChatSettingsUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromHipChatSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.hipChatSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireHipChatSettingsUpdatedEvent(hipChatSettings *resources.HipChatSettings) {
+	subscriptionHandler.hipChatSettingsUpdatedSubscriptionManager.Fire(hipChatSettings)
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToHipChatSettingsClearedEvents(updateHandler resources.HipChatSettingsClearedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.hipChatSettingsClearedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromHipChatSettingsClearedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.hipChatSettingsClearedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireHipChatSettingsClearedEvent() {
+	subscriptionHandler.hipChatSettingsClearedSubscriptionManager.Fire()
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToCookieStoreKeysUpdatedEvents(updateHandler resources.CookieStoreKeysUpdatedHandler) (resources.SubscriptionId, error) {

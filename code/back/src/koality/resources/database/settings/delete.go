@@ -38,6 +38,12 @@ func (deleteHandler *DeleteHandler) ClearS3ExporterSettings() error {
 	return err
 }
 
+func (deleteHandler *DeleteHandler) ClearHipChatSettings() error {
+	err := deleteHandler.removeSetting(hipChatSettingsLocator)
+	deleteHandler.subscriptionHandler.FireHipChatSettingsClearedEvent()
+	return err
+}
+
 func (deleteHandler *DeleteHandler) ClearGitHubEnterpriseSettings() error {
 	err := deleteHandler.removeSetting(gitHubEnterpriseSettingsLocator)
 	deleteHandler.subscriptionHandler.FireGitHubEnterpriseSettingsClearedEvent()

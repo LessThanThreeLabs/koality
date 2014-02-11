@@ -5,24 +5,24 @@
 		<form name="notificationsForm" novalidate>
 			<div class="formContainer centered">
 				<label>HipChat Enabled</label>
-				<input type="radio" ng-model="settings.hipChat.enabled" name="hipChatEnabled" value="yes" required>Yes
-				<input class="bufferLeft" type="radio" ng-model="settings.hipChat.enabled" name="hipChatEnabled" value="no" required>No
+				<input type="radio" ng-model="hipChat.enabled" name="hipChatEnabled" value="yes" required>Yes
+				<input class="bufferLeft" type="radio" ng-model="hipChat.enabled" name="hipChatEnabled" value="no" required>No
 				
 				<label>Authentication Token</label>
-				<input type="text" ng-model="settings.hipChat.token" ng-class="{disabled: settings.hipChat.enabled == 'no'}" name="hipChatToken" ng-disabled="settings.enabled == 'no'" focused required>
+				<input type="text" ng-model="hipChat.authenticationToken" ng-class="{disabled: hipChat.enabled == 'no'}" name="hipChatToken" ng-disabled="settings.enabled == 'no'" focused required>
 
 				<label>Rooms</label>
-				<input type="text" ng-model="settings.hipChat.rooms" ng-class="{disabled: settings.hipChat.enabled == 'no'}" name="hipChatRooms" ng-disabled="settings.hipChat.enabled == 'no'" required>
+				<input type="text" ng-model="hipChat.rooms" ng-class="{disabled: hipChat.enabled == 'no'}" name="hipChatRooms" ng-disabled="hipChat.enabled == 'no'" required>
 
 				<label>Receive Notifications On</label>
-				<input type="radio" ng-model="settings.hipChat.type" name="hipChatType" value="all" ng-disabled="settings.hipChat.enabled == 'no'" required>All
-				<input class="bufferLeft" type="radio" ng-model="settings.hipChat.type" name="hipChatType" value="failed" ng-disabled="settings.hipChat.enabled == 'no'" required>Just Failed
+				<input type="radio" ng-model="hipChat.notifyOn" name="hipChatType" value="all" ng-disabled="hipChat.enabled == 'no'" required>All
+				<input class="bufferLeft" type="radio" ng-model="hipChat.notifyOn" name="hipChatType" value="failed" ng-disabled="hipChat.enabled == 'no'" required>Just Failed
 			</div>
 
 			<div class="bottomContanier">
 				<div class="formDivider"></div>
 
-				<busy-button centered busy="makingRequest" click="submit()" disabled="settings.hipChat.enabled == 'yes' && notificationsForm.$invalid">Save Changes</busy-button>
+				<busy-button centered busy="makingRequest" click="submit()" disabled="hipChat.enabled == 'yes' && notificationsForm.$invalid">Save Changes</busy-button>
 			</div>
 		</form>
 	</panel-body>

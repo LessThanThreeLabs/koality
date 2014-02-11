@@ -23,6 +23,12 @@ type S3ExporterSettings struct {
 	BucketName string
 }
 
+type HipChatSettings struct {
+	AuthenticationToken string
+	Rooms               []string
+	NotifyOn            string
+}
+
 type CookieStoreKeys struct {
 	Authentication []byte
 	Encryption     []byte
@@ -81,6 +87,7 @@ type SettingsReadHandler interface {
 	GetAuthenticationSettings() (*AuthenticationSettings, error)
 	GetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	GetS3ExporterSettings() (*S3ExporterSettings, error)
+	GetHipChatSettings() (*HipChatSettings, error)
 	GetCookieStoreKeys() (*CookieStoreKeys, error)
 	GetSmtpServerSettings() (*SmtpServerSettings, error)
 	GetGitHubEnterpriseSettings() (*GitHubEnterpriseSettings, error)
@@ -92,6 +99,7 @@ type SettingsUpdateHandler interface {
 	SetAuthenticationSettings(manualAllowed, googleAllowed bool, allowedDomainNames []string) (*AuthenticationSettings, error)
 	ResetRepositoryKeyPair() (*RepositoryKeyPair, error)
 	SetS3ExporterSettings(accessKey, secretKey, bucketName string) (*S3ExporterSettings, error)
+	SetHipChatSettings(authenticationToken string, rooms []string, notifyOn string) (*HipChatSettings, error)
 	ResetCookieStoreKeys() (*CookieStoreKeys, error)
 	SetSmtpAuthPlain(hostname string, port uint16, identity, username, password, host string) (*SmtpServerSettings, error)
 	SetSmtpAuthCramMd5(hostname string, port uint16, username, secret string) (*SmtpServerSettings, error)
@@ -102,6 +110,7 @@ type SettingsUpdateHandler interface {
 
 type SettingsDeleteHandler interface {
 	ClearS3ExporterSettings() error
+	ClearHipChatSettings() error
 	ClearGitHubEnterpriseSettings() error
 }
 
@@ -110,6 +119,8 @@ type AuthenticationSettingsUpdatedHandler func(authenticationSettings *Authentic
 type RepositoryKeyPairUpdatedHandler func(keyPair *RepositoryKeyPair)
 type S3ExporterSettingsUpdatedHandler func(s3Settings *S3ExporterSettings)
 type S3ExporterSettingsClearedHandler func()
+type HipChatSettingsUpdatedHandler func(hipChatSettings *HipChatSettings)
+type HipChatSettingsClearedHandler func()
 type CookieStoreKeysUpdatedHandler func(keys *CookieStoreKeys)
 type SmtpServerSettingsUpdatedHandler func(auth *SmtpServerSettings)
 type GitHubEnterpriseSettingsUpdatedHandler func(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
@@ -131,6 +142,12 @@ type SettingsSubscriptionHandler interface {
 
 	SubscribeToS3ExporterSettingsClearedEvents(updateHandler S3ExporterSettingsClearedHandler) (SubscriptionId, error)
 	UnsubscribeFromS3ExporterSettingsClearedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToHipChatSettingsUpdatedEvents(updateHandler HipChatSettingsUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromHipChatSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+
+	SubscribeToHipChatSettingsClearedEvents(updateHandler HipChatSettingsClearedHandler) (SubscriptionId, error)
+	UnsubscribeFromHipChatSettingsClearedEvents(subscriptionId SubscriptionId) error
 
 	SubscribeToCookieStoreKeysUpdatedEvents(updateHandler CookieStoreKeysUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromCookieStoreKeysUpdatedEvents(subscriptionId SubscriptionId) error
@@ -154,6 +171,8 @@ type InternalSettingsSubscriptionHandler interface {
 	FireRepositoryKeyPairUpdatedEvent(keyPair *RepositoryKeyPair)
 	FireS3ExporterSettingsUpdatedEvent(s3ExporterSettings *S3ExporterSettings)
 	FireS3ExporterSettingsClearedEvent()
+	FireHipChatSettingsUpdatedEvent(hipChatSettings *HipChatSettings)
+	FireHipChatSettingsClearedEvent()
 	FireCookieStoreKeysUpdatedEvent(keys *CookieStoreKeys)
 	FireSmtpServerSettingsUpdatedEvent(smtpServerSettings *SmtpServerSettings)
 	FireGitHubEnterpriseSettingsUpdatedEvent(gitHubEnterpriseSettings *GitHubEnterpriseSettings)

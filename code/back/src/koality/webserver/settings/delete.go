@@ -21,3 +21,19 @@ func (settingsHandler *SettingsHandler) clearS3ExporterSettings(writer http.Resp
 	}
 	fmt.Fprint(writer, "ok")
 }
+
+func (settingsHandler *SettingsHandler) clearHipChatSettings(writer http.ResponseWriter, request *http.Request) {
+	_, err := settingsHandler.resourcesConnection.Settings.Read.GetHipChatSettings()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		fmt.Fprintf(writer, "ok")
+		return
+	}
+
+	err = settingsHandler.resourcesConnection.Settings.Delete.ClearHipChatSettings()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, "ok")
+}
