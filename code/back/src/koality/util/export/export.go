@@ -67,10 +67,10 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 				return nil, err
 			}
 
-                        absPath, err := filepath.Abs(path)
-                        if err != nil {
-                          return nil, err
-                        }
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				return nil, err
+			}
 
 			if fileInfo.Mode().IsRegular() {
 				err = uploadFile(absPath, fileInfo, nil)
