@@ -54,14 +54,17 @@ func (feedbackHandler *FeedbackHandler) sendFeedback(writer http.ResponseWriter,
 		return
 	}
 
+	domainName, err := feedbackHandler.resourcesConnection.Settings.Read.GetDomainName()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		domainName = "uninitialized-koality"
+	}
+
 	message := fmt.Sprintf("User: %s %s (%s)\n\nFeedback: %s\n\nUser Agent: %s\n\nWindow: %d x %d",
 		user.FirstName, user.LastName, user.Email, feedbackRequestData.Feedback, feedbackRequestData.UserAgent,
 		feedbackRequestData.WindowWidth, feedbackRequestData.WindowHeight)
-	domainName := "thisShouldBeARealDomainName"
-	userEmail := "thisShouldBeARealUserEmailAddress"
-	replyTo := []string{userEmail, "feedback@koalitycode.com"}
+	replyTo := []string{user.Email, "feedback@koalitycode.com"}
 	to := []string{"feedback@koalitycode.com"}
-	if err = feedbackHandler.mailer.SendMail("feedback@"+domainName, replyTo, to, "Feedback", message); err != nil {
+	if err = feedbackHandler.mailer.SendMail(fmt.Sprintf("feedback@%s", domainName), replyTo, to, "Feedback", message); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return

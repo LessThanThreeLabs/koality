@@ -84,7 +84,7 @@ func (accountsHandler *AccountsHandler) resetPassword(writer http.ResponseWriter
 
 	domainName, err := accountsHandler.resourcesConnection.Settings.Read.GetDomainName()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
-		domainName = "herpderp.com"
+		domainName = "koalitycode.com"
 	}
 
 	var passwordBuffer bytes.Buffer
