@@ -60,6 +60,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetRepositoryKeyPair)).
 		Methods("POST")
 
+	subrouter.HandleFunc("/domainName",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setDomainName)).
+		Methods("PUT")
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setS3ExporterSettings)).
 		Methods("PUT")
@@ -79,7 +82,10 @@ func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/apiKey/reset", settingsHandler.resetApiKey).Methods("POST")
 	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.resetRepositoryKeyPair).Methods("POST")
 
+	subrouter.HandleFunc("/domainName", settingsHandler.setDomainName).Methods("PUT")
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.setS3ExporterSettings).Methods("PUT")
+
+	subrouter.HandleFunc("/s3Exporter", settingsHandler.clearS3ExporterSettings).Methods("DELETE")
 }
 
 func getSanitizedAuthenticationSettings(authenticationSettings *resources.AuthenticationSettings) *sanitizedAuthenticationSettings {

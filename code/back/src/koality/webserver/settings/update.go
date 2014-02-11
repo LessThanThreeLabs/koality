@@ -3,6 +3,7 @@ package settings
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -43,6 +44,24 @@ func (settingsHandler *SettingsHandler) resetRepositoryKeyPair(writer http.Respo
 
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
+}
+
+func (settingsHandler *SettingsHandler) setDomainName(writer http.ResponseWriter, request *http.Request) {
+	domainNameBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	domainName := string(domainNameBytes)
+	_, err = settingsHandler.resourcesConnection.Settings.Update.SetDomainName(domainName)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, domainName)
 }
 
 func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
