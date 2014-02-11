@@ -148,22 +148,18 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 			hookTypes.append 'push' if repository.gitHub.newPush
 			hookTypes.append 'pull_request' if repository.gitHub.newPullRequest
 
+			request = null
 			if hookTypes.length is 0
 				request = $http.put "/app/repositories/#{repository.id}/gitHub/clearHook"
-				request.success (data, status, headers, config) =>
-					repository.gitHub.push = repository.gitHub.newPush
-					repository.gitHub.pullRequest = repository.gitHub.newPullRequest
-					callback null, true
-				request.error (data, status, headers, config) =>
-					callback data, false
 			else
 				request = $http.put "/app/repositories/#{repository.id}/gitHub/setHook", hookTypes
-				request.success (data, status, headers, config) =>
-					repository.gitHub.push = repository.gitHub.newPush
-					repository.gitHub.pullRequest = repository.gitHub.newPullRequest
-					callback null, true
-				request.error (data, status, headers, config) =>
-					callback data, false
+
+			request.success (data, status, headers, config) =>
+				repository.gitHub.push = repository.gitHub.newPush
+				repository.gitHub.pullRequest = repository.gitHub.newPullRequest
+				callback null, true
+			request.error (data, status, headers, config) =>
+				callback data, false
 
 		return if repository.saving
 		repository.saving = true

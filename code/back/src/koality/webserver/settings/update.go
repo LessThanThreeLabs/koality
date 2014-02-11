@@ -46,10 +46,15 @@ func (settingsHandler *SettingsHandler) resetRepositoryKeyPair(writer http.Respo
 }
 
 func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
-	accessKey := request.PostFormValue("accessKey")
-	secretKey := request.PostFormValue("secretKey")
-	bucketName := request.PostFormValue("bucketName")
-	s3ExporterSettings, err := settingsHandler.resourcesConnection.Settings.Update.SetS3ExporterSettings(accessKey, secretKey, bucketName)
+	setS3ExporterRequestData := new(setS3ExporterRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(setS3ExporterRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	s3ExporterSettings, err := settingsHandler.resourcesConnection.Settings.Update.SetS3ExporterSettings(setS3ExporterRequestData.AccessKey, setS3ExporterRequestData.SecretKey, setS3ExporterRequestData.BucketName)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

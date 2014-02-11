@@ -3,6 +3,7 @@ package settings
 import (
 	"encoding/json"
 	"fmt"
+	"koality/resources"
 	"net/http"
 )
 
@@ -68,7 +69,11 @@ func (settingsHandler *SettingsHandler) getRepositoryKeyPair(writer http.Respons
 
 func (settingsHandler *SettingsHandler) getS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
 	s3ExporterSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetS3ExporterSettings()
-	if err != nil {
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(writer, "{}")
+		return
+	} else if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return

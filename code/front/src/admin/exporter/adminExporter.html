@@ -4,8 +4,18 @@
 	<panel-body no-scroll>
 		<form name="exporterForm" novalidate>
 			<div class="formContainer centered">
-				<label>S3 Bucket Name</label>
-				<input type="text" ng-model="exporter.s3BucketName" name="bucketName" ng-maxlength="64" focused>
+				<label>S3 Exporter Enabled</label>
+				<input type="radio" ng-model="s3Exporter.enabled" name="s3ExporterEnabled" value="yes" required>Yes
+				<input class="bufferLeft" type="radio" ng-model="s3Exporter.enabled" name="s3ExporterEnabled" value="no" required>No
+
+				<label>AWS Access Key</label>
+				<input type="text" ng-model="s3Exporter.accessKey" name="accessKey" ng-class="{disabled: s3Exporter.enabled == 'no'}" ng-disabled="s3Exporter.enabled == 'no'" focused>
+				
+				<label>Secret Key</label>
+				<input type="text" ng-model="s3Exporter.secretKey" name="secretKey" ng-class="{disabled: s3Exporter.enabled == 'no'}" ng-disabled="s3Exporter.enabled == 'no'">
+
+				<label>Bucket Name</label>
+				<input type="text" ng-model="s3Exporter.bucketName" name="bucketName" ng-class="{disabled: s3Exporter.enabled == 'no'}" ng-disabled="s3Exporter.enabled == 'no'">
 			</div>
 
 			<div class="bottomContanier">

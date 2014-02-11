@@ -22,6 +22,12 @@ type sanitizedS3ExporterSettings struct {
 	BucketName string `json:"bucketName"`
 }
 
+type setS3ExporterRequestData struct {
+	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"`
+	BucketName string `json:"bucketName"`
+}
+
 type SettingsHandler struct {
 	resourcesConnection *resources.Connection
 }
@@ -57,6 +63,10 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setS3ExporterSettings)).
 		Methods("PUT")
+
+	subrouter.HandleFunc("/s3Exporter",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.clearS3ExporterSettings)).
+		Methods("DELETE")
 }
 
 func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) {
