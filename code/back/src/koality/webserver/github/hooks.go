@@ -35,7 +35,7 @@ func (gitHubHandler *GitHubHandler) handlePullRequest(pullRequestPayload PullReq
 	gitHubRepository := pullRequestPayload.PullRequest.Base.Repository
 	gitHubHandler.triggerBuild(gitHubRepository.Owner.Login, gitHubRepository.Name,
 		pullRequestPayload.PullRequest.Head.Sha, pullRequestPayload.PullRequest.Base.Sha,
-		writer, request)
+		pullRequestPayload.PullRequest.Head.Ref, writer, request)
 }
 
 func (gitHubHandler *GitHubHandler) handlePush(pushPayload PushHookPayload, writer http.ResponseWriter, request *http.Request) {
@@ -45,11 +45,11 @@ func (gitHubHandler *GitHubHandler) handlePush(pushPayload PushHookPayload, writ
 		return
 	}
 	gitHubHandler.triggerBuild(pushPayload.Repository.Owner.Name, pushPayload.Repository.Name,
-		pushPayload.After, pushPayload.Before,
+		pushPayload.After, pushPayload.Before, pushPayload.Ref,
 		writer, request)
 }
 
-func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName, headSha, baseSha string, writer http.ResponseWriter, request *http.Request) {
+func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName, headSha, baseSha, ref string, writer http.ResponseWriter, request *http.Request) {
 	repository, err := gitHubHandler.resourcesConnection.Repositories.Read.GetByGitHubInfo(repositoryOwner, repositoryName)
 	if err != nil {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -84,9 +84,9 @@ func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName
 	}
 
 	if changeset != nil {
-		_, err = gitHubHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repository.Id, changeset.Id, "", headEmail)
+		_, err = gitHubHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repository.Id, changeset.Id, headEmail, ref, false)
 	} else {
-		_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, "", headEmail)
+		_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, headEmail, ref, false)
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

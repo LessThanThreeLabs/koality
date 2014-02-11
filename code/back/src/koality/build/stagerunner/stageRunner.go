@@ -72,9 +72,10 @@ func (stageRunner *StageRunner) RunStages(sections, finalSections []section.Sect
 		environment = make(map[string]string)
 	}
 	environment["KOALITY_STATUS"] = stageRunner.build.Status
-	environment["KOALITY_MERGE_STATUS"] = stageRunner.build.MergeStatus
 	for finalSectionNumber, finalSection := range finalSections {
-		shouldContinue, err := stageRunner.runSection(uint64(finalSectionNumber+len(sections)), finalSection, environment)
+		// Leave room for potential merge stage
+		sectionNumber := uint64(finalSectionNumber + len(sections) + 1)
+		shouldContinue, err := stageRunner.runSection(sectionNumber, finalSection, environment)
 		if err != nil {
 			return err
 		}

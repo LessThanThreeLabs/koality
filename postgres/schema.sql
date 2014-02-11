@@ -128,10 +128,10 @@ CREATE TABLE IF NOT EXISTS builds (
 	snapshot_id			integer references snapshots(id) ON DELETE CASCADE,
 	debug_instance_id	integer references debug_instances(id) ON DELETE CASCADE,
 	changeset_id		integer NOT NULL references changesets(id) ON DELETE CASCADE,
-	merge_target		varchar(1024),
+	ref					varchar(1024) NOT NULL,
 	email_to_notify		varchar(256),
+	should_merge		boolean NOT NULL,
 	status 				varchar(32) NOT NULL,
-	merge_status		varchar(32),
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,
 	ended				timestamp with time zone,
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS builds (
 
 CREATE TABLE IF NOT EXISTS stages (
 	id 					serial PRIMARY KEY,
-	build_id		integer NOT NULL references builds(id) ON DELETE CASCADE,
+	build_id			integer NOT NULL references builds(id) ON DELETE CASCADE,
 	section_number		integer NOT NULL,
 	name 				varchar(1024) NOT NULL,
 	order_number 		integer NOT NULL,

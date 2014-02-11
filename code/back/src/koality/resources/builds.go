@@ -9,8 +9,8 @@ type Build struct {
 	RepositoryId  uint64
 	EmailToNotify string
 	Status        string
-	MergeTarget   string
-	MergeStatus   string
+	Ref           string
+	ShouldMerge   bool
 	Created       *time.Time
 	Started       *time.Time
 	Ended         *time.Time
@@ -24,6 +24,7 @@ type CoreBuildInformation struct {
 	HeadMessage   string
 	HeadUsername  string
 	HeadEmail     string
+	Ref           string
 	PatchContents []byte
 	EmailToNotify string
 }
@@ -48,10 +49,10 @@ type BuildsHandler struct {
 }
 
 type BuildsCreateHandler interface {
-	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, mergeTarget, emailToNotify string) (*Build, error)
-	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*Build, error)
-	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify string) (*Build, error)
-	CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*Build, error)
+	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string, shouldMerge bool) (*Build, error)
+	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify, ref string) (*Build, error)
+	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string) (*Build, error)
+	CreateFromChangeset(repositoryId, changesetId uint64, emailToNotify, ref string, shouldMerge bool) (*Build, error)
 }
 
 type BuildsReadHandler interface {
@@ -62,7 +63,6 @@ type BuildsReadHandler interface {
 
 type BuildsUpdateHandler interface {
 	SetStatus(buildId uint64, status string) error
-	SetMergeStatus(buildId uint64, mergeStatus string) error
 	SetStartTime(buildId uint64, startTime time.Time) error
 	SetEndTime(buildId uint64, endTime time.Time) error
 }
@@ -80,9 +80,6 @@ type BuildsSubscriptionHandler interface {
 	SubscribeToStatusUpdatedEvents(updateHandler BuildStatusUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromStatusUpdatedEvents(subscriptionId SubscriptionId) error
 
-	SubscribeToMergeStatusUpdatedEvents(updateHandler BuildMergeStatusUpdatedHandler) (SubscriptionId, error)
-	UnsubscribeFromMergeStatusUpdatedEvents(subscriptionId SubscriptionId) error
-
 	SubscribeToStartTimeUpdatedEvents(updateHandler BuildStartTimeUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromStartTimeUpdatedEvents(subscriptionId SubscriptionId) error
 
@@ -93,7 +90,6 @@ type BuildsSubscriptionHandler interface {
 type InternalBuildsSubscriptionHandler interface {
 	FireCreatedEvent(build *Build)
 	FireStatusUpdatedEvent(buildId uint64, status string)
-	FireMergeStatusUpdatedEvent(buildId uint64, mergeStatus string)
 	FireStartTimeUpdatedEvent(buildId uint64, startTime time.Time)
 	FireEndTimeUpdatedEvent(buildId uint64, endTime time.Time)
 	BuildsSubscriptionHandler

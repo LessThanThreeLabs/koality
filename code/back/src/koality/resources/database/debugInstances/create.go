@@ -31,7 +31,7 @@ func (createHandler *CreateHandler) Create(poolId uint64, instanceId string, exp
 	_, err = createHandler.buildsHandler.Create.CreateForDebugInstance(
 		repositoryInformation.RepositoryId, id, repositoryInformation.HeadSha, repositoryInformation.BaseSha,
 		repositoryInformation.HeadMessage, repositoryInformation.HeadUsername, repositoryInformation.HeadEmail,
-		repositoryInformation.PatchContents, repositoryInformation.EmailToNotify)
+		repositoryInformation.PatchContents, repositoryInformation.EmailToNotify, repositoryInformation.Ref)
 	if err != nil {
 		// TODO(dhuang) on these errors should there be some cleanup?
 		return nil, err

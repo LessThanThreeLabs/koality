@@ -155,6 +155,12 @@ func (repository *gitRepository) mergeChangeset(headRef, baseRef, refToMergeInto
 		return
 	}
 
+	if strings.HasPrefix(refToMergeInto, "refs/heads/") {
+		refToMergeInto = refToMergeInto[len("refs/heads/"):]
+	} else {
+		return fmt.Errorf("Unable to merge into ref: %s", refToMergeInto)
+	}
+
 	originalHead, err := repository.mergeRefs(headRef, refToMergeInto)
 	if err != nil {
 		return
@@ -437,8 +443,8 @@ func (repository *gitRepository) getCloneCommand() shell.Command {
 	)
 }
 
-func (repository *gitRepository) getCheckoutCommand(ref string) shell.Command {
-	return shell.And(
+func (repository *gitRepository) getCheckoutCommand(ref, baseRef string) shell.Command {
+	commands := []shell.Command{
 		ensureGitInstalledCommand,
 		shell.Or(
 			shell.Test(shell.Commandf("-d %s", repository.name)),
@@ -447,5 +453,16 @@ func (repository *gitRepository) getCheckoutCommand(ref string) shell.Command {
 		shell.Advertised(shell.Commandf("cd %s", repository.name)),
 		shell.Advertised(shell.Commandf("git fetch %s %s -n --depth 1", repository.remoteUri, GitHiddenRef(ref))),
 		shell.Advertised(shell.Commandf("git checkout --force %s", ref)),
-	)
+	}
+	if baseRef != ref {
+		commands = append(commands, shell.If(
+			shell.Silent(shell.Commandf("git show-ref %s", baseRef)),
+			shell.Advertised(shell.Commandf("git merge --no-edit %s", baseRef)),
+		))
+	}
+	if strings.HasPrefix(baseRef, "refs/heads/") {
+		branch := baseRef[len("refs/heads/"):]
+		commands = append(commands, shell.Advertised(shell.Commandf("git checkout -B %s", branch)))
+	}
+	return shell.And(commands...)
 }

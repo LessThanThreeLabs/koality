@@ -62,11 +62,14 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 		return
 	}
 
+	// TODO (bbland): use actual shouldMerge
+	shouldMerge := false
+
 	var build *resources.Build
 	if changeset != nil {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repositoryId, changeset.Id, "", headEmail)
+		build, err = buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repositoryId, changeset.Id, headEmail, ref, shouldMerge)
 	} else {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, "", headEmail)
+		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, headEmail, ref, shouldMerge)
 	}
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -103,7 +106,7 @@ func (buildsHandler *BuildsHandler) retrigger(writer http.ResponseWriter, reques
 	}
 
 	newBuild, err := buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(build.RepositoryId,
-		build.Changeset.Id, build.MergeTarget, build.EmailToNotify)
+		build.Changeset.Id, build.EmailToNotify, build.Ref, build.ShouldMerge)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

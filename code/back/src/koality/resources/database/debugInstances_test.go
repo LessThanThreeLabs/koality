@@ -49,7 +49,7 @@ func getBuildInfo() *resources.CoreBuildInformation {
 		return sha
 	}
 	return &resources.CoreBuildInformation{
-		2, createSha(), createSha(), "headmessage", "headuser", "heademail@foo.com", []byte("some-patch-contents"), "foo@foo.foo",
+		2, createSha(), createSha(), "headmessage", "headuser", "heademail@foo.com", "someRef", []byte("some-patch-contents"), "foo@foo.foo",
 	}
 }
 

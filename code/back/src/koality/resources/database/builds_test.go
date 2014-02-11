@@ -29,35 +29,35 @@ func TestCreateInvalidBuild(test *testing.T) {
 	headMessage := "This is an awesome commit message"
 	headUsername := "Jordan Potter"
 	headEmail := "jpotter@koalitycode.com"
-	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
+	ref := "refs/heads/master"
 
-	_, err = connection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, true)
 	if _, ok := err.(resources.NoSuchRepositoryError); !ok {
 		test.Fatal("Expected NoSuchRepositoryError when providing invalid repository id")
 	}
 
-	_, err = connection.Builds.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify)
+	_, err = connection.Builds.Create.CreateForSnapshot(firstRepository.Id, 13370, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify, ref)
 	if _, ok := err.(resources.NoSuchSnapshotError); !ok {
 		test.Fatal("Expected NoSuchSnapshotError")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, true)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid head sha")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, nil, emailToNotify, ref, true)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid base sha")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, "not-an-email")
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, "not-an-email", ref, true)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid email to notify")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, []byte("this is an invalid patch\ndiff file"), mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, []byte("this is an invalid patch\ndiff file"), emailToNotify, ref, true)
 	if err == nil {
 		test.Fatal("Expected error after providing invalid patch contents")
 	}
@@ -96,20 +96,23 @@ func TestCreateBuild(test *testing.T) {
 	headMessage := "This is an awesome commit message"
 	headUsername := "Jordan Potter"
 	headEmail := "jpotter@koalitycode.com"
-	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
+	ref := "refs/heads/master"
+	shouldMerge := true
 
-	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	if build.RepositoryId != firstRepository.Id {
 		test.Fatal("build.RepositoryId mismatch")
-	} else if build.MergeTarget != mergeTarget {
-		test.Fatal("build.MergeTarget mismatch")
+	} else if build.Ref != ref {
+		test.Fatal("build.Ref mismatch")
 	} else if build.EmailToNotify != emailToNotify {
 		test.Fatal("build.EmailToNotify mismatch")
+	} else if build.ShouldMerge != shouldMerge {
+		test.Fatal("build.ShouldMerge mismatch")
 	} else if build.Changeset.HeadSha != headSha {
 		test.Fatal("build.Changeset.HeadSha mismatch")
 	} else if build.Changeset.BaseSha != baseSha {
@@ -132,8 +135,10 @@ func TestCreateBuild(test *testing.T) {
 		test.Fatal("Bad build.Id in build creation event")
 	} else if createdEventBuild.RepositoryId != build.RepositoryId {
 		test.Fatal("Bad build.RepositoryId in build creation event")
-	} else if createdEventBuild.MergeTarget != build.MergeTarget {
-		test.Fatal("Bad build.MergeTarget in build creation event")
+	} else if createdEventBuild.Ref != build.Ref {
+		test.Fatal("Bad build.Ref in build creation event")
+	} else if createdEventBuild.ShouldMerge != build.ShouldMerge {
+		test.Fatal("Bad build.ShouldMerge in build creation event")
 	} else if createdEventBuild.EmailToNotify != build.EmailToNotify {
 		test.Fatal("Bad build.EmailToNotify in build creation event")
 	} else if createdEventBuild.Changeset.HeadSha != build.Changeset.HeadSha {
@@ -155,8 +160,10 @@ func TestCreateBuild(test *testing.T) {
 
 	if build.RepositoryId != buildAgain.RepositoryId {
 		test.Fatal("build.RepositoryId mismatch")
-	} else if build.MergeTarget != buildAgain.MergeTarget {
-		test.Fatal("build.MergeTarget mismatch")
+	} else if build.Ref != buildAgain.Ref {
+		test.Fatal("build.Ref mismatch")
+	} else if build.ShouldMerge != buildAgain.ShouldMerge {
+		test.Fatal("build.ShouldMerge mismatch")
 	} else if build.EmailToNotify != buildAgain.EmailToNotify {
 		test.Fatal("build.EmailToNotify mismatch")
 	} else if build.Changeset.HeadSha != buildAgain.Changeset.HeadSha {
@@ -171,12 +178,12 @@ func TestCreateBuild(test *testing.T) {
 		test.Fatal("build.Changeset.HeadEmail mismatch")
 	}
 
-	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	_, err = connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
 	if _, ok := err.(resources.ChangesetAlreadyExistsError); !ok {
 		test.Fatal("Expected ChangesetAlreadyExistsError when trying to add build with same changeset params twice")
 	}
 
-	build2, err := connection.Builds.Create.CreateFromChangeset(firstRepository.Id, build.Changeset.Id, mergeTarget, emailToNotify)
+	build2, err := connection.Builds.Create.CreateFromChangeset(firstRepository.Id, build.Changeset.Id, emailToNotify, ref, shouldMerge)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -191,8 +198,10 @@ func TestCreateBuild(test *testing.T) {
 		test.Fatal("Bad build.Id in build creation event")
 	} else if createdEventBuild.RepositoryId != build2.RepositoryId {
 		test.Fatal("Bad build.RepositoryId in build creation event")
-	} else if createdEventBuild.MergeTarget != build2.MergeTarget {
-		test.Fatal("Bad build.MergeTarget in build creation event")
+	} else if createdEventBuild.Ref != build2.Ref {
+		test.Fatal("Bad build.Ref in build creation event")
+	} else if createdEventBuild.ShouldMerge != build2.ShouldMerge {
+		test.Fatal("Bad build.ShouldMerge in build creation event")
 	} else if createdEventBuild.EmailToNotify != build2.EmailToNotify {
 		test.Fatal("Bad build.EmailToNotify in build creation event")
 	} else if createdEventBuild.Changeset.HeadSha != build2.Changeset.HeadSha {
@@ -208,7 +217,7 @@ func TestCreateBuild(test *testing.T) {
 	}
 }
 
-func TestBuildStatuses(test *testing.T) {
+func TestBuildStatus(test *testing.T) {
 	if err := PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
@@ -232,19 +241,6 @@ func TestBuildStatuses(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	buildMergeStatusEventReceived := make(chan bool, 1)
-	buildMergeStatusEventId := uint64(0)
-	buildMergeStatusEventStatus := ""
-	buildMergeStatusUpdatedHandler := func(buildId uint64, mergeStatus string) {
-		buildMergeStatusEventId = buildId
-		buildMergeStatusEventStatus = mergeStatus
-		buildMergeStatusEventReceived <- true
-	}
-	_, err = connection.Builds.Subscription.SubscribeToMergeStatusUpdatedEvents(buildMergeStatusUpdatedHandler)
-	if err != nil {
-		test.Fatal(err)
-	}
-
 	repositories, err := connection.Repositories.Read.GetAll()
 	if err != nil {
 		test.Fatal(err)
@@ -256,10 +252,11 @@ func TestBuildStatuses(test *testing.T) {
 	headMessage := "This is an awesome commit message"
 	headUsername := "Jordan Potter"
 	headEmail := "jpotter@koalitycode.com"
-	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
+	ref := "refs/heads/master"
+	shouldMerge := true
 
-	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -295,35 +292,6 @@ func TestBuildStatuses(test *testing.T) {
 	err = connection.Builds.Update.SetStatus(build.Id, "bad-status")
 	if _, ok := err.(resources.InvalidBuildStatusError); !ok {
 		test.Fatal("Expected InvalidBuildStatusError when trying to set status")
-	}
-
-	err = connection.Builds.Update.SetMergeStatus(build.Id, "failed")
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	select {
-	case <-buildMergeStatusEventReceived:
-	case <-time.After(10 * time.Second):
-		test.Fatal("Failed to hear build merge status updated event")
-	}
-
-	if buildMergeStatusEventId != build.Id {
-		test.Fatal("Bad build.Id in merge status updated event")
-	} else if buildMergeStatusEventStatus != "failed" {
-		test.Fatal("Bad build merge status in merge status updated event")
-	}
-
-	build, err = connection.Builds.Read.Get(build.Id)
-	if err != nil {
-		test.Fatal(err)
-	} else if build.MergeStatus != "failed" {
-		test.Fatal("Failed to update build merge status")
-	}
-
-	err = connection.Builds.Update.SetMergeStatus(build.Id, "bad-merge-status")
-	if _, ok := err.(resources.InvalidBuildMergeStatusError); !ok {
-		test.Fatal("Expected InvalidBuildMergeStatusError when trying to set merge status")
 	}
 }
 
@@ -375,10 +343,11 @@ func TestBuildTimes(test *testing.T) {
 	headMessage := "This is an awesome commit message"
 	headUsername := "Jordan Potter"
 	headEmail := "jpotter@koalitycode.com"
-	mergeTarget := "refs/heads/master"
 	emailToNotify := "koalas@koalitycode.com"
+	ref := "refs/heads/master"
+	shouldMerge := true
 
-	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, mergeTarget, emailToNotify)
+	build, err := connection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
 	if err != nil {
 		test.Fatal(err)
 	}
