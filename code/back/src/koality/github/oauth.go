@@ -1,12 +1,13 @@
 package github
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"koality/resources"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type GitHubOAuthConnection interface {
@@ -36,24 +37,21 @@ func (connection *standardGitHubOAuthConnection) GetAuthorizationUrl(action stri
 
 func (connection *standardGitHubOAuthConnection) CheckValidOAuthToken(oAuthToken string) (bool, error) {
 	oAuthCheckUrl := "https://koalitycode.com/gitHub/isValidOAuth"
-	jsonBytes, err := json.Marshal(map[string]string{"token": oAuthToken})
-	if err != nil {
-		return false, err
-	}
+	queryValues := url.Values{}
+	queryValues.Set("token", oAuthToken)
 
-	checkOAuthTokenRequestBody := bytes.NewReader(jsonBytes)
-	checkOAuthTokenRequest, err := http.NewRequest("GET", oAuthCheckUrl, checkOAuthTokenRequestBody)
-	if err != nil {
-		return false, err
-	}
-
-	httpClient := new(http.Client)
-	response, err := httpClient.Do(checkOAuthTokenRequest)
+	response, err := http.Get(oAuthCheckUrl + "?" + queryValues.Encode())
 	defer response.Body.Close()
 	if err != nil {
 		return false, err
 	} else if response.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("Failed to check OAuthToken, received http status: %d (%s)", response.StatusCode, response.Status)
+		responseBody, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return false, err
+		} else if strings.Contains(string(responseBody), "Invalid OAuth Token") {
+			return false, nil
+		}
+		return false, fmt.Errorf("Failed to check OAuthToken, received http status: %s", response.Status)
 	}
 
 	var isValid bool
@@ -108,7 +106,7 @@ func (connection *gitHubEnterpriseOAuthConnection) CheckValidOAuthToken(oAuthTok
 	if err != nil {
 		return false, err
 	} else if response.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("Failed to check OAuthToken, received http status: %d (%s)", response.StatusCode, response.Status)
+		return false, fmt.Errorf("Failed to check OAuthToken, received http status: %s", response.Status)
 	}
 
 	var oAuthResponse struct {

@@ -118,7 +118,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher)
+	usersHandler, err := users.New(webserver.resourcesConnection, passwordHasher, webserver.gitHubConnection)
 	if err != nil {
 		return nil, err
 	}

@@ -15,8 +15,14 @@ type GitHubRepository struct {
 	Name  string
 }
 
+type GitHubKey struct {
+	Name      string
+	PublicKey string
+}
+
 type GitHubConnection interface {
-	GetSshKeys(oAuthToken string) (sshKeys []string, err error)
+	GitHubOAuthConnection
+	GetSshKeys(oAuthToken string) (sshKeys []GitHubKey, err error)
 	AddKoalitySshKeyToUser(oAuthToken string) error
 	GetRepositories(oAuthToken string) (repositories []GitHubRepository, err error)
 	AddRepositoryHook(repository *resources.Repository, hookTypes []string, hookSecret string) (hookId int64, err error)
@@ -25,15 +31,15 @@ type GitHubConnection interface {
 }
 
 type gitHubConnection struct {
+	GitHubOAuthConnection
 	resourcesConnection *resources.Connection
-	oAuthConnection     GitHubOAuthConnection
 	subscriptionId      resources.SubscriptionId
 }
 
 func NewConnection(resourcesConnection *resources.Connection, oAuthConnection GitHubOAuthConnection) *gitHubConnection {
 	return &gitHubConnection{
-		resourcesConnection: resourcesConnection,
-		oAuthConnection:     oAuthConnection,
+		GitHubOAuthConnection: oAuthConnection,
+		resourcesConnection:   resourcesConnection,
 	}
 }
 
@@ -119,11 +125,11 @@ func (connection *gitHubConnection) getGitHubClient(oAuthToken string) (*github.
 		return nil, err
 	}
 
-	ok, err := connection.oAuthConnection.CheckValidOAuthToken(oAuthToken)
+	ok, err := connection.CheckValidOAuthToken(oAuthToken)
 	if err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, fmt.Errorf("Invalid OAuth token: %s", oAuthToken)
+		return nil, InvalidOAuthTokenError{oAuthToken}
 	}
 
 	transport := &oauth.Transport{
@@ -140,7 +146,7 @@ func (connection *gitHubConnection) getGitHubClient(oAuthToken string) (*github.
 	return gitHubClient, nil
 }
 
-func (connection *gitHubConnection) GetSshKeys(oAuthToken string) ([]string, error) {
+func (connection *gitHubConnection) GetSshKeys(oAuthToken string) ([]GitHubKey, error) {
 	gitHubClient, err := connection.getGitHubClient(oAuthToken)
 	if err != nil {
 		return nil, err
@@ -151,9 +157,9 @@ func (connection *gitHubConnection) GetSshKeys(oAuthToken string) ([]string, err
 		return nil, err
 	}
 
-	sshKeys := make([]string, len(keys))
+	sshKeys := make([]GitHubKey, len(keys))
 	for index, key := range keys {
-		sshKeys[index] = *key.Key
+		sshKeys[index] = GitHubKey{*key.Title, *key.Key}
 	}
 
 	return sshKeys, nil
@@ -261,4 +267,12 @@ func (connection *gitHubConnection) SetChangeStatus(repository *resources.Reposi
 
 	_, _, err = gitHubClient.Repositories.CreateStatus(repository.GitHub.Owner, repository.GitHub.Name, sha, &repoStatus)
 	return err
+}
+
+type InvalidOAuthTokenError struct {
+	OAuthToken string
+}
+
+func (err InvalidOAuthTokenError) Error() string {
+	return fmt.Sprintf("Invalid OAuth token: %s", err.OAuthToken)
 }

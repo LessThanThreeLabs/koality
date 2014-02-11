@@ -17,7 +17,6 @@ const (
 	emailRegex         = "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
 	firstNameRegex     = "^[-'a-zA-Z ]+$"
 	lastNameRegex      = "^[-'a-zA-Z ]+$"
-	keyNameRegex       = "^[-'a-zA-Z ]+$"
 	publicKeyRegex     = "^ssh-(?:dss|rsa) [A-Za-z0-9+/]+={0,2}"
 )
 
@@ -61,8 +60,6 @@ func (verifier *Verifier) verifyLastName(lastName string) error {
 func (verifier *Verifier) verifyKeyName(userId uint64, name string) error {
 	if len(name) > maxKeyNameLength {
 		return fmt.Errorf("SSH Key name cannot exceed %d characters long", maxKeyNameLength)
-	} else if ok, err := regexp.MatchString(keyNameRegex, name); !ok || err != nil {
-		return errors.New("SSH Key name must match regex: " + keyNameRegex)
 	} else if err := verifier.verifyKeyDoesNotExistWithName(userId, name); err != nil {
 		return err
 	}

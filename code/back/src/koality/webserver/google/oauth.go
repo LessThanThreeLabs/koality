@@ -172,7 +172,7 @@ func (googleHandler *GoogleHandler) getGoogleUserInformation(oAuthToken string) 
 	if err != nil {
 		return nil, err
 	} else if response.StatusCode != http.StatusOK {
-		return nil, BadAuthenticationError{fmt.Sprintf("Received http status %d (%s) while trying to check oAuth token", response.StatusCode, response.Status)}
+		return nil, BadAuthenticationError{fmt.Sprintf("Received http status %s while trying to check oAuth token", response.Status)}
 	}
 
 	userInformation := new(UserInformation)

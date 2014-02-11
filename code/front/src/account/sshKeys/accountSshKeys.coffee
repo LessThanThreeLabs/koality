@@ -69,16 +69,22 @@ window.AccountSshKeys = ['$scope', '$location', '$routeParams', '$http', '$timeo
 		$scope.addKey.publicKey = ''
 		$scope.currentlyOpenDrawer = null
 
-	# $scope.importFromGitHub = () ->
-	# 	return if $scope.waitingOnGitHubImportRequest
-	# 	$scope.waitingOnGitHubImportRequest = true
+	$scope.importFromGitHub = () ->
+		return if $scope.waitingOnGitHubImportRequest
+		$scope.waitingOnGitHubImportRequest = true
 
-	# 	rpc 'users', 'update', 'addGitHubSshKeys', null, (error) ->
-	# 		$scope.waitingOnGitHubImportRequest = false
-
-	# 		if error?
-	# 			if error.redirect? then window.location.href = error.redirect
-	# 			else notification.error error
-	# 		else
-	# 			notification.success 'Added GitHub SSH Keys'
+		request = $http.post "/app/users/addKeysFromGitHub"
+		request.success (data, status, headers, config) =>
+			if data.numKeysAdded?
+				if data.numKeysAdded > 0
+					notification.success "Added #{data.numKeysAdded} SSH Keys from GitHub"
+				else
+					notification.success "No new SSH Keys added from GitHub"
+			$scope.waitingOnGitHubImportRequest = false
+		request.error (data, status, headers, config) =>
+			$scope.waitingOnGitHubImportRequest = false
+			if data.redirectUri?
+				window.location.href = data.redirectUri
+			else
+				notification.error data
 ]

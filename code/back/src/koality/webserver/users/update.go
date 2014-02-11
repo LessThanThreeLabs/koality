@@ -7,6 +7,8 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"io/ioutil"
+	"koality/github"
+	"koality/resources"
 	"net/http"
 	"strconv"
 )
@@ -134,6 +136,50 @@ func (usersHandler *UsersHandler) addKey(writer http.ResponseWriter, request *ht
 		return
 	}
 	fmt.Fprint(writer, keyId)
+}
+
+func (usersHandler *UsersHandler) addKeysFromGitHub(writer http.ResponseWriter, request *http.Request) {
+	userId := context.Get(request, "userId").(uint64)
+	user, err := usersHandler.resourcesConnection.Users.Read.Get(userId)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sshKeys, err := usersHandler.gitHubConnection.GetSshKeys(user.GitHubOAuth)
+	if _, ok := err.(github.InvalidOAuthTokenError); ok {
+		authorizationUrl, err := usersHandler.gitHubConnection.GetAuthorizationUrl("sshKeys")
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		}
+
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(writer, fmt.Sprintf(`{"redirectUri": "%s"}`, authorizationUrl))
+		return
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	var numKeysAdded uint64
+
+	for _, sshKey := range sshKeys {
+		_, err := usersHandler.resourcesConnection.Users.Update.AddKey(userId, "GitHub: "+sshKey.Name, sshKey.PublicKey)
+		if _, ok := err.(resources.KeyAlreadyExistsError); !ok && err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		} else if err == nil {
+			numKeysAdded++
+		}
+	}
+
+	fmt.Fprint(writer, fmt.Sprintf(`{"numKeysAdded": %d}`, numKeysAdded))
 }
 
 func (usersHandler *UsersHandler) removeKey(writer http.ResponseWriter, request *http.Request) {

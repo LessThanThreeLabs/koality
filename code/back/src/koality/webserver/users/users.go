@@ -2,6 +2,7 @@ package users
 
 import (
 	"github.com/gorilla/mux"
+	"koality/github"
 	"koality/resources"
 	"koality/webserver/middleware"
 	"time"
@@ -46,10 +47,11 @@ type removeKeyRequestData struct {
 type UsersHandler struct {
 	resourcesConnection *resources.Connection
 	passwordHasher      *resources.PasswordHasher
+	gitHubConnection    github.GitHubConnection
 }
 
-func New(resourcesConnection *resources.Connection, passwordHasher *resources.PasswordHasher) (*UsersHandler, error) {
-	return &UsersHandler{resourcesConnection, passwordHasher}, nil
+func New(resourcesConnection *resources.Connection, passwordHasher *resources.PasswordHasher, gitHubConnection github.GitHubConnection) (*UsersHandler, error) {
+	return &UsersHandler{resourcesConnection, passwordHasher, gitHubConnection}, nil
 }
 
 func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
@@ -71,6 +73,9 @@ func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
 		Methods("POST")
 	subrouter.HandleFunc("/addKey",
 		middleware.IsLoggedInWrapper(usersHandler.addKey)).
+		Methods("POST")
+	subrouter.HandleFunc("/addKeysFromGitHub",
+		middleware.IsLoggedInWrapper(usersHandler.addKeysFromGitHub)).
 		Methods("POST")
 	subrouter.HandleFunc("/removeKey",
 		middleware.IsLoggedInWrapper(usersHandler.removeKey)).
