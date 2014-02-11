@@ -5,6 +5,7 @@ import (
 	"koality/resources"
 	"koality/shell"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -106,7 +107,7 @@ func (repository *gitRepository) storePending(ref, remoteUri string, args ...str
 		return NoSuchCommitInRepositoryError{fmt.Sprintf("The repository at %s does not contain commit %s", repository.bare.path, ref)}
 	}
 
-	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:refs/koality/%s", ref, ref)); err != nil {
+	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", ref, GitHiddenRef(ref))); err != nil {
 		return
 	}
 
@@ -192,7 +193,8 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 
 	branches := branchCommand.Stdout.String()
 	var checkoutBranch string
-	if remoteBranchExists := strings.Contains(branches, fmt.Sprintf("\\s+%s$", remoteBranch)); remoteBranchExists {
+
+	if remoteBranchExists, err := regexp.MatchString(fmt.Sprintf("\\s+%s$", remoteBranch), branches); remoteBranchExists && err != nil {
 		checkoutBranch = remoteBranch
 	} else {
 		checkoutBranch = "FETCH_HEAD"
@@ -336,21 +338,16 @@ func (repository *gitRepository) updateFromForwardUrl(remoteUri, refToMergeInto,
 }
 
 func (repository *gitRepository) pushMergeRetry(remoteUri, refToMergeInto, originalHead string) (err error) {
-	pushAttempts := 0
-
-	for {
-		pushAttempts += 1
+	for pushAttempt := 0; pushAttempt < pushMergeRetries; pushAttempt++ {
 		err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", refToMergeInto, refToMergeInto))
-
-		//TODO(akostov) More precise error catching
-		if err != nil && pushAttempts < pushMergeRetries {
+		// TODO (aksotov): more precise error checking
+		if err != nil && pushAttempt < pushMergeRetries-1 {
 			time.Sleep(retryTimeout)
 			repository.updateFromForwardUrl(remoteUri, refToMergeInto, originalHead)
-		} else if err != nil {
-			repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
-		} else {
-			break
 		}
+	}
+	if err != nil {
+		repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
 	}
 	return
 }
