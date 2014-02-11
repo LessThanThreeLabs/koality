@@ -117,7 +117,7 @@ func TestGitStorePending(testing *testing.T) {
 		testing.Fatal(err)
 	}
 
-	if err := RunCommand(Command(gitRemoteRepository, nil, "show", fmt.Sprintf("refs/koality/%s", headSha))); err != nil {
+	if err := RunCommand(Command(gitRemoteRepository, nil, "show", GitHiddenRef(headSha))); err != nil {
 		testing.Fatal(err)
 	}
 }
@@ -136,18 +136,16 @@ func TestGitMergePass(testing *testing.T) {
 	os.MkdirAll(clonedRepositoryPath, 0700)
 	RunCommand(Command(clonedRepository, nil, "clone", gitRepo.bare.path, clonedRepositoryPath))
 
-	oldHeadSha, _ := clonedRepository.getTopShaForSubrepository("HEAD")
-
 	writeAdd(clonedRepository, "newfile", "test changeset")
 	RunCommand(Command(clonedRepository, nil, "commit", "-m", "New commit", "--author=<chicken chickenson <cchickenson@chicken.com>>"))
 
 	headSha, _ := clonedRepository.getTopShaForSubrepository("HEAD")
 
-	if err := RunCommand(Command(clonedRepository, nil, "push", "origin", fmt.Sprintf("HEAD:refs/for/%s", headSha))); err != nil {
-		fmt.Println(err)
+	if err := RunCommand(Command(clonedRepository, nil, "push", "origin", fmt.Sprintf("HEAD:%s", GitHiddenRef(headSha)))); err != nil {
+		testing.Fatal(err)
 	}
 
-	if err := RM.MergeChangeset(gitRepositoryResource, fmt.Sprintf("refs/for/%s", headSha), fmt.Sprintf("refs/for/%s", headSha), oldHeadSha); err != nil {
+	if err := RM.MergeChangeset(gitRepositoryResource, GitHiddenRef(headSha), GitHiddenRef(headSha), "refs/heads/newbranch"); err != nil {
 		testing.Fatal(err)
 	}
 

@@ -31,12 +31,11 @@ func Command(repository Repository, Env []string, cmd string, args ...string) *V
 
 func RunCommand(vcsCommand *VcsCommand) error {
 	err := vcsCommand.Command.Run()
-	if err != nil {
+	if _, ok := err.(*exec.ExitError); ok {
+		return fmt.Errorf("Attempting to run command %v resulted in a non-zero return state.", vcsCommand.Command)
+	} else if err != nil {
 		return err
 	}
 
-	if success := vcsCommand.Command.ProcessState.Success(); !success {
-		return fmt.Errorf("Attempting to run command %v resulted in a non-zero return state.", vcsCommand.Command)
-	}
 	return nil
 }
