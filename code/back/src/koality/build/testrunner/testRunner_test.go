@@ -93,7 +93,7 @@ func testBuild(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 
 	testRunner := New(resourcesConnection, poolManager, repositoryManager)
 	build, err := resourcesConnection.Builds.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
-		"headMessage", "headUsername", "head@Ema.il", nil, "mergeTarget", "a@b.com")
+		"headMessage", "headUsername", "head@Ema.il", nil, "a@b.com", "refs/heads/master", true)
 	if err != nil {
 		test.Fatal(err)
 	}

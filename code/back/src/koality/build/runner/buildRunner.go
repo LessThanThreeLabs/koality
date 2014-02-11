@@ -74,7 +74,7 @@ func (buildRunner *BuildRunner) ProcessResults(currentBuild *resources.Build, ne
 		result, hasMoreResults := <-resultsChan
 		if !hasMoreResults {
 			if currentBuild.Status == "running" {
-				err := buildRunner.passBuild(currentBuild, buildData.Repository)
+				err := buildRunner.attemptToPassBuild(currentBuild, buildData)
 				if err != nil {
 					return false, err
 				}
@@ -106,7 +106,7 @@ func (buildRunner *BuildRunner) ProcessResults(currentBuild *resources.Build, ne
 			}
 			receivedResult[result.Section] = true
 			if len(receivedResult) == len(buildData.BuildConfig.Sections) && currentBuild.Status == "running" {
-				err := buildRunner.passBuild(currentBuild, buildData.Repository)
+				err := buildRunner.attemptToPassBuild(currentBuild, buildData)
 				if err != nil {
 					return false, err
 				}
@@ -118,34 +118,74 @@ func (buildRunner *BuildRunner) ProcessResults(currentBuild *resources.Build, ne
 func (buildRunner *BuildRunner) failBuild(build *resources.Build) error {
 	(*build).Status = "failed"
 	log.Infof("build %d %sFAILED!!!%s\n", build.Id, shell.AnsiFormat(shell.AnsiFgRed, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := buildRunner.resourcesConnection.Builds.Update.SetStatus(build.Id, "failed")
-	if err != nil {
+	if err := buildRunner.resourcesConnection.Builds.Update.SetStatus(build.Id, "failed"); err != nil {
 		return err
 	}
 
-	err = buildRunner.resourcesConnection.Builds.Update.SetEndTime(build.Id, time.Now())
-	return err
+	return buildRunner.resourcesConnection.Builds.Update.SetEndTime(build.Id, time.Now())
 }
 
-func (buildRunner *BuildRunner) passBuild(build *resources.Build, repository *resources.Repository) error {
-	log.Infof("build %d %sPASSED!!!%s\n", build.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
-	err := buildRunner.repositoryManager.MergeChangeset(repository, repositorymanager.GitHiddenRef(build.Changeset.HeadSha), build.Changeset.BaseSha, build.MergeTarget)
-	if err == nil {
-		(*build).MergeStatus = "passed"
-		buildRunner.resourcesConnection.Builds.Update.SetMergeStatus(build.Id, "passed")
-	} else {
-		(*build).MergeStatus = "failed"
-		buildRunner.resourcesConnection.Builds.Update.SetMergeStatus(build.Id, "failed")
+func (buildRunner *BuildRunner) attemptToPassBuild(build *resources.Build, buildData *BuildData) error {
+	if build.ShouldMerge {
+		if err := buildRunner.mergeChange(build, buildData); err != nil {
+			buildRunner.failBuild(build)
+			return err
+		}
 	}
 
+	return buildRunner.passBuild(build, buildData)
+}
+
+func (buildRunner *BuildRunner) passBuild(build *resources.Build, buildData *BuildData) error {
 	(*build).Status = "passed"
-	err = buildRunner.resourcesConnection.Builds.Update.SetStatus(build.Id, "passed")
+	log.Infof("build %d %sPASSED!!!%s\n", build.Id, shell.AnsiFormat(shell.AnsiFgGreen, shell.AnsiBold), shell.AnsiFormat(shell.AnsiReset))
+	if err := buildRunner.resourcesConnection.Builds.Update.SetStatus(build.Id, "passed"); err != nil {
+		return err
+	}
+
+	return buildRunner.resourcesConnection.Builds.Update.SetEndTime(build.Id, time.Now())
+}
+
+func (buildRunner *BuildRunner) mergeChange(build *resources.Build, buildData *BuildData) error {
+	stage, err := buildRunner.resourcesConnection.Stages.Create.Create(build.Id, uint64(len(buildData.BuildConfig.Sections)), "merge", 0)
 	if err != nil {
 		return err
 	}
 
-	err = buildRunner.resourcesConnection.Builds.Update.SetEndTime(build.Id, time.Now())
-	return err
+	stageRun, err := buildRunner.resourcesConnection.Stages.Create.CreateRun(stage.Id)
+	if err != nil {
+		return err
+	}
+
+	err = buildRunner.resourcesConnection.Stages.Update.SetStartTime(stageRun.Id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	outputLine := "Change merged successfully"
+	returnCode := 0
+	mergeErr := buildRunner.repositoryManager.MergeChangeset(buildData.Repository, repositorymanager.GitHiddenRef(build.Changeset.HeadSha), build.Changeset.BaseSha, build.Ref)
+	if mergeErr != nil {
+		returnCode = 1
+		outputLine = "Failed to merge. Try pulling before pushing again."
+	}
+
+	err = buildRunner.resourcesConnection.Stages.Update.AddConsoleLines(stageRun.Id, map[uint64]string{1: outputLine})
+	if err != nil {
+		return err
+	}
+
+	err = buildRunner.resourcesConnection.Stages.Update.SetEndTime(stageRun.Id, time.Now())
+	if err != nil {
+		return err
+	}
+
+	err = buildRunner.resourcesConnection.Stages.Update.SetReturnCode(stageRun.Id, returnCode)
+	if err != nil {
+		return err
+	}
+
+	return mergeErr
 }
 
 func (buildRunner *BuildRunner) getBuildConfig(currentBuild *resources.Build, repository *resources.Repository) (config.BuildConfig, error) {
@@ -178,7 +218,7 @@ func (buildRunner *BuildRunner) getBuildConfig(currentBuild *resources.Build, re
 	}
 
 	// TODO (bbland): add retry logic
-	checkoutCommand, err := buildRunner.repositoryManager.GetCheckoutCommand(repository, currentBuild.Changeset.HeadSha)
+	checkoutCommand, err := buildRunner.repositoryManager.GetCheckoutCommand(repository, currentBuild.Changeset.HeadSha, currentBuild.Ref)
 	if err != nil {
 		return emptyConfig, err
 	}

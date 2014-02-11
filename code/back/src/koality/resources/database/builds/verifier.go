@@ -15,7 +15,7 @@ const (
 	baseShaLength          = 40
 	maxHeadUsernameLength  = 128
 	maxHeadEmailLength     = 256
-	maxMergeTargetLength   = 1024
+	maxRefLength           = 1024
 	maxEmailToNotifyLength = 128
 	minResults             = 1
 	headShaRegex           = "^[a-fA-F0-9]+$"
@@ -91,9 +91,9 @@ func (verifier *Verifier) verifyPatchContents(patchContents []byte) error {
 	return err
 }
 
-func (verifier *Verifier) verifyMergeTarget(mergeTarget string) error {
-	if len(mergeTarget) > maxMergeTargetLength {
-		return fmt.Errorf("Merge target cannot exceed %d characters long", maxMergeTargetLength)
+func (verifier *Verifier) verifyRef(ref string) error {
+	if len(ref) > maxRefLength {
+		return fmt.Errorf("Merge target cannot exceed %d characters long", maxRefLength)
 	}
 	return nil
 }

@@ -23,9 +23,9 @@ func NewReadHandler(database *sql.DB, verifier *Verifier, subscriptionHandler re
 func (readHandler *ReadHandler) scanBuild(scannable Scannable) (*resources.Build, error) {
 	build := new(resources.Build)
 
-	var mergeTarget, emailToNotify, status, mergeStatus sql.NullString
-	err := scannable.Scan(&build.Id, &build.RepositoryId, &mergeTarget, &emailToNotify,
-		&status, &mergeStatus, &build.Created, &build.Started, &build.Ended,
+	var ref, emailToNotify, status sql.NullString
+	err := scannable.Scan(&build.Id, &build.RepositoryId, &ref, &build.ShouldMerge,
+		&emailToNotify, &status, &build.Created, &build.Started, &build.Ended,
 		&build.Changeset.Id, &build.Changeset.RepositoryId, &build.Changeset.HeadSha,
 		&build.Changeset.BaseSha, &build.Changeset.HeadMessage, &build.Changeset.HeadUsername,
 		&build.Changeset.HeadEmail, &build.Changeset.PatchContents, &build.Changeset.Created)
@@ -35,17 +35,14 @@ func (readHandler *ReadHandler) scanBuild(scannable Scannable) (*resources.Build
 		return nil, err
 	}
 
-	if mergeTarget.Valid {
-		build.MergeTarget = mergeTarget.String
+	if ref.Valid {
+		build.Ref = ref.String
 	}
 	if emailToNotify.Valid {
 		build.EmailToNotify = emailToNotify.String
 	}
 	if status.Valid {
 		build.Status = status.String
-	}
-	if mergeStatus.Valid {
-		build.MergeStatus = mergeStatus.String
 	}
 	return build, nil
 }
@@ -65,8 +62,8 @@ func (readHandler *ReadHandler) scanChangeset(scannable Scannable) (*resources.C
 }
 
 func (readHandler *ReadHandler) Get(buildId uint64) (*resources.Build, error) {
-	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
-		" V.status, V.merge_status, V.created, V.started, V.ended," +
+	query := "SELECT V.id, V.repository_id, V.ref, V.should_merge," +
+		" V.email_to_notify, V.status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.patch_contents, C.created" +
 		" FROM builds V JOIN changesets C" +
@@ -82,8 +79,8 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 		return nil, err
 	}
 
-	query := "SELECT V.id, V.repository_id, V.merge_target, V.email_to_notify," +
-		" V.status, V.merge_status, V.created, V.started, V.ended," +
+	query := "SELECT V.id, V.repository_id, V.ref, V.should_merge," +
+		" V.email_to_notify, V.status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.patch_contents, C.created" +
 		" FROM builds V JOIN changesets C" +

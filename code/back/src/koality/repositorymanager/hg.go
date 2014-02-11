@@ -197,8 +197,8 @@ func (repository *hgRepository) getCloneCommand() shell.Command {
 	)
 }
 
-func (repository *hgRepository) getCheckoutCommand(ref string) shell.Command {
-	return shell.And(
+func (repository *hgRepository) getCheckoutCommand(ref, baseRef string) shell.Command {
+	commands := []shell.Command{
 		ensureHgInstalledCommand,
 		shell.IfElse(
 			shell.Test(shell.Commandf("-d %s", repository.name)),
@@ -212,5 +212,9 @@ func (repository *hgRepository) getCheckoutCommand(ref string) shell.Command {
 			),
 		),
 		shell.Advertised(shell.Commandf("hg update --clean %s", ref)),
-	)
+	}
+	if baseRef != ref && baseRef != "" {
+		commands = append(commands, shell.Advertised(shell.Commandf("hg merge -y")))
+	}
+	return shell.And(commands...)
 }

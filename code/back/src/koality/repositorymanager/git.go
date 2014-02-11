@@ -5,6 +5,7 @@ import (
 	"koality/resources"
 	"koality/shell"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -106,7 +107,7 @@ func (repository *gitRepository) storePending(ref, remoteUri string, args ...str
 		return NoSuchCommitInRepositoryError{fmt.Sprintf("The repository at %s does not contain commit %s", repository.bare.path, ref)}
 	}
 
-	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:refs/koality/%s", ref, ref)); err != nil {
+	if err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", ref, GitHiddenRef(ref))); err != nil {
 		return
 	}
 
@@ -155,6 +156,12 @@ func (repository *gitRepository) mergeChangeset(headRef, baseRef, refToMergeInto
 		return
 	}
 
+	if strings.HasPrefix(refToMergeInto, "refs/heads/") {
+		refToMergeInto = refToMergeInto[len("refs/heads/"):]
+	} else {
+		return fmt.Errorf("Unable to merge into ref: %s", refToMergeInto)
+	}
+
 	originalHead, err := repository.mergeRefs(headRef, refToMergeInto)
 	if err != nil {
 		return
@@ -186,7 +193,8 @@ func (repository *gitRepository) mergeRefs(refToMerge, refToMergeInto string) (o
 
 	branches := branchCommand.Stdout.String()
 	var checkoutBranch string
-	if remoteBranchExists := strings.Contains(branches, fmt.Sprintf("\\s+%s$", remoteBranch)); remoteBranchExists {
+
+	if remoteBranchExists, err := regexp.MatchString(fmt.Sprintf("\\s+%s$", remoteBranch), branches); remoteBranchExists && err != nil {
 		checkoutBranch = remoteBranch
 	} else {
 		checkoutBranch = "FETCH_HEAD"
@@ -330,21 +338,16 @@ func (repository *gitRepository) updateFromForwardUrl(remoteUri, refToMergeInto,
 }
 
 func (repository *gitRepository) pushMergeRetry(remoteUri, refToMergeInto, originalHead string) (err error) {
-	pushAttempts := 0
-
-	for {
-		pushAttempts += 1
+	for pushAttempt := 0; pushAttempt < pushMergeRetries; pushAttempt++ {
 		err = repository.bare.pushWithPrivateKey(remoteUri, fmt.Sprintf("%s:%s", refToMergeInto, refToMergeInto))
-
-		//TODO(akostov) More precise error catching
-		if err != nil && pushAttempts < pushMergeRetries {
+		// TODO (aksotov): more precise error checking
+		if err != nil && pushAttempt < pushMergeRetries-1 {
 			time.Sleep(retryTimeout)
 			repository.updateFromForwardUrl(remoteUri, refToMergeInto, originalHead)
-		} else if err != nil {
-			repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
-		} else {
-			break
 		}
+	}
+	if err != nil {
+		repository.slave.resetRepositoryHead(refToMergeInto, originalHead)
 	}
 	return
 }
@@ -437,8 +440,8 @@ func (repository *gitRepository) getCloneCommand() shell.Command {
 	)
 }
 
-func (repository *gitRepository) getCheckoutCommand(ref string) shell.Command {
-	return shell.And(
+func (repository *gitRepository) getCheckoutCommand(ref, baseRef string) shell.Command {
+	commands := []shell.Command{
 		ensureGitInstalledCommand,
 		shell.Or(
 			shell.Test(shell.Commandf("-d %s", repository.name)),
@@ -447,5 +450,16 @@ func (repository *gitRepository) getCheckoutCommand(ref string) shell.Command {
 		shell.Advertised(shell.Commandf("cd %s", repository.name)),
 		shell.Advertised(shell.Commandf("git fetch %s %s -n --depth 1", repository.remoteUri, GitHiddenRef(ref))),
 		shell.Advertised(shell.Commandf("git checkout --force %s", ref)),
-	)
+	}
+	if baseRef != ref {
+		commands = append(commands, shell.If(
+			shell.Silent(shell.Commandf("git show-ref %s", baseRef)),
+			shell.Advertised(shell.Commandf("git merge --no-edit %s", baseRef)),
+		))
+	}
+	if strings.HasPrefix(baseRef, "refs/heads/") {
+		branch := baseRef[len("refs/heads/"):]
+		commands = append(commands, shell.Advertised(shell.Commandf("git checkout -B %s", branch)))
+	}
+	return shell.And(commands...)
 }

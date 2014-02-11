@@ -31,12 +31,12 @@ func nilOnZero(id uint64) interface{} {
 	}
 }
 
-func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, mergeTarget, emailToNotify string) (*resources.Build, error) {
+func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string, shouldMerge bool) (*resources.Build, error) {
 	if err := createHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
 	} else if err := createHandler.getChangesetParamsError(headSha, baseSha, headMessage, headUsername, headEmail, patchContents); err != nil {
 		return nil, err
-	} else if err := createHandler.getBuildParamsError(snapshotId, mergeTarget, emailToNotify); err != nil {
+	} else if err := createHandler.getBuildParamsError(snapshotId, ref, emailToNotify); err != nil {
 		return nil, err
 	}
 
@@ -57,10 +57,10 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 	}
 
 	buildId := uint64(0)
-	buildQuery := "INSERT INTO builds (repository_id, snapshot_id, debug_instance_id, changeset_id, merge_target, email_to_notify, status)" +
-		" VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+	buildQuery := "INSERT INTO builds (repository_id, snapshot_id, debug_instance_id, changeset_id, ref, should_merge, email_to_notify, status)" +
+		" VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
 
-	err = transaction.QueryRow(buildQuery, repositoryId, nilOnZero(snapshotId), nilOnZero(debugInstanceId), changesetId, mergeTarget, emailToNotify, initialBuildStatus).Scan(&buildId)
+	err = transaction.QueryRow(buildQuery, repositoryId, nilOnZero(snapshotId), nilOnZero(debugInstanceId), changesetId, ref, shouldMerge, emailToNotify, initialBuildStatus).Scan(&buildId)
 	if err != nil {
 		transaction.Rollback()
 		return nil, err
@@ -76,8 +76,8 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 	return build, nil
 }
 
-func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, mergeTarget, emailToNotify string) (*resources.Build, error) {
-	build, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, mergeTarget, emailToNotify)
+func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string, shouldMerge bool) (*resources.Build, error) {
+	build, err := createHandler.create(repositoryId, 0, 0, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, emailToNotify, ref, shouldMerge)
 	if err == nil {
 		createHandler.subscriptionHandler.FireCreatedEvent(build)
 	}
@@ -85,28 +85,28 @@ func (createHandler *CreateHandler) Create(repositoryId uint64, headSha, baseSha
 	return build, err
 }
 
-func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify string) (*resources.Build, error) {
-	return createHandler.create(repositoryId, snapshotId, 0, headSha, baseSha, headMessage, headUsername, headEmail, nil, "", emailToNotify)
+func (createHandler *CreateHandler) CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify, ref string) (*resources.Build, error) {
+	return createHandler.create(repositoryId, snapshotId, 0, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, false)
 }
 
-func (createHandler *CreateHandler) CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify string) (*resources.Build, error) {
-	return createHandler.create(repositoryId, 0, debugInstanceId, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, "", emailToNotify)
+func (createHandler *CreateHandler) CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string) (*resources.Build, error) {
+	return createHandler.create(repositoryId, 0, debugInstanceId, headSha, baseSha, headMessage, headUsername, headEmail, patchContents, emailToNotify, ref, false)
 }
 
-func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetId uint64, mergeTarget, emailToNotify string) (*resources.Build, error) {
+func (createHandler *CreateHandler) CreateFromChangeset(repositoryId, changesetId uint64, emailToNotify, ref string, shouldMerge bool) (*resources.Build, error) {
 	if err := createHandler.verifier.verifyRepositoryExists(repositoryId); err != nil {
 		return nil, err
 	} else if err := createHandler.verifier.verifyChangesetExists(changesetId); err != nil {
 		return nil, err
-	} else if err := createHandler.getBuildParamsError(0, mergeTarget, emailToNotify); err != nil {
+	} else if err := createHandler.getBuildParamsError(0, ref, emailToNotify); err != nil {
 		return nil, err
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO builds (repository_id, snapshot_id, changeset_id, merge_target, email_to_notify, status)" +
-		" VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+	query := "INSERT INTO builds (repository_id, snapshot_id, changeset_id, ref, should_merge, email_to_notify, status)" +
+		" VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
 
-	err := createHandler.database.QueryRow(query, repositoryId, nil, changesetId, mergeTarget, emailToNotify, initialBuildStatus).Scan(&id)
+	err := createHandler.database.QueryRow(query, repositoryId, nil, changesetId, ref, shouldMerge, emailToNotify, initialBuildStatus).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +139,8 @@ func (createHandler *CreateHandler) getChangesetParamsError(headSha, baseSha, he
 	return nil
 }
 
-func (createHandler *CreateHandler) getBuildParamsError(snapshotId uint64, mergeTarget, emailToNotify string) error {
-	if err := createHandler.verifier.verifyMergeTarget(mergeTarget); err != nil {
+func (createHandler *CreateHandler) getBuildParamsError(snapshotId uint64, ref, emailToNotify string) error {
+	if err := createHandler.verifier.verifyRef(ref); err != nil {
 		return err
 	} else if err := createHandler.verifier.verifyEmailToNotify(emailToNotify); err != nil {
 		return err
