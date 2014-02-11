@@ -11,9 +11,9 @@ import (
 type sanitizedBuild struct {
 	Id           uint64             `json:"id"`
 	RepositoryId uint64             `json:"repositoryId"`
-	MergeTarget  string             `json:"mergeTarget"`
+	Ref          string             `json:"ref"`
+	ShouldMerge  bool               `json:"shouldMerge"`
 	Status       string             `json:"status"`
-	MergeStatus  string             `json:"mergeStatus"`
 	Created      *time.Time         `json:"created"`
 	Started      *time.Time         `json:"started"`
 	Ended        *time.Time         `json:"ended"`
@@ -65,9 +65,9 @@ func getSanitizedBuild(build *resources.Build) *sanitizedBuild {
 	return &sanitizedBuild{
 		Id:           build.Id,
 		RepositoryId: build.RepositoryId,
-		MergeTarget:  build.MergeTarget,
+		Ref:          build.Ref,
+		ShouldMerge:  build.ShouldMerge,
 		Status:       build.Status,
-		MergeStatus:  build.MergeStatus,
 		Created:      build.Created,
 		Started:      build.Started,
 		Ended:        build.Ended,

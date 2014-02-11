@@ -39,8 +39,10 @@ func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repo
 	}
 
 	for _, repositoryInformationElement := range repositoryInformation {
-		createHandler.buildsHandler.Create.CreateForSnapshot(repositoryInformationElement.RepositoryId, id, repositoryInformationElement.HeadSha, repositoryInformationElement.BaseSha,
-			repositoryInformationElement.HeadMessage, repositoryInformationElement.HeadUsername, repositoryInformationElement.HeadEmail, repositoryInformationElement.EmailToNotify)
+		createHandler.buildsHandler.Create.CreateForSnapshot(repositoryInformationElement.RepositoryId, id,
+			repositoryInformationElement.HeadSha, repositoryInformationElement.BaseSha,
+			repositoryInformationElement.HeadMessage, repositoryInformationElement.HeadUsername,
+			repositoryInformationElement.HeadEmail, repositoryInformationElement.EmailToNotify, repositoryInformationElement.Ref)
 	}
 
 	snapshot, err := createHandler.readHandler.Get(id)

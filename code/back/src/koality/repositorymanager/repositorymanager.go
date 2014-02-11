@@ -20,7 +20,7 @@ type RepositoryManager interface {
 	StorePending(repository *resources.Repository, ref string, args ...string) (err error)
 	MergeChangeset(repository *resources.Repository, headRef, baseRef, refToMergeInto string) (err error)
 	GetCloneCommand(repository *resources.Repository) (cloneCommand shell.Command, err error)
-	GetCheckoutCommand(repository *resources.Repository, ref string) (checkoutCommand shell.Command, err error)
+	GetCheckoutCommand(repository *resources.Repository, ref, baseRef string) (checkoutCommand shell.Command, err error)
 }
 
 type repositoryManager struct {
@@ -149,11 +149,11 @@ func (repositoryManager *repositoryManager) GetCloneCommand(repository *resource
 	return openedRepository.getCloneCommand(), nil
 }
 
-func (repositoryManager *repositoryManager) GetCheckoutCommand(repository *resources.Repository, ref string) (cloneCommand shell.Command, err error) {
+func (repositoryManager *repositoryManager) GetCheckoutCommand(repository *resources.Repository, ref, baseRef string) (cloneCommand shell.Command, err error) {
 	openedRepository, err := repositoryManager.openPostPushRepository(repository)
 	if err != nil {
 		return
 	}
 
-	return openedRepository.getCheckoutCommand(ref), nil
+	return openedRepository.getCheckoutCommand(ref, baseRef), nil
 }

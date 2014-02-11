@@ -48,21 +48,6 @@ func (updateHandler *UpdateHandler) SetStatus(buildId uint64, status string) err
 	return nil
 }
 
-func (updateHandler *UpdateHandler) SetMergeStatus(buildId uint64, mergeStatus string) error {
-	if err := updateHandler.verifier.verifyMergeStatus(mergeStatus); err != nil {
-		return err
-	}
-
-	query := "UPDATE builds SET merge_status=$1 WHERE id=$2"
-	err := updateHandler.updateBuild(query, mergeStatus, buildId)
-	if err != nil {
-		return err
-	}
-
-	updateHandler.subscriptionHandler.FireMergeStatusUpdatedEvent(buildId, mergeStatus)
-	return nil
-}
-
 func (updateHandler *UpdateHandler) getTimes(buildId uint64) (createTime, startTime, endTime *time.Time, err error) {
 	query := "SELECT created, started, ended FROM builds WHERE id=$1"
 	err = updateHandler.database.QueryRow(query, buildId).Scan(&createTime, &startTime, &endTime)

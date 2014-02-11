@@ -159,7 +159,7 @@ func createBuilds(connection *resources.Connection, repositoryId uint64, numBuil
 	userNames := []string{"Jonathan Chu", "Jordan Potter", "Brian Bland", "Andrey Kostov"}
 	userEmails := []string{"jchu@koalitycode.com", "jpotter@koalitycode.com", "bbland@koalitycode.com", "akostov@koalitycode.com"}
 	patchContents := [][]byte{[]byte("a patch header"), nil}
-	mergeTargets := []string{"master", "development", "feature_branch_1", "feature_branch_2"}
+	refs := []string{"master", "development", "feature_branch_1", "feature_branch_2"}
 
 	createSha := func() string {
 		shaChars := "0123456789ABCDEF"
@@ -185,7 +185,8 @@ func createBuilds(connection *resources.Connection, repositoryId uint64, numBuil
 			headMessage := fmt.Sprintf("This is a commit from %s", userNames[index%len(userNames)])
 			build, err := connection.Builds.Create.Create(repositoryId, createSha(), createSha(),
 				headMessage, userNames[index%len(userNames)], userEmails[index%len(userEmails)],
-				patchContents[index%len(patchContents)], mergeTargets[index%len(mergeTargets)], userEmails[rand.Intn(len(userEmails))])
+				patchContents[index%len(patchContents)], userEmails[rand.Intn(len(userEmails))],
+				refs[index%len(refs)], index%2 == 0)
 			if err != nil {
 				errorChannel <- err
 				return
