@@ -3,21 +3,21 @@
 		<div class="left">
 			Upgrade
 		</div>
-		<div class="right" ng-show="version.current != null">
-			<span class="versionNumber">Current version: {{version.current}}</span>
+		<div class="right" ng-show="upgradeStatus.currentVersion != null">
+			<span class="versionNumber">Current version: {{upgradeStatus.currentVersion}}</span>
 		</div>
 	</panel-header>
 
 	<panel-body no-scroll>
 		<form name="updateForm" novalidate>
 			<div class="formContainer centered">
-				{{upgrade.message}}
+				{{upgradeStatus.message}}
 			</div>
 
 			<div class="bottomContanier">
 				<div class="formDivider"></div>
 
-				<busy-button centered busy="makingRequest" click="performUpgrade()" disabled="!upgrade.upgradeAllowed">Update Koality Now</busy-button>
+				<busy-button centered busy="makingRequest" click="performUpgrade()" disabled="performingUpgrade || (upgradeStatus.currentVersion == upgradeStatus.nextVersion)">Update Koality Now</busy-button>
 			</div>
 		</form>
 	</panel-body>

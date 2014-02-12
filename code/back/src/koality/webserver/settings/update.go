@@ -46,6 +46,11 @@ func (settingsHandler *SettingsHandler) resetRepositoryKeyPair(writer http.Respo
 	fmt.Fprintf(writer, "%s", jsonedRepositoryKeyPair)
 }
 
+func (settingsHandler *SettingsHandler) upgrade(writer http.ResponseWriter, request *http.Request) {
+	writer.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprint(writer, "need to run an upgrade here")
+}
+
 func (settingsHandler *SettingsHandler) setDomainName(writer http.ResponseWriter, request *http.Request) {
 	domainNameBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {

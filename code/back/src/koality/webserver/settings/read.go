@@ -157,3 +157,23 @@ func (settingsHandler *SettingsHandler) getLicense(writer http.ResponseWriter, r
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedLicense)
 }
+
+func (settingsHandler *SettingsHandler) getUpgradeStatus(writer http.ResponseWriter, request *http.Request) {
+	upgradeStatus := map[string]interface{}{
+		"currentVersion": "13.3.7",
+		"nextVersion":    "13.3.8",
+		"message":        "bitches ain't shit",
+	}
+
+	// sanitizedGitHubEnterpriseSettings := getSanitizedGitHubEnterpriseSettings(gitHubEnterpriseSettings)
+	sanitizedUpgradeStatus := upgradeStatus
+	jsonedUpgradeStatus, err := json.Marshal(sanitizedUpgradeStatus)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedUpgradeStatus)
+}

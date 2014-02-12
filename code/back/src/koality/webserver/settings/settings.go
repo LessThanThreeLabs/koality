@@ -86,6 +86,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/license",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getLicense)).
 		Methods("GET")
+	subrouter.HandleFunc("/upgradeStatus",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getUpgradeStatus)).
+		Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetApiKey)).
@@ -95,6 +98,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		Methods("POST")
 	subrouter.HandleFunc("/wizard",
 		settingsHandler.setWizard). // Does not require admin
+		Methods("POST")
+	subrouter.HandleFunc("/upgrade",
+		settingsHandler.upgrade). // Does not require admin
 		Methods("POST")
 
 	subrouter.HandleFunc("/domainName",
@@ -129,9 +135,12 @@ func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.getS3ExporterSettings).Methods("GET")
 	subrouter.HandleFunc("/hipChat", settingsHandler.getHipChatSettings).Methods("GET")
 	subrouter.HandleFunc("/gitHubEnterprise", settingsHandler.getGitHubEnterpriseSettings).Methods("GET")
+	subrouter.HandleFunc("/license", settingsHandler.getLicense).Methods("GET")
+	subrouter.HandleFunc("/upgradeStatus", settingsHandler.getUpgradeStatus).Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset", settingsHandler.resetApiKey).Methods("POST")
 	subrouter.HandleFunc("/repositoryKeyPair/reset", settingsHandler.resetRepositoryKeyPair).Methods("POST")
+	subrouter.HandleFunc("/upgrade", settingsHandler.resetRepositoryKeyPair).Methods("POST")
 
 	subrouter.HandleFunc("/domainName", settingsHandler.setDomainName).Methods("PUT")
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.setS3ExporterSettings).Methods("PUT")
