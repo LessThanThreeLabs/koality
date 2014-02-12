@@ -62,9 +62,6 @@ func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/",
 		middleware.IsLoggedInWrapper(usersHandler.getAll)).
 		Methods("GET")
-	subrouter.HandleFunc("/current",
-		middleware.IsLoggedInWrapper(usersHandler.getCurrent)).
-		Methods("GET")
 	subrouter.HandleFunc("/keys",
 		middleware.IsLoggedInWrapper(usersHandler.getKeys)).
 		Methods("GET")

@@ -61,26 +61,6 @@ func (usersHandler *UsersHandler) getAll(writer http.ResponseWriter, request *ht
 	fmt.Fprintf(writer, "%s", jsonedUsers)
 }
 
-func (usersHandler *UsersHandler) getCurrent(writer http.ResponseWriter, request *http.Request) {
-	userId := context.Get(request, "userId").(uint64)
-	user, err := usersHandler.resourcesConnection.Users.Read.Get(userId)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
-		return
-	}
-	sanitizedUser := getSanitizedUser(user)
-	jsonedUser, err := json.Marshal(sanitizedUser)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to stringify: %v", err)
-		return
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "%s", jsonedUser)
-}
-
 func (usersHandler *UsersHandler) getKeys(writer http.ResponseWriter, request *http.Request) {
 	userId := context.Get(request, "userId").(uint64)
 	sshKeys, err := usersHandler.resourcesConnection.Users.Read.GetKeys(userId)

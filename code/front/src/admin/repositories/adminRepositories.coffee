@@ -1,6 +1,6 @@
 'use strict'
 
-window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'events', 'notification', ($scope, $location, $routeParams, $http, $timeout, events, notification) ->
+window.AdminRepositories = ['$scope', '$location', '$routeParams', '$window', '$http', '$timeout', 'events', 'notification', ($scope, $location, $routeParams, $window, $http, $timeout, events, notification) ->
 	$scope.orderByPredicate = 'name'
 	$scope.orderByReverse = false
 
@@ -55,12 +55,11 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 
 	getIsConnectedToGitHub = () ->
 		$scope.retrievingGitHubInformation = true
-		request = $http.get "/app/users/current"
+		request = $http.get "/app/users/#{$window.userId}"
 		request.success (data, status, headers, config) =>
 			$scope.retrievingGitHubInformation = false
 			$scope.isConnectedToGitHub = data.hasGitHubOAuth
-			# Prefetch the repositories list as long as we're on the page
-			if $scope.isConnectedToGitHub
+			if $scope.isConnectedToGitHub and $scope.addRepository.setupType is 'gitHub'
 				getGitHubRepositories()
 		request.error (data, status, headers, config) =>
 			$scope.retrievingGitHubInformation = false
