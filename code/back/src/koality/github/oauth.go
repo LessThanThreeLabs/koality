@@ -82,7 +82,7 @@ func (connection *gitHubEnterpriseOAuthConnection) GetAuthorizationUrl(action st
 	queryValues.Set("client_id", gitHubEnterpriseSettings.OAuthClientId)
 	queryValues.Set("scope", "user,repo")
 	queryValues.Set("state", action)
-	return gitHubEnterpriseSettings.BaseUrl + "/login/oauth/authorize?" + queryValues.Encode(), nil
+	return gitHubEnterpriseSettings.BaseUri + "/login/oauth/authorize?" + queryValues.Encode(), nil
 }
 
 func (connection *gitHubEnterpriseOAuthConnection) CheckValidOAuthToken(oAuthToken string) (bool, error) {
@@ -91,7 +91,7 @@ func (connection *gitHubEnterpriseOAuthConnection) CheckValidOAuthToken(oAuthTok
 		return false, err
 	}
 
-	oAuthCheckUrl := fmt.Sprintf("%s/api/v3/applications/%s/tokens/%s", gitHubEnterpriseSettings.BaseUrl, gitHubEnterpriseSettings.OAuthClientId, oAuthToken)
+	oAuthCheckUrl := fmt.Sprintf("%s/api/v3/applications/%s/tokens/%s", gitHubEnterpriseSettings.BaseUri, gitHubEnterpriseSettings.OAuthClientId, oAuthToken)
 
 	checkOAuthTokenRequest, err := http.NewRequest("GET", oAuthCheckUrl, nil)
 	if err != nil {

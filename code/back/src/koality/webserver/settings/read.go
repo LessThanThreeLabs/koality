@@ -114,3 +114,27 @@ func (settingsHandler *SettingsHandler) getHipChatSettings(writer http.ResponseW
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedHipChatSettings)
 }
+
+func (settingsHandler *SettingsHandler) getGitHubEnterpriseSettings(writer http.ResponseWriter, request *http.Request) {
+	gitHubEnterpriseSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetGitHubEnterpriseSettings()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(writer, "{}")
+		return
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedGitHubEnterpriseSettings := getSanitizedGitHubEnterpriseSettings(gitHubEnterpriseSettings)
+	jsonedGitHubEnterpriseSettings, err := json.Marshal(sanitizedGitHubEnterpriseSettings)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedGitHubEnterpriseSettings)
+}

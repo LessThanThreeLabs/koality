@@ -120,6 +120,35 @@ func (settingsHandler *SettingsHandler) setHipChatSettings(writer http.ResponseW
 	fmt.Fprintf(writer, "%s", jsonedHipChatSettings)
 }
 
+func (settingsHandler *SettingsHandler) setGitHubEnterpriseSettings(writer http.ResponseWriter, request *http.Request) {
+	setGitHubEnterpriseRequestData := new(setGitHubEnterpriseRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(setGitHubEnterpriseRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	hipChatSettings, err := settingsHandler.resourcesConnection.Settings.Update.SetGitHubEnterpriseSettings(
+		setGitHubEnterpriseRequestData.BaseUri, setGitHubEnterpriseRequestData.OAuthClientId, setGitHubEnterpriseRequestData.OAuthClientSecret)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedGitHubEnterpriseSettings := getSanitizedGitHubEnterpriseSettings(hipChatSettings)
+	jsonedGitHubEnterpriseSettings, err := json.Marshal(sanitizedGitHubEnterpriseSettings)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedGitHubEnterpriseSettings)
+}
+
 func (settingsHandler *SettingsHandler) setWizard(writer http.ResponseWriter, request *http.Request) {
 	licenseKey := request.PostFormValue("licenseKey")
 	_ = licenseKey // TODO(dhuang) do something with this

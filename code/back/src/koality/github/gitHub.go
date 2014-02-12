@@ -137,11 +137,11 @@ func (connection *gitHubConnection) getGitHubClient(oAuthToken string) (*github.
 	}
 	gitHubClient := github.NewClient(transport.Client())
 	if gitHubEnterpriseSettings != nil {
-		baseUrl, err := url.Parse(gitHubEnterpriseSettings.BaseUrl)
+		baseUri, err := url.Parse(gitHubEnterpriseSettings.BaseUri)
 		if err != nil {
 			return nil, err
 		}
-		gitHubClient.BaseURL = baseUrl
+		gitHubClient.BaseURL = baseUri
 	}
 	return gitHubClient, nil
 }

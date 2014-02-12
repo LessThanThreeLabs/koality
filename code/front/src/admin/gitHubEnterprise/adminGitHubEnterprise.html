@@ -9,13 +9,13 @@
 				<input class="bufferLeft" type="radio" ng-model="settings.enabled" name="enabled" value="no" required>No
 
 				<label>GitHub Enterprise URL</label>
-				<input type="text" ng-model="settings.uri" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" focused required>
+				<input type="text" ng-model="settings.baseUri" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" focused required>
 
 				<label>Client ID</label>
-				<input type="text" ng-model="settings.clientId" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" required>
+				<input type="text" ng-model="settings.oAuthClientId" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" required>
 
 				<label>Client Secret</label>
-				<input type="text" ng-model="settings.clientSecret" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" required>
+				<input type="text" ng-model="settings.oAuthClientSecret" ng-class="{disabled: settings.enabled == 'no'}" name="uri" ng-disabled="settings.enabled == 'no'" required>
 			</div>
 
 			<div class="bottomContanier">
