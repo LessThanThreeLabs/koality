@@ -37,3 +37,19 @@ func (settingsHandler *SettingsHandler) clearHipChatSettings(writer http.Respons
 	}
 	fmt.Fprint(writer, "ok")
 }
+
+func (settingsHandler *SettingsHandler) clearGitHubEnterpriseSettings(writer http.ResponseWriter, request *http.Request) {
+	_, err := settingsHandler.resourcesConnection.Settings.Read.GetGitHubEnterpriseSettings()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		fmt.Fprintf(writer, "ok")
+		return
+	}
+
+	err = settingsHandler.resourcesConnection.Settings.Delete.ClearGitHubEnterpriseSettings()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+	fmt.Fprint(writer, "ok")
+}
