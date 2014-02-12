@@ -83,6 +83,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/gitHubEnterprise",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getGitHubEnterpriseSettings)).
 		Methods("GET")
+	subrouter.HandleFunc("/license",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getLicense)).
+		Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.resetApiKey)).

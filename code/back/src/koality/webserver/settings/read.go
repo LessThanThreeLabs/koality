@@ -138,3 +138,22 @@ func (settingsHandler *SettingsHandler) getGitHubEnterpriseSettings(writer http.
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedGitHubEnterpriseSettings)
 }
+
+func (settingsHandler *SettingsHandler) getLicense(writer http.ResponseWriter, request *http.Request) {
+	license := map[string]interface{}{
+		"key":          "some-key-here",
+		"maxExecutors": 100,
+	}
+
+	// sanitizedGitHubEnterpriseSettings := getSanitizedGitHubEnterpriseSettings(gitHubEnterpriseSettings)
+	sanitizedLicense := license
+	jsonedLicense, err := json.Marshal(sanitizedLicense)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedLicense)
+}
