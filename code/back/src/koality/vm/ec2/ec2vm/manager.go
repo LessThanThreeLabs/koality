@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/crowdmob/goamz/aws"
-	"github.com/crowdmob/goamz/ec2"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/ec2"
 	"koality/resources"
 	"koality/shell"
 	"koality/vm"
@@ -26,7 +26,7 @@ type Ec2VirtualMachineManager struct {
 }
 
 func NewManager(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool, resourcesConnection *resources.Connection) (*Ec2VirtualMachineManager, error) {
-	auth, err := aws.GetAuth(ec2Pool.AccessKey, ec2Pool.SecretKey, "", time.Time{})
+	auth, err := aws.GetAuth(ec2Pool.AccessKey, ec2Pool.SecretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -61,13 +61,13 @@ func (manager *Ec2VirtualMachineManager) NewVirtualMachine() (vm.VirtualMachine,
 		return nil, err
 	}
 
-	runOptions := ec2.RunInstancesOptions{
-		ImageId:             activeImage.Id,
-		InstanceType:        manager.Ec2Pool.InstanceType,
-		SecurityGroups:      securityGroups,
-		SubnetId:            manager.Ec2Pool.VpcSubnetId,
-		UserData:            userData,
-		BlockDeviceMappings: manager.getBlockDeviceMappings(activeImage),
+	runOptions := ec2.RunInstances{
+		ImageId:        activeImage.Id,
+		InstanceType:   manager.Ec2Pool.InstanceType,
+		SecurityGroups: securityGroups,
+		SubnetId:       manager.Ec2Pool.VpcSubnetId,
+		UserData:       userData,
+		BlockDevices:   manager.getBlockDeviceMappings(activeImage),
 	}
 	runResponse, err := manager.ec2Cache.EC2.RunInstances(&runOptions)
 	if err != nil {
@@ -137,7 +137,7 @@ func (manager *Ec2VirtualMachineManager) waitForIpAddress(instance *ec2.Instance
 			}
 			return fmt.Errorf("Instance failed to receive an IP address after %s", timeout.String())
 		default:
-			if instance.PrivateIPAddress != "" {
+			if instance.PrivateIpAddress != "" {
 				return nil
 			} else {
 				time.Sleep(5 * time.Second)
@@ -278,7 +278,9 @@ func (manager *Ec2VirtualMachineManager) getSecurityGroups() ([]ec2.SecurityGrou
 		securityGroup = ec2.SecurityGroup{
 			Name: "koality_build",
 		}
-		_, err := manager.ec2Cache.EC2.CreateSecurityGroup("koality_build", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.")
+
+		group := ec2.SecurityGroup{"", "koality_build", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.", ""}
+		_, err := manager.ec2Cache.EC2.CreateSecurityGroup(group)
 		if err != nil {
 			return nil, err
 		}

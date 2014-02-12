@@ -1,6 +1,7 @@
 package localmachine
 
 import (
+	"fmt"
 	"io/ioutil"
 	"koality/shell"
 	"koality/vm"
@@ -66,6 +67,10 @@ func (localMachine *LocalMachine) Execute(executable shell.Executable) (shell.Ex
 	executable.Environment["HOME"] = localMachine.rootDir
 
 	return localMachine.executor.Execute(executable)
+}
+
+func (localMachine *LocalMachine) SaveState(name string) (imageId string, err error) {
+	return "", fmt.Errorf("Local machines do not currently support state saving.")
 }
 
 func (localMachine *LocalMachine) Terminate() error {

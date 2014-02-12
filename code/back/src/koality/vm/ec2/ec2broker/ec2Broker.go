@@ -1,8 +1,8 @@
 package ec2broker
 
 import (
-	"github.com/crowdmob/goamz/aws"
-	"github.com/crowdmob/goamz/ec2"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/ec2"
 	"net"
 	"os"
 	"os/exec"
@@ -104,7 +104,7 @@ func (broker *Ec2Broker) InstanceInfo() *InstanceInfo {
 						}
 					}
 					securityGroups = reservation.SecurityGroups
-					privateIp = net.ParseIP(instance.PrivateIPAddress)
+					privateIp = net.ParseIP(instance.PrivateIpAddress)
 					break
 				}
 			}

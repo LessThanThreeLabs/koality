@@ -3,7 +3,7 @@ package ec2vm
 import (
 	"errors"
 	"fmt"
-	"github.com/crowdmob/goamz/ec2"
+	"github.com/mitchellh/goamz/ec2"
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
@@ -19,7 +19,7 @@ type Ec2VirtualMachine struct {
 func New(instance ec2.Instance, cache *ec2broker.Ec2Cache, username, privateKey string) (*Ec2VirtualMachine, error) {
 	sshConfig := vm.SshConfig{
 		Username:   username,
-		Hostname:   instance.IPAddress,
+		Hostname:   instance.PublicIpAddress,
 		Port:       22,
 		PrivateKey: privateKey,
 		Options: map[string]string{

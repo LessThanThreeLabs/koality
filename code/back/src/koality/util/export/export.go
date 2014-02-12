@@ -1,14 +1,13 @@
 package export
 
 import (
-	"github.com/crowdmob/goamz/aws"
-	"github.com/crowdmob/goamz/s3"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/s3"
 	"io/ioutil"
 	"koality/resources"
 	"koality/util/find"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 type ExportOutput struct {
@@ -17,9 +16,7 @@ type ExportOutput struct {
 }
 
 func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Region, globPatterns []string) ([]resources.Export, error) {
-	token := ""
-	expiration := time.Time{}
-	auth, err := aws.GetAuth(accessKey, secretKey, token, expiration)
+	auth, err := aws.GetAuth(accessKey, secretKey)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +39,7 @@ func Export(accessKey, secretKey, bucketName, exportPrefix string, region aws.Re
 
 		s3Path := exportPrefix + path
 		contentType := ""
-		err = bucket.Put(s3Path, data, contentType, s3.PublicRead, s3.Options{})
+		err = bucket.Put(s3Path, data, contentType, s3.PublicRead)
 		if err != nil {
 			return err
 		}

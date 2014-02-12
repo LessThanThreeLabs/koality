@@ -16,9 +16,6 @@
 [submodule "chef/cookbooks/erlang"]
 	path = chef/cookbooks/erlang
 	url = http://github.com/opscode-cookbooks/erlang
-[submodule "code/back/src/github.com/crowdmob/goamz"]
-	path = code/back/src/github.com/crowdmob/goamz
-	url = git@github.com:crowdmob/goamz.git
 [submodule "code/back/src/github.com/scale-it/go-log"]
 	path = code/back/src/github.com/scale-it/go-log
 	url = git@github.com:scale-it/go-log.git
@@ -82,3 +79,6 @@
 [submodule "code/back/src/github.com/LessThanThreeLabs/go.codereview"]
 	path = code/back/src/github.com/LessThanThreeLabs/go.codereview
 	url = git@github.com:LessThanThreeLabs/go.codereview
+[submodule "code/back/src/github.com/mitchellh/goamz"]
+	path = code/back/src/github.com/mitchellh/goamz
+	url = git@github.com:mitchellh/goamz.git
