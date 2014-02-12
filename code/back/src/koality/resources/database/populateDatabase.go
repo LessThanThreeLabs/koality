@@ -64,6 +64,10 @@ func makeSureDumpExists() error {
 		return err
 	}
 
+	if err = setSettings(connection); err != nil {
+		return err
+	}
+
 	return CreateDump()
 }
 
@@ -339,4 +343,10 @@ func createPools(connection *resources.Connection) error {
 		}
 	}
 	return nil
+}
+
+func setSettings(connection *resources.Connection) error {
+	domainName := "koalitycode.com"
+	_, err := connection.Settings.Update.SetDomainName(domainName)
+	return err
 }

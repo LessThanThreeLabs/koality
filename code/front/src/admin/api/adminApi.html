@@ -3,7 +3,7 @@
 
 	<panel-body no-scroll>
 		<form name="websiteForm" novalidate>
-			<div class="formContainer centered">
+			<div class="formContainer centered" ng-show="domainName != null && apiKey != null">
 				<label>Rest API Location</label>
 				<div id="adminApiUrl">https://{{domainName}}/api/v/0/...</div>
 

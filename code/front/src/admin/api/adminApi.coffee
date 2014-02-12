@@ -34,11 +34,15 @@ window.AdminApi = ['$scope', '$http', 'events', 'notification', ($scope, $http, 
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		rpc 'systemSettings', 'update', 'regenerateApiKey', null, (error, apiKey) ->
+		request = $http.post "/app/settings/apiKey/reset"
+		request.success (data, status, headers, config) =>
 			$scope.makingRequest = false
-			$scope.apiKey = apiKey
+			$scope.apiKey = data.replace(/\"/g, '')
 			$scope.mustConfirmRegenerateKey = false
 			notification.success 'Successfully updated API key'
+		request.error (data, status, headers, config) =>
+			$scope.makingRequest = false
+			notification.error data
 
 	$scope.cancelRegenerateKey = () ->
 		$scope.mustConfirmRegenerateKey = false
