@@ -100,7 +100,7 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		settingsHandler.setWizard). // Does not require admin
 		Methods("POST")
 	subrouter.HandleFunc("/upgrade",
-		settingsHandler.upgrade). // Does not require admin
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.upgrade)).
 		Methods("POST")
 
 	subrouter.HandleFunc("/domainName",
