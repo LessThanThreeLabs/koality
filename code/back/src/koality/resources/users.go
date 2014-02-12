@@ -33,6 +33,7 @@ type UsersHandler struct {
 }
 
 type UsersCreateHandler interface {
+	CanCreate(email, firstName, lastName string) error
 	Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (*User, error)
 }
 

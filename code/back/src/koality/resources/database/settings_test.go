@@ -106,18 +106,18 @@ func TestSettingsAuthenticationSettings(test *testing.T) {
 		test.Fatal("Failed to hear authentication settings updated event")
 	}
 
-	if authenticationSettingsUpdatedEventSettings.ManualLoginAllowed != authenticationSettings.ManualLoginAllowed {
-		test.Fatal("Bad authenticationSettings.ManualLoginAllowed in authentication settings updated event")
-	} else if authenticationSettingsUpdatedEventSettings.GoogleLoginAllowed != authenticationSettings.GoogleLoginAllowed {
-		test.Fatal("Bad authenticationSettings.GoogleLoginAllowed in authentication settings updated event")
+	if authenticationSettingsUpdatedEventSettings.ManualAccountsAllowed != authenticationSettings.ManualAccountsAllowed {
+		test.Fatal("Bad authenticationSettings.ManualAccountsAllowed in authentication settings updated event")
+	} else if authenticationSettingsUpdatedEventSettings.GoogleAccountsAllowed != authenticationSettings.GoogleAccountsAllowed {
+		test.Fatal("Bad authenticationSettings.GoogleAccountsAllowed in authentication settings updated event")
 	} else if !allowedDomainsEqual(authenticationSettingsUpdatedEventSettings.AllowedDomains, authenticationSettings.AllowedDomains) {
 		test.Fatal("Bad authenticationSettings.AllowedDomains in authentication settings updated event")
 	}
 
-	if authenticationSettings.ManualLoginAllowed != manualAllowed {
-		test.Fatal("ManualLoginAllowed mismatch")
-	} else if authenticationSettings.GoogleLoginAllowed != googleAllowed {
-		test.Fatal("GoogleLoginAllowed mismatch")
+	if authenticationSettings.ManualAccountsAllowed != manualAllowed {
+		test.Fatal("ManualAccountsAllowed mismatch")
+	} else if authenticationSettings.GoogleAccountsAllowed != googleAllowed {
+		test.Fatal("GoogleAccountsAllowed mismatch")
 	} else if !allowedDomainsEqual(authenticationSettings.AllowedDomains, allowedDomains) {
 		test.Fatal("AllowedDomains mismatch")
 	}
@@ -127,10 +127,10 @@ func TestSettingsAuthenticationSettings(test *testing.T) {
 		test.Fatal(err)
 	}
 
-	if authenticationSettings.ManualLoginAllowed != authenticationSettings2.ManualLoginAllowed {
-		test.Fatal("Bad authenticationSettings.ManualLoginAllowed in authentication settings updated event")
-	} else if authenticationSettings.GoogleLoginAllowed != authenticationSettings2.GoogleLoginAllowed {
-		test.Fatal("Bad authenticationSettings.GoogleLoginAllowed in authentication settings updated event")
+	if authenticationSettings.ManualAccountsAllowed != authenticationSettings2.ManualAccountsAllowed {
+		test.Fatal("Bad authenticationSettings.ManualAccountsAllowed in authentication settings updated event")
+	} else if authenticationSettings.GoogleAccountsAllowed != authenticationSettings2.GoogleAccountsAllowed {
+		test.Fatal("Bad authenticationSettings.GoogleAccountsAllowed in authentication settings updated event")
 	} else if !allowedDomainsEqual(authenticationSettings.AllowedDomains, authenticationSettings2.AllowedDomains) {
 		test.Fatal("Bad authenticationSettings.AllowedDomains in authentication settings updated event")
 	}

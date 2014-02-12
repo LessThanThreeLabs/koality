@@ -1,7 +1,7 @@
 package accounts
 
 import (
-	"fmt"
+	"encoding/gob"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"koality/mail"
@@ -10,8 +10,25 @@ import (
 )
 
 const (
-	rememberMeDuration = 2592000
+	rememberMeDuration     = 2592000
+	confirmAccountFlashKey = "createAccountData"
 )
+
+type createAccountRequestData struct {
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Password  string `json:"password"`
+}
+
+type confirmAccountData struct {
+	Email        string
+	FirstName    string
+	LastName     string
+	PasswordHash []byte
+	PasswordSalt []byte
+	Token        string
+}
 
 type loginRequestData struct {
 	Email      string `json:"email"`
@@ -27,13 +44,15 @@ type AccountsHandler struct {
 	mailer              mail.Mailer
 }
 
+func init() {
+	gob.Register(&confirmAccountData{})
+}
+
 func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, mailer mail.Mailer) (*AccountsHandler, error) {
 	return &AccountsHandler{resourcesConnection, sessionStore, sessionName, passwordHasher, mailer}, nil
 }
 
 func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) {
-	fmt.Println("...need to add functionality to reset password")
-
 	subrouter.HandleFunc("/googleLoginRedirect",
 		middleware.IsLoggedOutWrapper(accountsHandler.getGoogleLoginRedirect)).
 		Methods("GET")
@@ -44,8 +63,8 @@ func (accountsHandler *AccountsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/create",
 		middleware.IsLoggedOutWrapper(accountsHandler.create)).
 		Methods("POST")
-	subrouter.HandleFunc("/gitHub/Create",
-		middleware.IsLoggedOutWrapper(accountsHandler.createWithGitHub)).
+	subrouter.HandleFunc("/confirm",
+		middleware.IsLoggedOutWrapper(accountsHandler.confirm)).
 		Methods("POST")
 	subrouter.HandleFunc("/login",
 		middleware.IsLoggedOutWrapper(accountsHandler.login)).

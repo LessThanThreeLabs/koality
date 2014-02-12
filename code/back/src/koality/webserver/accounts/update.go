@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"koality/mail"
 	"koality/resources"
 	"net/http"
 )
@@ -49,9 +50,13 @@ func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, reques
 		return
 	}
 
+	accountsHandler.doLogin(user.Id, loginRequestData.RememberMe, writer, request)
+}
+
+func (accountsHandler *AccountsHandler) doLogin(userId uint64, rememberMe bool, writer http.ResponseWriter, request *http.Request) {
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
-	session.Values["userId"] = user.Id
-	session.Options.MaxAge = accountsHandler.getMaxSessionAge(loginRequestData.RememberMe)
+	session.Values["userId"] = userId
+	session.Options.MaxAge = accountsHandler.getMaxSessionAge(rememberMe)
 	session.Save(request, writer)
 
 	fmt.Fprint(writer, "ok")
@@ -85,6 +90,10 @@ func (accountsHandler *AccountsHandler) resetPassword(writer http.ResponseWriter
 	domainName, err := accountsHandler.resourcesConnection.Settings.Read.GetDomainName()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
 		domainName = "koalitycode.com"
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
 	}
 
 	var passwordBuffer bytes.Buffer
@@ -105,6 +114,10 @@ func (accountsHandler *AccountsHandler) resetPassword(writer http.ResponseWriter
 		return
 	}
 
+	undoPasswordReset := func() {
+		accountsHandler.resourcesConnection.Users.Update.SetPassword(user.Id, user.PasswordHash, user.PasswordSalt)
+	}
+
 	if err = accountsHandler.resourcesConnection.Users.Update.SetPassword(user.Id, passwordHash, passwordSalt); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -116,11 +129,18 @@ func (accountsHandler *AccountsHandler) resetPassword(writer http.ResponseWriter
 	toAddresses := []string{email}
 	emailBody := fmt.Sprintf("Your new password is: %s", password)
 
-	if err = accountsHandler.mailer.SendMail(fromAddress, replyToAddresses, toAddresses, "Your new Koality Password", emailBody); err != nil {
+	err = accountsHandler.mailer.SendMail(fromAddress, replyToAddresses, toAddresses, "Your new Koality Password", emailBody)
+	if _, ok := err.(mail.NoAuthProvidedError); ok {
+		undoPasswordReset()
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		fmt.Fprint(writer, "Unable to send confirmation email, an Administrator must configure SMTP settings first")
+		return
+	} else if err != nil {
+		undoPasswordReset()
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	fmt.Fprint(writer, "need to reset password for "+string(emailBytes))
+	fmt.Fprint(writer, "ok")
 }

@@ -2,8 +2,8 @@
 
 window.Login = ['$scope', '$window', '$location', '$routeParams', '$http', '$timeout', 'notification', ($scope, $window, $location, $routeParams, $http, $timeout, notification) ->
 	$scope.loginConfig =
-		type: if $window.googleLoginAllowed then 'google' else 'default'
-		defaultType: if $window.googleLoginAllowed then 'google' else 'default'
+		type: if $window.googleAccountsAllowed then 'google' else 'default'
+		defaultType: if $window.googleAccountsAllowed then 'google' else 'default'
 	$scope.account = {}
 	$scope.makingRequest = false
 

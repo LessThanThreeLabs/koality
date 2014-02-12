@@ -64,7 +64,18 @@ func (feedbackHandler *FeedbackHandler) sendFeedback(writer http.ResponseWriter,
 		feedbackRequestData.WindowWidth, feedbackRequestData.WindowHeight)
 	replyTo := []string{user.Email, "feedback@koalitycode.com"}
 	to := []string{"feedback@koalitycode.com"}
-	if err = feedbackHandler.mailer.SendMail(fmt.Sprintf("feedback@%s", domainName), replyTo, to, "Feedback", message); err != nil {
+	feedbackHandler.mailer.SendMail(fmt.Sprintf("feedback@%s", domainName), replyTo, to, "Feedback", message)
+	if _, ok := err.(mail.NoAuthProvidedError); ok {
+		var errorMessage string
+		if user.IsAdmin {
+			errorMessage = "Unable to send feedback email, please configure SMTP settings first"
+		} else {
+			errorMessage = "Unable to send feedback email, an Administrator must configure SMTP settings first"
+		}
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		fmt.Fprint(writer, errorMessage)
+		return
+	} else if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return

@@ -79,7 +79,7 @@ func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.U
 		return nil, err
 	}
 
-	if !authenticationSettings.GoogleLoginAllowed {
+	if !authenticationSettings.GoogleAccountsAllowed {
 		return nil, BadAuthenticationError{"The administrator has disabled Google Account login"}
 	}
 
@@ -109,8 +109,8 @@ func (googleHandler *GoogleHandler) handleCreateAccount(oAuthToken string) (*res
 		return nil, err
 	}
 
-	if !authenticationSettings.GoogleLoginAllowed {
-		return nil, BadAuthenticationError{"The administrator has disabled Google Account login"}
+	if !authenticationSettings.GoogleAccountsAllowed {
+		return nil, BadAuthenticationError{"The administrator has disabled Google Account creation"}
 	}
 
 	userInformation, err := googleHandler.getGoogleUserInformation(oAuthToken)

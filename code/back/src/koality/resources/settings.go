@@ -7,9 +7,9 @@ func (domainName DomainName) String() string {
 }
 
 type AuthenticationSettings struct {
-	ManualLoginAllowed bool
-	GoogleLoginAllowed bool
-	AllowedDomains     []string
+	ManualAccountsAllowed bool
+	GoogleAccountsAllowed bool
+	AllowedDomains        []string
 }
 
 type RepositoryKeyPair struct {

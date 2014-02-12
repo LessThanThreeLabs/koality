@@ -1,6 +1,6 @@
 'use strict'
 
-window.AdminRepositories = ['$scope', '$location', '$routeParams', '$window', '$http', '$timeout', 'events', 'notification', ($scope, $location, $routeParams, $window, $http, $timeout, events, notification) ->
+window.AdminRepositories = ['$scope', '$window', '$location', '$routeParams', '$http', '$timeout', 'events', 'notification', ($scope, $window, $location, $routeParams, $http, $timeout, events, notification) ->
 	$scope.orderByPredicate = 'name'
 	$scope.orderByReverse = false
 

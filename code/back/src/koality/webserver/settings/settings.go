@@ -7,9 +7,9 @@ import (
 )
 
 type sanitizedAuthenticationSettings struct {
-	ManualLoginAllowed bool     `json:"manualLoginAllowed"`
-	GoogleLoginAllowed bool     `json:"googleLoginAllowed"`
-	AllowedDomains     []string `json:"allowedDomains"`
+	ManualAccountsAllowed bool     `json:"manualAccountsAllowed"`
+	GoogleAccountsAllowed bool     `json:"googleAccountsAllowed"`
+	AllowedDomains        []string `json:"allowedDomains"`
 }
 
 type sanitizedRepositoryKeyPair struct {
@@ -154,9 +154,9 @@ func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) 
 
 func getSanitizedAuthenticationSettings(authenticationSettings *resources.AuthenticationSettings) *sanitizedAuthenticationSettings {
 	return &sanitizedAuthenticationSettings{
-		ManualLoginAllowed: authenticationSettings.ManualLoginAllowed,
-		GoogleLoginAllowed: authenticationSettings.GoogleLoginAllowed,
-		AllowedDomains:     authenticationSettings.AllowedDomains,
+		ManualAccountsAllowed: authenticationSettings.ManualAccountsAllowed,
+		GoogleAccountsAllowed: authenticationSettings.GoogleAccountsAllowed,
+		AllowedDomains:        authenticationSettings.AllowedDomains,
 	}
 }
 

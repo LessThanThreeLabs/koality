@@ -61,7 +61,7 @@ func (mailer *SmtpMailer) formatMessage(fromAddress string, replyToAddresses, to
 		message += fmt.Sprintf("Reply-To: %s\r\n", replyToAddress)
 	}
 
-	message += fmt.Sprintf("Subject: %s\r\nMIME-version: 1.0\r\nContent-Type: text/plain; charset=\"UTF-8\"\r\n\r\n%s", subject, body)
+	message += fmt.Sprintf("Subject: %s\r\nMIME-version: 1.0\r\nContent-Type: text/html; charset=\"UTF-8\"\r\n\r\n%s", subject, body)
 	return []byte(message)
 }
 

@@ -19,7 +19,7 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 }
 
 func (createHandler *CreateHandler) Create(email, firstName, lastName string, passwordHash, passwordSalt []byte, admin bool) (*resources.User, error) {
-	err := createHandler.getUserParamsError(email, firstName, lastName)
+	err := createHandler.CanCreate(email, firstName, lastName)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (createHandler *CreateHandler) Create(email, firstName, lastName string, pa
 	return user, nil
 }
 
-func (createHandler *CreateHandler) getUserParamsError(email, firstName, lastName string) error {
+func (createHandler *CreateHandler) CanCreate(email, firstName, lastName string) error {
 	if err := createHandler.verifier.verifyEmail(email); err != nil {
 		return err
 	} else if err := createHandler.verifier.verifyFirstName(firstName); err != nil {

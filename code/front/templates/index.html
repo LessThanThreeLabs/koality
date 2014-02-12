@@ -22,8 +22,8 @@
 			var csrfToken = "{{.CsrfToken}}"
 			var userId = {{if .User}} {{.User.Id}} {{else}} null {{end}}
 			var isAdmin = {{if .User}} {{.User.IsAdmin}} {{else}} false {{end}}
-			var manualLoginAllowed = {{.AuthenticationSettings.ManualLoginAllowed}}
-			var googleLoginAllowed = {{.AuthenticationSettings.GoogleLoginAllowed}}
+			var manualAccountsAllowed = {{.AuthenticationSettings.ManualAccountsAllowed}}
+			var googleAccountsAllowed = {{.AuthenticationSettings.GoogleAccountsAllowed}}
 		</script>
 
 		{{range .JsFiles}}<script type="text/javascript" src="{{.}}"></script>

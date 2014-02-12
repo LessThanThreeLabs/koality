@@ -114,7 +114,7 @@ func getDumpLocation() (string, error) {
 func checkSettingsInitialized(connection *resources.Connection) error {
 	_, err := connection.Settings.Read.GetAuthenticationSettings()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
-		if _, err = connection.Settings.Update.SetAuthenticationSettings(true, true, nil); err != nil {
+		if _, err = connection.Settings.Update.SetAuthenticationSettings(true, false, nil); err != nil {
 			return err
 		}
 	} else if err != nil {
