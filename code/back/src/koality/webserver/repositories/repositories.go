@@ -55,6 +55,9 @@ func (repositoriesHandler *RepositoriesHandler) WireAppSubroutes(subrouter *mux.
 	subrouter.HandleFunc("/",
 		middleware.IsLoggedInWrapper(repositoriesHandler.getAll)).
 		Methods("GET")
+	subrouter.HandleFunc("/gitHubRepositories",
+		middleware.IsLoggedInWrapper(repositoriesHandler.getGitHubRepositories)).
+		Methods("GET")
 
 	subrouter.HandleFunc("/create",
 		middleware.IsAdminWrapper(repositoriesHandler.resourcesConnection, repositoriesHandler.create)).

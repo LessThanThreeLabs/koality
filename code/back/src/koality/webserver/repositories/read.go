@@ -3,7 +3,9 @@ package repositories
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"koality/github"
 	"net/http"
 	"strconv"
 )
@@ -50,6 +52,44 @@ func (repositoriesHandler *RepositoriesHandler) getAll(writer http.ResponseWrite
 	}
 
 	jsonedRepositories, err := json.Marshal(sanitizedRepositories)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedRepositories)
+}
+
+func (repositoriesHandler *RepositoriesHandler) getGitHubRepositories(writer http.ResponseWriter, request *http.Request) {
+	userId := context.Get(request, "userId").(uint64)
+	user, err := repositoriesHandler.resourcesConnection.Users.Read.Get(userId)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	repositories, err := repositoriesHandler.gitHubConnection.GetRepositories(user.GitHubOAuth)
+	if _, ok := err.(github.InvalidOAuthTokenError); ok {
+		authorizationUrl, err := repositoriesHandler.gitHubConnection.GetAuthorizationUrl("addRepository")
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		}
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(writer, fmt.Sprintf(`{"redirectUri": "%s"}`, authorizationUrl))
+		return
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	jsonedRepositories, err := json.Marshal(repositories)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)

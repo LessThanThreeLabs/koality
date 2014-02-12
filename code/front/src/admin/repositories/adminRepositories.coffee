@@ -19,7 +19,10 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 	$scope.publicKey =
 		key: null
 
-	if $routeParams.addGitHubRepository
+	if $routeParams.gitHubAuthenticated
+		$location.search 'gitHubAuthenticated', null
+		notification.success 'Successfully authenticated with GitHub'
+	else if $routeParams.addGitHubRepository
 		$location.search 'addGitHubRepository', null
 		$timeout (() ->
 			$scope.addRepository.setupType = 'gitHub'
@@ -51,16 +54,17 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 			notification.error data
 
 	getIsConnectedToGitHub = () ->
-		console.log 'need to determine if connected to GitHub...'
-		# $scope.retrievingGitHubInformation = true
-		# rpc 'users', 'read', 'isConnectedToGitHub', null, (error, connectedToGitHub) ->
-		# 	$scope.retrievingGitHubInformation = false
-		# 	if error? then notification.error error
-		# 	else
-		# 		$scope.isConnectedToGitHub = connectedToGitHub
-
-		# 		if connectedToGitHub and $scope.addRepository.setupType is 'gitHub'
-		# 			getGitHubRepositories() 
+		$scope.retrievingGitHubInformation = true
+		request = $http.get "/app/users/current"
+		request.success (data, status, headers, config) =>
+			$scope.retrievingGitHubInformation = false
+			$scope.isConnectedToGitHub = data.hasGitHubOAuth
+			# Prefetch the repositories list as long as we're on the page
+			if $scope.isConnectedToGitHub
+				getGitHubRepositories()
+		request.error (data, status, headers, config) =>
+			$scope.retrievingGitHubInformation = false
+			notification data
 
 	hasRequestedGitHubRepositories = false
 	getGitHubRepositories = () ->
@@ -69,13 +73,18 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 
 		hasRequestedGitHubRepositories = true
 		$scope.retrievingGitHubInformation = true
-		rpc 'repositories', 'read', 'getGitHubRepositories', null, (error, gitHubRepositories) ->
+		request = $http.get "/app/repositories/gitHubRepositories"
+		request.success (data, status, headers, config) =>
 			$scope.retrievingGitHubInformation = false
-			if error? then notification.error error
+			$scope.gitHubRepositories = data
+			for repository in $scope.gitHubRepositories
+				repository.displayName = "#{repository.owner}/#{repository.name}"
+		request.error (data, status, headers, config) =>
+			$scope.retrievingGitHubInformation = false
+			if data.redirectUri?
+				window.location.href = data.redirectUri
 			else
-				$scope.gitHubRepositories = gitHubRepositories
-				for repository in $scope.gitHubRepositories
-					repository.displayName = "#{repository.owner}/#{repository.name}"
+				notification.error data
 
 	# handleAddedRepositoryUpdate = (data) ->
 	# 	return if data.resourceId isnt initialState.user.id
@@ -126,9 +135,11 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 			$scope.currentlyEditingRepositoryId = null
 
 	$scope.connectToGitHub = () ->
-		rpc 'repositories', 'read', 'getGitHubConnectRedirectUri', null, (error, redirectUri) ->
-			if error? then notification.error error
-			else window.location.href = redirectUri
+		request = $http.get '/oAuth/gitHub/connectUri?action=addRepository'
+		request.success (data, status, headers, config) =>
+			window.location.href = data.redirectUri
+		request.error (data, status, headers, config) =>
+			notification.error data
 
 	$scope.editRepository = (repository) ->
 		otherRepository.deleting = false for otherRepository in $scope.repositories
@@ -145,8 +156,8 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 
 		updateGitHubHook = (callback) ->
 			hookTypes = []
-			hookTypes.append 'push' if repository.gitHub.newPush
-			hookTypes.append 'pull_request' if repository.gitHub.newPullRequest
+			hookTypes.push 'push' if repository.gitHub.newPush
+			hookTypes.push 'pull_request' if repository.gitHub.newPullRequest
 
 			request = null
 			if hookTypes.length is 0
@@ -168,7 +179,7 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 			if repository.remoteUri isnt repository.newRemoteUri
 				updateForwardUrl defer remoteUriError, remoteUriSuccess
 
-			if repository.gitHub? and 
+			if repository.gitHub? and
 				(repository.gitHub.push isnt repository.gitHub.newPost or
 				repository.gitHub.pullRequest isnt repository.gitHub.newPullRequest)
 					updateGitHubHook defer gitHubHookError, gitHubHookSuccess
@@ -178,7 +189,7 @@ window.AdminRepositories = ['$scope', '$location', '$routeParams', '$http', '$ti
 
 		if remoteUriError? then notification.error remoteUriError
 		else if gitHubHookError?
-			if gitHubHookError.redirect? then window.location.href = gitHubHookError.redirect
+			if gitHubHookError.redirectUri? then window.location.href = gitHubHookError.redirectUri
 			else notification.error gitHubHookError
 		else if remoteUriSuccess or gitHubHookSuccess
 			notification.success "Repository #{repository.name} successfully updated"

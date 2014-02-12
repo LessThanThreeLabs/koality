@@ -3,8 +3,11 @@ package repositories
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"io/ioutil"
+	"koality/github"
+	"koality/resources"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -40,7 +43,7 @@ func (repositoriesHandler *RepositoriesHandler) setRemoteUri(writer http.Respons
 func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.ResponseWriter, request *http.Request) {
 	hookTypes := make([]string, 0, 2)
 	defer request.Body.Close()
-	if err := json.NewDecoder(request.Body).Decode(hookTypes); err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&hookTypes); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
@@ -68,14 +71,29 @@ func (repositoriesHandler *RepositoriesHandler) setGitHubHookTypes(writer http.R
 	}
 
 	hookSecret := generateSecret()
-	hookId, err := repositoriesHandler.gitHubConnection.AddRepositoryHook(repository, hookTypes, hookSecret)
+	hookId := new(int64)
+	addRepositoryHookAction := func(repository *resources.Repository) error {
+		newHookId, err := repositoriesHandler.gitHubConnection.AddRepositoryHook(repository, hookTypes, hookSecret)
+		if err != nil {
+			return err
+		}
+		*hookId = newHookId
+		return nil
+	}
+	userId := context.Get(request, "userId").(uint64)
+	redirectUri, err := repositoriesHandler.authenticateGitHubRepositoryAction(userId, repository, addRepositoryHookAction)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
+	} else if redirectUri != "" {
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(writer, fmt.Sprintf(`{"redirectUri": "%s"}`, redirectUri))
+		return
 	}
 
-	err = repositoriesHandler.resourcesConnection.Repositories.Update.SetGitHubHook(repositoryId, hookId, hookSecret, hookTypes)
+	err = repositoriesHandler.resourcesConnection.Repositories.Update.SetGitHubHook(repositoryId, *hookId, hookSecret, hookTypes)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
@@ -122,10 +140,16 @@ func (repositoriesHandler *RepositoriesHandler) clearGitHubHook(writer http.Resp
 		return
 	}
 
-	err = repositoriesHandler.gitHubConnection.RemoveRepositoryHook(repository)
+	userId := context.Get(request, "userId").(uint64)
+	redirectUri, err := repositoriesHandler.authenticateGitHubRepositoryAction(userId, repository, repositoriesHandler.gitHubConnection.RemoveRepositoryHook)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
+		return
+	} else if redirectUri != "" {
+		writer.WriteHeader(http.StatusPreconditionFailed)
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(writer, fmt.Sprintf(`{"redirectUri": "%s"}`, redirectUri))
 		return
 	}
 
@@ -137,6 +161,38 @@ func (repositoriesHandler *RepositoriesHandler) clearGitHubHook(writer http.Resp
 	}
 
 	fmt.Fprint(writer, "ok")
+}
+
+func (repositoriesHandler *RepositoriesHandler) authenticateGitHubRepositoryAction(userId uint64, repository *resources.Repository, action func(repository *resources.Repository) error) (string, error) {
+	err := action(repository)
+	if _, ok := err.(github.InvalidOAuthTokenError); ok {
+		user, err := repositoriesHandler.resourcesConnection.Users.Read.Get(userId)
+		if err != nil {
+			return "", err
+		}
+		ok, err := repositoriesHandler.gitHubConnection.CheckValidOAuthToken(user.GitHubOAuth)
+		if err != nil {
+			return "", err
+		}
+		if !ok {
+			authorizationUrl, err := repositoriesHandler.gitHubConnection.GetAuthorizationUrl("editRepository")
+			if err != nil {
+				return "", err
+			}
+			return authorizationUrl, nil
+		} else {
+			err = repositoriesHandler.resourcesConnection.Repositories.Update.SetGitHubOAuthToken(repository.Id, user.GitHubOAuth)
+			if err != nil {
+				return "", err
+			}
+			repository.GitHub.OAuthToken = user.GitHubOAuth
+			err = action(repository)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+	return "", err
 }
 
 func generateSecret() string {

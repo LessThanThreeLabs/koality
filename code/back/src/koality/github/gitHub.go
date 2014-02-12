@@ -11,8 +11,8 @@ import (
 )
 
 type GitHubRepository struct {
-	Owner string
-	Name  string
+	Owner string `json:"owner"`
+	Name  string `json:"name"`
 }
 
 type GitHubKey struct {
@@ -199,13 +199,13 @@ func (connection *gitHubConnection) GetRepositories(oAuthToken string) ([]GitHub
 		return nil, err
 	}
 
-	repositories, _, err := gitHubClient.Repositories.List(*gitHubUser.Name, nil)
+	repositories, _, err := gitHubClient.Repositories.List(*gitHubUser.Login, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, organization := range organizations {
-		orgRepositories, _, err := gitHubClient.Repositories.ListByOrg(*organization.Name, nil)
+		orgRepositories, _, err := gitHubClient.Repositories.ListByOrg(*organization.Login, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +214,7 @@ func (connection *gitHubConnection) GetRepositories(oAuthToken string) ([]GitHub
 
 	gitHubRepositories := make([]GitHubRepository, len(repositories))
 	for index, repository := range repositories {
-		gitHubRepositories[index] = GitHubRepository{*repository.Owner.Name, *repository.Name}
+		gitHubRepositories[index] = GitHubRepository{*repository.Owner.Login, *repository.Name}
 	}
 	return gitHubRepositories, nil
 }
@@ -225,11 +225,19 @@ func (connection *gitHubConnection) AddRepositoryHook(repository *resources.Repo
 		return 0, err
 	}
 
+	domainName, err := connection.resourcesConnection.Settings.Read.GetDomainName()
+	if err != nil {
+		return 0, err
+	}
+
+	hookUrl := fmt.Sprintf("https://%s/hooks/gitHub/verifyChange", domainName)
+
 	hook := github.Hook{
 		Name:   github.String("web"),
 		Events: hookTypes,
 		Active: github.Bool(true),
 		Config: map[string]interface{}{
+			"url":          hookUrl,
 			"secret":       hookSecret,
 			"insecure_ssl": 1,
 		},

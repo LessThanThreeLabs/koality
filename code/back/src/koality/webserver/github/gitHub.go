@@ -67,4 +67,5 @@ func (gitHubHandler *GitHubHandler) WireHooksSubroutes(subrouter *mux.Router) {
 
 func (gitHubHandler *GitHubHandler) WireOAuthSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/token", gitHubHandler.handleOAuthToken).Methods("GET")
+	subrouter.HandleFunc("/connectUri", gitHubHandler.getConnectUri).Methods("GET")
 }

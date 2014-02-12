@@ -9,13 +9,14 @@ import (
 )
 
 type sanitizedUser struct {
-	Id        uint64     `json:"id"`
-	Email     string     `json:"email"`
-	FirstName string     `json:"firstName"`
-	LastName  string     `json:"lastName"`
-	IsAdmin   bool       `json:"isAdmin"`
-	Created   *time.Time `json:"created,omitempty"`
-	IsDeleted bool       `json:"isDeleted"`
+	Id             uint64     `json:"id"`
+	Email          string     `json:"email"`
+	FirstName      string     `json:"firstName"`
+	LastName       string     `json:"lastName"`
+	IsAdmin        bool       `json:"isAdmin"`
+	Created        *time.Time `json:"created,omitempty"`
+	IsDeleted      bool       `json:"isDeleted"`
+	HasGitHubOAuth bool       `json:"hasGitHubOAuth"`
 }
 
 type sanitizedSshKey struct {
@@ -61,6 +62,9 @@ func (usersHandler *UsersHandler) WireAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/",
 		middleware.IsLoggedInWrapper(usersHandler.getAll)).
 		Methods("GET")
+	subrouter.HandleFunc("/current",
+		middleware.IsLoggedInWrapper(usersHandler.getCurrent)).
+		Methods("GET")
 	subrouter.HandleFunc("/keys",
 		middleware.IsLoggedInWrapper(usersHandler.getKeys)).
 		Methods("GET")
@@ -98,13 +102,14 @@ func (usersHandler *UsersHandler) WireApiSubroutes(subrouter *mux.Router) {
 
 func getSanitizedUser(user *resources.User) *sanitizedUser {
 	return &sanitizedUser{
-		Id:        user.Id,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		IsAdmin:   user.IsAdmin,
-		Created:   user.Created,
-		IsDeleted: user.IsDeleted,
+		Id:             user.Id,
+		Email:          user.Email,
+		FirstName:      user.FirstName,
+		LastName:       user.LastName,
+		IsAdmin:        user.IsAdmin,
+		Created:        user.Created,
+		IsDeleted:      user.IsDeleted,
+		HasGitHubOAuth: user.GitHubOAuth != "",
 	}
 }
 
