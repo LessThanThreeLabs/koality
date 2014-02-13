@@ -170,10 +170,6 @@ func (repository *gitSubRepository) fetchAllRefsExceptFor(remoteUri string) (err
 		}
 	}
 
-	if err = repository.pushWithPrivateKey(remoteUri, ":refs/for/master", ":refs/force/master", ":refs/for/etc"); err != nil {
-		return
-	}
-
 	return
 }
 
