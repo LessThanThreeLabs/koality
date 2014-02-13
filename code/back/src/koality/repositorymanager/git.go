@@ -101,7 +101,7 @@ func (repository *gitSubRepository) pruneExcessBranches(remoteUri string) (err e
 			break
 		}
 
-		branch := strings.TrimPrefix(strings.TrimSpace(strings.Split(branchLine, "\t")[1]), "refs/heads/")
+		branch := strings.TrimPrefix(strings.TrimSpace(strings.Fields(branchLine)[1]), "refs/heads/")
 
 		if _, ok := excessBranches[branch]; ok {
 			excessBranches[branch] = false
