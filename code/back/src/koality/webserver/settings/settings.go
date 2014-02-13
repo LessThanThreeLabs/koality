@@ -22,6 +22,13 @@ type sanitizedS3ExporterSettings struct {
 	BucketName string `json:"bucketName"`
 }
 
+type sanitizedSmtpServerSettings struct {
+	Hostname           string `json:"hostname"`
+	Port               uint16 `json:"port"`
+	AuthenticationType string `json:"authenticationType"`
+	Username           string `json:"username"`
+}
+
 type sanitizedHipChatSettings struct {
 	AuthenticationToken string   `json:"authenticationToken"`
 	Rooms               []string `json:"rooms"`
@@ -44,6 +51,14 @@ type setS3ExporterRequestData struct {
 	AccessKey  string `json:"accessKey"`
 	SecretKey  string `json:"secretKey"`
 	BucketName string `json:"bucketName"`
+}
+
+type setSmtpServerSettingsRequestData struct {
+	Hostname           string `json:"hostname"`
+	Port               uint16 `json:"port"`
+	AuthenticationType string `json:"authenticationType"`
+	Username           string `json:"username"`
+	Password           string `json:"password"`
 }
 
 type setHipChatRequestData struct {
@@ -83,6 +98,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getS3ExporterSettings)).
 		Methods("GET")
+	subrouter.HandleFunc("/smtp",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getSmtpServerSettings)).
+		Methods("GET")
 	subrouter.HandleFunc("/hipChat",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getHipChatSettings)).
 		Methods("GET")
@@ -117,6 +135,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		Methods("PUT")
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setS3ExporterSettings)).
+		Methods("PUT")
+	subrouter.HandleFunc("/smtp",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setSmtpServerSettings)).
 		Methods("PUT")
 	subrouter.HandleFunc("/hipChat",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setHipChatSettings)).
@@ -180,6 +201,27 @@ func getSanitizedS3ExporterSettings(settings *resources.S3ExporterSettings) *san
 		AccessKey:  settings.AccessKey,
 		SecretKey:  settings.SecretKey,
 		BucketName: settings.BucketName,
+	}
+}
+
+func getSanitizedSmtpServerSettings(settings *resources.SmtpServerSettings) *sanitizedSmtpServerSettings {
+	var authenticationType, username string
+	if settings.Auth.Plain != nil {
+		authenticationType = "plain"
+		username = settings.Auth.Plain.Username
+	} else if settings.Auth.Plain != nil {
+		authenticationType = "login"
+		username = settings.Auth.Login.Username
+	} else if settings.Auth.CramMd5 != nil {
+		authenticationType = "cramMd5"
+		username = settings.Auth.CramMd5.Username
+	}
+
+	return &sanitizedSmtpServerSettings{
+		Hostname:           settings.Hostname,
+		Port:               settings.Port,
+		AuthenticationType: authenticationType,
+		Username:           username,
 	}
 }
 

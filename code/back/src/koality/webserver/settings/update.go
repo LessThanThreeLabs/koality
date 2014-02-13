@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"koality/resources"
 	"net/http"
 )
 
@@ -123,6 +124,83 @@ func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.Respon
 
 	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprintf(writer, "%s", jsonedS3ExporterSettings)
+}
+
+func (settingsHandler *SettingsHandler) setSmtpServerSettings(writer http.ResponseWriter, request *http.Request) {
+	smtpSettings := new(setSmtpServerSettingsRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(smtpSettings); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	if smtpSettings.Password == "" {
+		oldSmtpServerSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetSmtpServerSettings()
+		if err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(writer, err)
+			return
+		}
+
+		if oldSmtpServerSettings.Auth.Plain != nil {
+			if oldSmtpServerSettings.Auth.Plain.Username == smtpSettings.Username {
+				smtpSettings.Password = oldSmtpServerSettings.Auth.Plain.Password
+			} else {
+				writer.WriteHeader(http.StatusBadRequest)
+				fmt.Fprint(writer, "Must provide an SMTP password if you change the username")
+				return
+			}
+		} else if oldSmtpServerSettings.Auth.Login != nil {
+			if oldSmtpServerSettings.Auth.Login.Username == smtpSettings.Username {
+				smtpSettings.Password = oldSmtpServerSettings.Auth.Login.Password
+			} else {
+				writer.WriteHeader(http.StatusBadRequest)
+				fmt.Fprint(writer, "Must provide an SMTP password if you change the username")
+				return
+			}
+		} else if oldSmtpServerSettings.Auth.CramMd5 != nil {
+			if oldSmtpServerSettings.Auth.CramMd5.Username == smtpSettings.Username {
+				smtpSettings.Password = oldSmtpServerSettings.Auth.CramMd5.Secret
+			} else {
+				writer.WriteHeader(http.StatusBadRequest)
+				fmt.Fprint(writer, "Must provide an SMTP secret if you change the username")
+				return
+			}
+		}
+	}
+
+	var smtpServerSettings *resources.SmtpServerSettings
+	var err error
+	switch smtpSettings.AuthenticationType {
+	case "plain":
+		smtpServerSettings, err = settingsHandler.resourcesConnection.Settings.Update.SetSmtpAuthPlain(smtpSettings.Hostname, smtpSettings.Port, "", smtpSettings.Username, smtpSettings.Password, smtpSettings.Hostname)
+	case "login":
+		smtpServerSettings, err = settingsHandler.resourcesConnection.Settings.Update.SetSmtpAuthLogin(smtpSettings.Hostname, smtpSettings.Port, smtpSettings.Username, smtpSettings.Password)
+	case "cramMd5":
+		smtpServerSettings, err = settingsHandler.resourcesConnection.Settings.Update.SetSmtpAuthCramMd5(smtpSettings.Hostname, smtpSettings.Port, smtpSettings.Username, smtpSettings.Password)
+	default:
+		writer.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(writer, "Invalid SMTP authentication type provided")
+		return
+	}
+
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedSmtpServerSettings := getSanitizedSmtpServerSettings(smtpServerSettings)
+	jsonedSmtpServerSettings, err := json.Marshal(sanitizedSmtpServerSettings)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedSmtpServerSettings)
 }
 
 func (settingsHandler *SettingsHandler) setHipChatSettings(writer http.ResponseWriter, request *http.Request) {

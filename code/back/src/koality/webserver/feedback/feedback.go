@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"html"
 	"koality/mail"
 	"koality/resources"
 	"koality/webserver/middleware"
 	"net/http"
+	"strings"
 )
 
 type FeedbackRequestData struct {
@@ -58,9 +60,10 @@ func (feedbackHandler *FeedbackHandler) sendFeedback(writer http.ResponseWriter,
 	message := fmt.Sprintf("User: %s %s (%s)\n\nFeedback: %s\n\nUser Agent: %s\n\nWindow: %d x %d",
 		user.FirstName, user.LastName, user.Email, feedbackRequestData.Feedback, feedbackRequestData.UserAgent,
 		feedbackRequestData.WindowWidth, feedbackRequestData.WindowHeight)
+	message = strings.Replace(html.EscapeString(message), "\n", "<br>", -1)
 	replyTo := []string{user.Email, "feedback@koalitycode.com"}
 	to := []string{"feedback@koalitycode.com"}
-	feedbackHandler.mailer.SendMail(fmt.Sprintf("feedback@%s", domainName), replyTo, to, "Feedback", message)
+	err = feedbackHandler.mailer.SendMail(fmt.Sprintf("feedback@%s", domainName), replyTo, to, "Feedback", message)
 	if _, ok := err.(mail.NoAuthProvidedError); ok {
 		var errorMessage string
 		if user.IsAdmin {
