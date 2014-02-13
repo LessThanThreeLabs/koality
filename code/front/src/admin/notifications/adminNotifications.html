@@ -3,11 +3,33 @@
 
 	<panel-body no-scroll>
 		<form name="notificationsForm" novalidate>
-			<div class="formContainer centered">
+			<div class="formContainer">
+				<label>SMTP Server Hostname</label>
+				<input type="text" ng-model="smtp.hostname" name="smtpHostName" required>
+
+				<label>SMTP Server Port</label>
+				<input type="number" ng-model="smtp.port" name="smtpPort" min=1 max=65535 required>
+
+				<label>Authentication Type</label>
+				<select ng-model="smtp.authenticationType" required>
+					<option value="plain">Plain</option>
+					<option value="login">Login</option>
+					<option value="cramMd5">CRAM-MD5</option>
+				</select>
+
+				<label>Username</label>
+				<input type="text" ng-model="smtp.username" name="smtpUsername">
+
+				<label ng-show="smtp.authenticationType == 'plain' || smtp.authenticationType == 'login'">Password</label>
+				<label ng-show="smtp.authenticationType == 'cramMd5'">Secret</label>
+				<input type="password" placeholder="unchanged" ng-model="smtp.password" name="smtpPassword">
+			</div>
+
+			<div class="formContainer">
 				<label>HipChat Enabled</label>
 				<input type="radio" ng-model="hipChat.enabled" name="hipChatEnabled" value="yes" required>Yes
 				<input class="bufferLeft" type="radio" ng-model="hipChat.enabled" name="hipChatEnabled" value="no" required>No
-				
+
 				<label>Authentication Token</label>
 				<input type="text" ng-model="hipChat.authenticationToken" ng-class="{disabled: hipChat.enabled == 'no'}" name="hipChatToken" ng-disabled="settings.enabled == 'no'" focused required>
 

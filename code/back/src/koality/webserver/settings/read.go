@@ -91,6 +91,30 @@ func (settingsHandler *SettingsHandler) getS3ExporterSettings(writer http.Respon
 	fmt.Fprintf(writer, "%s", jsonedS3ExporterSettings)
 }
 
+func (settingsHandler *SettingsHandler) getSmtpServerSettings(writer http.ResponseWriter, request *http.Request) {
+	smtpServerSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetSmtpServerSettings()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		writer.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(writer, "{}")
+		return
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedSmtpServerSettings := getSanitizedSmtpServerSettings(smtpServerSettings)
+	jsonedSmtpServerSettings, err := json.Marshal(sanitizedSmtpServerSettings)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedSmtpServerSettings)
+}
+
 func (settingsHandler *SettingsHandler) getHipChatSettings(writer http.ResponseWriter, request *http.Request) {
 	hipChatSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetHipChatSettings()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
