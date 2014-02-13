@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"koality/mail"
 	"koality/resources"
+	"koality/webserver/util"
 	"net/http"
 	"net/url"
 )
@@ -134,5 +135,7 @@ func (accountsHandler *AccountsHandler) confirm(writer http.ResponseWriter, requ
 		return
 	}
 
-	accountsHandler.doLogin(user.Id, false, writer, request)
+	util.Login(user.Id, false, session, writer, request)
+
+	fmt.Fprint(writer, "ok")
 }

@@ -5,6 +5,7 @@ import (
 	"koality/resources"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 func (accountsHandler *AccountsHandler) getGoogleLoginRedirect(writer http.ResponseWriter, request *http.Request) {
@@ -16,6 +17,9 @@ func (accountsHandler *AccountsHandler) getGoogleCreateAccountRedirect(writer ht
 }
 
 func (accountsHandler *AccountsHandler) getGoogleRedirect(writer http.ResponseWriter, request *http.Request, action string) {
+	rememberMeString := request.URL.Query().Get("rememberMe")
+	rememberMe, _ := strconv.ParseBool(rememberMeString)
+
 	domainName, err := accountsHandler.resourcesConnection.Settings.Read.GetDomainName()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
 		domainName = "127.0.0.1:10443"
@@ -24,6 +28,10 @@ func (accountsHandler *AccountsHandler) getGoogleRedirect(writer http.ResponseWr
 		fmt.Fprint(writer, err)
 		return
 	}
+
+	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
+	session.Values["rememberMe"] = rememberMe
+	session.Save(request, writer)
 
 	queryValues := url.Values{}
 	queryValues.Set("redirectUri", fmt.Sprintf("https://%s/oAuth/google/token", domainName))

@@ -10,16 +10,9 @@ import (
 	"io/ioutil"
 	"koality/mail"
 	"koality/resources"
+	"koality/webserver/util"
 	"net/http"
 )
-
-func (accountsHandler *AccountsHandler) getMaxSessionAge(rememberMe bool) int {
-	if rememberMe {
-		return rememberMeDuration
-	} else {
-		return 0
-	}
-}
 
 func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, request *http.Request) {
 	loginRequestData := new(loginRequestData)
@@ -50,22 +43,15 @@ func (accountsHandler *AccountsHandler) login(writer http.ResponseWriter, reques
 		return
 	}
 
-	accountsHandler.doLogin(user.Id, loginRequestData.RememberMe, writer, request)
-}
-
-func (accountsHandler *AccountsHandler) doLogin(userId uint64, rememberMe bool, writer http.ResponseWriter, request *http.Request) {
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
-	session.Values["userId"] = userId
-	session.Options.MaxAge = accountsHandler.getMaxSessionAge(rememberMe)
-	session.Save(request, writer)
+	util.Login(user.Id, loginRequestData.RememberMe, session, writer, request)
 
 	fmt.Fprint(writer, "ok")
 }
 
 func (accountsHandler *AccountsHandler) logout(writer http.ResponseWriter, request *http.Request) {
 	session, _ := accountsHandler.sessionStore.Get(request, accountsHandler.sessionName)
-	session.Options.MaxAge = -1
-	session.Save(request, writer)
+	util.Logout(session, writer, request)
 
 	fmt.Fprint(writer, "ok")
 }

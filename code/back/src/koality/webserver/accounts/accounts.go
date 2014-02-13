@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	rememberMeDuration     = 2592000
 	confirmAccountFlashKey = "createAccountData"
 )
 
