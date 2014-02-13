@@ -69,6 +69,34 @@ func (settingsHandler *SettingsHandler) setDomainName(writer http.ResponseWriter
 	fmt.Fprint(writer, domainName)
 }
 
+func (settingsHandler *SettingsHandler) setAuthenticationSettings(writer http.ResponseWriter, request *http.Request) {
+	setAuthenticationRequestData := new(setAuthenticationRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(setAuthenticationRequestData); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	authenticationSettings, err := settingsHandler.resourcesConnection.Settings.Update.SetAuthenticationSettings(setAuthenticationRequestData.ManualAccountsAllowed, setAuthenticationRequestData.GoogleAccountsAllowed, setAuthenticationRequestData.AllowedDomains)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedAuthenticationSettings := getSanitizedAuthenticationSettings(authenticationSettings)
+	jsonedAuthenticationSettings, err := json.Marshal(sanitizedAuthenticationSettings)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(writer, "Unable to stringify: %v", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedAuthenticationSettings)
+}
+
 func (settingsHandler *SettingsHandler) setS3ExporterSettings(writer http.ResponseWriter, request *http.Request) {
 	setS3ExporterRequestData := new(setS3ExporterRequestData)
 	defer request.Body.Close()

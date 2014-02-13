@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"koality/resources"
+	"koality/webserver/util"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -47,12 +48,14 @@ func (googleHandler *GoogleHandler) processLoginAction(oAuthToken string, writer
 	if _, ok := err.(BadAuthenticationError); ok {
 		queryValues := url.Values{}
 		queryValues.Set("googleLoginError", err.Error())
-		http.Redirect(writer, request, "/login?"+queryValues.Encode(), http.StatusSeeOther)
+		http.Redirect(writer, request, "/login?"+strings.Replace(queryValues.Encode(), "+", "%20", -1), http.StatusSeeOther)
 	} else if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 	} else {
-		googleHandler.login(user, writer, request)
+		session, _ := googleHandler.sessionStore.Get(request, googleHandler.sessionName)
+		rememberMe, _ := session.Values["rememberMe"].(bool)
+		util.Login(user.Id, rememberMe, session, writer, request)
 		http.Redirect(writer, request, "/", http.StatusSeeOther)
 	}
 }
@@ -62,13 +65,15 @@ func (googleHandler *GoogleHandler) processCreateAccountAction(oAuthToken string
 	if _, ok := err.(BadAuthenticationError); ok {
 		queryValues := url.Values{}
 		queryValues.Set("googleCreateAccountError", err.Error())
-		http.Redirect(writer, request, "/login?"+queryValues.Encode(), http.StatusSeeOther)
+		http.Redirect(writer, request, "/login?"+strings.Replace(queryValues.Encode(), "+", "%20", -1), http.StatusSeeOther)
 	} else if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	} else {
-		googleHandler.login(user, writer, request)
+		session, _ := googleHandler.sessionStore.Get(request, googleHandler.sessionName)
+		rememberMe, _ := session.Values["rememberMe"].(bool)
+		util.Login(user.Id, rememberMe, session, writer, request)
 		http.Redirect(writer, request, "/", http.StatusSeeOther)
 	}
 }
@@ -96,7 +101,7 @@ func (googleHandler *GoogleHandler) handleLogin(oAuthToken string) (*resources.U
 
 	user, err := googleHandler.resourcesConnection.Users.Read.GetByEmail(userInformation.Email)
 	if _, ok := err.(resources.NoSuchUserError); ok {
-		return nil, BadAuthenticationError{fmt.Sprintf("No user found with email address %s", userInformation.Email)}
+		return googleHandler.handleCreateAccount(oAuthToken)
 	} else if err != nil {
 		return nil, err
 	}
@@ -183,10 +188,4 @@ func (googleHandler *GoogleHandler) getGoogleUserInformation(oAuthToken string) 
 		return nil, err
 	}
 	return userInformation, nil
-}
-
-func (googleHandler *GoogleHandler) login(user *resources.User, writer http.ResponseWriter, request *http.Request) {
-	session, _ := googleHandler.sessionStore.Get(request, googleHandler.sessionName)
-	session.Values["userId"] = user.Id
-	session.Save(request, writer)
 }

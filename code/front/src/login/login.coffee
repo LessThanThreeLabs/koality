@@ -21,7 +21,7 @@ window.Login = ['$scope', '$window', '$location', '$routeParams', '$http', '$tim
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		request = $http.post("/app/accounts/login", $scope.account)
+		request = $http.post "/app/accounts/login", $scope.account
 		request.success (data, status, headers, config) =>
 			# this will force a refresh, rather than do html5 pushstate
 			window.location.href = '/'
@@ -34,7 +34,7 @@ window.Login = ['$scope', '$window', '$location', '$routeParams', '$http', '$tim
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		request = $http.get("/app/accounts/googleLoginRedirect")
+		request = $http.get "/app/accounts/googleLoginRedirect?rememberMe=#{$scope.account.rememberMe}"
 		request.success (data, status, headers, config) =>
 			window.location.href = data
 		request.error (data, status, headers, config) =>
@@ -45,7 +45,7 @@ window.Login = ['$scope', '$window', '$location', '$routeParams', '$http', '$tim
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		request = $http.get("/app/accounts/googleCreateAccountRedirect")
+		request = $http.get "/app/accounts/googleCreateAccountRedirect?rememberMe=#{$scope.account.rememberMe}"
 		request.success (data, status, headers, config) =>
 			window.location.href = data
 		request.error (data, status, headers, config) =>

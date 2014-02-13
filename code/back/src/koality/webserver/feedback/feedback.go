@@ -11,10 +11,6 @@ import (
 	"net/http"
 )
 
-const (
-	rememberMeDuration = 2592000
-)
-
 type FeedbackRequestData struct {
 	Feedback     string `json:"feedback"`
 	UserAgent    string `json:"userAgent"`

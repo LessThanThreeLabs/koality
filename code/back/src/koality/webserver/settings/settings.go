@@ -34,6 +34,12 @@ type sanitizedGitHubEnterpriseSettings struct {
 	OAuthClientSecret string `json:"oAuthClientSecret"`
 }
 
+type setAuthenticationRequestData struct {
+	ManualAccountsAllowed bool     `json:"manualAccountsAllowed"`
+	GoogleAccountsAllowed bool     `json:"googleAccountsAllowed"`
+	AllowedDomains        []string `json:"allowedDomains"`
+}
+
 type setS3ExporterRequestData struct {
 	AccessKey  string `json:"accessKey"`
 	SecretKey  string `json:"secretKey"`
@@ -105,6 +111,9 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 
 	subrouter.HandleFunc("/domainName",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setDomainName)).
+		Methods("PUT")
+	subrouter.HandleFunc("/authentication",
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setAuthenticationSettings)).
 		Methods("PUT")
 	subrouter.HandleFunc("/s3Exporter",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.setS3ExporterSettings)).
