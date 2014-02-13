@@ -159,8 +159,13 @@ func (repository *gitSubRepository) fetchAllRefsExceptFor(remoteUri string) (err
 			break
 		}
 
-		command := Command(repository, nil, "update-ref", "-d", strings.Trim(strings.TrimSpace(refLine), "'"))
+		ref := strings.Trim(strings.TrimSpace(refLine), "'")
+		command := Command(repository, nil, "update-ref", "-d", ref)
 		if err = RunCommand(command); err != nil {
+			return err
+		}
+
+		if err = repository.pushWithPrivateKey(remoteUri, fmt.Sprintf(":%s", ref)); err != nil {
 			return err
 		}
 	}
