@@ -163,7 +163,7 @@ func createBuilds(connection *resources.Connection, repositoryId uint64, numBuil
 	userNames := []string{"Jonathan Chu", "Jordan Potter", "Brian Bland", "Andrey Kostov"}
 	userEmails := []string{"jchu@koalitycode.com", "jpotter@koalitycode.com", "bbland@koalitycode.com", "akostov@koalitycode.com"}
 	patchContents := [][]byte{[]byte("a patch header"), nil}
-	refs := []string{"master", "development", "feature_branch_1", "feature_branch_2"}
+	refs := []string{"refs/heads/master", "refs/heads/development", "refs/heads/feature", "refs/tags/version-1.0", "4f68e75e5920b018a6ffe35f5cfe037cc454fd1b"}
 
 	createSha := func() string {
 		shaChars := "0123456789ABCDEF"

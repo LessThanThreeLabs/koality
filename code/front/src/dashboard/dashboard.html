@@ -23,7 +23,7 @@
 					<tr>
 						<th class="statusColumn">Status</th>
 						<th class="repositoryColumn">Repository</th>
-						<th class="branchColumn">Branch</th>
+						<th class="refColumn">Ref</th>
 						<th class="shaColumn">Sha</th>
 						<th class="commitMessageColumn">Commit Message</th>
 						<th class="userColumn">User</th>
@@ -39,8 +39,8 @@
 							{{build.repository.name}}
 						</td>
 
-						<td class="branchColumn">
-							{{build.ref}}
+						<td class="refColumn">
+							{{build.ref | ref}}
 						</td>
 
 						<td class="shaColumn">

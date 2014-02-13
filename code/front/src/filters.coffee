@@ -29,6 +29,20 @@ angular.module('koality.filter', ['koality.service']).
 			return null if not input? or typeof input isnt 'string'
 			return ansiParsedLine = ansiParser.parse input
 	]).
+	filter('ref', [() ->
+		(input) ->
+			return null if not input? or typeof input isnt 'string'
+
+			refPrefix = 'refs/heads/'
+			tagPrefix = 'refs/tags/'
+
+			if input.indexOf(refPrefix) is 0
+				return input.substring refPrefix.length
+			else if input.indexOf(tagPrefix) is 0
+				return 'tag: ' + input.substring tagPrefix.length
+			else
+				return input
+	]).
 	filter('shaLink', [() ->
 		(headSha, baseSha, repositoryInformation) ->
 			return null if not headSha? or typeof headSha isnt 'string'
