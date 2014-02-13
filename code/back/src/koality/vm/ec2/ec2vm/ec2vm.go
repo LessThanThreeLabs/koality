@@ -70,7 +70,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 	imageFilter.Add("owner-id", getOwnerId())
 	imageFilter.Add("name", name)
 
-	pipe := make(chan error, 1)
+	waitFunctionChan := make(chan error, 1)
 
 	go func() {
 		imagesResponse, err := ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
@@ -79,18 +79,18 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
 		}
 		if err != nil {
-			pipe <- err
+			waitFunctionChan <- err
 		}
 
 		for imagesResponse.Images[0].State != "available" {
 			if imagesResponse.Images[0].State == "failed" {
-				pipe <- fmt.Errorf("Ec2 failed to create the image")
+				waitFunctionChan <- fmt.Errorf("Ec2 failed to create the image")
 			}
 			time.Sleep(2 * time.Second)
 			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
 		}
 
-		pipe <- nil
+		waitFunctionChan <- nil
 	}()
 
 	timeout := 60
@@ -99,7 +99,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 	case <-time.After(time.Duration(timeout) * time.Minute):
 		err = fmt.Errorf("Creating ec2 image timed out after %s minutes", timeout)
 		return
-	case err = <-pipe:
+	case err = <-waitFunctionChan:
 		return
 	}
 

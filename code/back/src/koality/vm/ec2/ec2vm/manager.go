@@ -141,17 +141,12 @@ func (manager *Ec2VirtualMachineManager) GetVirtualMachine(instanceId string) (v
 }
 
 func (manager *Ec2VirtualMachineManager) waitForIpAddress(instance *ec2.Instance, timeout time.Duration) error {
-	for {
-		select {
-		case <-time.After(timeout):
-			_, err := manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
-			if err != nil {
-				return err
-			}
-			return fmt.Errorf("Instance failed to receive an IP address after %s", timeout.String())
-		default:
+	waitFunctionChan := make(chan interface{}, 1)
+
+	go func() {
+		for {
 			if instance.PrivateIpAddress != "" {
-				return nil
+				waitFunctionChan <- nil
 			} else {
 				time.Sleep(5 * time.Second)
 				for _, reservation := range manager.ec2Cache.Reservations() {
@@ -164,19 +159,29 @@ func (manager *Ec2VirtualMachineManager) waitForIpAddress(instance *ec2.Instance
 				}
 			}
 		}
+
+		waitFunctionChan <- nil
+	}()
+
+	select {
+	case <-time.After(timeout):
+		_, err := manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("Instance failed to receive an IP address after %s", timeout.String())
+	case <-waitFunctionChan:
+		return nil
 	}
+
+	return nil, fmt.Errorf("This case should never be reached")
 }
 
 func (manager *Ec2VirtualMachineManager) waitForSsh(instance ec2.Instance, username string, keyPair *resources.RepositoryKeyPair, timeout time.Duration) (*Ec2VirtualMachine, error) {
-	for {
-		select {
-		case <-time.After(timeout):
-			_, err := manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
-			if err != nil {
-				return new(Ec2VirtualMachine), err
-			}
-			return nil, fmt.Errorf("Failed to ssh into the instance after %s", timeout.String())
-		default:
+	waitFunctionChan := make(chan *Ec2VirtualMachine, 1)
+
+	go func() {
+		for {
 			ec2Vm, err := New(instance, manager.ec2Cache, username, keyPair.PrivateKey)
 			if err != nil {
 				time.Sleep(3 * time.Second)
@@ -189,12 +194,25 @@ func (manager *Ec2VirtualMachineManager) waitForSsh(instance ec2.Instance, usern
 			if err == nil {
 				err = sshAttempt.Wait()
 				if err == nil {
-					return ec2Vm, nil
+					waitFunctionChan <- ec2Vm
 				}
 			}
 			time.Sleep(3 * time.Second)
 		}
+	}()
+
+	select {
+	case <-time.After(timeout):
+		_, err := manager.ec2Cache.EC2.TerminateInstances([]string{instance.InstanceId})
+		if err != nil {
+			return new(Ec2VirtualMachine), err
+		}
+		return nil, fmt.Errorf("Failed to ssh into the instance after %s", timeout.String())
+	case ec2Vm := <-waitFunctionChan:
+		return ec2Vm, nil
 	}
+
+	return nil, fmt.Errorf("This case should never be reached")
 }
 
 func (manager *Ec2VirtualMachineManager) getActiveImage() (ec2.Image, error) {
