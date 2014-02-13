@@ -52,19 +52,77 @@ func (repositoryManager *repositoryManager) openGitRepository(repository *resour
 	return &gitRepository{&gitSubRepository{path, repositoryManager.resourcesConnection}, &gitSubRepository{path + ".slave", repositoryManager.resourcesConnection}, repository.Name, repository.RemoteUri}
 }
 
-func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
+func (repository *gitSubRepository) getSshEnvironment() []string {
 	keyPair, err := repository.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
 	if err != nil {
-		return
+		return []string{}
 	}
 
-	env := []string{
+	return []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
 		fmt.Sprintf("SSH_PRIVATE_KEY=%s", keyPair.PrivateKey),
 		fmt.Sprintf("SSH_TIMEOUT=%s", defaultTimeout),
 	}
+}
+
+func (repository *gitSubRepository) pruneExcessBranches(remoteUri string) (err error) {
+	env := repository.getSshEnvironment()
 
 	if err := RunCommand(Command(repository, env, "remote", "prune", remoteUri)); err != nil {
+		return err
+	}
+
+	excessBranches := make(map[string]bool)
+
+	command := Command(repository, nil, "branch")
+	if err := RunCommand(command); err != nil {
+		return err
+	}
+
+	for {
+		branchLine, err := command.Stdout.ReadString('\n')
+		if err != nil {
+			break
+		}
+
+		if !strings.HasPrefix(strings.Trim(strings.TrimSpace(branchLine), " "), "*") {
+			excessBranches[strings.TrimSpace(branchLine)] = true
+		}
+	}
+
+	command = Command(repository, nil, "ls-remote", "-h", remoteUri)
+	if err := RunCommand(command); err != nil {
+		return err
+	}
+
+	for {
+		branchLine, err := command.Stdout.ReadString('\n')
+		if err != nil {
+			break
+		}
+
+		branch := strings.TrimPrefix(strings.TrimSpace(strings.Split(branchLine, "\t")[1]), "refs/heads/")
+
+		if _, ok := excessBranches[branch]; ok {
+			excessBranches[branch] = false
+		}
+	}
+
+	for branch, excess := range excessBranches {
+		if excess {
+			if err := RunCommand(Command(repository, nil, "branch", "-d", branch)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return
+}
+
+func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args ...string) (err error) {
+	env := repository.getSshEnvironment()
+
+	if err := repository.pruneExcessBranches(remoteUri); err != nil {
 		return err
 	}
 
@@ -76,16 +134,7 @@ func (repository *gitSubRepository) fetchWithPrivateKey(remoteUri string, args .
 }
 
 func (repository *gitSubRepository) pushWithPrivateKey(remoteUri string, args ...string) (err error) {
-	keyPair, err := repository.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
-	if err != nil {
-		return
-	}
-
-	env := []string{
-		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("SSH_PRIVATE_KEY=%s", keyPair.PrivateKey),
-		fmt.Sprintf("SSH_TIMEOUT=%s", defaultTimeout),
-	}
+	env := repository.getSshEnvironment()
 
 	if err := RunCommand(Command(repository, env, "push", append([]string{remoteUri}, args...)...)); err != nil {
 		return err
@@ -99,21 +148,25 @@ func (repository *gitSubRepository) fetchAllRefsExceptFor(remoteUri string) (err
 		return
 	}
 
-	command := Command(repository, nil, "for-each-ref", fmt.Sprintf("--format=%s", shell.Quote("%(refname)")), "refs/for")
+	command := Command(repository, nil, "for-each-ref", fmt.Sprintf("--format=%s", shell.Quote("%(refname)")), "refs/for/", "refs/force/")
 	if err = RunCommand(command); err != nil {
 		return
 	}
 
 	for {
-		shaLine, err := command.Stdout.ReadString('\n')
+		refLine, err := command.Stdout.ReadString('\n')
 		if err != nil {
 			break
 		}
 
-		command := Command(repository, nil, "update-ref", "-d", strings.Trim(strings.TrimSpace(shaLine), "'"))
+		command := Command(repository, nil, "update-ref", "-d", strings.Trim(strings.TrimSpace(refLine), "'"))
 		if err = RunCommand(command); err != nil {
 			return err
 		}
+	}
+
+	if err = repository.pushWithPrivateKey(remoteUri, ":refs/for/master", ":refs/force/master", ":refs/for/etc"); err != nil {
+		return
 	}
 
 	return
