@@ -20,6 +20,7 @@ import (
 	"koality/webserver/stages"
 	"koality/webserver/templates"
 	"koality/webserver/users"
+	"koality/webserver/websockets"
 	"net/http"
 	"strings"
 )
@@ -49,7 +50,8 @@ func (webserver *Webserver) Start() error {
 		return err
 	}
 
-	hasCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router)
+	hasHeaderCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router, false)
+	hasQueryCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router, true)
 	hasApiKeyWrapper := middleware.HasApiKeyWrapper(webserver.resourcesConnection, router)
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -60,24 +62,14 @@ func (webserver *Webserver) Start() error {
 		}
 		context.Set(request, "userId", userId)
 
-		if request.URL.Path == "/" || request.URL.Path == "/dashboard" ||
-			strings.HasPrefix(request.URL.Path, "/repository/") ||
-			strings.HasPrefix(request.URL.Path, "/login") ||
-			strings.HasPrefix(request.URL.Path, "/create/account") ||
-			strings.HasPrefix(request.URL.Path, "/resetPassword") ||
-			strings.HasPrefix(request.URL.Path, "/account") ||
-			strings.HasPrefix(request.URL.Path, "/admin") ||
-			strings.HasPrefix(request.URL.Path, "/hooks/") ||
-			strings.HasPrefix(request.URL.Path, "/oAuth/") ||
-			strings.HasPrefix(request.URL.Path, "/wizard") ||
-			strings.HasPrefix(request.URL.Path, "/ping") {
-			router.ServeHTTP(writer, request)
+		if strings.HasPrefix(request.URL.Path, "/websockets/") {
+			hasQueryCsrfTokenWrapper(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/app/") {
-			hasCsrfTokenWrapper(writer, request)
+			hasHeaderCsrfTokenWrapper(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/api/") {
 			hasApiKeyWrapper(writer, request)
 		} else {
-			panic("Unexpected path: " + request.URL.Path)
+			router.ServeHTTP(writer, request)
 		}
 	})
 
@@ -110,6 +102,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	}
 
 	templatesHandler, err := templates.New(webserver.resourcesConnection, sessionStore, webserver.sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	websocketsHandler, err := websockets.New()
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +158,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 	wireTemplateSubroutes := func() {
 		templatesHandler.WireTemplateSubroutes(router)
+	}
+
+	wireWebsocketSubroutes := func() {
+		websocketSubrouter := router.PathPrefix("/websockets").Subrouter()
+		websocketsHandler.WireWebsocketSubroutes(websocketSubrouter)
 	}
 
 	wireAppSubroutes := func() {
@@ -236,6 +238,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 	}
 
 	wireTemplateSubroutes()
+	wireWebsocketSubroutes()
 	wireAppSubroutes()
 	wireApiSubroutes()
 	wireHooksSubroutes()

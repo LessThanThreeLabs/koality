@@ -82,3 +82,6 @@
 [submodule "code/back/src/github.com/mitchellh/goamz"]
 	path = code/back/src/github.com/mitchellh/goamz
 	url = git@github.com:mitchellh/goamz.git
+[submodule "code/back/src/github.com/gorilla/websocket"]
+	path = code/back/src/github.com/gorilla/websocket
+	url = git@github.com:gorilla/websocket.git

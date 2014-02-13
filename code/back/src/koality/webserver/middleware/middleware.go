@@ -55,9 +55,16 @@ func IsLoggedOutWrapper(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func CheckCsrfTokenWraper(sessionStore sessions.Store, sessionName string, router *mux.Router) http.HandlerFunc {
+func CheckCsrfTokenWraper(sessionStore sessions.Store, sessionName string, router *mux.Router, searchQuery bool) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		csrfTokenToVerify := request.Header.Get("X-XSRF-TOKEN")
+		var csrfTokenToVerify string
+		if searchQuery {
+			queryValues := request.URL.Query()
+			csrfTokenToVerify = queryValues.Get("csrfToken")
+		} else {
+			csrfTokenToVerify = request.Header.Get("X-XSRF-TOKEN")
+		}
+
 		if csrfTokenToVerify == "" {
 			writer.WriteHeader(http.StatusForbidden)
 			fmt.Fprint(writer, "Forbidden request, must provide csrf token")

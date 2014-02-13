@@ -36,8 +36,22 @@ angular.module('koality.service', []).
 			hash += text.charCodeAt index for index in [0...text.length]
 			return hash
 	]).
-	factory('events', [() ->
-		console.log 'should do stuff...'
+	factory('events', ['$window', 'notification', ($window, notification) ->
+		try
+			websocket = new WebSocket "wss://#{$window.location.host}/websockets/connect?csrfToken=#{$window.csrfToken}"
+			websocket.onopen = () ->
+				console.log 'Websocket connected'
+			websocket.onmessage = (event) ->
+				console.log event
+				console.log event.data
+			websocket.onerror = (error) ->
+				console.error error
+			websocket.onclose = () ->
+				console.log 'Websocket closed'
+				notification.warning 'Websocket has been closed. No events will be received', 0
+		catch exception
+			console.error exception
+			notification.warning 'Failed to open websocket. No events will be received', 0
 	]).
 	factory('notification', ['$compile', '$rootScope', '$document', '$timeout', ($compile, $rootScope, $document, $timeout) ->
 		container = $document.find '#notificationsContainer'
