@@ -41,6 +41,6 @@
 	</panel>
 
 	<div id="createAccountLink">
-		Don't have an account? <a href="/create/account">Create one here</a> / <a href="#" ng-show="loginConfig.type == 'google'" ng-click="googleCreateAccount()">with Google</a>
+		Don't have an account? <a href="/create/account" ng-show="loginConfig.defaultType == 'default'">Create one here</a><a href="#" ng-show="loginConfig.defaultType == 'google'" ng-click="googleCreateAccount()">Create one with Google</a>
 	</div>
 </div>
