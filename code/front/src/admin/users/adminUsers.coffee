@@ -22,7 +22,7 @@ window.AdminUsers = ['$scope', '$http', 'events', 'notification', ($scope, $http
 		request.success (data, status, headers, config) =>
 			$scope.addUsers.connectionType = if data.googleAccountsAllowed then 'google' else 'default'
 			$scope.addUsers.newConnectionType = $scope.addUsers.connectionType
-			$scope.addUsers.emailDomains = data.allowedDomains?.join ' '
+			$scope.addUsers.emailDomains = data.allowedDomains?.join ', '
 			$scope.addUsers.newEmailDomains = $scope.addUsers.emailDomains
 		request.error (data, status, headers, config) =>
 			notification.error data
@@ -105,28 +105,30 @@ window.AdminUsers = ['$scope', '$http', 'events', 'notification', ($scope, $http
 			$scope.currentlyEditingUserId = null
 			notification.error data
 
-	# $scope.saveAddUsersConfig = () ->
-	# 	return if $scope.addUsers.makingRequest
-	# 	$scope.addUsers.makingRequest = true
+	$scope.saveAddUsersConfig = () ->
+		return if $scope.addUsers.makingRequest
+		$scope.addUsers.makingRequest = true
 
-	# 	emailDomains = []
-	# 	if $scope.addUsers.newEmailDomains isnt ''
-	# 		emailDomains = $scope.addUsers.newEmailDomains.split(/[,; ]/)
-	# 		emailDomains = emailDomains.filter (domain) -> return domain isnt ''
+		emailDomains = []
+		if $scope.addUsers.newEmailDomains isnt ''
+			emailDomains = $scope.addUsers.newEmailDomains.split(/[,; ]/)
+			emailDomains = emailDomains.filter (domain) -> return domain isnt ''
 
-	# 	await
-	# 		rpc 'systemSettings', 'update', 'setAllowedUserConnectionTypes', connectionTypes: [$scope.addUsers.newConnectionType], defer connectionTypeError
-	# 		rpc 'systemSettings', 'update', 'setAllowedUserEmailDomains', emailDomains: emailDomains, defer emailDomainsError
+		authenticationConfig =
+			manualAccountsAllowed: $scope.addUsers.newConnectionType is 'default'
+			googleAccountsAllowed: $scope.addUsers.newConnectionType is 'google'
+			allowedDomains: emailDomains
 
-	# 	$scope.addUsers.makingRequest = false
-
-	# 	if connectionTypeError then notification.error connectionTypeError
-	# 	else if emailDomainsError then notification.error emailDomainsError
-	# 	else
-	# 		$scope.addUsers.connectionType = $scope.addUsers.newConnectionType
-	# 		$scope.addUsers.emailDomains = $scope.addUsers.newEmailDomains
-	# 		notification.success 'Updated new user configuration'
-	# 		$scope.clearAddUserConfig()
+		request = $http.put "/app/settings/authentication", authenticationConfig
+		request.success (data, status, headers, config) =>
+			$scope.addUsers.makingRequest = false
+			$scope.addUsers.connectionType = $scope.addUsers.newConnectionType
+			$scope.addUsers.emailDomains = $scope.addUsers.newEmailDomains
+			notification.success 'Updated new user configuration'
+			$scope.clearAddUserConfig()
+		request.error (data, status, headers, config) =>
+			$scope.addUsers.makingRequest = false
+			notification.error data
 
 	$scope.clearAddUserConfig = () ->
 		$scope.addUsers.newConnectionType = $scope.addUsers.connectionType
