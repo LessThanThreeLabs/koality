@@ -53,6 +53,18 @@ func (subscriptionHandler *SubscriptionHandler) FireStatusUpdatedEvent(snapshotI
 	subscriptionHandler.statusUpdatedSubscriptionManager.Fire(snapshotId, status)
 }
 
+func (subscriptionHandler *SubscriptionHandler) SubscribeToImageIdUpdatedEvents(updateHandler resources.SnapshotImageIdUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.statusUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromImageIdUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.statusUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireImageIdUpdatedEvent(snapshotId uint64, status string) {
+	subscriptionHandler.statusUpdatedSubscriptionManager.Fire(snapshotId, status)
+}
+
 func (subscriptionHandler *SubscriptionHandler) SubscribeToStartTimeUpdatedEvents(updateHandler resources.SnapshotStartTimeUpdatedHandler) (resources.SubscriptionId, error) {
 	return subscriptionHandler.startTimeUpdatedSubscriptionManager.Add(updateHandler)
 }

@@ -7,6 +7,7 @@ import (
 	"koality/shell"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
+	"time"
 )
 
 type Ec2VirtualMachine struct {
@@ -55,6 +56,54 @@ func (ec2vm Ec2VirtualMachine) GetStartShellCommand() vm.Command {
 
 func (ec2Vm *Ec2VirtualMachine) Execute(executable shell.Executable) (shell.Execution, error) {
 	return ec2Vm.sshExecutor.Execute(executable)
+}
+
+func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err error) {
+	image := &ec2.CreateImage{ec2Vm.instance.InstanceId, name, fmt.Sprintf("Koality snapshot"), false, []ec2.BlockDeviceMapping{}}
+	createImageResp, err := ec2Vm.ec2Cache.EC2.CreateImage(image)
+	if err != nil {
+		return "", err
+	}
+
+	imageId = createImageResp.ImageId
+	imageFilter := ec2.NewFilter()
+	imageFilter.Add("owner-id", getOwnerId())
+	imageFilter.Add("name", name)
+
+	pipe := make(chan error, 1)
+
+	go func() {
+		imagesResponse, err := ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+		for err.(*ec2.Error).Code == "InvalidPermission.Malformed" {
+			time.Sleep(2 * time.Second)
+			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+		}
+		if err != nil {
+			pipe <- err
+		}
+
+		for imagesResponse.Images[0].State != "available" {
+			if imagesResponse.Images[0].State == "failed" {
+				pipe <- fmt.Errorf("Ec2 failed to create the image")
+			}
+			time.Sleep(2 * time.Second)
+			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+		}
+
+		pipe <- nil
+	}()
+
+	timeout := 60
+
+	select {
+	case <-time.After(time.Duration(timeout) * time.Minute):
+		err = fmt.Errorf("Creating ec2 image timed out after %s minutes", timeout)
+		return
+	case err = <-pipe:
+		return
+	}
+
+	return
 }
 
 func (ec2Vm *Ec2VirtualMachine) Terminate() error {

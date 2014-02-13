@@ -12,6 +12,7 @@ type VirtualMachine interface {
 
 	Id() string
 	GetStartShellCommand() Command
+	SaveState(name string) (imageId string, err error)
 	Terminate() error
 }
 

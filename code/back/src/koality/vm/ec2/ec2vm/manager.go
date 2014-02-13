@@ -25,6 +25,19 @@ type Ec2VirtualMachineManager struct {
 	resourcesConnection *resources.Connection
 }
 
+func getOwnerId() string {
+	return "600991114254"
+}
+
+func (manager *Ec2VirtualMachineManager) getSnapshotName() (string, error) {
+	baseImage, err := manager.getBaseImage()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("koality-snapshot-(%s/%s)-v*", manager.Ec2Pool.Name, baseImage.Name), nil
+}
+
 func NewManager(ec2Broker *ec2broker.Ec2Broker, ec2Pool *resources.Ec2Pool, resourcesConnection *resources.Connection) (*Ec2VirtualMachineManager, error) {
 	auth, err := aws.GetAuth(ec2Pool.AccessKey, ec2Pool.SecretKey)
 	if err != nil {
@@ -229,7 +242,7 @@ func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
 		}
 	}
 	imageFilter := ec2.NewFilter()
-	imageFilter.Add("owner-id", "600991114254") // must be changed if our ec2 info changes
+	imageFilter.Add("owner-id", getOwnerId())
 	imageFilter.Add("name", "koality_build_precise_0.4")
 	imageFilter.Add("state", "available")
 	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
@@ -241,7 +254,12 @@ func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
 
 func (manager *Ec2VirtualMachineManager) getSnapshotsForImage(baseImage ec2.Image) ([]ec2.Image, error) {
 	imageFilter := ec2.NewFilter()
-	imageFilter.Add("name", fmt.Sprintf("koality-snapshot-(%s/%s)-v*", manager.Ec2Pool.Name, baseImage.Name))
+
+	snapshotName, err := manager.getSnapshotName()
+	if err != nil {
+		return nil, err
+	}
+	imageFilter.Add("name", snapshotName)
 	imageFilter.Add("state", "available")
 	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {

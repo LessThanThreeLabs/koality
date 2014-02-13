@@ -36,6 +36,7 @@ type SnapshotsReadHandler interface {
 
 type SnapshotsUpdateHandler interface {
 	SetStatus(snapshotId uint64, status string) error
+	SetImageId(snapshotId uint64, imageId string) error
 	SetStartTime(snapshotId uint64, startTime time.Time) error
 	SetEndTime(snapshotId uint64, endTime time.Time) error
 }
@@ -47,6 +48,7 @@ type SnapshotsDeleteHandler interface {
 type SnapshotCreatedHandler func(Snapshot *Snapshot)
 type SnapshotDeletedHandler func(ec2PoolId uint64)
 type SnapshotStatusUpdatedHandler func(snapshotId uint64, status string)
+type SnapshotImageIdUpdatedHandler func(snapshotId uint64, imageId string)
 type SnapshotStartTimeUpdatedHandler func(snapshotId uint64, startTime time.Time)
 type SnapshotEndTimeUpdatedHandler func(snapshotId uint64, endTime time.Time)
 
@@ -60,6 +62,9 @@ type SnapshotsSubscriptionHandler interface {
 	SubscribeToStatusUpdatedEvents(updateHandler SnapshotStatusUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromStatusUpdatedEvents(subscriptionId SubscriptionId) error
 
+	SubscribeToImageIdUpdatedEvents(updateHandler SnapshotImageIdUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromImageIdUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToStartTimeUpdatedEvents(updateHandler SnapshotStartTimeUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromStartTimeUpdatedEvents(subscriptionId SubscriptionId) error
 
@@ -71,6 +76,7 @@ type InternalSnapshotsSubscriptionHandler interface {
 	FireCreatedEvent(snapshot *Snapshot)
 	FireDeletedEvent(snapshotId uint64)
 	FireStatusUpdatedEvent(snapshotId uint64, status string)
+	FireImageIdUpdatedEvent(snapshotId uint64, imageId string)
 	FireStartTimeUpdatedEvent(snapshotId uint64, startTime time.Time)
 	FireEndTimeUpdatedEvent(snapshotId uint64, endTime time.Time)
 	SnapshotsSubscriptionHandler

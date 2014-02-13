@@ -24,8 +24,9 @@ func (readHandler *ReadHandler) scanBuild(scannable Scannable) (*resources.Build
 	build := new(resources.Build)
 
 	var ref, emailToNotify, status sql.NullString
-	err := scannable.Scan(&build.Id, &build.RepositoryId, &ref, &build.ShouldMerge,
-		&emailToNotify, &status, &build.Created, &build.Started, &build.Ended,
+	var snapshotId, debugInstanceId sql.NullInt64
+	err := scannable.Scan(&build.Id, &build.RepositoryId, &snapshotId, &debugInstanceId,
+		&ref, &build.ShouldMerge, &emailToNotify, &status, &build.Created, &build.Started, &build.Ended,
 		&build.Changeset.Id, &build.Changeset.RepositoryId, &build.Changeset.HeadSha,
 		&build.Changeset.BaseSha, &build.Changeset.HeadMessage, &build.Changeset.HeadUsername,
 		&build.Changeset.HeadEmail, &build.Changeset.PatchContents, &build.Changeset.Created)
@@ -44,6 +45,13 @@ func (readHandler *ReadHandler) scanBuild(scannable Scannable) (*resources.Build
 	if status.Valid {
 		build.Status = status.String
 	}
+	if snapshotId.Valid {
+		build.SnapshotId = uint64(snapshotId.Int64)
+	}
+	if debugInstanceId.Valid {
+		build.SnapshotId = uint64(debugInstanceId.Int64)
+	}
+
 	return build, nil
 }
 
@@ -62,14 +70,44 @@ func (readHandler *ReadHandler) scanChangeset(scannable Scannable) (*resources.C
 }
 
 func (readHandler *ReadHandler) Get(buildId uint64) (*resources.Build, error) {
-	query := "SELECT V.id, V.repository_id, V.ref, V.should_merge," +
-		" V.email_to_notify, V.status, V.created, V.started, V.ended," +
+	query := "SELECT V.id, V.repository_id, V.snapshot_id, V.debug_instance_id, V.ref," +
+		" V.should_merge, V.email_to_notify, V.status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.patch_contents, C.created" +
 		" FROM builds V JOIN changesets C" +
 		" ON V.changeset_id=C.id WHERE V.id=$1"
 	row := readHandler.database.QueryRow(query, buildId)
 	return readHandler.scanBuild(row)
+}
+
+func (readHandler *ReadHandler) GetForSnapshot(snapshotId uint64) ([]resources.Build, error) {
+	if err := readHandler.verifier.verifySnapshotExists(snapshotId); err != nil {
+		return nil, err
+	}
+
+	query := "SELECT V.id, V.repository_id, V.snapshot_id, V.debug_instance_id, V.ref," +
+		" V.should_merge, V.email_to_notify, V.status, V.created, V.started, V.ended," +
+		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
+		" C.head_email, C.patch_contents, C.created" +
+		" FROM builds V JOIN changesets C" +
+		" ON V.changeset_id=C.id WHERE V.snapshot_id=$1"
+	rows, err := readHandler.database.Query(query, snapshotId)
+	if err != nil {
+		return nil, err
+	}
+
+	builds := make([]resources.Build, 0, 100)
+	for rows.Next() {
+		build, err := readHandler.scanBuild(rows)
+		if err != nil {
+			return nil, err
+		}
+		builds = append(builds, *build)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return builds, nil
 }
 
 func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uint32) ([]resources.Build, error) {
@@ -79,8 +117,8 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 		return nil, err
 	}
 
-	query := "SELECT V.id, V.repository_id, V.ref, V.should_merge," +
-		" V.email_to_notify, V.status, V.created, V.started, V.ended," +
+	query := "SELECT V.id, V.repository_id, V.snapshot_id, V.debug_instance_id, V.ref," +
+		" V.should_merge, V.email_to_notify, V.status, V.created, V.started, V.ended," +
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username," +
 		" C.head_email, C.patch_contents, C.created" +
 		" FROM builds V JOIN changesets C" +

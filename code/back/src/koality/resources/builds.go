@@ -5,16 +5,18 @@ import (
 )
 
 type Build struct {
-	Id            uint64
-	RepositoryId  uint64
-	EmailToNotify string
-	Status        string
-	Ref           string
-	ShouldMerge   bool
-	Created       *time.Time
-	Started       *time.Time
-	Ended         *time.Time
-	Changeset     Changeset
+	Id              uint64
+	RepositoryId    uint64
+	SnapshotId      uint64
+	DebugInstanceId uint64
+	EmailToNotify   string
+	Status          string
+	Ref             string
+	ShouldMerge     bool
+	Created         *time.Time
+	Started         *time.Time
+	Ended           *time.Time
+	Changeset       Changeset
 }
 
 type CoreBuildInformation struct {
@@ -57,6 +59,7 @@ type BuildsCreateHandler interface {
 
 type BuildsReadHandler interface {
 	Get(buildId uint64) (*Build, error)
+	GetForSnapshot(snapshotId uint64) ([]Build, error)
 	GetTail(repositoryId uint64, offset, results uint32) ([]Build, error)
 	GetChangesetFromShas(headSha, baseSha string, patchContents []byte) (*Changeset, error)
 }

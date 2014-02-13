@@ -48,6 +48,19 @@ func (updateHandler *UpdateHandler) SetStatus(snapshotId uint64, status string) 
 	return nil
 }
 
+func (updateHandler *UpdateHandler) SetImageId(snapshotId uint64, imageId string) error {
+	//TODO(akostov) imageId verifier?
+
+	query := "UPDATE snapshots SET image_id=$1 WHERE id=$2"
+	err := updateHandler.updateSnapshot(query, imageId, snapshotId)
+	if err != nil {
+		return err
+	}
+
+	updateHandler.subscriptionHandler.FireImageIdUpdatedEvent(snapshotId, imageId)
+	return nil
+}
+
 func (updateHandler *UpdateHandler) getTimes(snapshotId uint64) (createTime, startTime, endTime *time.Time, err error) {
 	query := "SELECT created, started, ended FROM snapshots WHERE id=$1"
 	err = updateHandler.database.QueryRow(query, snapshotId).Scan(&createTime, &startTime, &endTime)
