@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/goamz/ec2"
 	"koality/resources"
 	"koality/shell"
+	"koality/util/log"
 	"koality/vm"
 	"koality/vm/cloudinit"
 	"koality/vm/ec2/ec2broker"
@@ -261,7 +262,7 @@ func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
 	}
 	imageFilter := ec2.NewFilter()
 	imageFilter.Add("owner-id", getOwnerId())
-	imageFilter.Add("name", "koality_build_precise_0.4")
+	imageFilter.Add("name", "koality_verification_precise_0.4")
 	imageFilter.Add("state", "available")
 	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {
@@ -306,20 +307,25 @@ func (manager *Ec2VirtualMachineManager) getSecurityGroups() ([]ec2.SecurityGrou
 	}
 
 	securityGroupsResp, err := manager.ec2Cache.EC2.SecurityGroups(securityGroups, nil)
-	if err != nil {
+	if ec2Err, ok := err.(*ec2.Error); !ok {
+		log.Criticalf("Received a non-ec2 error from SecurityGroup: %v", err)
 		return nil, err
 	}
-
-	if len(securityGroupsResp.Groups) == 0 {
+	if err.(*ec2.Error).Code == "InvalidGroup.NotFound" {
 		securityGroup = ec2.SecurityGroup{
 			Name: "koality_build",
 		}
 
 		group := ec2.SecurityGroup{"", "koality_build", "Auto-generated security group which allows the Koality master to ssh into its launched testing instances.", ""}
 		_, err := manager.ec2Cache.EC2.CreateSecurityGroup(group)
-		if err != nil {
+		if ec2Err, ok := err.(*ec2.Error); !ok {
+			log.Criticalf("Received a non-ec2 error from CreateSecurityGroup: %v", err)
+			return nil, err
+		} else if ec2Err.Code != "InvalidGroup.Duplicate" && err != nil {
 			return nil, err
 		}
+	} else if err != nil {
+		return nil, err
 	} else {
 		groupInfo := securityGroupsResp.Groups[0]
 		if len(securityGroupsResp.Groups) == 2 {
