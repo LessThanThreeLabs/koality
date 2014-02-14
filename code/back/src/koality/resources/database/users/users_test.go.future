@@ -1,10 +1,11 @@
-package database
+package users_test
 
 import (
 	"time"
 	// "bytes"
 	"github.com/LessThanThreeLabs/gocheck"
 	"koality/resources"
+	"koality/resources/database"
 	"testing"
 	// "time"
 )
@@ -19,10 +20,10 @@ type UsersTestSuite struct {
 var _ = gocheck.Suite(&UsersTestSuite{})
 
 func (suite *UsersTestSuite) SetUpTest(check *gocheck.C) {
-	err := PopulateDatabase()
+	err := database.PopulateDatabase()
 	check.Assert(err, gocheck.IsNil)
 
-	suite.connection, err = New()
+	suite.connection, err = database.New()
 	check.Assert(err, gocheck.IsNil)
 }
 

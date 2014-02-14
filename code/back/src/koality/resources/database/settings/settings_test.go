@@ -1,18 +1,19 @@
-package database
+package settings_test
 
 import (
 	"bytes"
 	"koality/resources"
+	"koality/resources/database"
 	"testing"
 	"time"
 )
 
 func TestSettingsDomainName(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -71,11 +72,11 @@ func TestSettingsAuthenticationSettings(test *testing.T) {
 		}
 		return true
 	}
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -137,11 +138,11 @@ func TestSettingsAuthenticationSettings(test *testing.T) {
 }
 
 func TestSettingsResetRepositoryKeyPair(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -205,11 +206,11 @@ func TestSettingsResetRepositoryKeyPair(test *testing.T) {
 }
 
 func TestSettingsS3ExporterSettings(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -296,11 +297,11 @@ func TestSettingsS3ExporterSettings(test *testing.T) {
 }
 
 func TestSettingsHipChatSettings(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -393,11 +394,11 @@ func TestSettingsHipChatSettings(test *testing.T) {
 }
 
 func TestSettingsResetCookieStoreKeys(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -462,11 +463,11 @@ func TestSettingsResetCookieStoreKeys(test *testing.T) {
 }
 
 func TestSettingsSmtpAuth(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -586,11 +587,11 @@ func TestSettingsSmtpAuth(test *testing.T) {
 }
 
 func TestSettingsGitHubEnterprise(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -677,11 +678,11 @@ func TestSettingsGitHubEnterprise(test *testing.T) {
 }
 
 func TestSettingsApiKey(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
