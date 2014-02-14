@@ -3,7 +3,9 @@ package builds
 import (
 	"crypto/md5"
 	"database/sql"
+	"fmt"
 	"koality/resources"
+	"strings"
 )
 
 type Scannable interface {
@@ -102,11 +104,57 @@ func (readHandler *ReadHandler) GetForSnapshot(snapshotId uint64) ([]resources.B
 		if err != nil {
 			return nil, err
 		}
+
 		builds = append(builds, *build)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+
+	return builds, nil
+}
+
+func (readHandler *ReadHandler) GetBuilds(repositoryIds []uint64, searchParams string, all bool, numResults, offset, userId uint64) ([]resources.Build, error) {
+	repositoryIdStrings := []string{}
+	for _, repositoryId := range repositoryIds {
+		repositoryIdStrings = append(repositoryIdStrings, fmt.Sprintf("%d", repositoryId))
+	}
+	repositoryIdsString := strings.Join(repositoryIdStrings, ",")
+	searchCondition := fmt.Sprintf("(LOWER(C.head_sha) LIKE LOWER('%s%%') OR LOWER(B.ref)=LOWER($1))", searchParams)
+	if all {
+		searchCondition = fmt.Sprintf("%s OR LOWER($1)=LOWER(U.first_name) OR LOWER($1)=LOWER(U.last_name)", searchCondition)
+	} else {
+		searchCondition = fmt.Sprintf("%s AND U.id=%d", searchCondition, userId)
+	}
+
+	query := fmt.Sprintf("SELECT B.id, B.repository_id, B.ref, B.should_merge,"+
+		" B.email_to_notify, B.status, B.created, B.started, B.ended,"+
+		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username,"+
+		" C.head_email, C.patch_contents, C.created"+
+		" FROM builds B"+
+		" JOIN changesets C ON B.changeset_id=C.id"+
+		" JOIN users U ON B.email_to_notify=U.email"+
+		" WHERE B.repository_id IN (%s) AND (%s)"+
+		" ORDER BY B.id DESC LIMIT $2 OFFSET $3",
+		repositoryIdsString, searchCondition)
+	rows, err := readHandler.database.Query(query, searchParams, numResults, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	builds := make([]resources.Build, 0, 100)
+	for rows.Next() {
+		build, err := readHandler.scanBuild(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		builds = append(builds, *build)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return builds, nil
 }
 
