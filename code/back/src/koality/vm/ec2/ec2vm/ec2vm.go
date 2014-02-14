@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mitchellh/goamz/ec2"
 	"koality/shell"
+	"koality/util/log"
 	"koality/vm"
 	"koality/vm/ec2/ec2broker"
 	"time"
@@ -74,7 +75,12 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 
 	go func() {
 		imagesResponse, err := ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
-		for err.(*ec2.Error).Code == "InvalidPermission.Malformed" {
+		if ec2Err, ok := err.(*ec2.Error); !ok {
+			log.Criticalf("Received a non-ec2 error from Images: %v", err)
+			waitFunctionChan <- err
+		}
+
+		for err.(*ec2.Error).Code == "InvalidAMIID.NotFound" {
 			time.Sleep(2 * time.Second)
 			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
 		}
@@ -88,6 +94,10 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 			}
 			time.Sleep(2 * time.Second)
 			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+			if ec2Err, ok := err.(*ec2.Error); !ok {
+				log.Criticalf("Received a non-ec2 error from Images: %v", err)
+				waitFunctionChan <- err
+			}
 		}
 
 		waitFunctionChan <- nil
