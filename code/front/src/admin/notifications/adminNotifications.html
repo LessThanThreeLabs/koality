@@ -17,12 +17,12 @@
 					<option value="cramMd5">CRAM-MD5</option>
 				</select>
 
-				<label>Username</label>
-				<input type="text" ng-model="smtp.username" name="smtpUsername">
+				<label ng-show="smtp.authenticationType != null">Username</label>
+				<input type="text" ng-model="smtp.username" name="smtpUsername" ng-show="smtp.authenticationType != null">
 
 				<label ng-show="smtp.authenticationType == 'plain' || smtp.authenticationType == 'login'">Password</label>
 				<label ng-show="smtp.authenticationType == 'cramMd5'">Secret</label>
-				<input type="password" placeholder="unchanged" ng-model="smtp.password" name="smtpPassword">
+				<input type="password" placeholder="unchanged" ng-model="smtp.password" name="smtpPassword" ng-show="smtp.authenticationType != null">
 			</div>
 
 			<div class="formContainer">
@@ -31,14 +31,14 @@
 				<input class="bufferLeft" type="radio" ng-model="hipChat.enabled" name="hipChatEnabled" value="no" required>No
 
 				<label>Authentication Token</label>
-				<input type="text" ng-model="hipChat.authenticationToken" ng-class="{disabled: hipChat.enabled == 'no'}" name="hipChatToken" ng-disabled="settings.enabled == 'no'" focused required>
+				<input type="text" ng-model="hipChat.authenticationToken" ng-class="{disabled: hipChat.enabled != 'yes'}" name="hipChatToken" ng-disabled="hipChat.enabled != 'yes'" focused required>
 
 				<label>Rooms</label>
-				<input type="text" ng-model="hipChat.rooms" ng-class="{disabled: hipChat.enabled == 'no'}" name="hipChatRooms" ng-disabled="hipChat.enabled == 'no'" required>
+				<input type="text" ng-model="hipChat.rooms" ng-class="{disabled: hipChat.enabled != 'yes'}" name="hipChatRooms" ng-disabled="hipChat.enabled != 'yes'" required>
 
 				<label>Receive Notifications On</label>
-				<input type="radio" ng-model="hipChat.notifyOn" name="hipChatType" value="all" ng-disabled="hipChat.enabled == 'no'" required>All
-				<input class="bufferLeft" type="radio" ng-model="hipChat.notifyOn" name="hipChatType" value="failed" ng-disabled="hipChat.enabled == 'no'" required>Just Failed
+				<input type="radio" ng-model="hipChat.notifyOn" name="hipChatType" value="all" ng-disabled="hipChat.enabled != 'yes'" required>All
+				<input class="bufferLeft" type="radio" ng-model="hipChat.notifyOn" name="hipChatType" value="failed" ng-disabled="hipChat.enabled != 'yes'" required>Just Failed
 			</div>
 
 			<div class="bottomContanier">
