@@ -307,7 +307,7 @@ func (manager *Ec2VirtualMachineManager) getSecurityGroups() ([]ec2.SecurityGrou
 	}
 
 	securityGroupsResp, err := manager.ec2Cache.EC2.SecurityGroups(securityGroups, nil)
-	if ec2Err, ok := err.(*ec2.Error); !ok {
+	if _, ok := err.(*ec2.Error); !ok {
 		log.Criticalf("Received a non-ec2 error from SecurityGroup: %v", err)
 		return nil, err
 	}
