@@ -1,17 +1,18 @@
-package database
+package repositories_test
 
 import (
 	"koality/resources"
+	"koality/resources/database"
 	"testing"
 	"time"
 )
 
 func TestCreateInvalidRepository(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -53,11 +54,11 @@ func TestCreateInvalidRepository(test *testing.T) {
 }
 
 func TestCreateAndDeleteRepository(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -182,11 +183,11 @@ func TestCreateAndDeleteRepository(test *testing.T) {
 }
 
 func TestCreateGitHubRepository(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -330,11 +331,11 @@ func TestCreateGitHubRepository(test *testing.T) {
 }
 
 func TestRepositoryRemoteUri(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -407,11 +408,11 @@ func TestRepositoryRemoteUri(test *testing.T) {
 }
 
 func TestRepositoryStatus(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -485,11 +486,11 @@ func TestRepositoryStatus(test *testing.T) {
 }
 
 func TestGitHubOAuthTokens(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -621,11 +622,11 @@ func TestGitHubOAuthTokens(test *testing.T) {
 }
 
 func TestRepositoryHook(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}

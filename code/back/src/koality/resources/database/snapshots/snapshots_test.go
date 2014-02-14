@@ -1,17 +1,18 @@
-package database
+package snapshots_test
 
 import (
 	"koality/resources"
+	"koality/resources/database"
 	"testing"
 	"time"
 )
 
 func TestCreateInvalidSnapshot(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -37,11 +38,11 @@ func TestCreateInvalidSnapshot(test *testing.T) {
 }
 
 func TestCreateAndDeleteSnapshot(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -163,11 +164,11 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 }
 
 func TestSnapshotStatuses(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -234,11 +235,11 @@ func TestSnapshotStatuses(test *testing.T) {
 }
 
 func TestSnapshotTimes(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}

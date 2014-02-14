@@ -1,18 +1,19 @@
-package database
+package stages_test
 
 import (
 	"fmt"
 	"koality/resources"
+	"koality/resources/database"
 	"testing"
 	"time"
 )
 
 func TestCreateInvalidStage(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -45,11 +46,11 @@ func TestCreateInvalidStage(test *testing.T) {
 }
 
 func TestCreateStage(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -215,11 +216,11 @@ func TestCreateStage(test *testing.T) {
 }
 
 func TestStageReturnCode(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -296,11 +297,11 @@ func TestStageReturnCode(test *testing.T) {
 }
 
 func TestStageTimes(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -421,11 +422,11 @@ func TestStageTimes(test *testing.T) {
 }
 
 func TestConsoleLines(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -545,11 +546,11 @@ func TestConsoleLines(test *testing.T) {
 }
 
 func TestXunit(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -657,11 +658,11 @@ func TestXunit(test *testing.T) {
 }
 
 func TestExport(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}

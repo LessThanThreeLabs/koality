@@ -1,18 +1,19 @@
-package database
+package users_test
 
 import (
 	"bytes"
 	"koality/resources"
+	"koality/resources/database"
 	"testing"
 	"time"
 )
 
 func TestCreateInvalidUser(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -51,11 +52,11 @@ func TestCreateInvalidUser(test *testing.T) {
 }
 
 func TestCreateAndDeleteUser(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -185,11 +186,11 @@ func TestCreateAndDeleteUser(test *testing.T) {
 }
 
 func TestUsersRead(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -246,11 +247,11 @@ func TestUsersRead(test *testing.T) {
 }
 
 func TestUsersUpdateName(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -326,11 +327,11 @@ func TestUsersUpdateName(test *testing.T) {
 }
 
 func TestUsersUpdatePassword(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -372,11 +373,11 @@ func TestUsersUpdatePassword(test *testing.T) {
 }
 
 func TestUsersUpdateGitHubOAuth(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -418,11 +419,11 @@ func TestUsersUpdateGitHubOAuth(test *testing.T) {
 }
 
 func TestUsersUpdateAdmin(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -494,11 +495,11 @@ func TestUsersUpdateAdmin(test *testing.T) {
 }
 
 func TestUsersSshKeys(test *testing.T) {
-	if err := PopulateDatabase(); err != nil {
+	if err := database.PopulateDatabase(); err != nil {
 		test.Fatal(err)
 	}
 
-	connection, err := New()
+	connection, err := database.New()
 	if err != nil {
 		test.Fatal(err)
 	}

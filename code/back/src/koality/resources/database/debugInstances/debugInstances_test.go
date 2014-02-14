@@ -1,8 +1,9 @@
-package database
+package debugInstances_test
 
 import (
 	"github.com/LessThanThreeLabs/gocheck"
 	"koality/resources"
+	"koality/resources/database"
 	"math/rand"
 	"testing"
 	"time"
@@ -20,10 +21,10 @@ type DebugInstancesSuite struct {
 var _ = gocheck.Suite(&DebugInstancesSuite{})
 
 func (suite *DebugInstancesSuite) SetUpTest(check *gocheck.C) {
-	err := PopulateDatabase()
+	err := database.PopulateDatabase()
 	check.Assert(err, gocheck.IsNil)
 
-	suite.resourcesConnection, err = New()
+	suite.resourcesConnection, err = database.New()
 	check.Assert(err, gocheck.IsNil)
 
 	suite.pools, err = suite.resourcesConnection.Pools.Read.GetAllEc2Pools()
