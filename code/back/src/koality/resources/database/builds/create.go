@@ -45,7 +45,7 @@ func (createHandler *CreateHandler) create(repositoryId, snapshotId, debugInstan
 		return nil, err
 	}
 
-	patchHash := md5.New().Sum(patchContents)
+	patchHash := md5.Sum(patchContents)
 
 	changesetId := uint64(0)
 	changesetQuery := "INSERT INTO changesets (repository_id, head_sha, base_sha, head_message, head_username, head_email, patch_contents, patch_hash)" +

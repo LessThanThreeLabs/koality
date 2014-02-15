@@ -31,7 +31,7 @@
 
 				<label>Admin User Information</label>
 				<label>Email</label>
-				<input name="email" type="email" placeholder="Email" maxlength="256" required="">
+				<input id="email" name="email" type="email" placeholder="Email" maxlength="256" required="">
 				<label>Confirm Email</label>
 				<input id="confirmemail" type="email" placeholder="Confirm Email" maxlength="256" required="">
 				<label>Password</label>
@@ -52,7 +52,7 @@
 var csrfToken = "{{.CsrfToken}}"
 $("form[name=wizardForm]").submit(function(event) {
 	event.preventDefault();
-	var $email = $("form input[name=email]"),
+	var $email = $("#email"),
 	    $emailConfirm = $("#confirmemail"),
 	    $submit = $("form button"),
 	    $notification = $("#notificationsContainer .notification");
@@ -72,7 +72,7 @@ $("form[name=wizardForm]").submit(function(event) {
 		},
 		headers: { "X-XSRF-TOKEN": csrfToken}
 	}).done(function(data) {
-		// TODO(dhuang) redirect maybe?
+		window.location.href = "/"
 	}).fail(function(data, err) {
 		$notification.find(".notificationMessage").text(data.responseText);
                 $notification.show();

@@ -164,14 +164,20 @@ func (settingsHandler *SettingsHandler) getGitHubEnterpriseSettings(writer http.
 }
 
 func (settingsHandler *SettingsHandler) getLicense(writer http.ResponseWriter, request *http.Request) {
-	license := map[string]interface{}{
-		"key":          "some-key-here",
-		"maxExecutors": 100,
+	licenseSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetLicenseSettings()
+	if _, ok := err.(resources.NoSuchSettingError); ok {
+		licenseSettings = &resources.LicenseSettings{
+			IsValid:       false,
+			InvalidReason: "License key not set",
+		}
+	} else if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
 	}
 
-	// sanitizedGitHubEnterpriseSettings := getSanitizedGitHubEnterpriseSettings(gitHubEnterpriseSettings)
-	sanitizedLicense := license
-	jsonedLicense, err := json.Marshal(sanitizedLicense)
+	sanitizedLicenseSettings := getSanitizedLicenseSettings(licenseSettings)
+	jsonedLicenseSettings, err := json.Marshal(sanitizedLicenseSettings)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
@@ -179,7 +185,7 @@ func (settingsHandler *SettingsHandler) getLicense(writer http.ResponseWriter, r
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(writer, "%s", jsonedLicense)
+	fmt.Fprintf(writer, "%s", jsonedLicenseSettings)
 }
 
 func (settingsHandler *SettingsHandler) getUpgradeStatus(writer http.ResponseWriter, request *http.Request) {
