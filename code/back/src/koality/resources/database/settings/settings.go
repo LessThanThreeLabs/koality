@@ -24,6 +24,7 @@ var (
 	cookieStoreKeysLocator          = SettingLocator("CookieStoreKeys")
 	smtpServerSettingsLocator       = SettingLocator("SmtpServerSettings")
 	gitHubEnterpriseSettingsLocator = SettingLocator("GitHubEnterpriseSettings")
+	licenseSettingsLocator          = SettingLocator("licenseSettings")
 	apiKeyLocator                   = SettingLocator("ApiKey")
 )
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	githubconnection "koality/github"
+	"koality/licensemanager"
 	"koality/mail"
 	"koality/repositorymanager"
 	"koality/resources"
@@ -30,13 +31,14 @@ type Webserver struct {
 	repositoryManager   repositorymanager.RepositoryManager
 	gitHubConnection    githubconnection.GitHubConnection
 	mailer              mail.Mailer
+	licenseManager      *licensemanager.LicenseManager
 	sessionName         string
 	address             string
 }
 
-func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection githubconnection.GitHubConnection, mailer mail.Mailer, port int) (*Webserver, error) {
+func New(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, gitHubConnection githubconnection.GitHubConnection, mailer mail.Mailer, licenseManager *licensemanager.LicenseManager, port uint16) (*Webserver, error) {
 	address := fmt.Sprintf(":%d", port)
-	return &Webserver{resourcesConnection, repositoryManager, gitHubConnection, mailer, "koality", address}, nil
+	return &Webserver{resourcesConnection, repositoryManager, gitHubConnection, mailer, licenseManager, "koality", address}, nil
 }
 
 func (webserver *Webserver) Start() error {
@@ -136,7 +138,7 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
-	settingsHandler, err := settings.New(webserver.resourcesConnection, passwordHasher)
+	settingsHandler, err := settings.New(webserver.resourcesConnection, sessionStore, webserver.sessionName, passwordHasher, webserver.licenseManager)
 	if err != nil {
 		return nil, err
 	}

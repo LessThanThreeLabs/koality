@@ -69,6 +69,15 @@ type GitHubEnterpriseSettings struct {
 	OAuthClientSecret string
 }
 
+type LicenseSettings struct {
+	LicenseKey           string
+	ServerId             string
+	MaxExecutors         uint32
+	LicenseCheckFailures uint32
+	IsValid              bool
+	InvalidReason        string
+}
+
 type ApiKey string
 
 func (apiKey ApiKey) String() string {
@@ -91,6 +100,7 @@ type SettingsReadHandler interface {
 	GetCookieStoreKeys() (*CookieStoreKeys, error)
 	GetSmtpServerSettings() (*SmtpServerSettings, error)
 	GetGitHubEnterpriseSettings() (*GitHubEnterpriseSettings, error)
+	GetLicenseSettings() (*LicenseSettings, error)
 	GetApiKey() (ApiKey, error)
 }
 
@@ -105,6 +115,7 @@ type SettingsUpdateHandler interface {
 	SetSmtpAuthCramMd5(hostname string, port uint16, username, secret string) (*SmtpServerSettings, error)
 	SetSmtpAuthLogin(hostname string, port uint16, username, password string) (*SmtpServerSettings, error)
 	SetGitHubEnterpriseSettings(baseUri, oAuthClientId, oAuthClientSecret string) (*GitHubEnterpriseSettings, error)
+	SetLicenseSettings(licenseKey, serverId string, maxExecutors, licenseCheckFailures uint32, isValid bool, invalidReason string) (*LicenseSettings, error)
 	ResetApiKey() (ApiKey, error)
 }
 
@@ -125,6 +136,7 @@ type CookieStoreKeysUpdatedHandler func(keys *CookieStoreKeys)
 type SmtpServerSettingsUpdatedHandler func(auth *SmtpServerSettings)
 type GitHubEnterpriseSettingsUpdatedHandler func(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
 type GitHubEnterpriseSettingsClearedHandler func()
+type LicenseSettingsUpdatedHandler func(licenseSettings *LicenseSettings)
 type ApiKeyUpdatedHandler func(key ApiKey)
 
 type SettingsSubscriptionHandler interface {
@@ -161,6 +173,9 @@ type SettingsSubscriptionHandler interface {
 	SubscribeToGitHubEnterpriseSettingsClearedEvents(updateHandler GitHubEnterpriseSettingsClearedHandler) (SubscriptionId, error)
 	UnsubscribeFromGitHubEnterpriseSettingsClearedEvents(subscriptionId SubscriptionId) error
 
+	SubscribeToLicenseSettingsUpdatedEvents(updateHandler LicenseSettingsUpdatedHandler) (SubscriptionId, error)
+	UnsubscribeFromLicenseSettingsUpdatedEvents(subscriptionId SubscriptionId) error
+
 	SubscribeToApiKeyUpdatedEvents(updateHandler ApiKeyUpdatedHandler) (SubscriptionId, error)
 	UnsubscribeFromApiKeyUpdatedEvents(subscriptionId SubscriptionId) error
 }
@@ -177,6 +192,7 @@ type InternalSettingsSubscriptionHandler interface {
 	FireSmtpServerSettingsUpdatedEvent(smtpServerSettings *SmtpServerSettings)
 	FireGitHubEnterpriseSettingsUpdatedEvent(gitHubEnterpriseSettings *GitHubEnterpriseSettings)
 	FireGitHubEnterpriseSettingsClearedEvent()
+	FireLicenseSettingsUpdatedEvent(licenseSettings *LicenseSettings)
 	FireApiKeyUpdatedEvent(key ApiKey)
 	SettingsSubscriptionHandler
 }

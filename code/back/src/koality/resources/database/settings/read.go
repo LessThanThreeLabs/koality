@@ -102,6 +102,14 @@ func (readHandler *ReadHandler) GetGitHubEnterpriseSettings() (*resources.GitHub
 	return gitHubEnterpriseSettings, nil
 }
 
+func (readHandler *ReadHandler) GetLicenseSettings() (*resources.LicenseSettings, error) {
+	licenseSettings := new(resources.LicenseSettings)
+	if err := readHandler.getSetting(licenseSettingsLocator, &licenseSettings); err != nil {
+		return nil, err
+	}
+	return licenseSettings, nil
+}
+
 func (readHandler *ReadHandler) GetApiKey() (resources.ApiKey, error) {
 	var apiKey resources.ApiKey
 	if err := readHandler.getSetting(apiKeyLocator, &apiKey); err != nil {

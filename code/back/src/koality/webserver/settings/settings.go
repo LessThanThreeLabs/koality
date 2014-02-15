@@ -2,6 +2,8 @@ package settings
 
 import (
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
+	"koality/licensemanager"
 	"koality/resources"
 	"koality/webserver/middleware"
 )
@@ -41,6 +43,12 @@ type sanitizedGitHubEnterpriseSettings struct {
 	OAuthClientSecret string `json:"oAuthClientSecret"`
 }
 
+type sanitizedLicenseSettings struct {
+	LicenseKey   string `json:"licenseKey"`
+	MaxExecutors uint32 `json:"maxExecutors"`
+	Status       string `json:"status"`
+}
+
 type setAuthenticationRequestData struct {
 	ManualAccountsAllowed bool     `json:"manualAccountsAllowed"`
 	GoogleAccountsAllowed bool     `json:"googleAccountsAllowed"`
@@ -75,11 +83,14 @@ type setGitHubEnterpriseRequestData struct {
 
 type SettingsHandler struct {
 	resourcesConnection *resources.Connection
+	sessionStore        sessions.Store
+	sessionName         string
 	passwordHasher      *resources.PasswordHasher
+	licenseManager      *licensemanager.LicenseManager
 }
 
-func New(resourcesConnection *resources.Connection, passwordHasher *resources.PasswordHasher) (*SettingsHandler, error) {
-	return &SettingsHandler{resourcesConnection, passwordHasher}, nil
+func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, licenseManager *licensemanager.LicenseManager) (*SettingsHandler, error) {
+	return &SettingsHandler{resourcesConnection, sessionStore, sessionName, passwordHasher, licenseManager}, nil
 }
 
 func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) {
@@ -238,5 +249,17 @@ func getSanitizedGitHubEnterpriseSettings(settings *resources.GitHubEnterpriseSe
 		BaseUri:           settings.BaseUri,
 		OAuthClientId:     settings.OAuthClientId,
 		OAuthClientSecret: settings.OAuthClientSecret,
+	}
+}
+
+func getSanitizedLicenseSettings(settings *resources.LicenseSettings) *sanitizedLicenseSettings {
+	status := "Active"
+	if !settings.IsValid {
+		status = settings.InvalidReason
+	}
+	return &sanitizedLicenseSettings{
+		LicenseKey:   settings.LicenseKey,
+		MaxExecutors: settings.MaxExecutors,
+		Status:       status,
 	}
 }

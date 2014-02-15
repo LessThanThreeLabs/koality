@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"koality/resources"
+	"koality/webserver/util"
 	"net/http"
 )
 
@@ -262,11 +263,17 @@ func (settingsHandler *SettingsHandler) setGitHubEnterpriseSettings(writer http.
 
 func (settingsHandler *SettingsHandler) setWizard(writer http.ResponseWriter, request *http.Request) {
 	licenseKey := request.PostFormValue("licenseKey")
-	_ = licenseKey // TODO(dhuang) do something with this
 	email := request.PostFormValue("email")
 	firstName := request.PostFormValue("firstName")
 	lastName := request.PostFormValue("lastName")
 	password := request.PostFormValue("password")
+
+	if err := settingsHandler.licenseManager.SetLicenseKey(licenseKey); err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
 	passwordHash, passwordSalt, err := settingsHandler.passwordHasher.GenerateHashAndSalt(password)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -274,12 +281,15 @@ func (settingsHandler *SettingsHandler) setWizard(writer http.ResponseWriter, re
 		return
 	}
 
-	_, err = settingsHandler.resourcesConnection.Users.Create.Create(email, firstName, lastName, passwordHash, passwordSalt, true)
+	user, err := settingsHandler.resourcesConnection.Users.Create.Create(email, firstName, lastName, passwordHash, passwordSalt, true)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
+	session, _ := settingsHandler.sessionStore.Get(request, settingsHandler.sessionName)
+
+	util.Login(user.Id, false, session, writer, request)
 	fmt.Fprintln(writer, "{success:true}")
 }

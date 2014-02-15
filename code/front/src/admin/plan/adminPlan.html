@@ -4,9 +4,14 @@
 	<panel-body no-scroll>
 		<form name="updateForm" novalidate>
 			<div class="formContainer centered">
+				<div id="status">
+					<label>Status</label>
+					<div>{{license.status}}</div>
+				</div>
+
 				<div id="licenseKey">
 					<label>License Key</label>
-					<div>{{license.key}}</div>
+					<div>{{license.licenseKey}}</div>
 				</div>
 
 				<div id="maxExecutors">

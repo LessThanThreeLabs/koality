@@ -16,6 +16,7 @@ type SubscriptionHandler struct {
 	smtpServerSettingsUpdatedSubscriptionManager       resources.SubscriptionManager
 	gitHubEnterpriseSettingsUpdatedSubscriptionManager resources.SubscriptionManager
 	gitHubEnterpriseSettingsClearedSubscriptionManager resources.SubscriptionManager
+	licenseSettingsUpdatedSubscriptionManager          resources.SubscriptionManager
 	apiKeyUpdatedSubscriptionManager                   resources.SubscriptionManager
 }
 
@@ -152,6 +153,18 @@ func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromGitHubEnterpriseS
 }
 func (subscriptionHandler *SubscriptionHandler) FireGitHubEnterpriseSettingsClearedEvent() {
 	subscriptionHandler.gitHubEnterpriseSettingsClearedSubscriptionManager.Fire()
+}
+
+func (subscriptionHandler *SubscriptionHandler) SubscribeToLicenseSettingsUpdatedEvents(updateHandler resources.LicenseSettingsUpdatedHandler) (resources.SubscriptionId, error) {
+	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Add(updateHandler)
+}
+
+func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromLicenseSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
+	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Remove(subscriptionId)
+}
+
+func (subscriptionHandler *SubscriptionHandler) FireLicenseSettingsUpdatedEvent(licenseSettings *resources.LicenseSettings) {
+	subscriptionHandler.apiKeyUpdatedSubscriptionManager.Fire(licenseSettings)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToApiKeyUpdatedEvents(updateHandler resources.ApiKeyUpdatedHandler) (resources.SubscriptionId, error) {
