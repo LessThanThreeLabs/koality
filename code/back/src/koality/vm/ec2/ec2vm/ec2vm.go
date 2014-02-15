@@ -78,6 +78,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 		if _, ok := err.(*ec2.Error); !ok {
 			log.Criticalf("Received a non-ec2 error from Images: %v", err)
 			waitFunctionChan <- err
+			return
 		}
 
 		for err.(*ec2.Error).Code == "InvalidAMIID.NotFound" {
@@ -86,6 +87,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 		}
 		if err != nil {
 			waitFunctionChan <- err
+			return
 		}
 
 		for imagesResponse.Images[0].State != "available" {
@@ -97,6 +99,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 			if _, ok := err.(*ec2.Error); !ok {
 				log.Criticalf("Received a non-ec2 error from Images: %v", err)
 				waitFunctionChan <- err
+				return
 			}
 		}
 

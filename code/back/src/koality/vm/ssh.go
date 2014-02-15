@@ -91,12 +91,7 @@ func (sshExecutor *SshExecutor) Close() error {
 }
 
 func (execution *sshExecution) Wait() error {
-	waitErr := execution.Session.Wait()
-	closeErr := execution.Session.Close()
-	if waitErr != nil {
-		return waitErr
-	}
-	return closeErr
+	return execution.Session.Wait()
 }
 
 func (k *keychain) Key(i int) (ssh.PublicKey, error) {

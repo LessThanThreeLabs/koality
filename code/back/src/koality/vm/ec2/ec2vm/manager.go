@@ -148,6 +148,7 @@ func (manager *Ec2VirtualMachineManager) waitForIpAddress(instance *ec2.Instance
 		for {
 			if instance.PrivateIpAddress != "" {
 				waitFunctionChan <- nil
+				return
 			} else {
 				time.Sleep(5 * time.Second)
 				for _, reservation := range manager.ec2Cache.Reservations() {
@@ -196,6 +197,7 @@ func (manager *Ec2VirtualMachineManager) waitForSsh(instance ec2.Instance, usern
 				err = sshAttempt.Wait()
 				if err == nil {
 					waitFunctionChan <- ec2Vm
+					return
 				}
 			}
 			time.Sleep(3 * time.Second)
