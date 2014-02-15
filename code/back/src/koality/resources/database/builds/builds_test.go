@@ -4,6 +4,8 @@ import (
 	"github.com/LessThanThreeLabs/gocheck"
 	"koality/resources"
 	"koality/resources/database"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 )
@@ -16,6 +18,20 @@ type BuildsTestSuite struct {
 }
 
 var _ = gocheck.Suite(new(BuildsTestSuite))
+
+type buildsType []resources.Build
+
+func (builds buildsType) Len() int {
+	return len(builds)
+}
+
+func (builds buildsType) Less(i, j int) bool {
+	return builds[i].Id < builds[j].Id
+}
+
+func (builds buildsType) Swap(i, j int) {
+	builds[i], builds[j] = builds[j], builds[i]
+}
 
 func (suite *BuildsTestSuite) SetUpTest(check *gocheck.C) {
 	err := database.PopulateDatabase()
@@ -327,4 +343,146 @@ func (suite *BuildsTestSuite) TestGetChangesetFromShas(check *gocheck.C) {
 
 	_, err = suite.resourcesConnection.Builds.Read.GetChangesetFromShas(firstBuild.Changeset.HeadSha, firstBuild.Changeset.BaseSha, []byte("some-bad-patch-contents"))
 	check.Assert(ok, gocheck.Equals, true, gocheck.Commentf("Expected NoSuchChangesetError when providing invalid patch contents"))
+}
+
+func (suite *BuildsTestSuite) TestGetBuilds(check *gocheck.C) {
+	resultLimit := uint32(100)
+	var allBuilds, builds1, builds2 buildsType
+	var repositoryIds []uint64
+
+	users, err := suite.resourcesConnection.Users.Read.GetAll()
+	check.Assert(err, gocheck.IsNil)
+	userSet := make(map[string]bool)
+	for _, user := range users {
+		userSet[user.Email] = true
+	}
+
+	repositories, err := suite.resourcesConnection.Repositories.Read.GetAll()
+	check.Assert(err, gocheck.IsNil)
+	for _, repository := range repositories {
+		repositoryBuilds, err := suite.resourcesConnection.Builds.Read.GetTail(repository.Id, 0, resultLimit)
+		check.Assert(err, gocheck.IsNil)
+		allBuilds = append(allBuilds, repositoryBuilds...)
+		repositoryIds = append(repositoryIds, repository.Id)
+	}
+	// we can only search for builds with emails that match users' emails
+	for _, build := range allBuilds {
+		if userSet[build.EmailToNotify] {
+			builds1 = append(builds1, build)
+		}
+	}
+
+	totalResultLimit := resultLimit * uint32(len(repositories))
+	builds2, err = suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, "", true, 0, totalResultLimit, 1000)
+	check.Assert(err, gocheck.IsNil)
+	// GetBuilds should return builds sorted with decreasing ids
+	for i := range builds2 {
+		numBuilds := len(builds2)
+		j := numBuilds - 1 - i
+		if i < numBuilds/2 {
+			builds2[i], builds2[j] = builds2[j], builds2[i]
+		}
+	}
+	check.Assert(sort.IsSorted(builds2), gocheck.Equals, true)
+
+	sort.Sort(builds1)
+	check.Assert(sort.IsSorted(builds1), gocheck.Equals, true)
+	check.Assert(len(builds1), gocheck.DeepEquals, len(builds2))
+	check.Assert(builds1, gocheck.DeepEquals, builds2)
+
+	for _, user := range users {
+		var buildsForUser []resources.Build
+		for _, build := range builds1 {
+			if build.EmailToNotify == user.Email {
+				buildsForUser = append(buildsForUser, build)
+			}
+		}
+		sort.Sort(buildsType(buildsForUser))
+
+		buildsForUser2, err := suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, "", false, 0, totalResultLimit, user.Id)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForUser2))
+
+		if len(buildsForUser)+len(buildsForUser2) != 0 {
+			check.Assert(buildsForUser2, gocheck.DeepEquals, buildsForUser)
+		}
+
+		buildsForUserFirstName, err := suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, user.FirstName, true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForUserFirstName))
+		if len(buildsForUser)+len(buildsForUserFirstName) != 0 {
+			buildSet := make(map[uint64]bool)
+			for _, build := range buildsForUserFirstName {
+				buildSet[build.Id] = true
+			}
+			for _, build := range buildsForUser {
+				check.Assert(buildSet[build.Id], gocheck.Equals, true)
+			}
+		}
+
+		buildsForUserLastName, err := suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, user.LastName, true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForUserLastName))
+		if len(buildsForUser)+len(buildsForUserLastName) != 0 {
+			buildSet := make(map[uint64]bool)
+			for _, build := range buildsForUserLastName {
+				buildSet[build.Id] = true
+			}
+			for _, build := range buildsForUser {
+				check.Assert(buildSet[build.Id], gocheck.Equals, true)
+			}
+		}
+	}
+
+	shaMap := make(map[string][]resources.Build)
+	for _, build := range builds1 {
+		shaPrefix := build.Changeset.HeadSha[:5]
+		shaMap[shaPrefix] = append(shaMap[shaPrefix], build)
+	}
+	for shaPrefix, expectedBuildsForShaPrefix := range shaMap {
+		sort.Sort(buildsType(expectedBuildsForShaPrefix))
+
+		buildsForShaPrefix, err := suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, strings.ToUpper(shaPrefix), true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForShaPrefix))
+		check.Assert(buildsForShaPrefix, gocheck.DeepEquals, expectedBuildsForShaPrefix)
+
+		buildsForShaPrefix, err = suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, strings.ToLower(shaPrefix), true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForShaPrefix))
+		check.Assert(buildsForShaPrefix, gocheck.DeepEquals, expectedBuildsForShaPrefix)
+	}
+
+	refMap := make(map[string][]resources.Build)
+	for _, build := range builds1 {
+		refMap[build.Ref] = append(refMap[build.Ref], build)
+	}
+	for ref, expectedBuildsForRef := range refMap {
+		sort.Sort(buildsType(expectedBuildsForRef))
+
+		buildsForRef, err := suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, strings.ToUpper(ref), true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForRef))
+		check.Assert(buildsForRef, gocheck.DeepEquals, expectedBuildsForRef)
+
+		buildsForRef, err = suite.resourcesConnection.Builds.Read.GetBuilds(repositoryIds, strings.ToLower(ref), true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsForRef))
+		check.Assert(buildsForRef, gocheck.DeepEquals, expectedBuildsForRef)
+	}
+
+	for _, repositoryId := range repositoryIds {
+		var expectedBuildsInRepository []resources.Build
+		for _, build := range builds1 {
+			if build.RepositoryId == repositoryId {
+				expectedBuildsInRepository = append(expectedBuildsInRepository, build)
+			}
+		}
+		sort.Sort(buildsType(expectedBuildsInRepository))
+
+		buildsInRepository, err := suite.resourcesConnection.Builds.Read.GetBuilds([]uint64{repositoryId}, "", true, 0, totalResultLimit, 1000)
+		check.Assert(err, gocheck.IsNil)
+		sort.Sort(buildsType(buildsInRepository))
+		check.Assert(buildsInRepository, gocheck.DeepEquals, expectedBuildsInRepository)
+	}
 }

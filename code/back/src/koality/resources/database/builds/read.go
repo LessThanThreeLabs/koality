@@ -114,7 +114,7 @@ func (readHandler *ReadHandler) GetForSnapshot(snapshotId uint64) ([]resources.B
 	return builds, nil
 }
 
-func (readHandler *ReadHandler) GetBuilds(repositoryIds []uint64, searchParams string, all bool, numResults, offset, userId uint64) ([]resources.Build, error) {
+func (readHandler *ReadHandler) GetBuilds(repositoryIds []uint64, searchParams string, all bool, offset, results uint32, userId uint64) ([]resources.Build, error) {
 	repositoryIdStrings := []string{}
 	for _, repositoryId := range repositoryIds {
 		repositoryIdStrings = append(repositoryIdStrings, fmt.Sprintf("%d", repositoryId))
@@ -127,7 +127,7 @@ func (readHandler *ReadHandler) GetBuilds(repositoryIds []uint64, searchParams s
 		searchCondition = fmt.Sprintf("%s AND U.id=%d", searchCondition, userId)
 	}
 
-	query := fmt.Sprintf("SELECT B.id, B.repository_id, B.ref, B.should_merge,"+
+	query := fmt.Sprintf("SELECT B.id, B.repository_id, B.snapshot_id, B.debug_instance_id, B.ref, B.should_merge,"+
 		" B.email_to_notify, B.status, B.created, B.started, B.ended,"+
 		" C.id, C.repository_id, C.head_sha, C.base_sha, C.head_message, C.head_username,"+
 		" C.head_email, C.patch_contents, C.created"+
@@ -137,7 +137,7 @@ func (readHandler *ReadHandler) GetBuilds(repositoryIds []uint64, searchParams s
 		" WHERE B.repository_id IN (%s) AND (%s)"+
 		" ORDER BY B.id DESC LIMIT $2 OFFSET $3",
 		repositoryIdsString, searchCondition)
-	rows, err := readHandler.database.Query(query, searchParams, numResults, offset)
+	rows, err := readHandler.database.Query(query, searchParams, results, offset)
 	if err != nil {
 		return nil, err
 	}

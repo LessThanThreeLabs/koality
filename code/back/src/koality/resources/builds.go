@@ -60,7 +60,7 @@ type BuildsCreateHandler interface {
 type BuildsReadHandler interface {
 	Get(buildId uint64) (*Build, error)
 	GetForSnapshot(snapshotId uint64) ([]Build, error)
-	GetBuilds(repositoryIds []uint64, searchParams string, all bool, numResults, offset, userId uint64) ([]Build, error)
+	GetBuilds(repositoryIds []uint64, searchParams string, all bool, offset, results uint32, userId uint64) ([]Build, error)
 	GetTail(repositoryId uint64, offset, results uint32) ([]Build, error)
 	GetChangesetFromShas(headSha, baseSha string, patchContents []byte) (*Changeset, error)
 }
