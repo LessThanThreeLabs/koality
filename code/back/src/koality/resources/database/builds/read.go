@@ -192,9 +192,9 @@ func (readHandler *ReadHandler) GetTail(repositoryId uint64, offset, results uin
 }
 
 func (readHandler *ReadHandler) GetChangesetFromShas(headSha, baseSha string, patchContents []byte) (*resources.Changeset, error) {
-	patchHash := md5.New().Sum(patchContents)
+	patchHash := md5.Sum(patchContents)
 	query := "SELECT id, repository_id, head_sha, base_sha, head_message, head_username, head_email, patch_contents, created" +
 		" FROM changesets WHERE head_sha=$1 AND base_sha=$2 AND patch_hash=$3"
-	row := readHandler.database.QueryRow(query, headSha, baseSha, patchHash)
+	row := readHandler.database.QueryRow(query, headSha, baseSha, patchHash[:])
 	return readHandler.scanChangeset(row)
 }

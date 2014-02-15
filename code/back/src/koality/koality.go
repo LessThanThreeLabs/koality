@@ -3,10 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/LessThanThreeLabs/license-server/license/checker"
 	"koality/build/debuginstancerunner"
 	"koality/build/testrunner"
 	"koality/github"
 	"koality/internalapi"
+	"koality/licensemanager"
 	"koality/mail"
 	"koality/notify"
 	"koality/repositorymanager"
@@ -36,6 +38,8 @@ func main() {
 
 	resourcesConnection := getResourcesConnection()
 
+	licenseManager := getLicenseManager(resourcesConnection)
+
 	mailer := getMailer(resourcesConnection)
 
 	ec2Broker := ec2broker.New()
@@ -60,7 +64,7 @@ func main() {
 	internalapi.Start(resourcesConnection, poolManager, koalityRoot, internalapi.RpcSocket)
 
 	fmt.Println("Koality successfully started!")
-	startWebserverAndBlock(resourcesConnection, repositoryManager, mailer)
+	startWebserverAndBlock(resourcesConnection, repositoryManager, mailer, licenseManager)
 }
 
 func getResourcesConnection() *resources.Connection {
@@ -75,6 +79,13 @@ func getResourcesConnection() *resources.Connection {
 
 	database.KeepClean(resourcesConnection)
 	return resourcesConnection
+}
+
+func getLicenseManager(resourcesConnection *resources.Connection) *licensemanager.LicenseManager {
+	licenseChecker := licensechecker.New("http://localhost:9000")
+	licenseManager := licensemanager.New(resourcesConnection, licenseChecker)
+	go licenseManager.MonitorLicense()
+	return licenseManager
 }
 
 func getMailer(resourcesConnection *resources.Connection) mail.Mailer {
@@ -112,14 +123,14 @@ func getVirtualMachinePools(resourcesConnection *resources.Connection, ec2Broker
 	}
 }
 
-func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer) {
+func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer, licenseManager *licensemanager.LicenseManager) {
 	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
 	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
 	if err := gitHubConnection.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 
-	webserver, err := webserver.New(resourcesConnection, repositoryManager, gitHubConnection, mailer, webserverPort)
+	webserver, err := webserver.New(resourcesConnection, repositoryManager, gitHubConnection, mailer, licenseManager, webserverPort)
 	if err != nil {
 		panic(err)
 	}

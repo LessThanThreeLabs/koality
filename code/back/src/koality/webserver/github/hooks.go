@@ -99,7 +99,8 @@ func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName
 
 func (gitHubHandler *GitHubHandler) checkSignature(payload []byte, hookSecret, signature string) bool {
 	hasher := hmac.New(sha1.New, []byte(hookSecret))
-	checksum := hasher.Sum(payload)
+	hasher.Write(payload)
+	checksum := hasher.Sum(nil)
 	hexString := hex.EncodeToString(checksum)
 	return hexString == signature
 }

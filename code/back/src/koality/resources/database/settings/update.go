@@ -217,6 +217,17 @@ func (updateHandler *UpdateHandler) SetGitHubEnterpriseSettings(baseUri, oAuthCl
 	return gitHubEnterpriseSettings, nil
 }
 
+func (updateHandler *UpdateHandler) SetLicenseSettings(licenseKey, serverId string, maxExecutors, licenseCheckFailures uint32, isValid bool, invalidReason string) (*resources.LicenseSettings, error) {
+	licenseSettings := &resources.LicenseSettings{licenseKey, serverId, maxExecutors, licenseCheckFailures, isValid, invalidReason}
+
+	if err := updateHandler.setSetting(licenseSettingsLocator, licenseSettings); err != nil {
+		return nil, err
+	}
+
+	updateHandler.subscriptionHandler.FireLicenseSettingsUpdatedEvent(licenseSettings)
+	return licenseSettings, nil
+}
+
 func (updateHandler *UpdateHandler) ResetApiKey() (resources.ApiKey, error) {
 	var apiKey resources.ApiKey
 
