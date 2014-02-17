@@ -55,7 +55,7 @@ func IsLoggedOutWrapper(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func CheckCsrfTokenWraper(sessionStore sessions.Store, sessionName string, router *mux.Router, searchQuery bool) http.HandlerFunc {
+func CheckCsrfTokenWrapper(sessionStore sessions.Store, sessionName string, router *mux.Router, searchQuery bool) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		var csrfTokenToVerify string
 		if searchQuery {

@@ -52,8 +52,8 @@ func (webserver *Webserver) Start() error {
 		return err
 	}
 
-	hasHeaderCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router, false)
-	hasQueryCsrfTokenWrapper := middleware.CheckCsrfTokenWraper(sessionStore, webserver.sessionName, router, true)
+	hasHeaderCsrfTokenWrapper := middleware.CheckCsrfTokenWrapper(sessionStore, webserver.sessionName, router, false)
+	hasQueryCsrfTokenWrapper := middleware.CheckCsrfTokenWrapper(sessionStore, webserver.sessionName, router, true)
 	hasApiKeyWrapper := middleware.HasApiKeyWrapper(webserver.resourcesConnection, router)
 
 	loadUserIdRouter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
