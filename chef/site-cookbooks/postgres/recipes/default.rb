@@ -36,8 +36,12 @@ execute "create-role" do
 	not_if "psql -c \"SELECT 1 FROM pg_user WHERE usename='#{node[:postgres][:username]}'\" | grep -q 1", :user => "postgres"
 end
 
-execute "create-database" do
-	user "postgres"
-	command "createdb #{node[:postgres][:database_name]} --template template0 --locale #{node[:postgres][:locale]} --encoding #{node[:postgres][:character_encoding]}"
-	not_if "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{node[:postgres][:database_name]}'\" | grep -q 1", :user => "postgres"
+node[:postgres][:database_names].each do |database_name|
+	execute "create-database-#{database_name}" do
+		user "postgres"
+		command "createdb #{database_name} --template template0 --locale #{node[:postgres][:locale]} --encoding #{node[:postgres][:character_encoding]}"
+		not_if "psql -c \"SELECT 1 FROM pg_database WHERE datname='#{database_name}'\" | grep -q 1", :user => "postgres"
+	end
 end
+
+

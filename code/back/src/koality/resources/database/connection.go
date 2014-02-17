@@ -102,12 +102,12 @@ func New() (*resources.Connection, error) {
 }
 
 func getSchemaLocation() (string, error) {
-	relativePath := path.Join("postgres", "schema.sql")
+	relativePath := path.Join("postgres", "koality-schema.sql")
 	return pathtranslator.TranslatePathAndCheckExists(relativePath)
 }
 
 func getDumpLocation() (string, error) {
-	relativePath := path.Join("postgres", "backup.tar")
+	relativePath := path.Join("postgres", "test-backup.tar")
 	return pathtranslator.TranslatePath(relativePath)
 }
 
