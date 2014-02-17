@@ -17,6 +17,7 @@ import (
 	"koality/webserver/github"
 	"koality/webserver/google"
 	"koality/webserver/middleware"
+	"koality/webserver/pools"
 	"koality/webserver/repositories"
 	"koality/webserver/settings"
 	"koality/webserver/stages"
@@ -150,6 +151,11 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	poolsHandler, err := pools.New(webserver.resourcesConnection)
+	if err != nil {
+		return nil, err
+	}
+
 	settingsHandler, err := settings.New(webserver.resourcesConnection, sessionStore, webserver.sessionName, passwordHasher, webserver.licenseManager)
 	if err != nil {
 		return nil, err
@@ -203,6 +209,9 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		stageRunsSubrouter := appSubrouter.PathPrefix("/stageRuns").Subrouter()
 		stagesHandler.WireStageRunsAppSubroutes(stageRunsSubrouter)
 
+		poolsSubrouter := appSubrouter.PathPrefix("/pools").Subrouter()
+		poolsHandler.WirePoolsAppSubroutes(poolsSubrouter)
+
 		settingsSubrouter := appSubrouter.PathPrefix("/settings").Subrouter()
 		settingsHandler.WireAppSubroutes(settingsSubrouter)
 
@@ -227,6 +236,9 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 		stageRunsSubrouter := apiSubrouter.PathPrefix("/stageRuns").Subrouter()
 		stagesHandler.WireStageRunsApiSubroutes(stageRunsSubrouter)
+
+		poolsSubrouter := apiSubrouter.PathPrefix("/pools").Subrouter()
+		poolsHandler.WirePoolsApiSubroutes(poolsSubrouter)
 
 		settingsSubrouter := apiSubrouter.PathPrefix("/settings").Subrouter()
 		settingsHandler.WireApiSubroutes(settingsSubrouter)

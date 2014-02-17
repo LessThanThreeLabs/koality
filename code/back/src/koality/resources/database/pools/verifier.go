@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	allowedEc2InstanceTypes []string = []string{"m1.small", "m1.medium", "m1.large", "m1.xlarge",
+	AllowedEc2InstanceTypes []string = []string{"m1.small", "m1.medium", "m1.large", "m1.xlarge",
 		"m2.xlarge", "m2.2xlarge", "m2.4xlarge", "cr1.8xlarge",
 		"m3.xlarge", "m3.2xlarge",
 		"c1.medium", "c1.xlarge", "cc2.8xlarge",
@@ -121,12 +121,12 @@ func (verifier *Verifier) verifyEc2VpcSubnetId(vpcSubnetId string) error {
 }
 
 func (verifier *Verifier) verifyEc2InstanceType(instanceType string) error {
-	for _, allowedEc2InstanceType := range allowedEc2InstanceTypes {
+	for _, allowedEc2InstanceType := range AllowedEc2InstanceTypes {
 		if instanceType == allowedEc2InstanceType {
 			return nil
 		}
 	}
-	return fmt.Errorf("Instance type must be one of: %v", allowedEc2InstanceTypes)
+	return fmt.Errorf("Instance type must be one of: %v", AllowedEc2InstanceTypes)
 }
 
 func (verifier *Verifier) verifyReadyAndMaxInstances(numReadyInstances, numMaxInstances uint64) error {

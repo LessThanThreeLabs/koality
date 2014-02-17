@@ -3,10 +3,18 @@
 
 	<panel-body>
 		<form name="poolForm" novalidate>
+			<input type="hidden" name="id" value="{{pool.id}}">
 			<div class="formContainer centered"><table>
 				<tr>
+					<td class="fieldName"><label>Name</label></td>
+					<td class="inputField"><input type="text" ng-model="pool.name" name="name" ng-maxlength="128" focused required>
+				</tr>
+			</table>
+			<div class="formDivider"></div>
+			<table>
+				<tr>
 					<td class="fieldName"><label>Access Key</label></td>
-					<td class="inputField"><input type="text" ng-model="pool.awsKeys.accessKey" name="accessKey" ng-pattern="/^[\w]+$/" ng-minlength="16" ng-maxlength="32" focused required></td>
+					<td class="inputField"><input type="text" ng-model="pool.awsKeys.accessKey" name="accessKey" ng-pattern="/^[\w]+$/" ng-minlength="16" ng-maxlength="32" required></td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>Secret Key </label></td>
@@ -14,7 +22,7 @@
 				</tr>
 				<tr>
 					<td class="fieldName"><label>User Data</label></td>
-					<td class="inputField"><textarea id="userDataField" type="text" ng-model="pool.verifierPoolSettings.userData" name="userData"></textarea></td>
+					<td class="inputField"><textarea id="userDataField" type="text" ng-model="pool.verifierPoolSettings.userData" name="userData">{{pool.verifierPoolSettings.userData}}</textarea></td>
 					<td class="note">This is a note about the content to the left, User Data. <a href="#">Link to Documentation</a> with more information.</td>
 				</tr>
 			</table>
@@ -64,6 +72,11 @@
 					<td><input type="number" ng-model="pool.verifierPoolSettings.rootDriveSize" name="rootDriveSize" min=8 required></td>
 				</tr>
 			</table></div>
+			<div>
+				<div class="formDivider"></div>
+
+				<busy-button centered busy="makingRequest" click="submit()" disabled="poolForm.$pristine">Save Changes</busy-button>
+			</div>
 		</form>
 	</panel-body>
 </div>
