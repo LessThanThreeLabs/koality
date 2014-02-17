@@ -102,7 +102,6 @@ CREATE TABLE IF NOT EXISTS snapshots (
 	id 					serial PRIMARY KEY,
 	pool_id				integer NOT NULL references ec2_pools(id) ON DELETE CASCADE,
 	image_id			varchar(12),
-	image_type			varchar(20) NOT NULL,
 	status 				varchar(32) NOT NULL,
 	created 			timestamp with time zone NOT NULL DEFAULT current_timestamp,
 	started				timestamp with time zone,

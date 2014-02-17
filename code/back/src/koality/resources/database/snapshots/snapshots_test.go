@@ -18,22 +18,9 @@ func TestCreateInvalidSnapshot(test *testing.T) {
 	}
 	defer connection.Close()
 
-	pools, err := connection.Pools.Read.GetAllEc2Pools()
-	if err != nil {
-		test.Fatal(err)
-	}
-
-	firstPool := pools[0]
-	imageType := "ec2"
-
-	_, err = connection.Snapshots.Create.Create(0, imageType, nil)
+	_, err = connection.Snapshots.Create.Create(1337, nil)
 	if _, ok := err.(resources.NoSuchPoolError); !ok {
-		test.Fatal("Expected NoSuchPoolError when providing invalid repository id")
-	}
-
-	_, err = connection.Snapshots.Create.Create(firstPool.Id, "hpcloud (lol)", nil)
-	if err == nil {
-		test.Fatal("Expected error after providing an incorrect image type")
+		test.Fatal("Expected NoSuchPoolError when providing invalid pool id")
 	}
 }
 
@@ -76,16 +63,13 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 	}
 
 	firstPool := pools[0]
-	imageType := "ec2"
-	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType, nil)
+	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, nil)
 	if err != nil {
 		test.Fatal(err)
 	}
 
 	if snapshot.PoolId != firstPool.Id {
 		test.Fatal("snapshot.PoolId mismatch")
-	} else if snapshot.ImageType != imageType {
-		test.Fatal("snapshot.ImageType mismatch")
 	}
 
 	select {
@@ -98,8 +82,6 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 		test.Fatal("Bad snapshot.Id in snapshot creation event")
 	} else if createdEventSnapshot.PoolId != snapshot.PoolId {
 		test.Fatal("Bad snapshot.PoolId in snapshot creation event")
-	} else if createdEventSnapshot.ImageType != snapshot.ImageType {
-		test.Fatal("Bad snapshot.ImageType in snapshot creation event")
 	}
 
 	snapshot2, err := connection.Snapshots.Read.Get(snapshot.Id)
@@ -111,8 +93,6 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 		test.Fatal("snapshot.Id mismatch")
 	} else if snapshot.PoolId != snapshot2.PoolId {
 		test.Fatal("snapshot.PoolId mismatch")
-	} else if snapshot.ImageType != snapshot2.ImageType {
-		test.Fatal("snapshot.ImageType mismatch")
 	}
 
 	snapshot3, err := connection.Snapshots.Read.GetByImageId(snapshot.ImageId)
@@ -124,8 +104,6 @@ func TestCreateAndDeleteSnapshot(test *testing.T) {
 		test.Fatal("snapshot.Id mismatch")
 	} else if snapshot.PoolId != snapshot3.PoolId {
 		test.Fatal("snapshot.PoolId mismatch")
-	} else if snapshot.ImageType != snapshot3.ImageType {
-		test.Fatal("snapshot.ImageType mismatch")
 	}
 
 	snapshots, err := connection.Snapshots.Read.GetAllForPool(firstPool.Id)
@@ -193,9 +171,7 @@ func TestSnapshotStatuses(test *testing.T) {
 	}
 
 	firstPool := pools[0]
-	imageType := "ec2"
-
-	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType, nil)
+	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, nil)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -277,9 +253,7 @@ func TestSnapshotTimes(test *testing.T) {
 	}
 
 	firstPool := pools[0]
-	imageType := "ec2"
-
-	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, imageType, nil)
+	snapshot, err := connection.Snapshots.Create.Create(firstPool.Id, nil)
 	if err != nil {
 		test.Fatal(err)
 	}

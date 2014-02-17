@@ -24,16 +24,16 @@ func NewCreateHandler(database *sql.DB, verifier *Verifier, readHandler resource
 	return &CreateHandler{database, verifier, readHandler, buildHandler, subscriptionHandler}, nil
 }
 
-func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repositoryInformation []*resources.CoreBuildInformation) (*resources.Snapshot, error) {
-	err := createHandler.getSnapshotParamsError(poolId, imageType)
+func (createHandler *CreateHandler) Create(poolId uint64, repositoryInformation []*resources.CoreBuildInformation) (*resources.Snapshot, error) {
+	err := createHandler.getSnapshotParamsError(poolId)
 	if err != nil {
 		return nil, err
 	}
 
 	id := uint64(0)
-	query := "INSERT INTO snapshots (pool_id, image_id, image_type, status)" +
-		" VALUES ($1, $2, $3, $4) RETURNING id"
-	err = createHandler.database.QueryRow(query, poolId, defaultImageId, imageType, initialSnapshotStatus).Scan(&id)
+	query := "INSERT INTO snapshots (pool_id, image_id, status)" +
+		" VALUES ($1, $2, $3) RETURNING id"
+	err = createHandler.database.QueryRow(query, poolId, defaultImageId, initialSnapshotStatus).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +54,8 @@ func (createHandler *CreateHandler) Create(poolId uint64, imageType string, repo
 	return snapshot, nil
 }
 
-func (createHandler *CreateHandler) getSnapshotParamsError(poolId uint64, imageType string) error {
-	if err := createHandler.verifier.verifyImageType(imageType); err != nil {
-		return err
-	} else if err := createHandler.verifier.verifyPoolExists(poolId); err != nil {
+func (createHandler *CreateHandler) getSnapshotParamsError(poolId uint64) error {
+	if err := createHandler.verifier.verifyPoolExists(poolId); err != nil {
 		return err
 	}
 	return nil

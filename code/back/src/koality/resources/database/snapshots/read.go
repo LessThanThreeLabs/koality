@@ -24,7 +24,7 @@ func (readHandler *ReadHandler) scanSnapshot(scannable Scannable) (*resources.Sn
 
 	var imageId sql.NullString
 	var deletedId uint64
-	err := scannable.Scan(&snapshot.Id, &snapshot.PoolId, &imageId, &snapshot.ImageType, &snapshot.Status,
+	err := scannable.Scan(&snapshot.Id, &snapshot.PoolId, &imageId, &snapshot.Status,
 		&snapshot.Created, &snapshot.Started, &snapshot.Ended, &deletedId)
 	if err == sql.ErrNoRows {
 		return nil, resources.NoSuchSnapshotError{"Unable to find snapshot"}
@@ -41,21 +41,21 @@ func (readHandler *ReadHandler) scanSnapshot(scannable Scannable) (*resources.Sn
 }
 
 func (readHandler *ReadHandler) Get(snapshotId uint64) (*resources.Snapshot, error) {
-	query := "SELECT id, pool_id, image_id, image_type, status, created, started, ended, deleted" +
+	query := "SELECT id, pool_id, image_id, status, created, started, ended, deleted" +
 		" FROM snapshots WHERE id=$1"
 	row := readHandler.database.QueryRow(query, snapshotId)
 	return readHandler.scanSnapshot(row)
 }
 
 func (readHandler *ReadHandler) GetByImageId(imageId string) (*resources.Snapshot, error) {
-	query := "SELECT id, pool_id, image_id, image_type, status, created, started, ended, deleted" +
+	query := "SELECT id, pool_id, image_id, status, created, started, ended, deleted" +
 		" FROM snapshots WHERE image_id=$1"
 	row := readHandler.database.QueryRow(query, imageId)
 	return readHandler.scanSnapshot(row)
 }
 
 func (readHandler *ReadHandler) GetAllForPool(poolId uint64) ([]resources.Snapshot, error) {
-	query := "SELECT id, pool_id, image_id, image_type, status, created, started, ended, deleted" +
+	query := "SELECT id, pool_id, image_id, status, created, started, ended, deleted" +
 		" FROM snapshots WHERE pool_id = $1" +
 		" ORDER BY id DESC"
 	rows, err := readHandler.database.Query(query, poolId)
