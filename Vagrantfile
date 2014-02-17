@@ -10,7 +10,7 @@ Vagrant.require_version ">= 1.4.0"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 	config.vm.box = "koality-v0"
 	config.vm.box_url = "https://s3-us-west-2.amazonaws.com/koality-boxes/v0.box"
-	
+
 	config.ssh.username = "koality"
 
 	config.vm.provider "virtualbox" do |v|
@@ -32,45 +32,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		chefRoot = "chef"
 		chef.cookbooks_path = ["#{chefRoot}/cookbooks", "#{chefRoot}/site-cookbooks"]
 		chef.data_bags_path = "#{chefRoot}/databags"
+		chef.roles_path = "#{chefRoot}/roles"
 
-		chef.add_recipe "koality"
-		chef.add_recipe "apt"
-		chef.add_recipe "build-essential"
-		chef.add_recipe "gdb"
-		chef.add_recipe "hg"
-		chef.add_recipe "vim"
-		chef.add_recipe "git"
-		chef.add_recipe "oh-my-zsh"
-		chef.add_recipe "golang"
-		chef.add_recipe "nginx"
-		chef.add_recipe "postgres"
-		chef.add_recipe "nodejs"
-		chef.add_recipe "npm"
-		chef.add_recipe "icedcoffeescript"
-		chef.add_recipe "grunt"
-
-		chef.json = {
-			:koality => {
-				:location => KOALITY_REPOSITORY_DIRECTORY
-			},
-			:oh_my_zsh => {
-				:users => [
-					{
-					:login => "koality",
-					:theme => {:name => "bbland", :source => "https://gist.github.com/BrianBland/7884348/raw/934802429044760bc5a2b90c773e71b13d261563/bbland.zsh-theme" },
-					:plugins => ["git", "golang"]
-					}
-				]
-			},
-			:go => {
-				:version => "1.2",
-				:gopath => "#{KOALITY_REPOSITORY_DIRECTORY}/code/back",
-				:gobin => "#{KOALITY_REPOSITORY_DIRECTORY}/code/back/bin"
-			},
-			:nodejs => {
-				:version => "0.10.15",
-				:install_method => "package"
-			}
-		}
+		chef.add_role "development"
 	end
 end

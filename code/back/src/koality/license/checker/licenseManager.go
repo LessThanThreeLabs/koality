@@ -1,10 +1,9 @@
-package licensemanager
+package licensechecker
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
-	"github.com/LessThanThreeLabs/license-server/license/checker"
 	"koality/resources"
 	"net"
 	"strings"
@@ -13,10 +12,10 @@ import (
 
 type LicenseManager struct {
 	resourcesConnection *resources.Connection
-	licenseChecker      *licensechecker.LicenseChecker
+	licenseChecker      LicenseChecker
 }
 
-func New(resourcesConnection *resources.Connection, licenseChecker *licensechecker.LicenseChecker) *LicenseManager {
+func NewLicenseManager(resourcesConnection *resources.Connection, licenseChecker LicenseChecker) *LicenseManager {
 	return &LicenseManager{resourcesConnection, licenseChecker}
 }
 

@@ -1,0 +1,7 @@
+{
+	"host": "localhost",
+	"username": "koality",
+	"password": "lt3",
+	"databaseName": "koalityLicense",
+	"sslMode": "disable"
+}
