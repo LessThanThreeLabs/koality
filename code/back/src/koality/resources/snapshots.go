@@ -8,7 +8,6 @@ type Snapshot struct {
 	Id        uint64
 	PoolId    uint64
 	ImageId   string
-	ImageType string
 	Status    string
 	Created   *time.Time
 	Started   *time.Time
@@ -25,7 +24,7 @@ type SnapshotsHandler struct {
 }
 
 type SnapshotsCreateHandler interface {
-	Create(poolId uint64, imageType string, repositoryInformation []*CoreBuildInformation) (*Snapshot, error)
+	Create(poolId uint64, repositoryInformation []*CoreBuildInformation) (*Snapshot, error)
 }
 
 type SnapshotsReadHandler interface {

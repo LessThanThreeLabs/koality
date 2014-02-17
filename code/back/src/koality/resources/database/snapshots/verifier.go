@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	allowedImageTypes []string = []string{"ec2"}
-	allowedStatuses   []string = []string{"running", "succeeded", "failed", "cancelled"}
+	allowedStatuses []string = []string{"running", "succeeded", "failed", "cancelled"}
 )
 
 type Verifier struct {
@@ -19,15 +18,6 @@ type Verifier struct {
 
 func NewVerifier(database *sql.DB) (*Verifier, error) {
 	return &Verifier{database}, nil
-}
-
-func (verifier *Verifier) verifyImageType(imageType string) error {
-	for _, allowedImageType := range allowedImageTypes {
-		if imageType == allowedImageType {
-			return nil
-		}
-	}
-	return fmt.Errorf("Instance type must be one of: %v", allowedImageTypes)
 }
 
 func (verifier *Verifier) verifyStatus(status string) error {
