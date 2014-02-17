@@ -3,13 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/LessThanThreeLabs/license-server/license/checker"
 	"koality/build/debuginstancerunner"
 	"koality/build/snapshotrunner"
 	"koality/build/testrunner"
 	"koality/github"
 	"koality/internalapi"
-	"koality/licensemanager"
+	"koality/license/checker"
 	"koality/mail"
 	"koality/notify"
 	"koality/repositorymanager"
@@ -87,9 +86,9 @@ func getResourcesConnection() *resources.Connection {
 	return resourcesConnection
 }
 
-func getLicenseManager(resourcesConnection *resources.Connection) *licensemanager.LicenseManager {
+func getLicenseManager(resourcesConnection *resources.Connection) *licensechecker.LicenseManager {
 	licenseChecker := licensechecker.New("http://localhost:9000")
-	licenseManager := licensemanager.New(resourcesConnection, licenseChecker)
+	licenseManager := licensechecker.NewLicenseManager(resourcesConnection, licenseChecker)
 	go licenseManager.MonitorLicense()
 	return licenseManager
 }
@@ -129,7 +128,7 @@ func getVirtualMachinePools(resourcesConnection *resources.Connection, ec2Broker
 	}
 }
 
-func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer, licenseManager *licensemanager.LicenseManager) {
+func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer, licenseManager *licensechecker.LicenseManager) {
 	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
 	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
 	if err := gitHubConnection.SubscribeToEvents(); err != nil {

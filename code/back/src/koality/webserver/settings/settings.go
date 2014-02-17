@@ -3,7 +3,7 @@ package settings
 import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"koality/licensemanager"
+	"koality/license/checker"
 	"koality/resources"
 	"koality/webserver/middleware"
 )
@@ -86,10 +86,10 @@ type SettingsHandler struct {
 	sessionStore        sessions.Store
 	sessionName         string
 	passwordHasher      *resources.PasswordHasher
-	licenseManager      *licensemanager.LicenseManager
+	licenseManager      *licensechecker.LicenseManager
 }
 
-func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, licenseManager *licensemanager.LicenseManager) (*SettingsHandler, error) {
+func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, licenseManager *licensechecker.LicenseManager) (*SettingsHandler, error) {
 	return &SettingsHandler{resourcesConnection, sessionStore, sessionName, passwordHasher, licenseManager}, nil
 }
 
