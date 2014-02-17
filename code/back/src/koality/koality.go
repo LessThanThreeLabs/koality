@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/LessThanThreeLabs/license-server/license/checker"
 	"koality/build/debuginstancerunner"
+	"koality/build/snapshotrunner"
 	"koality/build/testrunner"
 	"koality/github"
 	"koality/internalapi"
@@ -58,6 +59,11 @@ func main() {
 
 	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, notify.New(resourcesConnection, mailer))
 	if err := debugInstanceRunner.SubscribeToEvents(); err != nil {
+		panic(err)
+	}
+
+	snapshotRunner := snapshotrunner.New(resourcesConnection, poolManager)
+	if err := snapshotRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 

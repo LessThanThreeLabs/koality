@@ -1,4 +1,4 @@
-package snapshotter
+package snapshotrunner
 
 import (
 	"fmt"
