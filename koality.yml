@@ -31,7 +31,7 @@ test:
       script:
       - |
         cd code/back/src/koality
-        find * -name "*_test.go" | sed -e "s/\/[^/]*_test.go//" | uniq | while read testDirectory; do
+        find * -name "*_test.go" | sed -e "s/\/[^/]*_test.go//" | sort | uniq | while read testDirectory; do
           echo - ${testDirectory}:
           echo "    script: go test -v koality/$testDirectory"
         done
