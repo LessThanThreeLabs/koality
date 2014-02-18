@@ -10,7 +10,7 @@ import (
 )
 
 type LicenseChecker interface {
-	CheckLicense(licenseKey, serverId string) (*license.CheckResponse, error)
+	CheckLicense(licenseKey, serverId string) (*license.CheckLicenseResponse, error)
 }
 
 type licenseChecker struct {
@@ -21,14 +21,14 @@ func New(serverUri string) LicenseChecker {
 	return &licenseChecker{serverUri}
 }
 
-func (licenseChecker *licenseChecker) CheckLicense(licenseKey, serverId string) (*license.CheckResponse, error) {
-	checkRequest := &license.CheckRequest{licenseKey, serverId}
-	jsonedCheckRequest, err := json.Marshal(checkRequest)
+func (licenseChecker *licenseChecker) CheckLicense(licenseKey, serverId string) (*license.CheckLicenseResponse, error) {
+	checkLicenseRequest := &license.CheckLicenseRequest{licenseKey, serverId}
+	jsonedCheckLicenseRequest, err := json.Marshal(checkLicenseRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := http.Post(licenseChecker.serverUri+license.CheckRoute, "application/json", bytes.NewReader(jsonedCheckRequest))
+	response, err := http.Post(licenseChecker.serverUri+license.LicenseRoute+license.CheckLicenseSubroute, "application/json", bytes.NewReader(jsonedCheckLicenseRequest))
 	if err != nil {
 		return nil, err
 	} else if response.StatusCode != http.StatusOK {
@@ -37,11 +37,11 @@ func (licenseChecker *licenseChecker) CheckLicense(licenseKey, serverId string) 
 		return nil, fmt.Errorf("License check failed with HTTP status: %s, %s", response.Status, errorMessage)
 	}
 
-	checkResponse := new(license.CheckResponse)
+	checkLicenseResponse := new(license.CheckLicenseResponse)
 	defer response.Body.Close()
-	if err = json.NewDecoder(response.Body).Decode(checkResponse); err != nil {
+	if err = json.NewDecoder(response.Body).Decode(checkLicenseResponse); err != nil {
 		return nil, err
 	}
 
-	return checkResponse, nil
+	return checkLicenseResponse, nil
 }

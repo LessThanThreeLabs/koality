@@ -1,7 +1,14 @@
 {
-	"host": "localhost",
-	"username": "koality",
-	"password": "lt3",
-	"databaseName": "koalityLicense",
-	"sslMode": "disable"
+	"database": {
+		"host": "localhost",
+		"username": "koality",
+		"password": "lt3",
+		"databaseName": "koalityLicense",
+		"sslMode": "disable"
+	},
+	"s3": {
+		"awsAccessKeyId": "",
+		"awsSecretAccessKey": "",
+		"bucketName": "koality_release"
+	}
 }

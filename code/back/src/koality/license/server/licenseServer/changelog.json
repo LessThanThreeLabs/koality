@@ -1,0 +1,14 @@
+[
+    {
+        "changes": [
+            "Added stuff"
+        ],
+        "versionAdded": "0.0.1"
+    },
+    {
+        "changes": [
+            "Added more stuff"
+        ],
+        "versionAdded": "0.8.3"
+    }
+]

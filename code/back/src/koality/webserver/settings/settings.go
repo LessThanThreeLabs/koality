@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"koality/license/checker"
@@ -255,7 +256,9 @@ func getSanitizedGitHubEnterpriseSettings(settings *resources.GitHubEnterpriseSe
 func getSanitizedLicenseSettings(settings *resources.LicenseSettings) *sanitizedLicenseSettings {
 	status := "Active"
 	if !settings.IsValid {
-		status = settings.InvalidReason
+		status = "Invalid: " + settings.InvalidReason
+	} else if settings.InvalidReason != "" {
+		status = fmt.Sprintf("Warning (%d/%d): %s", settings.LicenseCheckFailures, licensechecker.MaxLicenseCheckFailures, settings.InvalidReason)
 	}
 	return &sanitizedLicenseSettings{
 		LicenseKey:   settings.LicenseKey,

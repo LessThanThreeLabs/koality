@@ -2,7 +2,7 @@ package license
 
 import "errors"
 
-// Check
+// License Check
 
 const (
 	LicenseNotFound    = "License does not exist."
@@ -16,36 +16,65 @@ var (
 	ServerIdMismatchError = errors.New(ServerIdMismatch)
 )
 
-type CheckRequest struct {
+type CheckLicenseRequest struct {
 	LicenseKey string `json:"licenseKey"`
 	ServerId   string `json:"serverId"`
 }
 
-type CheckResponse struct {
+type CheckLicenseResponse struct {
 	IsValid      bool   `json:"isValid"`
 	ErrorReason  string `json:"errorReason,omitempty"`
 	MaxExecutors uint32 `json:"maxExecutors,omitempty"`
 }
 
-// Activation
+// License Activation
 
-type ActivationRequest struct {
+type LicenseActivationRequest struct {
 	LicenseKey string `json:"licenseKey"`
 }
 
-// Set Max Executors
+// Set License Max Executors
 
 type SetMaxExecutorsRequest struct {
 	LicenseKey   string `json:"licenseKey"`
 	MaxExecutors uint32 `json:"maxExecutors"`
 }
 
-// Generate
+// Generate License
 
-type GenerateRequest struct {
+type GenerateLicenseRequest struct {
 	MaxExecutors uint32 `json:"maxExecutors"`
 }
 
-type GenerateResponse struct {
+type GenerateLicenseResponse struct {
 	LicenseKey string `json:"licenseKey"`
+}
+
+// Check Upgrade
+
+type CheckUpgradeRequest struct {
+	LicenseKey     string `json:"licenseKey"`
+	ServerId       string `json:"serverId"`
+	CurrentVersion string `json:"currentVersion"`
+}
+
+type CheckUpgradeResponse struct {
+	HasUpgrade bool      `json:"hasUpgrade"`
+	NewVersion string    `json:"newVersion,omitempty"`
+	Changelog  Changelog `json:"changelog,omitempty"`
+}
+
+type Changelog []ChangeInfo
+
+type ChangeInfo struct {
+	VersionAdded string   `json:"versionAdded"`
+	Changes      []string `json:"changes"`
+}
+
+// Download Upgrade
+
+type DownloadUpgradeRequest struct {
+	LicenseKey string `json:"licenseKey"`
+	ServerId   string `json:"serverId"`
+	Version    string `json:"version"`
 }

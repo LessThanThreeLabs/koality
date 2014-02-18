@@ -16,7 +16,7 @@ func (licenseServer *LicenseServer) reactivateLicense(writer http.ResponseWriter
 }
 
 func (licenseServer *LicenseServer) handleLicenseActivationRequest(shouldBeActive bool, writer http.ResponseWriter, request *http.Request) {
-	licenseActivationRequest := new(license.ActivationRequest)
+	licenseActivationRequest := new(license.LicenseActivationRequest)
 	defer request.Body.Close()
 	if err := json.NewDecoder(request.Body).Decode(licenseActivationRequest); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

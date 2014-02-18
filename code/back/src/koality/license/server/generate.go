@@ -12,7 +12,7 @@ import (
 )
 
 func (licenseServer *LicenseServer) generateLicense(writer http.ResponseWriter, request *http.Request) {
-	licenseGenerateRequest := new(license.GenerateRequest)
+	licenseGenerateRequest := new(license.GenerateLicenseRequest)
 	defer request.Body.Close()
 	if err := json.NewDecoder(request.Body).Decode(licenseGenerateRequest); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -42,7 +42,7 @@ func (licenseServer *LicenseServer) generateLicense(writer http.ResponseWriter, 
 		return
 	}
 
-	licenseGenerateResponse := license.GenerateResponse{
+	licenseGenerateResponse := license.GenerateLicenseResponse{
 		LicenseKey: licenseKey,
 	}
 

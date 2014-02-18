@@ -10,27 +10,27 @@ import (
 )
 
 func (licenseServer *LicenseServer) checkLicense(writer http.ResponseWriter, request *http.Request) {
-	licenseCheckRequest := new(license.CheckRequest)
+	checkLicenseRequest := new(license.CheckLicenseRequest)
 	defer request.Body.Close()
-	if err := json.NewDecoder(request.Body).Decode(licenseCheckRequest); err != nil {
+	if err := json.NewDecoder(request.Body).Decode(checkLicenseRequest); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
 	}
 
-	if licenseCheckRequest.LicenseKey == "" {
+	if checkLicenseRequest.LicenseKey == "" {
 		writer.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(writer, "Must provide a license key")
 		return
-	} else if licenseCheckRequest.ServerId == "" {
+	} else if checkLicenseRequest.ServerId == "" {
 		writer.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(writer, "Must provide a server id")
 		return
 	}
 
-	licenseCheckResponse, err := licenseServer.checkLicenseKey(licenseCheckRequest)
+	checkLicenseResponse, err := licenseServer.checkLicenseKey(checkLicenseRequest)
 	if err == license.NotFoundError || err == license.DeactivatedError || err == license.ServerIdMismatchError {
-		licenseCheckResponse = &license.CheckResponse{
+		checkLicenseResponse = &license.CheckLicenseResponse{
 			IsValid:     false,
 			ErrorReason: err.Error(),
 		}
@@ -40,7 +40,7 @@ func (licenseServer *LicenseServer) checkLicense(writer http.ResponseWriter, req
 		return
 	}
 
-	jsonedLicenseCheckResponse, err := json.Marshal(licenseCheckResponse)
+	jsonedLicenseCheckResponse, err := json.Marshal(checkLicenseResponse)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(writer, "Unable to stringify: %v", err)
@@ -51,7 +51,7 @@ func (licenseServer *LicenseServer) checkLicense(writer http.ResponseWriter, req
 	fmt.Fprintf(writer, "%s", jsonedLicenseCheckResponse)
 }
 
-func (licenseServer *LicenseServer) checkLicenseKey(licenseCheckRequest *license.CheckRequest) (*license.CheckResponse, error) {
+func (licenseServer *LicenseServer) checkLicenseKey(checkLicenseRequest *license.CheckLicenseRequest) (*license.CheckLicenseResponse, error) {
 	transaction, err := licenseServer.database.Begin()
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (licenseServer *LicenseServer) checkLicenseKey(licenseCheckRequest *license
 	var lastPing *time.Time
 
 	checkQuery := "SELECT max_executors, is_active, server_id, last_ping FROM licenses WHERE key=$1"
-	err = transaction.QueryRow(checkQuery, licenseCheckRequest.LicenseKey).Scan(&maxExecutors, &isActive, &serverId, &lastPing)
+	err = transaction.QueryRow(checkQuery, checkLicenseRequest.LicenseKey).Scan(&maxExecutors, &isActive, &serverId, &lastPing)
 	if err == sql.ErrNoRows {
 		transaction.Rollback()
 		return nil, license.NotFoundError
@@ -76,20 +76,20 @@ func (licenseServer *LicenseServer) checkLicenseKey(licenseCheckRequest *license
 		return nil, license.DeactivatedError
 	}
 
-	if serverId.String != licenseCheckRequest.ServerId && lastPing != nil && lastPing.Add(time.Hour).After(time.Now()) {
+	if serverId.String != checkLicenseRequest.ServerId && lastPing != nil && lastPing.Add(time.Hour).After(time.Now()) {
 		return nil, license.ServerIdMismatchError
 	}
 
 	updateQuery := "UPDATE licenses SET server_id=$1, last_ping=$2 WHERE key=$3"
-	_, err = transaction.Exec(updateQuery, licenseCheckRequest.ServerId, time.Now(), licenseCheckRequest.LicenseKey)
+	_, err = transaction.Exec(updateQuery, checkLicenseRequest.ServerId, time.Now(), checkLicenseRequest.LicenseKey)
 	if err != nil {
 		return nil, err
 	}
 
 	transaction.Commit()
-	licenseCheckResponse := license.CheckResponse{
+	checkLicenseResponse := license.CheckLicenseResponse{
 		IsValid:      true,
 		MaxExecutors: maxExecutors,
 	}
-	return &licenseCheckResponse, nil
+	return &checkLicenseResponse, nil
 }

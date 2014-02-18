@@ -1,9 +1,18 @@
 package license
 
 const (
-	CheckRoute           = "/check"
-	GenerateRoute        = "/generate"
-	DeactivateRoute      = "/deactivate"
-	ReactivateRoute      = "/reactivate"
-	SetMaxExecutorsRoute = "/maxExecutors"
+	PingRoute = "/ping"
+
+	LicenseRoute = "/license"
+
+	CheckLicenseSubroute           = "/check"
+	GenerateLicenseSubroute        = "/generate"
+	DeactivateLicenseSubroute      = "/deactivate"
+	ReactivateLicenseSubroute      = "/reactivate"
+	SetLicenseMaxExecutorsSubroute = "/maxExecutors"
+
+	UpgradeRoute = "/upgrade"
+
+	CheckUpgradeSubroute    = "/check"
+	DownloadUpgradeSubroute = "/download"
 )

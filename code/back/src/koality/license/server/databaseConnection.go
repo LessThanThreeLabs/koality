@@ -9,15 +9,7 @@ import (
 	"path"
 )
 
-type DatabaseConfiguration struct {
-	Host         string `json:"host"`         //= "localhost"
-	Username     string `json:"username"`     //= "koality"
-	Password     string `json:"password"`     //= "lt3"
-	DatabaseName string `json:"databaseName"` //= "koalityLicense"
-	SslMode      string `json:"sslMode"`      //= "disable"
-}
-
-func GetDatabaseConnection(databaseConfiguration *DatabaseConfiguration) (*sql.DB, error) {
+func GetDatabaseConnection(databaseConfiguration DatabaseConfiguration) (*sql.DB, error) {
 	setEnvironment(databaseConfiguration)
 	database, err := sql.Open("postgres", "")
 	if err != nil {
@@ -35,7 +27,7 @@ func GetDatabaseConnection(databaseConfiguration *DatabaseConfiguration) (*sql.D
 	return database, nil
 }
 
-func setEnvironment(databaseConfiguration *DatabaseConfiguration) {
+func setEnvironment(databaseConfiguration DatabaseConfiguration) {
 	os.Setenv("PGHOST", databaseConfiguration.Host)
 	os.Setenv("PGUSER", databaseConfiguration.Username)
 	os.Setenv("PGPASSWORD", databaseConfiguration.Password)

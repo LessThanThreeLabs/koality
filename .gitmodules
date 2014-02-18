@@ -85,6 +85,3 @@
 [submodule "code/back/src/github.com/gorilla/websocket"]
 	path = code/back/src/github.com/gorilla/websocket
 	url = git@github.com:gorilla/websocket.git
-[submodule "code/back/src/github.com/LessThanThreeLabs/license-server"]
-	path = code/back/src/github.com/LessThanThreeLabs/license-server
-	url = git@github.com:LessThanThreeLabs/license-server

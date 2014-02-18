@@ -4,18 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/mitchellh/goamz/s3"
 	"koality/license"
 	"net/http"
 )
 
 type LicenseServer struct {
 	database *sql.DB
+	bucket   *s3.Bucket
 	address  string
 }
 
-func New(database *sql.DB, port uint16) *LicenseServer {
+func New(database *sql.DB, bucket *s3.Bucket, port uint16) *LicenseServer {
 	address := fmt.Sprintf(":%d", port)
-	return &LicenseServer{database, address}
+	return &LicenseServer{database, bucket, address}
 }
 
 func (licenseServer *LicenseServer) Start() error {
@@ -27,12 +29,23 @@ func (licenseServer *LicenseServer) Start() error {
 func (licenseServer *LicenseServer) createRouter() *mux.Router {
 	router := mux.NewRouter()
 
-	router.HandleFunc(license.CheckRoute, licenseServer.checkLicense).Methods("POST")
-	router.HandleFunc(license.GenerateRoute, licenseServer.generateLicense).Methods("POST")
+	router.HandleFunc(license.PingRoute, func(writer http.ResponseWriter, request *http.Request) {
+		fmt.Fprint(writer, "pong")
+	}).Methods("GET")
 
-	router.HandleFunc(license.DeactivateRoute, licenseServer.deactivateLicense).Methods("PUT")
-	router.HandleFunc(license.ReactivateRoute, licenseServer.reactivateLicense).Methods("PUT")
-	router.HandleFunc(license.SetMaxExecutorsRoute, licenseServer.setMaxExecutors).Methods("PUT")
+	licenseSubRouter := router.PathPrefix(license.LicenseRoute).Subrouter()
+
+	licenseSubRouter.HandleFunc(license.CheckLicenseSubroute, licenseServer.checkLicense).Methods("POST")
+	licenseSubRouter.HandleFunc(license.GenerateLicenseSubroute, licenseServer.generateLicense).Methods("POST")
+
+	licenseSubRouter.HandleFunc(license.DeactivateLicenseSubroute, licenseServer.deactivateLicense).Methods("PUT")
+	licenseSubRouter.HandleFunc(license.ReactivateLicenseSubroute, licenseServer.reactivateLicense).Methods("PUT")
+	licenseSubRouter.HandleFunc(license.SetLicenseMaxExecutorsSubroute, licenseServer.setMaxExecutors).Methods("PUT")
+
+	upgradeSubRouter := router.PathPrefix(license.UpgradeRoute).Subrouter()
+
+	upgradeSubRouter.HandleFunc(license.CheckUpgradeSubroute, licenseServer.checkUpgrade).Methods("POST")
+	upgradeSubRouter.HandleFunc(license.DownloadUpgradeSubroute, licenseServer.downloadUpgrade).Methods("POST")
 
 	return router
 }

@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const MaxLicenseCheckFailures = 12
+
 type LicenseManager struct {
 	resourcesConnection *resources.Connection
 	licenseChecker      LicenseChecker
@@ -76,7 +78,7 @@ func (licenseManager *LicenseManager) checkLicenseAndRecordResult() error {
 
 	licenseCheckResponse, err := licenseManager.licenseChecker.CheckLicense(licenseSettings.LicenseKey, licenseSettings.ServerId)
 	if err != nil {
-		return licenseManager.recordLicenseCheckFailure("Error: " + err.Error())
+		return licenseManager.recordLicenseCheckFailure("Unexpected license check error: " + err.Error())
 	} else if !licenseCheckResponse.IsValid {
 		return licenseManager.recordLicenseCheckFailure(licenseCheckResponse.ErrorReason)
 	} else {
@@ -107,7 +109,7 @@ func (licenseManager *LicenseManager) recordLicenseCheckFailure(reason string) e
 	isValid := licenseSettings.IsValid
 	maxExecutors := licenseSettings.MaxExecutors
 
-	if licenseCheckFailures > 12 {
+	if licenseCheckFailures >= MaxLicenseCheckFailures {
 		isValid = false
 		maxExecutors = 0
 	}
