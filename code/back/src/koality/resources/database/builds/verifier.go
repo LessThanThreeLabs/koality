@@ -171,15 +171,3 @@ func (verifier *Verifier) verifyChangesetExists(changesetId uint64) error {
 	}
 	return nil
 }
-
-func (verifier *Verifier) verifyShaPairDoesNotExist(headSha, baseSha string) error {
-	query := "SELECT id FROM changesets WHERE head_sha=$1 AND base_sha=$2"
-	err := verifier.database.QueryRow(query, headSha, baseSha).Scan(new(uint64))
-	if err != nil && err != sql.ErrNoRows {
-		return err
-	} else if err != sql.ErrNoRows {
-		errorText := fmt.Sprintf("Changeset already exists with head sha %s and base sha %s", headSha, baseSha)
-		return resources.ChangesetAlreadyExistsError{errorText}
-	}
-	return nil
-}
