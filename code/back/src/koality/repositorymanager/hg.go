@@ -44,7 +44,7 @@ func (repository *hgRepository) fetchWithPrivateKey(args ...string) (err error) 
 		return
 	}
 
-	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", shell.Quote(fmt.Sprintf("SSH_PRIVATE_KEY=%s %s -o ConnectTimeout=%s", keyPair.PrivateKey, defaultSshScript, defaultTimeout)), repository.remoteUri}, args...)...)); err != nil {
+	if err := RunCommand(Command(repository, nil, "pull", append([]string{"--ssh", shell.Quote(fmt.Sprintf("PRIVATE_KEY=%s %s -o ConnectTimeout=%s", keyPair.PrivateKey, defaultSshScript, defaultTimeout)), repository.remoteUri}, args...)...)); err != nil {
 		return err
 	}
 

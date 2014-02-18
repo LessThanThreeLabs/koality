@@ -17,7 +17,7 @@ type VcsCommand struct {
 	Stderr  *bytes.Buffer
 }
 
-func Command(repository Repository, Env []string, cmd string, args ...string) *VcsCommand {
+func Command(repository Repository, env []string, cmd string, args ...string) *VcsCommand {
 	arguments := append([]string{cmd}, args...)
 	command := exec.Command(repository.getVcsBaseCommand(), arguments...)
 
@@ -25,6 +25,7 @@ func Command(repository Repository, Env []string, cmd string, args ...string) *V
 	command.Stdout, command.Stderr = stdout, stderr
 
 	command.Dir = repository.getPath()
+	command.Env = env
 
 	return &VcsCommand{command, stdout, stderr}
 }
