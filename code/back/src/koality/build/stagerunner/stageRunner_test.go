@@ -68,7 +68,7 @@ func (suite *StageRunnerSuite) SetUpTest(check *gocheck.C) {
 
 	suite.build, err = suite.resourcesConnection.Builds.Create.Create(suite.repository.Id,
 		"1234567890123456789012345678901234567890", "1234567890123456789012345678901234567890",
-		"headMessage", "headUsername", "head@Ema.il", nil, "a@b.com", "someRef", true)
+		"headMessage", "headUsername", "head@Ema.il", nil, "a@b.com", "someRef", false, true)
 	check.Assert(err, gocheck.IsNil)
 
 	mockExports = nil

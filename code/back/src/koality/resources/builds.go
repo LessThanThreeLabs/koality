@@ -51,9 +51,9 @@ type BuildsHandler struct {
 }
 
 type BuildsCreateHandler interface {
-	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string, shouldMerge bool) (*Build, error)
+	Create(repositoryId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string, reuseChangeset, shouldMerge bool) (*Build, error)
 	CreateForSnapshot(repositoryId, snapshotId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify, ref string) (*Build, error)
-	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail string, patchContents []byte, emailToNotify, ref string) (*Build, error)
+	CreateForDebugInstance(repositoryId, debugInstanceId uint64, headSha, baseSha, headMessage, headUsername, headEmail, emailToNotify, ref string) (*Build, error)
 	CreateFromChangeset(repositoryId, changesetId uint64, emailToNotify, ref string, shouldMerge bool) (*Build, error)
 }
 
