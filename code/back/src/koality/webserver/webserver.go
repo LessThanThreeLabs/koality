@@ -12,6 +12,7 @@ import (
 	"koality/resources"
 	"koality/webserver/accounts"
 	"koality/webserver/builds"
+	"koality/webserver/events"
 	"koality/webserver/feedback"
 	"koality/webserver/github"
 	"koality/webserver/google"
@@ -65,6 +66,7 @@ func (webserver *Webserver) Start() error {
 		context.Set(request, "userId", userId)
 
 		if strings.HasPrefix(request.URL.Path, "/websockets/") {
+			router.ServeHTTP(writer, request)
 			hasQueryCsrfTokenWrapper(writer, request)
 		} else if strings.HasPrefix(request.URL.Path, "/app/") {
 			hasHeaderCsrfTokenWrapper(writer, request)
@@ -103,12 +105,22 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 		return nil, err
 	}
 
+	websocketsManager, err := websockets.NewManager()
+	if err != nil {
+		return nil, err
+	}
+
 	templatesHandler, err := templates.New(webserver.resourcesConnection, sessionStore, webserver.sessionName)
 	if err != nil {
 		return nil, err
 	}
 
-	websocketsHandler, err := websockets.New()
+	websocketsHandler, err := websockets.New(websocketsManager)
+	if err != nil {
+		return nil, err
+	}
+
+	eventsHandler, err := events.New(webserver.resourcesConnection, websocketsManager)
 	if err != nil {
 		return nil, err
 	}
@@ -169,6 +181,10 @@ func (webserver *Webserver) createRouter(sessionStore sessions.Store) (*mux.Rout
 
 	wireAppSubroutes := func() {
 		appSubrouter := router.PathPrefix("/app").Subrouter()
+
+		eventsSubrouter := appSubrouter.PathPrefix("/events").Subrouter()
+		eventsHandler.WireAppSubroutes(eventsSubrouter)
+
 		accountsSubrouter := appSubrouter.PathPrefix("/accounts").Subrouter()
 		accountsHandler.WireAppSubroutes(accountsSubrouter)
 

@@ -85,7 +85,6 @@ func createStartCleanTimer(connection *resources.Connection) func() {
 			timer.Reset(getDurationUntilNextClean())
 		}
 	}
-
 	return startCleanTimer
 }
 

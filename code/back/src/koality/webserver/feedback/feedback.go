@@ -63,6 +63,7 @@ func (feedbackHandler *FeedbackHandler) sendFeedback(writer http.ResponseWriter,
 	message = strings.Replace(html.EscapeString(message), "\n", "<br>", -1)
 	replyTo := []string{user.Email, "feedback@koalitycode.com"}
 	to := []string{"feedback@koalitycode.com"}
+
 	err = feedbackHandler.mailer.SendMail(fmt.Sprintf("feedback@%s", domainName), replyTo, to, "Feedback", message)
 	if _, ok := err.(mail.NoAuthProvidedError); ok {
 		var errorMessage string
