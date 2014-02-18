@@ -33,16 +33,16 @@ func (eventsHandler *EventsHandler) getSubscriptionIndex(subscriptionType subscr
 }
 
 func (eventsHandler *EventsHandler) addToSubscriptions(subscriptionType subscriptionType, subscription subscription) error {
-	eventsHandler.subscriptionsMutex.Lock()
-	defer eventsHandler.subscriptionsMutex.Unlock()
+	eventsHandler.subscriptionsRWMutex.Lock()
+	defer eventsHandler.subscriptionsRWMutex.Unlock()
 
 	eventsHandler.subscriptions[subscriptionType] = append(eventsHandler.subscriptions[subscriptionType], subscription)
 	return nil
 }
 
 func (eventsHandler *EventsHandler) removeFromSubscriptions(subscriptionType subscriptionType, userId, subscriptionId uint64) error {
-	eventsHandler.subscriptionsMutex.Lock()
-	defer eventsHandler.subscriptionsMutex.Unlock()
+	eventsHandler.subscriptionsRWMutex.Lock()
+	defer eventsHandler.subscriptionsRWMutex.Unlock()
 
 	subscriptionIndex := eventsHandler.getSubscriptionIndex(subscriptionType, userId, subscriptionId)
 	if subscriptionIndex < 0 {
@@ -53,4 +53,39 @@ func (eventsHandler *EventsHandler) removeFromSubscriptions(subscriptionType sub
 		eventsHandler.subscriptions[subscriptionType][:subscriptionIndex],
 		eventsHandler.subscriptions[subscriptionType][subscriptionIndex+1:]...)
 	return nil
+}
+
+func (eventsHandler *EventsHandler) handleEvent(subscriptionType subscriptionType, resourceId uint64, message interface{}) {
+	subscriptionIdsToDelete := make([]uint64, 0)
+
+	eventsHandler.subscriptionsRWMutex.RLock()
+	for _, subscription := range eventsHandler.subscriptions[subscriptionType] {
+		if subscription.allResources || subscription.resourceId == resourceId {
+			if err := eventsHandler.websocketsManager.SendJson(subscription.websocketId, message); err != nil {
+				subscriptionIdsToDelete = append(subscriptionIdsToDelete, subscription.id)
+			}
+		}
+	}
+	eventsHandler.subscriptionsRWMutex.RUnlock()
+
+	eventsHandler.removeSubscriptions(subscriptionType, subscriptionIdsToDelete)
+}
+
+func (eventsHandler *EventsHandler) removeSubscriptions(subscriptionType subscriptionType, subscriptionIdsToDelete []uint64) {
+	eventsHandler.subscriptionsRWMutex.Lock()
+	defer eventsHandler.subscriptionsRWMutex.Unlock()
+
+	subscriptionsToRetain := make([]subscription, 0, len(eventsHandler.subscriptions[subscriptionType]))
+
+loop:
+	for _, subscription := range eventsHandler.subscriptions[subscriptionType] {
+		for _, subscriptionIdToDelete := range subscriptionIdsToDelete {
+			if subscription.id == subscriptionIdToDelete {
+				continue loop
+			}
+		}
+		subscriptionsToRetain = append(subscriptionsToRetain, subscription)
+	}
+
+	eventsHandler.subscriptions[subscriptionType] = subscriptionsToRetain
 }

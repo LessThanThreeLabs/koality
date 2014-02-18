@@ -36,13 +36,24 @@ angular.module('koality.service', []).
 			hash += text.charCodeAt index for index in [0...text.length]
 			return hash
 	]).
-	factory('events', ['$window', 'notification', ($window, notification) ->
+	factory('events', ['$window', '$http', 'notification', ($window, $http, notification) ->
 		connectionId = Math.floor Math.random() * 1000000
 
 		try
 			websocket = new WebSocket "wss://#{$window.location.host}/websockets/connect?csrfToken=#{$window.csrfToken}&connectionId=#{connectionId}"
 			websocket.onopen = () ->
 				console.log 'Websocket connected'
+
+				requestParams = 
+					connectionId: connectionId
+					allResources: true
+					resourceId: 0
+				request = $http.post '/app/events/users/created/subscribe', requestParams
+				request.success (data, status, headers, config) =>
+					console.log data
+				request.error (data, status, headers, config) =>
+					notification.error data
+
 			websocket.onmessage = (event) ->
 				console.log event
 				console.log event.data

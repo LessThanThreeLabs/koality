@@ -13,9 +13,9 @@ import (
 )
 
 type subscriptionRequestData struct {
-	connectionId uint64 `json:"connectionId"`
-	allResources bool   `json:"allResources"`
-	resourceId   uint64 `json:"resourceId"`
+	ConnectionId uint64 `json:"connectionId"`
+	AllResources bool   `json:"allResources"`
+	ResourceId   uint64 `json:"resourceId"`
 }
 
 type EventsHandler struct {
@@ -24,7 +24,7 @@ type EventsHandler struct {
 	subscriptionIdCounter uint64
 	subscriptionIdMutex   sync.Mutex
 	subscriptions         map[subscriptionType][]subscription
-	subscriptionsMutex    sync.Mutex
+	subscriptionsRWMutex  sync.RWMutex
 }
 
 func New(resourcesConnection *resources.Connection, websocketsManager *websockets.WebsocketsManager) (*EventsHandler, error) {
@@ -59,9 +59,9 @@ func (eventsHandler *EventsHandler) createSubscription(subscriptionType subscrip
 			return
 		}
 
-		websocketId := eventsHandler.websocketsManager.GetId(userId, subscriptionRequestData.connectionId)
+		websocketId := eventsHandler.websocketsManager.GetId(userId, subscriptionRequestData.ConnectionId)
 		subscription := subscription{eventsHandler.getNextSubscriptionId(), userId, websocketId,
-			subscriptionRequestData.allResources, subscriptionRequestData.resourceId}
+			subscriptionRequestData.AllResources, subscriptionRequestData.ResourceId}
 
 		if mustBeAdmin {
 			user, err := eventsHandler.resourcesConnection.Users.Read.Get(userId)
@@ -75,7 +75,7 @@ func (eventsHandler *EventsHandler) createSubscription(subscriptionType subscrip
 		}
 
 		if mustBeSelf {
-			if userId != subscriptionRequestData.resourceId || subscriptionRequestData.allResources {
+			if userId != subscriptionRequestData.ResourceId || subscriptionRequestData.AllResources {
 				http.Error(writer, "Forbidden request, can only subscribe to events for self", http.StatusForbidden)
 				return
 			}
