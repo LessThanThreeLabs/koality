@@ -37,8 +37,10 @@ angular.module('koality.service', []).
 			return hash
 	]).
 	factory('events', ['$window', 'notification', ($window, notification) ->
+		connectionId = Math.floor Math.random() * 1000000
+
 		try
-			websocket = new WebSocket "wss://#{$window.location.host}/websockets/connect?csrfToken=#{$window.csrfToken}"
+			websocket = new WebSocket "wss://#{$window.location.host}/websockets/connect?csrfToken=#{$window.csrfToken}&connectionId=#{connectionId}"
 			websocket.onopen = () ->
 				console.log 'Websocket connected'
 			websocket.onmessage = (event) ->
