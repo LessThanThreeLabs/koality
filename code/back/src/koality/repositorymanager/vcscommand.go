@@ -25,6 +25,7 @@ func Command(repository Repository, Env []string, cmd string, args ...string) *V
 	command.Stdout, command.Stderr = stdout, stderr
 
 	command.Dir = repository.getPath()
+	command.Env = env
 
 	return &VcsCommand{command, stdout, stderr}
 }

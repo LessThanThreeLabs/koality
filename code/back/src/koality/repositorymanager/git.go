@@ -60,7 +60,7 @@ func (repository *gitSubRepository) getSshEnvironment() []string {
 
 	return []string{
 		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
-		fmt.Sprintf("SSH_PRIVATE_KEY=%s", keyPair.PrivateKey),
+		fmt.Sprintf("PRIVATE_KEY=%s", keyPair.PrivateKey),
 		fmt.Sprintf("SSH_TIMEOUT=%s", defaultTimeout),
 	}
 }
