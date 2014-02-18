@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"koality/resources"
 	"net/http"
 )
 
@@ -76,18 +75,7 @@ func (gitHubHandler *GitHubHandler) triggerBuild(repositoryOwner, repositoryName
 		return
 	}
 
-	changeset, err := gitHubHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha, nil)
-	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
-		return
-	}
-
-	if changeset != nil {
-		_, err = gitHubHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repository.Id, changeset.Id, headEmail, ref, false)
-	} else {
-		_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, headEmail, ref, false)
-	}
+	_, err = gitHubHandler.resourcesConnection.Builds.Create.Create(repository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, headEmail, ref, true, false)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

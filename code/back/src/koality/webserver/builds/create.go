@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"io/ioutil"
-	"koality/resources"
 	"net/http"
 	"strconv"
 )
@@ -47,16 +46,7 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 		}
 	}
 
-	baseSha := headSha
-
 	if err = buildsHandler.repositoryManager.StorePending(repository, headSha); err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
-		return
-	}
-
-	changeset, err := buildsHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha, patchContents)
-	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
 		return
@@ -64,13 +54,9 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 
 	// TODO (bbland): use actual shouldMerge
 	shouldMerge := false
+	reuseChangeset := true
 
-	var build *resources.Build
-	if changeset != nil {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repositoryId, changeset.Id, headEmail, ref, shouldMerge)
-	} else {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, headEmail, ref, shouldMerge)
-	}
+	build, err := buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, headEmail, ref, reuseChangeset, shouldMerge)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)
