@@ -55,22 +55,11 @@ func (buildsHandler *BuildsHandler) create(writer http.ResponseWriter, request *
 		return
 	}
 
-	changeset, err := buildsHandler.resourcesConnection.Builds.Read.GetChangesetFromShas(headSha, baseSha, patchContents)
-	if _, ok := err.(resources.NoSuchChangesetError); err != nil && !ok {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(writer, err)
-		return
-	}
-
 	// TODO (bbland): use actual shouldMerge
 	shouldMerge := false
+	reuseChangeset := true
 
-	var build *resources.Build
-	if changeset != nil {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.CreateFromChangeset(repositoryId, changeset.Id, headEmail, ref, shouldMerge)
-	} else {
-		build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, headEmail, ref, shouldMerge)
-	}
+	build, err = buildsHandler.resourcesConnection.Builds.Create.Create(repositoryId, headSha, headSha, headMessage, headUsername, headEmail, patchContents, headEmail, ref, reuseChangeset, shouldMerge)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

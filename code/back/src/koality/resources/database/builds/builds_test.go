@@ -61,7 +61,7 @@ func (suite *BuildsTestSuite) TestCreateInvalidBuild(check *gocheck.C) {
 	emailToNotify := "koalas@koalitycode.com"
 	ref := "refs/heads/master"
 
-	_, err = suite.resourcesConnection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, true)
+	_, err = suite.resourcesConnection.Builds.Create.Create(13370, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, false, true)
 	_, ok := err.(resources.NoSuchRepositoryError)
 	check.Assert(ok, gocheck.Equals, true, gocheck.Commentf("Expected NoSuchRepositoryError when providing invalid repository id"))
 
@@ -69,16 +69,16 @@ func (suite *BuildsTestSuite) TestCreateInvalidBuild(check *gocheck.C) {
 	_, ok = err.(resources.NoSuchSnapshotError)
 	check.Assert(ok, gocheck.Equals, true, gocheck.Commentf("Expected NoSuchSnapshotError"))
 
-	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, true)
+	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, "badheadsha", baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, false, true)
 	check.Assert(err, gocheck.NotNil, gocheck.Commentf("Expected error after providing invalid head sha"))
 
-	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, nil, emailToNotify, ref, true)
+	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, "badbasesha", headMessage, headUsername, headEmail, nil, emailToNotify, ref, false, true)
 	check.Assert(err, gocheck.NotNil, gocheck.Commentf("Expected error after providing invalid base sha"))
 
-	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, "not-an-email", ref, true)
+	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, "not-an-email", ref, false, true)
 	check.Assert(err, gocheck.NotNil, gocheck.Commentf("Expected error after providing invalid email to notify"))
 
-	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, []byte("this is an invalid patch\ndiff file"), emailToNotify, ref, true)
+	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, []byte("this is an invalid patch\ndiff file"), emailToNotify, ref, false, true)
 	check.Assert(err, gocheck.NotNil, gocheck.Commentf("Expected error after providing invalid patch contents"))
 }
 
@@ -116,8 +116,9 @@ func (suite *BuildsTestSuite) TestCreateBuild(check *gocheck.C) {
 	emailToNotify := "koalas@koalitycode.com"
 	ref := "refs/heads/master"
 	shouldMerge := true
+	reuseChangeset := false
 
-	build, err := suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
+	build, err := suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, reuseChangeset, shouldMerge)
 	check.Assert(err, gocheck.IsNil)
 
 	shallowCheckBuild(check, build, &resources.Build{
@@ -146,10 +147,6 @@ func (suite *BuildsTestSuite) TestCreateBuild(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 
 	shallowCheckBuild(check, buildAgain, build)
-
-	_, err = suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
-	_, ok := err.(resources.ChangesetAlreadyExistsError)
-	check.Assert(ok, gocheck.Equals, true, gocheck.Commentf("Expected ChangesetAlreadyExistsError when trying to add build with same changeset params twice"))
 
 	build2, err := suite.resourcesConnection.Builds.Create.CreateFromChangeset(firstRepository.Id, build.Changeset.Id, emailToNotify, ref, shouldMerge)
 	check.Assert(err, gocheck.IsNil)
@@ -187,8 +184,9 @@ func (suite *BuildsTestSuite) TestBuildStatus(check *gocheck.C) {
 	emailToNotify := "koalas@koalitycode.com"
 	ref := "refs/heads/master"
 	shouldMerge := true
+	reuseChangeset := false
 
-	build, err := suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
+	build, err := suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, reuseChangeset, shouldMerge)
 	check.Assert(err, gocheck.IsNil)
 
 	check.Assert(build.Status, gocheck.Equals, "declared", gocheck.Commentf("Expected initial build status to be 'declared'"))
@@ -249,8 +247,9 @@ func (suite *BuildsTestSuite) TestBuildTimes(check *gocheck.C) {
 	emailToNotify := "koalas@koalitycode.com"
 	ref := "refs/heads/master"
 	shouldMerge := true
+	reuseChangeset := false
 
-	build, err := suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, shouldMerge)
+	build, err := suite.resourcesConnection.Builds.Create.Create(firstRepository.Id, headSha, baseSha, headMessage, headUsername, headEmail, nil, emailToNotify, ref, reuseChangeset, shouldMerge)
 	check.Assert(err, gocheck.IsNil)
 
 	err = suite.resourcesConnection.Builds.Update.SetEndTime(build.Id, time.Now())

@@ -190,7 +190,7 @@ func createBuilds(connection *resources.Connection, repositoryId uint64, numBuil
 			build, err := connection.Builds.Create.Create(repositoryId, createSha(), createSha(),
 				headMessage, userNames[index%len(userNames)], userEmails[index%len(userEmails)],
 				patchContents[index%len(patchContents)], userEmails[rand.Intn(len(userEmails))],
-				refs[index%len(refs)], index%2 == 0)
+				refs[index%len(refs)], false, index%2 == 0)
 			if err != nil {
 				errorChannel <- err
 				return
