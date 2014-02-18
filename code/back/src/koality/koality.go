@@ -8,7 +8,7 @@ import (
 	"koality/build/testrunner"
 	"koality/github"
 	"koality/internalapi"
-	"koality/license/checker"
+	"koality/license/client"
 	"koality/mail"
 	"koality/notify"
 	"koality/repositorymanager"
@@ -86,9 +86,9 @@ func getResourcesConnection() *resources.Connection {
 	return resourcesConnection
 }
 
-func getLicenseManager(resourcesConnection *resources.Connection) *licensechecker.LicenseManager {
-	licenseChecker := licensechecker.New("http://localhost:9000")
-	licenseManager := licensechecker.NewLicenseManager(resourcesConnection, licenseChecker)
+func getLicenseManager(resourcesConnection *resources.Connection) *licenseclient.LicenseManager {
+	licenseClient := licenseclient.New("http://localhost:9000")
+	licenseManager := licenseclient.NewLicenseManager(resourcesConnection, licenseClient)
 	go licenseManager.MonitorLicense()
 	return licenseManager
 }
@@ -128,7 +128,7 @@ func getVirtualMachinePools(resourcesConnection *resources.Connection, ec2Broker
 	}
 }
 
-func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer, licenseManager *licensechecker.LicenseManager) {
+func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer, licenseManager *licenseclient.LicenseManager) {
 	gitHubOAuthConnection := github.NewCompoundGitHubOAuthConnection(resourcesConnection)
 	gitHubConnection := github.NewConnection(resourcesConnection, gitHubOAuthConnection)
 	if err := gitHubConnection.SubscribeToEvents(); err != nil {

@@ -1,9 +1,10 @@
-package licensechecker
+package licenseclient
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"koality/license"
 	"koality/resources"
 	"net"
 	"strings"
@@ -14,11 +15,11 @@ const MaxLicenseCheckFailures = 12
 
 type LicenseManager struct {
 	resourcesConnection *resources.Connection
-	licenseChecker      LicenseChecker
+	licenseClient       LicenseClient
 }
 
-func NewLicenseManager(resourcesConnection *resources.Connection, licenseChecker LicenseChecker) *LicenseManager {
-	return &LicenseManager{resourcesConnection, licenseChecker}
+func NewLicenseManager(resourcesConnection *resources.Connection, licenseClient LicenseClient) *LicenseManager {
+	return &LicenseManager{resourcesConnection, licenseClient}
 }
 
 func (licenseManager *LicenseManager) SetLicenseKey(licenseKey string) error {
@@ -40,6 +41,15 @@ func (licenseManager *LicenseManager) SetLicenseKey(licenseKey string) error {
 	return nil
 }
 
+func (licenseManager *LicenseManager) CheckUpgrade() (*license.CheckUpgradeResponse, error) {
+	licenseSettings, err := licenseManager.resourcesConnection.Settings.Read.GetLicenseSettings()
+	if err != nil {
+		return nil, err
+	}
+
+	return licenseManager.licenseClient.CheckUpgrade(licenseSettings.LicenseKey, licenseSettings.ServerId, resources.Version)
+}
+
 func (licenseManager *LicenseManager) licenseKeyToSettings(licenseKey string) (*resources.LicenseSettings, error) {
 	licenseKey = strings.ToUpper(licenseKey)
 	networkInterface, err := net.InterfaceByIndex(1)
@@ -50,7 +60,7 @@ func (licenseManager *LicenseManager) licenseKeyToSettings(licenseKey string) (*
 	macAddress := networkInterface.HardwareAddr.String()
 	hash := sha1.Sum([]byte(licenseKey + "/" + macAddress))
 	serverId := hex.EncodeToString(hash[:])
-	checkResponse, err := licenseManager.licenseChecker.CheckLicense(licenseKey, serverId)
+	checkResponse, err := licenseManager.licenseClient.CheckLicense(licenseKey, serverId)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +86,7 @@ func (licenseManager *LicenseManager) checkLicenseAndRecordResult() error {
 		return err
 	}
 
-	licenseCheckResponse, err := licenseManager.licenseChecker.CheckLicense(licenseSettings.LicenseKey, licenseSettings.ServerId)
+	licenseCheckResponse, err := licenseManager.licenseClient.CheckLicense(licenseSettings.LicenseKey, licenseSettings.ServerId)
 	if err != nil {
 		return licenseManager.recordLicenseCheckFailure("Unexpected license check error: " + err.Error())
 	} else if !licenseCheckResponse.IsValid {

@@ -1,5 +1,7 @@
 package resources
 
+const Version = "0.0.1"
+
 type DomainName string
 
 func (domainName DomainName) String() string {

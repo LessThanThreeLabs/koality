@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"koality/license/checker"
+	"koality/license"
+	"koality/license/client"
 	"koality/resources"
 	"koality/webserver/middleware"
 )
@@ -50,6 +51,20 @@ type sanitizedLicenseSettings struct {
 	Status       string `json:"status"`
 }
 
+type sanitizedUpgradeStatus struct {
+	CurrentVersion string             `json:"currentVersion"`
+	StatusMessage  string             `json:"statusMessage,omitempty"`
+	NextVersion    string             `json:"nextVersion,omitempty"`
+	Changelog      sanitizedChangelog `json:"changelog,omitempty"`
+}
+
+type sanitizedChangelog []sanitizedChangeInfo
+
+type sanitizedChangeInfo struct {
+	VersionAdded string   `json:"versionAdded"`
+	Changes      []string `json:"changes"`
+}
+
 type setAuthenticationRequestData struct {
 	ManualAccountsAllowed bool     `json:"manualAccountsAllowed"`
 	GoogleAccountsAllowed bool     `json:"googleAccountsAllowed"`
@@ -87,10 +102,10 @@ type SettingsHandler struct {
 	sessionStore        sessions.Store
 	sessionName         string
 	passwordHasher      *resources.PasswordHasher
-	licenseManager      *licensechecker.LicenseManager
+	licenseManager      *licenseclient.LicenseManager
 }
 
-func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, licenseManager *licensechecker.LicenseManager) (*SettingsHandler, error) {
+func New(resourcesConnection *resources.Connection, sessionStore sessions.Store, sessionName string, passwordHasher *resources.PasswordHasher, licenseManager *licenseclient.LicenseManager) (*SettingsHandler, error) {
 	return &SettingsHandler{resourcesConnection, sessionStore, sessionName, passwordHasher, licenseManager}, nil
 }
 
@@ -258,11 +273,34 @@ func getSanitizedLicenseSettings(settings *resources.LicenseSettings) *sanitized
 	if !settings.IsValid {
 		status = "Invalid: " + settings.InvalidReason
 	} else if settings.InvalidReason != "" {
-		status = fmt.Sprintf("Warning (%d/%d): %s", settings.LicenseCheckFailures, licensechecker.MaxLicenseCheckFailures, settings.InvalidReason)
+		status = fmt.Sprintf("Warning (%d/%d): %s", settings.LicenseCheckFailures, licenseclient.MaxLicenseCheckFailures, settings.InvalidReason)
 	}
 	return &sanitizedLicenseSettings{
 		LicenseKey:   settings.LicenseKey,
 		MaxExecutors: settings.MaxExecutors,
 		Status:       status,
 	}
+}
+
+func getSanitizedUpgradeStatus(currentVersion string, checkUpgradeResponse *license.CheckUpgradeResponse) *sanitizedUpgradeStatus {
+	if !checkUpgradeResponse.HasUpgrade {
+		return &sanitizedUpgradeStatus{
+			CurrentVersion: resources.Version,
+			StatusMessage:  "Already at the latest version",
+		}
+	} else {
+		return &sanitizedUpgradeStatus{
+			CurrentVersion: resources.Version,
+			NextVersion:    checkUpgradeResponse.NewVersion,
+			Changelog:      getSanitizedChangelog(checkUpgradeResponse.Changelog),
+		}
+	}
+}
+
+func getSanitizedChangelog(changelog license.Changelog) sanitizedChangelog {
+	sanitizedChangelog := make([]sanitizedChangeInfo, len(changelog))
+	for index, changeInfo := range changelog {
+		sanitizedChangelog[index] = sanitizedChangeInfo{changeInfo.VersionAdded, changeInfo.Changes}
+	}
+	return sanitizedChangelog
 }
