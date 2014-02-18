@@ -156,15 +156,15 @@ func (subscriptionHandler *SubscriptionHandler) FireGitHubEnterpriseSettingsClea
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToLicenseSettingsUpdatedEvents(updateHandler resources.LicenseSettingsUpdatedHandler) (resources.SubscriptionId, error) {
-	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Add(updateHandler)
+	return subscriptionHandler.licenseSettingsUpdatedSubscriptionManager.Add(updateHandler)
 }
 
 func (subscriptionHandler *SubscriptionHandler) UnsubscribeFromLicenseSettingsUpdatedEvents(subscriptionId resources.SubscriptionId) error {
-	return subscriptionHandler.apiKeyUpdatedSubscriptionManager.Remove(subscriptionId)
+	return subscriptionHandler.licenseSettingsUpdatedSubscriptionManager.Remove(subscriptionId)
 }
 
 func (subscriptionHandler *SubscriptionHandler) FireLicenseSettingsUpdatedEvent(licenseSettings *resources.LicenseSettings) {
-	subscriptionHandler.apiKeyUpdatedSubscriptionManager.Fire(licenseSettings)
+	subscriptionHandler.licenseSettingsUpdatedSubscriptionManager.Fire(licenseSettings)
 }
 
 func (subscriptionHandler *SubscriptionHandler) SubscribeToApiKeyUpdatedEvents(updateHandler resources.ApiKeyUpdatedHandler) (resources.SubscriptionId, error) {
