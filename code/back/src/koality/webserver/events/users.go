@@ -85,11 +85,11 @@ func (eventsHandler *EventsHandler) wireUserAppSubroutes(subrouter *mux.Router) 
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userAdminUpdatedSubscriptions))).
 		Methods("DELETE")
-	subrouter.HandleFunc("/sshKeyAdded/#{subscriptionId:[0-9]+}",
+	subrouter.HandleFunc("/sshKeyAdded/{subscriptionId:[0-9]+}",
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userSshKeyAddedSubscriptions))).
 		Methods("DELETE")
-	subrouter.HandleFunc("/sshKeyRemoved/#{subscriptionId:[0-9]+}",
+	subrouter.HandleFunc("/sshKeyRemoved/{subscriptionId:[0-9]+}",
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userSshKeyRemovedSubscriptions))).
 		Methods("DELETE")

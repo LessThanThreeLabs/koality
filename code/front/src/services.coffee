@@ -89,7 +89,7 @@ angular.module('koality.service', []).
 
 			unsubscribe: () =>
 				@callback = null
-				request = $http.delete "/app/events/#{@resourceType}/#{@eventName}/#{subscriptionId}"
+				request = $http.delete "/app/events/#{@resourceType}/#{@eventName}/#{@subscriptionId}"
 				request.success (data, status, headers, config) =>
 					@subscriptionId = null
 					delete @subscriptionCallbackRegistry[@subscriptionId]
