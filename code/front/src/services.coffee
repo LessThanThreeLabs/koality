@@ -46,9 +46,9 @@ angular.module('koality.service', []).
 
 				requestParams = 
 					connectionId: connectionId
-					allResources: true
-					resourceId: 0
-				request = $http.post '/app/events/users/created/subscribe', requestParams
+					allResources: false
+					resourceId: $window.userId
+				request = $http.post '/app/events/users/sshKeyAdded/subscribe', requestParams
 				request.success (data, status, headers, config) =>
 					console.log data
 				request.error (data, status, headers, config) =>
