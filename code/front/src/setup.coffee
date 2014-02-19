@@ -1,6 +1,6 @@
 'use strict'
 
-angular.module('koality', ['ngSanitize', 
+angular.module('koality', ['ngSanitize', 'ngRoute',
 		'koality.service', 'koality.service.state', 'koality.service.rpc', 'koality.service.managers',
 		'koality.filter',
 		'koality.directive', 'koality.directive.buildsMenu', 'koality.directive.panel', 'koality.directive.dropdown', 'koality.d3.directive']).

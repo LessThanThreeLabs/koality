@@ -17,16 +17,16 @@
 		<panel-body style="z-index: -1;"></panel-body>
 
 		<div ng-switch="view">
-			<div ng-switch-when="users" ng-include="'html/admin/users/adminUsers.html'"></div>
-			<div ng-switch-when="repositories" ng-include="'html/admin/repositories/adminRepositories.html'"></div>
-			<div ng-switch-when="pools" ng-include="'html/admin/pools/adminPools.html'"></div>
-			<div ng-switch-when="exporter" ng-include="'html/admin/exporter/adminExporter.html'"></div>
-			<div ng-switch-when="website" ng-include="'html/admin/website/adminWebsite.html'"></div>
-			<div ng-switch-when="notifications" ng-include="'html/admin/notifications/adminNotifications.html'"></div>
-			<div ng-switch-when="gitHubEnterprise" ng-include="'html/admin/gitHubEnterprise/adminGitHubEnterprise.html'"></div>
-			<div ng-switch-when="api" ng-include="'html/admin/api/adminApi.html'"></div>
-			<div ng-switch-when="plan" ng-include="'html/admin/plan/adminPlan.html'"></div>
-			<div ng-switch-when="upgrade" ng-include="'html/admin/upgrade/adminUpgrade.html'"></div>
+			<div ng-switch-when="users"><div ng-include="'html/admin/users/adminUsers.html'"></div></div>
+			<div ng-switch-when="repositories"><div ng-include="'html/admin/repositories/adminRepositories.html'"></div></div>
+			<div ng-switch-when="pools"><div ng-include="'html/admin/pools/adminPools.html'"></div></div>
+			<div ng-switch-when="exporter"><div ng-include="'html/admin/exporter/adminExporter.html'"></div></div>
+			<div ng-switch-when="website"><div ng-include="'html/admin/website/adminWebsite.html'"></div></div>
+			<div ng-switch-when="notifications"><div ng-include="'html/admin/notifications/adminNotifications.html'"></div></div>
+			<div ng-switch-when="gitHubEnterprise"><div ng-include="'html/admin/gitHubEnterprise/adminGitHubEnterprise.html'"></div></div>
+			<div ng-switch-when="api"><div ng-include="'html/admin/api/adminApi.html'"></div></div>
+			<div ng-switch-when="plan"><div ng-include="'html/admin/plan/adminPlan.html'"></div></div>
+			<div ng-switch-when="upgrade"><div ng-include="'html/admin/upgrade/adminUpgrade.html'"></div></div>
 		</div>
 	</panel>
 </div>

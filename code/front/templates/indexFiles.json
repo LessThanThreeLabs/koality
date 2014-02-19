@@ -63,6 +63,7 @@
 		"/js/libs/jquery.js",
 		"/js/libs/angular.js",
 		"/js/libs/angularSanitize.js",
+		"/js/libs/angularRoute.js",
 		"/js/libs/d3.js",
 		"/js/libs/spinner.js",
 
