@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/goamz/aws"
+	"github.com/LessThanThreeLabs/goamz/aws"
 	"koality/util/export"
 	"os"
 )

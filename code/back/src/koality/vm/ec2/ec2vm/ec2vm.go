@@ -3,7 +3,7 @@ package ec2vm
 import (
 	"errors"
 	"fmt"
-	"github.com/mitchellh/goamz/ec2"
+	"github.com/LessThanThreeLabs/goamz/ec2"
 	"koality/shell"
 	"koality/util/log"
 	"koality/vm"
@@ -74,7 +74,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 	waitFunctionChan := make(chan error, 1)
 
 	go func() {
-		imagesResponse, err := ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+		imagesResponse, err := ec2Vm.ec2Cache.EC2.Images([]string{imageId}, nil, imageFilter)
 		if _, ok := err.(*ec2.Error); !ok {
 			log.Criticalf("Received a non-ec2 error from Images: %v", err)
 			waitFunctionChan <- err
@@ -83,7 +83,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 
 		for err.(*ec2.Error).Code == "InvalidAMIID.NotFound" {
 			time.Sleep(2 * time.Second)
-			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, nil, imageFilter)
 		}
 		if err != nil {
 			waitFunctionChan <- err
@@ -95,7 +95,7 @@ func (ec2Vm *Ec2VirtualMachine) SaveState(name string) (imageId string, err erro
 				waitFunctionChan <- fmt.Errorf("Ec2 failed to create the image")
 			}
 			time.Sleep(2 * time.Second)
-			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, imageFilter)
+			imagesResponse, err = ec2Vm.ec2Cache.EC2.Images([]string{imageId}, nil, imageFilter)
 			if _, ok := err.(*ec2.Error); !ok {
 				log.Criticalf("Received a non-ec2 error from Images: %v", err)
 				waitFunctionChan <- err

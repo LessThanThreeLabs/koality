@@ -1,8 +1,8 @@
 package export
 
 import (
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
+	"github.com/LessThanThreeLabs/goamz/aws"
+	"github.com/LessThanThreeLabs/goamz/s3"
 	"io/ioutil"
 	"koality/resources"
 	"koality/util/find"

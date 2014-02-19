@@ -79,9 +79,9 @@
 [submodule "code/back/src/github.com/LessThanThreeLabs/go.codereview"]
 	path = code/back/src/github.com/LessThanThreeLabs/go.codereview
 	url = git@github.com:LessThanThreeLabs/go.codereview
-[submodule "code/back/src/github.com/mitchellh/goamz"]
-	path = code/back/src/github.com/mitchellh/goamz
-	url = git@github.com:mitchellh/goamz.git
 [submodule "code/back/src/github.com/gorilla/websocket"]
 	path = code/back/src/github.com/gorilla/websocket
 	url = git@github.com:gorilla/websocket.git
+[submodule "code/back/src/github.com/LessThanThreeLabs/goamz"]
+	path = code/back/src/github.com/LessThanThreeLabs/goamz
+	url = git@github.com:LessThanThreeLabs/goamz.git

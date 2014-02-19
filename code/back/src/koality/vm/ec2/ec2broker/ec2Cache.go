@@ -1,7 +1,7 @@
 package ec2broker
 
 import (
-	"github.com/mitchellh/goamz/ec2"
+	"github.com/LessThanThreeLabs/goamz/ec2"
 	"sync"
 	"time"
 )

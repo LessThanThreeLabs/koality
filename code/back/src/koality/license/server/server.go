@@ -3,8 +3,8 @@ package licenseserver
 import (
 	"database/sql"
 	"fmt"
+	"github.com/LessThanThreeLabs/goamz/s3"
 	"github.com/gorilla/mux"
-	"github.com/mitchellh/goamz/s3"
 	"koality/license"
 	"net/http"
 )
