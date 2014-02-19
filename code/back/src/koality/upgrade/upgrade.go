@@ -10,8 +10,6 @@ import (
 )
 
 func PrepareUpgrade(upgradeTgz io.ReadCloser) (string, error) {
-	fmt.Println("Writing upgrade contents...")
-
 	extractCommand := exec.Command("tar", "-xzf", "-")
 	extractCommand.Dir = os.TempDir()
 	extractCommand.Stdin = upgradeTgz
@@ -19,7 +17,7 @@ func PrepareUpgrade(upgradeTgz io.ReadCloser) (string, error) {
 		return "", err
 	}
 
-	installerPath := path.Join(os.TempDir(), "out", pathtranslator.BinaryPath("installer"))
+	installerPath := path.Join(os.TempDir(), "koality", pathtranslator.BinaryPath("installer"))
 	_, err := os.Stat(installerPath)
 	if err != nil {
 		return "", err
@@ -28,16 +26,24 @@ func PrepareUpgrade(upgradeTgz io.ReadCloser) (string, error) {
 }
 
 func RunUpgrade(executablePath string) error {
-	fmt.Printf("Running installer at %s...\n", executablePath)
+	upgradeLogPath := path.Join(os.TempDir(), "koality-upgrade.log")
+	upgradeLog, err := os.OpenFile(upgradeLogPath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprintf(upgradeLog, "Running installer at %s...\n", executablePath)
 	installCommand := exec.Command("sudo", executablePath)
-	installCommand.Stdout = os.Stdout
-	installCommand.Stderr = os.Stderr
+	installCommand.Stdout = upgradeLog
+	installCommand.Stderr = upgradeLog
 	if err := installCommand.Run(); err != nil {
 		return err
 	}
 
-	fmt.Println("Restarting...")
+	fmt.Fprintln(upgradeLog, "Upgrade complete, restarting...")
 
 	restartCommand := exec.Command("sudo", "service", "koality", "restart")
+	restartCommand.Stdout = upgradeLog
+	restartCommand.Stderr = upgradeLog
 	return restartCommand.Run()
 }

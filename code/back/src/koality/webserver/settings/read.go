@@ -3,6 +3,7 @@ package settings
 import (
 	"encoding/json"
 	"fmt"
+	"koality/constants"
 	"koality/resources"
 	"net/http"
 )
@@ -196,7 +197,7 @@ func (settingsHandler *SettingsHandler) getUpgradeStatus(writer http.ResponseWri
 		return
 	}
 
-	sanitizedUpgradeStatus := getSanitizedUpgradeStatus(resources.Version, checkUpgradeResponse)
+	sanitizedUpgradeStatus := getSanitizedUpgradeStatus(constants.Version, checkUpgradeResponse)
 
 	jsonedUpgradeStatus, err := json.Marshal(sanitizedUpgradeStatus)
 	if err != nil {

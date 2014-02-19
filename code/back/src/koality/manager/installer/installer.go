@@ -2,10 +2,10 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"koality/constants"
 	"koality/shell"
 	"koality/util/pathtranslator"
 	"os"
@@ -35,23 +35,10 @@ func installKoality() error {
 		return err
 	}
 
-	metadataBytes, err := ioutil.ReadFile(filepath.Join(baseDirectory, ".metadata"))
-	if err != nil {
-		return err
-	}
+	version := constants.Version
 
-	var metadata koalityMetadata
-	if err = json.Unmarshal(metadataBytes, &metadata); err != nil {
-		return err
-	}
-
-	if metadata.Version == "" {
-		return fmt.Errorf("Version not specified in metadata file")
-	}
-
-	version := metadata.Version
-	if metadata.Release == "development" {
-		version = fmt.Sprintf("%s-dev-%d", metadata.Version, time.Now().Unix())
+	if constants.Release == constants.DevelopmentRelease {
+		version = fmt.Sprintf("%s-dev-%d", constants.Version, time.Now().Unix())
 	}
 
 	installDirectory := filepath.Join("/", "etc", "koality", "install", version)
@@ -153,6 +140,13 @@ func installKoality() error {
 
 	if _, err = io.Copy(serviceFile, serviceFileSource); err != nil {
 		return fmt.Errorf("Failed to create init.d file at %s\nError: %v", serviceFilePath, err)
+	}
+
+	setupAutostartCommand := exec.Command("update-rc.d", "koality", "defaults", "60")
+	setupAutostartStdout, setupAutostartStderr := new(bytes.Buffer), new(bytes.Buffer)
+	setupAutostartCommand.Stdout, setupAutostartCommand.Stderr = setupAutostartStdout, setupAutostartStderr
+	if err := setupAutostartCommand.Run(); err != nil {
+		return fmt.Errorf("Failed to enable auto-start for the Koality service\nStdout: %s\nStderr: %s\nError: %v", setupAutostartStdout.String(), setupAutostartStderr.String(), err)
 	}
 
 	relinkCommand := exec.Command("bash", "-c", string(shell.Sudo(shell.Commandf("ln -n -f -s %s %s", installDirectory, filepath.Join("/", "etc", "koality", "current")))))

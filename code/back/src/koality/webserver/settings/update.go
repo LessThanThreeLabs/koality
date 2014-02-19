@@ -8,6 +8,7 @@ import (
 	"koality/upgrade"
 	"koality/webserver/util"
 	"net/http"
+	"time"
 )
 
 func (settingsHandler *SettingsHandler) resetApiKey(writer http.ResponseWriter, request *http.Request) {
@@ -74,10 +75,11 @@ func (settingsHandler *SettingsHandler) upgrade(writer http.ResponseWriter, requ
 
 	fmt.Fprint(writer, "ok")
 
-	err = upgrade.RunUpgrade(installerPath)
-	if err != nil {
-		fmt.Printf("Failed to run upgrade, %v\n", err)
-	}
+	time.AfterFunc(2*time.Second, func() {
+		if err := upgrade.RunUpgrade(installerPath); err != nil {
+			fmt.Printf("Failed to run upgrade, %v\n", err)
+		}
+	})
 }
 
 func (settingsHandler *SettingsHandler) setDomainName(writer http.ResponseWriter, request *http.Request) {

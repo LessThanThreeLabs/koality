@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/pwaller/goupx/hemfix"
 	"io/ioutil"
+	"koality/constants"
 	"koality/shell"
 	"koality/util/pathtranslator"
 	"os"
@@ -22,7 +23,7 @@ var requiredLibraries = []string{"curl", "libpcre3-dev", "upx"}
 var expectedArtifacts = []string{"koality", "koalityRunner", "getXunitResults", "exportPaths", "sshwrapper",
 	"installer", "authorizedKeys", "restrictedShell"}
 
-var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", ".metadata", "misc"}
+var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", "misc"}
 
 func main() {
 	flag.Parse()
@@ -35,7 +36,7 @@ func main() {
 		panic(err)
 	}
 
-	outputDirectory := filepath.Join("/", "tmp", "out")
+	outputDirectory := filepath.Join(os.TempDir(), "koality")
 	if *compressFlag {
 		defer os.RemoveAll(outputDirectory)
 	}
@@ -44,7 +45,7 @@ func main() {
 	}
 	fmt.Printf("Koality packaged successfully to %s\n", outputDirectory)
 
-	tgzPath := filepath.Join("/", "tmp", "out.tgz")
+	tgzPath := filepath.Join(os.TempDir(), fmt.Sprintf("koality-%s.tgz", constants.Version))
 	compressCommand := exec.Command("tar", "-czf", tgzPath, filepath.Base(outputDirectory))
 	compressCommand.Dir = filepath.Dir(tgzPath)
 	compressStdout, compressStderr := new(bytes.Buffer), new(bytes.Buffer)

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"koality/constants"
 	"koality/license"
 	"koality/resources"
 	"net"
@@ -48,7 +49,7 @@ func (licenseManager *LicenseManager) CheckUpgrade() (*license.CheckUpgradeRespo
 		return nil, err
 	}
 
-	return licenseManager.licenseClient.CheckUpgrade(licenseSettings.LicenseKey, licenseSettings.ServerId, resources.Version)
+	return licenseManager.licenseClient.CheckUpgrade(licenseSettings.LicenseKey, licenseSettings.ServerId, constants.Version)
 }
 
 func (licenseManager *LicenseManager) DownloadUpgrade(upgradeVersion string) (io.ReadCloser, error) {

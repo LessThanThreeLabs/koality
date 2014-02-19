@@ -19,8 +19,8 @@ window.AdminUpgrade = ['$scope', '$http', '$timeout', 'events', 'notification', 
 		checkIfWebserverIsUp = () ->
 			request = $http.get '/ping', timeout: intervalTime
 			request.success (data, status, headers, config) ->
-				notification.success 'Update successful! Your browser will automatically refresh in 60 seconds', 60
-				$timeout (() -> location.reload()), 60000
+				notification.success 'Upgrade successful! Your browser will automatically refresh in 10 seconds', 10
+				$timeout (() -> location.reload()), 10000
 			request.error (data, status, headers, config) ->
 				$timeout checkIfWebserverIsUp, intervalTime
 
@@ -68,13 +68,22 @@ window.AdminUpgrade = ['$scope', '$http', '$timeout', 'events', 'notification', 
 	$scope.performUpgrade = () ->
 		return if $scope.makingRequest
 		$scope.makingRequest = true
+		downloadingMessage = "Downloading upgrade to " + $scope.upgradeStatus.nextVersion + "..."
+		$scope.upgradeStatus.statusMessage = downloadingMessage
+		notification.success downloadingMessage
 
 		request = $http.post "/app/settings/upgrade", $scope.upgradeStatus.nextVersion
 		request.success (data, status, headers, config) =>
 			$scope.makingRequest = false
 			$scope.performingUpgrade = true
+
+			upgradeMessage = "Upgrade to " + $scope.upgradeStatus.nextVersion + " in progress..."
+			$scope.upgradeStatus.statusMessage = upgradeMessage
+			notification.success upgradeMessage
+
 			listenForWebserverComingBackUp()
 		request.error (data, status, headers, config) =>
 			$scope.makingRequest = false
+			$scope.upgradeStatus.statusMessage = "Failed to download upgrade file."
 			notification.error data
 ]

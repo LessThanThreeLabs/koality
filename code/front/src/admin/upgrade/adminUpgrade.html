@@ -10,11 +10,8 @@
 
 	<panel-body no-scroll>
 		<form name="updateForm" novalidate>
-			<div class="formContainer centered" ng-show="upgradeStatus.statusMessage != null">
-				{{upgradeStatus.statusMessage}}
-			</div>
-			<div class="formContainer centered" ng-show="upgradeStatus.changelog != null">
-				<span>Upgrade to {{upgradeStatus.nextVersion}} available:</span>
+			<div class="formContainer centered">
+				<span>{{upgradeStatus.statusMessage}}</span>
 				<ul>
 					<li ng-repeat="changeInfo in upgradeStatus.changelog | orderBy:'versionAdded':true">
 						<span>Added in {{changeInfo.versionAdded}}:</span>
@@ -26,11 +23,10 @@
 					</li>
 				</ul>
 			</div>
-
 			<div class="bottomContanier">
 				<div class="formDivider"></div>
 
-				<busy-button centered busy="makingRequest" click="performUpgrade()" disabled="performingUpgrade || (upgradeStatus.nextVersion == null)">Update Koality Now</busy-button>
+				<busy-button centered busy="makingRequest" click="performUpgrade()" disabled="performingUpgrade || (upgradeStatus.nextVersion == null)">Upgrade Koality Now</busy-button>
 			</div>
 		</form>
 	</panel-body>

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"koality/constants"
 	"koality/license"
 	"koality/license/client"
 	"koality/resources"
@@ -285,12 +286,13 @@ func getSanitizedLicenseSettings(settings *resources.LicenseSettings) *sanitized
 func getSanitizedUpgradeStatus(currentVersion string, checkUpgradeResponse *license.CheckUpgradeResponse) *sanitizedUpgradeStatus {
 	if !checkUpgradeResponse.HasUpgrade {
 		return &sanitizedUpgradeStatus{
-			CurrentVersion: resources.Version,
+			CurrentVersion: constants.Version,
 			StatusMessage:  "Already at the latest version",
 		}
 	} else {
 		return &sanitizedUpgradeStatus{
-			CurrentVersion: resources.Version,
+			CurrentVersion: constants.Version,
+			StatusMessage:  fmt.Sprintf("Upgrade to %s available", checkUpgradeResponse.NewVersion),
 			NextVersion:    checkUpgradeResponse.NewVersion,
 			Changelog:      getSanitizedChangelog(checkUpgradeResponse.Changelog),
 		}
