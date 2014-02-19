@@ -4,45 +4,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 )
 
 func (poolsHandler *PoolsHandler) create(writer http.ResponseWriter, request *http.Request) {
-	name := request.PostFormValue("name")
-	accessKey := request.PostFormValue("accessKey")
-	secretKey := request.PostFormValue("secretkey")
-	username := request.PostFormValue("username")
-	baseAmiId := request.PostFormValue("baseAmiId")
-	securityGroupId := request.PostFormValue("securityGroupId")
-	vpcSubnetId := request.PostFormValue("vpcSubnetId")
-	instanceType := request.PostFormValue("instanceType")
-	numReadyInstancesString := request.PostFormValue("numReadyInstances")
-	numReadyInstances, err := strconv.ParseUint(numReadyInstancesString, 10, 64)
-	if err != nil {
+	poolData := new(poolRequestData)
+	defer request.Body.Close()
+	if err := json.NewDecoder(request.Body).Decode(poolData); err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse numReadyInstances: %v", err)
+		fmt.Fprint(writer, err)
 		return
 	}
 
-	numMaxInstancesString := request.PostFormValue("numMaxInstances")
-	numMaxInstances, err := strconv.ParseUint(numMaxInstancesString, 10, 64)
+	pool, err := poolsHandler.resourcesConnection.Pools.Create.CreateEc2Pool(poolData.Name, poolData.AccessKey, poolData.SecretKey, poolData.Username, poolData.BaseAmiId, poolData.SecurityGroupId, poolData.VpcSubnetId, poolData.InstanceType, poolData.NumReadyInstances, poolData.MaxRunningInstances, poolData.RootDriveSize, poolData.UserData)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse numMaxInstances: %v", err)
+		fmt.Fprint(writer, err)
 		return
 	}
-
-	rootDriveSizeString := request.PostFormValue("rootDriveSize")
-	rootDriveSize, err := strconv.ParseUint(rootDriveSizeString, 10, 64)
-	if err != nil {
-		writer.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(writer, "Unable to parse rootDriveSize: %v", err)
-		return
-	}
-
-	userData := request.PostFormValue("userData")
-
-	pool, err := poolsHandler.resourcesConnection.Pools.Create.CreateEc2Pool(name, accessKey, secretKey, username, baseAmiId, securityGroupId, vpcSubnetId, instanceType, numReadyInstances, numMaxInstances, rootDriveSize, userData)
 
 	sanitizedPool := getSanitizedPool(pool)
 	jsonedPool, err := json.Marshal(sanitizedPool)

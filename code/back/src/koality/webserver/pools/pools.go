@@ -34,6 +34,21 @@ type awsSettings struct {
 	InstanceTypes  []string            `json:"instanceTypes"`
 }
 
+type poolRequestData struct {
+	Name                string `json:"name"`
+	AccessKey           string `json:"accessKey"`
+	SecretKey           string `json:"secretKey"`
+	Username            string `json:"username"`
+	BaseAmiId           string `json:"baseAmiId"`
+	SecurityGroupId     string `json:"securityGroupId"`
+	VpcSubnetId         string `json:"vpcSubnetId"`
+	InstanceType        string `json:"instanceType"`
+	NumReadyInstances   uint64 `json:"numReadyInstances"`
+	MaxRunningInstances uint64 `json:"maxRunningInstances"`
+	RootDriveSize       uint64 `json:"rootDriveSize"`
+	UserData            string `json:"userData"`
+}
+
 type PoolsHandler struct {
 	resourcesConnection *resources.Connection
 }
@@ -44,22 +59,25 @@ func New(resourcesConnection *resources.Connection) (*PoolsHandler, error) {
 
 func (poolsHandler *PoolsHandler) WirePoolsAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{poolId:[0-9]+}",
-		middleware.IsLoggedInWrapper(poolsHandler.get)).
+		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.get)).
 		Methods("GET")
 	subrouter.HandleFunc("/getAwsSettings",
-		middleware.IsLoggedInWrapper(poolsHandler.getAwsSettings)).
+		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.getAwsSettings)).
 		Methods("GET")
 
 	subrouter.HandleFunc("/",
-		middleware.IsLoggedInWrapper(poolsHandler.create)).
+		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.create)).
 		Methods("POST")
 
 	subrouter.HandleFunc("/{poolId:[0-9]+}",
-		middleware.IsLoggedInWrapper(poolsHandler.update)).
+		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.update)).
 		Methods("PUT")
 }
 
 func (poolsHandler *PoolsHandler) WirePoolsApiSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/{poolId:[0-9]+}", poolsHandler.get).Methods("GET")
+	subrouter.HandleFunc("/{poolId:[0-9]+}", poolsHandler.update).Methods("PUT")
+	subrouter.HandleFunc("/", poolsHandler.create).Methods("POST")
 }
 
 func getSanitizedPool(pool *resources.Ec2Pool) *sanitizedPool {

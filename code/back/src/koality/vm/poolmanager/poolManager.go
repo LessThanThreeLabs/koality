@@ -82,6 +82,7 @@ func (poolManager *PoolManager) SubscribeToEvents(resourcesConnection *resources
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
 			log.Errorf("Tried to update nonexistent pool with id: %d\n%s", ec2PoolId, stacktrace)
+			return // TODO(dhuang) remove this - this is only to help with development
 		}
 
 		ec2VmPool, ok := vmPool.(ec2vm.Ec2VirtualMachinePool)
