@@ -1,13 +1,14 @@
 [
     {
         "changes": [
-            "Added stuff"
+            "Fake upgrade",
+            "Nothing to see here"
         ],
-        "versionAdded": "0.0.1"
+        "versionAdded": "0.0.2"
     },
     {
         "changes": [
-            "Added more stuff"
+            "This shouldn't appear"
         ],
         "versionAdded": "0.8.2"
     }

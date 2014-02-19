@@ -6,10 +6,15 @@ import (
 	"koality/util/pathtranslator"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 	"time"
 )
+
+var daemons = make(map[string]*exec.Cmd, 2)
+var exited = false
 
 func main() {
 	koalityBinary, err := pathtranslator.TranslatePathWithCheckFunc(pathtranslator.BinaryPath("koality"), pathtranslator.CheckExecutable)
@@ -22,24 +27,33 @@ func main() {
 		panic("Could not find the nginx binary")
 	}
 
-	koalityErrorChan := runDaemon(koalityBinary)
-	nginxErrorChan := runDaemon(nginxBinary, "-c", path.Join(path.Dir(nginxBinary), "nginx.conf"))
+	koalityErrorChan := runDaemon("koality", koalityBinary)
+	nginxErrorChan := runDaemon("root", nginxBinary, "-c", path.Join(path.Dir(nginxBinary), "nginx.conf"))
+	signalChan := make(chan os.Signal, 2)
+
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
 	case err := <-koalityErrorChan:
 		panic(fmt.Sprintf("Koality daemon errored out, error: %v", err))
 	case err := <-nginxErrorChan:
 		panic(fmt.Sprintf("Nginx daemon errored out, error: %v", err))
+	case signal := <-signalChan:
+		exit(signal)
 	}
 }
 
-func runDaemon(binary string, args ...string) <-chan error {
+func runDaemon(username, binary string, args ...string) <-chan error {
 	errorChan := make(chan error)
 	go func(errorChan chan<- error) {
 		startTime := time.Now()
 		for {
-			shellCommand := shell.Command(strings.Join(append([]string{binary}, args...), " "))
+			if exited {
+				return
+			}
+			shellCommand := shell.AsUser(username, shell.Command(strings.Join(append([]string{binary}, args...), " ")))
 			command := exec.Command("bash", "-c", string(shellCommand))
+			daemons[binary] = command
 			command.Stdout, command.Stderr = os.Stdout, os.Stderr
 			if err := command.Start(); err != nil {
 				errorChan <- fmt.Errorf("Could not start daemon %s, error: %v", binary, err)
@@ -57,4 +71,13 @@ func runDaemon(binary string, args ...string) <-chan error {
 		}
 	}(errorChan)
 	return errorChan
+}
+
+func exit(signal os.Signal) {
+	exited = true
+	for _, daemon := range daemons {
+		daemon.Process.Signal(syscall.SIGTERM)
+		daemon.Process.Wait()
+	}
+	panic(fmt.Sprintf("Received signal %s, exiting now.", signal.String()))
 }
