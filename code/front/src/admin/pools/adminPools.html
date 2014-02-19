@@ -7,23 +7,24 @@
 			<div class="formContainer centered"><table>
 				<tr>
 					<td class="fieldName"><label>Name</label></td>
-					<td class="inputField"><input type="text" ng-model="pool.name" name="name" ng-maxlength="128" focused required>
+					<td class="inputField"><input type="text" ng-model="pool.name" name="name" focused required>
+				</tr>
+				<tr>
+					<td class="fieldName"><label>Access Key</label></td>
+					<td class="inputField"><input type="text" ng-model="pool.awsKeys.accessKey" name="accessKey" ng-blur="updateAwsCredentials()" required></td>
+				</tr>
+				<tr>
+					<td class="fieldName"><label>Secret Key </label></td>
+					<td class="inputField"><input type="text" ng-model="pool.awsKeys.secretKey" name="secretKey" ng-blur="updateAwsCredentials()" required></td>
 				</tr>
 			</table>
 			<div class="formDivider"></div>
 			<table>
 				<tr>
-					<td class="fieldName"><label>Access Key</label></td>
-					<td class="inputField"><input type="text" ng-model="pool.awsKeys.accessKey" name="accessKey" ng-pattern="/^[\w]+$/" ng-minlength="16" ng-maxlength="32" required></td>
-				</tr>
-				<tr>
-					<td class="fieldName"><label>Secret Key </label></td>
-					<td class="inputField"><input type="text" ng-model="pool.awsKeys.secretKey" name="secretKey" ng-maxlength="128" required></td>
-				</tr>
-				<tr>
 					<td class="fieldName"><label>User Data</label></td>
-					<td class="inputField"><textarea id="userDataField" type="text" ng-model="pool.verifierPoolSettings.userData" name="userData">{{pool.verifierPoolSettings.userData}}</textarea></td>
-					<td class="note">This is a note about the content to the left, User Data. <a href="#">Link to Documentation</a> with more information.</td>
+					<td class="inputField"><textarea id="userDataField" type="text" ng-model="pool.verifierPoolSettings.userData" name="userData" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()">{{pool.verifierPoolSettings.userData}}</textarea></td>
+					<td class="note" ng-show="awsCredentialsSet()">This is a note about the content to the left, User Data. <a href="#">Link to Documentation</a> with more information.</td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 			</table>
 			<div class="formDivider"></div>
@@ -31,51 +32,58 @@
 				<tr>
 					<td class="fieldName"><label>Base AMI</label></td>
 					<td class="inputField">
-						<input ng-model="pool.verifierPoolSettings.amiId" list="amiIds">
+						<input ng-model="pool.verifierPoolSettings.amiId" list="amiIds" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()">
 						<datalist id="amiIds">
-							<option ng-repeat="amiId in allowedAmiIds" value="{{amiId}}">
+							<option ng-repeat="ami in allowedAmis" value="{{ami.name}}">
 						</datalist>
 					</td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>Machine Username</label></td>
-					<td class="inputField"><input type="text" ng-model="pool.verifierPoolSettings.username" name="username" ng-maxlength="128" required></td>
+					<td class="inputField"><input type="text" ng-model="pool.verifierPoolSettings.username" name="username" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()" required></td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>Security Group</label></td>
-					<td class="inputField"><select ng-model="pool.instanceSettings.securityGroupId" ng-options="securityGroup.id as securityGroup.displayName for securityGroup in allowedSecurityGroups" required></select></td>
+					<td class="inputField"><select ng-model="pool.instanceSettings.securityGroupId" ng-options="securityGroup.Id as securityGroup.Name for securityGroup in allowedSecurityGroups" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()" required></select></td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>VPC Subnet Id</label></td>
-					<td class="inputField"><input type="text" ng-model="pool.instanceSettings.subnetId" name="subnetId" ng-maxlength="128"></td>
+					<td class="inputField"><input type="text" ng-model="pool.instanceSettings.subnetId" name="subnetId" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()"></td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 			</table>
 			<div class="formDivider"></div>
 			<table>
 				<tr>
 					<td class="fieldName"><label>Instance Size</label></td>
-					<td class="inputField"><select ng-model="pool.verifierPoolSettings.instanceSize" ng-options="instanceSize as instanceSize for instanceSize in allowedInstanceSizes" required></select></td>
-					<td class="note">The default size of your AWS instances.</td>
+					<td class="inputField"><select ng-model="pool.verifierPoolSettings.instanceSize" ng-options="instanceSize as instanceSize for instanceSize in allowedInstanceSizes" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()" required></select></td>
+					<td class="note" ng-show="awsCredentialsSet()">The default size of your AWS instances.</td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>Ready Instances</label></td>
-					<td class="inputField"><input type="number" ng-model="pool.verifierPoolSettings.minReady" name="minReady" min=0 max=1000 required></td>
-					<td class="note">The number of instances always available for use.</td>
+					<td class="inputField"><input type="number" ng-model="pool.verifierPoolSettings.minReady" name="minReady" min=0 ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()" required></td>
+					<td class="note" ng-show="awsCredentialsSet()">The number of instances always available for use.</td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>Max Running Instances</label></td>
-					<td class="inputField"><input type="number" ng-model="pool.verifierPoolSettings.maxRunning" name="maxRunning" min=1 max=10000 required></td>
-					<td class="note">The max number of instances that can be spun up during periods of high use.</td>
+					<td class="inputField"><input type="number" ng-model="pool.verifierPoolSettings.maxRunning" name="maxRunning" min=1 ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()" required></td>
+					<td class="note" ng-show="awsCredentialsSet()">The max number of instances that can be spun up during periods of high use.</td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 				<tr>
 					<td class="fieldName"><label>Root Drive Size</label></td>
-					<td><input type="number" ng-model="pool.verifierPoolSettings.rootDriveSize" name="rootDriveSize" min=8 required></td>
+					<td><input type="number" ng-model="pool.verifierPoolSettings.rootDriveSize" name="rootDriveSize" ng-class="{disabled: awsCredentialsNotSet()}" ng-disabled="awsCredentialsNotSet()" required></td>
+					<td class="note" ng-show="awsCredentialsNotSet()">{{needAWSCredentials}}</td>
 				</tr>
 			</table></div>
 			<div>
 				<div class="formDivider"></div>
-
-				<busy-button centered busy="makingRequest" click="submit()" disabled="poolForm.$pristine">Save Changes</busy-button>
+				<busy-button centered busy="makingRequest" click="submit()" disabled="poolForm.$invalid">Save Changes</busy-button>
 			</div>
 		</form>
 	</panel-body>
