@@ -33,6 +33,9 @@ func New(resourcesConnection *resources.Connection, websocketsManager *websocket
 		websocketsManager:   websocketsManager,
 		subscriptions:       make(map[subscriptionType][]subscription),
 	}
+
+	eventsHandler.listenForUserEvents()
+
 	return &eventsHandler, nil
 }
 

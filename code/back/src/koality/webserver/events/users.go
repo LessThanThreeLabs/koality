@@ -2,8 +2,46 @@ package events
 
 import (
 	"github.com/gorilla/mux"
+	"koality/resources"
 	"koality/webserver/middleware"
+	"time"
 )
+
+type userCreatedEventData struct {
+	Id             uint64     `json:"id"`
+	Email          string     `json:"email"`
+	FirstName      string     `json:"firstName"`
+	LastName       string     `json:"lastName"`
+	IsAdmin        bool       `json:"isAdmin"`
+	Created        *time.Time `json:"created,omitempty"`
+	IsDeleted      bool       `json:"isDeleted"`
+	HasGitHubOAuth bool       `json:"hasGitHubOAuth"`
+}
+
+type userDeletedEventData struct {
+	Id uint64 `json:"id"`
+}
+
+type userNameUpdatedEventData struct {
+	Id        uint64 `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
+type userAdminUpdatedEventData struct {
+	Id      uint64 `json:"id"`
+	IsAdmin bool   `json:"isAdmin"`
+}
+
+type userSshKeyAddedEventData struct {
+	Id       uint64 `json:"id"`
+	SshKeyId uint64 `json:"keyId"`
+}
+
+type userSshKeyRemovedEventData struct {
+	Id       uint64 `json:"id"`
+	SshKeyId uint64 `json:"keyId"`
+}
 
 func (eventsHandler *EventsHandler) wireUserAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/created/subscribe",
@@ -55,4 +93,77 @@ func (eventsHandler *EventsHandler) wireUserAppSubroutes(subrouter *mux.Router) 
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userSshKeyRemovedSubscriptions))).
 		Methods("DELETE")
+}
+
+func (eventsHandler *EventsHandler) listenForUserEvents() error {
+	_, err := eventsHandler.resourcesConnection.Users.Subscription.SubscribeToCreatedEvents(eventsHandler.handleUserCreatedEvent)
+	if err != nil {
+		return err
+	}
+
+	_, err = eventsHandler.resourcesConnection.Users.Subscription.SubscribeToDeletedEvents(eventsHandler.handleUserDeletedEvent)
+	if err != nil {
+		return err
+	}
+
+	_, err = eventsHandler.resourcesConnection.Users.Subscription.SubscribeToNameUpdatedEvents(eventsHandler.handleNameUpdatedEvent)
+	if err != nil {
+		return err
+	}
+
+	_, err = eventsHandler.resourcesConnection.Users.Subscription.SubscribeToAdminUpdatedEvents(eventsHandler.handleAdminUpdatedEvent)
+	if err != nil {
+		return err
+	}
+
+	_, err = eventsHandler.resourcesConnection.Users.Subscription.SubscribeToSshKeyAddedEvents(eventsHandler.handleSshKeyAddedEvent)
+	if err != nil {
+		return err
+	}
+
+	_, err = eventsHandler.resourcesConnection.Users.Subscription.SubscribeToSshKeyRemovedEvents(eventsHandler.handleSshKeyRemovedEvent)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (eventsHandler *EventsHandler) handleUserCreatedEvent(user *resources.User) {
+	message := userCreatedEventData{
+		Id:             user.Id,
+		Email:          user.Email,
+		FirstName:      user.FirstName,
+		LastName:       user.LastName,
+		IsAdmin:        user.IsAdmin,
+		Created:        user.Created,
+		IsDeleted:      user.IsDeleted,
+		HasGitHubOAuth: user.GitHubOAuth != "",
+	}
+	eventsHandler.handleEvent(userCreatedSubscriptions, user.Id, message)
+}
+
+func (eventsHandler *EventsHandler) handleUserDeletedEvent(userId uint64) {
+	message := userDeletedEventData{userId}
+	eventsHandler.handleEvent(userDeletedSubscriptions, userId, message)
+}
+
+func (eventsHandler *EventsHandler) handleNameUpdatedEvent(userId uint64, firstName, lastName string) {
+	message := userNameUpdatedEventData{userId, firstName, lastName}
+	eventsHandler.handleEvent(userNameUpdatedSubscriptions, userId, message)
+}
+
+func (eventsHandler *EventsHandler) handleAdminUpdatedEvent(userId uint64, admin bool) {
+	message := userAdminUpdatedEventData{userId, admin}
+	eventsHandler.handleEvent(userAdminUpdatedSubscriptions, userId, message)
+}
+
+func (eventsHandler *EventsHandler) handleSshKeyAddedEvent(userId, sshKeyId uint64) {
+	message := userSshKeyAddedEventData{userId, sshKeyId}
+	eventsHandler.handleEvent(userSshKeyAddedSubscriptions, userId, message)
+}
+
+func (eventsHandler *EventsHandler) handleSshKeyRemovedEvent(userId, sshKeyId uint64) {
+	message := userSshKeyRemovedEventData{userId, sshKeyId}
+	eventsHandler.handleEvent(userSshKeyRemovedSubscriptions, userId, message)
 }
