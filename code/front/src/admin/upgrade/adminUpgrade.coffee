@@ -6,7 +6,7 @@ window.AdminUpgrade = ['$scope', '$http', '$timeout', 'events', 'notification', 
 	$scope.makingRequest = false
 
 	listenForWebserverComingBackUp = () ->
-		intervalTime = 5000
+		intervalTime = 500
 
 		checkIfWebserverIsDown = () ->
 			request = $http.get '/ping', timeout: intervalTime
@@ -36,7 +36,7 @@ window.AdminUpgrade = ['$scope', '$http', '$timeout', 'events', 'notification', 
 	# handleUpgradeStatus = (upgradeStatus) ->
 	# 	return if not upgradeStatus?
 
-	# 	$scope.version = 
+	# 	$scope.version =
 	# 		current: upgradeStatus.currentVersion
 	# 		future: upgradeStatus.upgradeVersion
 
@@ -69,7 +69,7 @@ window.AdminUpgrade = ['$scope', '$http', '$timeout', 'events', 'notification', 
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		request = $http.post "/app/settings/upgrade"
+		request = $http.post "/app/settings/upgrade", $scope.upgradeStatus.nextVersion
 		request.success (data, status, headers, config) =>
 			$scope.makingRequest = false
 			$scope.performingUpgrade = true

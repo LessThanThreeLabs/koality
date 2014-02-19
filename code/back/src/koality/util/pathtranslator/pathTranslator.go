@@ -38,7 +38,7 @@ func translatePathFromCurrentExecutable(relativePath string, checkFunc func(file
 	}
 
 	// koality/code/back/bin/executable
-	basePath := filepath.Dir(filepath.Dir(filepath.Dir(filepath.Dir(currentBinaryPath))))
+	basePath := parent(parent(parent(parent(currentBinaryPath))))
 	return resolvePath(basePath, relativePath, checkFunc)
 }
 
@@ -49,7 +49,7 @@ func translatePathFromGoEnvironment(relativePath string, checkFunc func(filePath
 	}
 
 	// koality/code/back
-	basePath := filepath.Dir(filepath.Dir(goPathEnv))
+	basePath := parent(parent(goPathEnv))
 	return resolvePath(basePath, relativePath, checkFunc)
 }
 
@@ -65,4 +65,8 @@ func resolvePath(basePath, relativePath string, checkFunc func(filePath string) 
 
 func BinaryPath(binaryPath string) string {
 	return filepath.Join("code", "back", "bin", binaryPath)
+}
+
+func parent(path string) string {
+	return filepath.Join(path, "..")
 }

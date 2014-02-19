@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"koality/shell"
 	"koality/util/pathtranslator"
@@ -81,7 +82,7 @@ func installKoality() error {
 		return fmt.Errorf("Failed to install dependencies: %v\nStdout: %s\nStderr: %s\nError: %v", requiredLibraries, installDependenciesStdout.String(), installDependenciesStderr.String(), err)
 	}
 
-	postgresqlSourceFile := filepath.Join("/", "etc", "apt", "sources.list.d", "pgdg.list")
+	postgresqlSourceFile := filepath.Join("/", "etc", "apt", "sources.list.d", "apt.postgresql.org.list")
 	if _, err := os.Stat(postgresqlSourceFile); err != nil {
 		if err = ioutil.WriteFile(postgresqlSourceFile, []byte("deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main"), 0644); err != nil {
 			return fmt.Errorf("Failed to create the postgresql sources file at %s\nError: %v", postgresqlSourceFile, err)
@@ -138,10 +139,26 @@ func installKoality() error {
 		return fmt.Errorf("Failed to install OpenSSH\nStdout: %s\nStderr: %s\nError: %v", installOpenSshStdout.String(), installOpenSshStderr.String(), err)
 	}
 
+	serviceFilePath := filepath.Join("/", "etc", "init.d", "koality")
+
+	serviceFileSource, err := os.Open(filepath.Join(installDirectory, "misc", "koality.init.d"))
+	if err != nil {
+		return fmt.Errorf("Failed to create init.d file at %s\nError: %v", serviceFilePath, err)
+	}
+
+	serviceFile, err := os.OpenFile(serviceFilePath, os.O_CREATE|os.O_WRONLY, 0755)
+	if err != nil {
+		return fmt.Errorf("Failed to create init.d file at %s\nError: %v", serviceFilePath, err)
+	}
+
+	if _, err = io.Copy(serviceFile, serviceFileSource); err != nil {
+		return fmt.Errorf("Failed to create init.d file at %s\nError: %v", serviceFilePath, err)
+	}
+
 	relinkCommand := exec.Command("bash", "-c", string(shell.Sudo(shell.Commandf("ln -n -f -s %s %s", installDirectory, filepath.Join("/", "etc", "koality", "current")))))
 	relinkStdout, relinkStderr := new(bytes.Buffer), new(bytes.Buffer)
 	relinkCommand.Stdout, relinkCommand.Stderr = relinkStdout, relinkStderr
-	if err := relinkCommand.Run(); err != nil {
+	if err = relinkCommand.Run(); err != nil {
 		return fmt.Errorf("Failed to link new Koality version at %s\nStdout: %s\nStderr: %s\nError: %v", installDirectory, relinkStdout.String(), relinkStderr.String(), err)
 	}
 

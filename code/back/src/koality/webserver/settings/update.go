@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"koality/resources"
+	"koality/upgrade"
 	"koality/webserver/util"
 	"net/http"
 )
@@ -49,8 +50,34 @@ func (settingsHandler *SettingsHandler) resetRepositoryKeyPair(writer http.Respo
 }
 
 func (settingsHandler *SettingsHandler) upgrade(writer http.ResponseWriter, request *http.Request) {
-	writer.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprint(writer, "need to run an upgrade here")
+	upgradeVersionBytes, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	upgradeVersion := string(upgradeVersionBytes)
+	upgradeReader, err := settingsHandler.licenseManager.DownloadUpgrade(upgradeVersion)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	installerPath, err := upgrade.PrepareUpgrade(upgradeReader)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	fmt.Fprint(writer, "ok")
+
+	err = upgrade.RunUpgrade(installerPath)
+	if err != nil {
+		fmt.Printf("Failed to run upgrade, %v\n", err)
+	}
 }
 
 func (settingsHandler *SettingsHandler) setDomainName(writer http.ResponseWriter, request *http.Request) {

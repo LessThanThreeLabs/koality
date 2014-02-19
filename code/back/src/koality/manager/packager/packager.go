@@ -22,7 +22,7 @@ var requiredLibraries = []string{"curl", "libpcre3-dev", "upx"}
 var expectedArtifacts = []string{"koality", "koalityRunner", "getXunitResults", "exportPaths", "sshwrapper",
 	"installer", "authorizedKeys", "restrictedShell"}
 
-var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", ".metadata"}
+var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", ".metadata", "misc"}
 
 func main() {
 	flag.Parse()
