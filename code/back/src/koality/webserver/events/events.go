@@ -18,6 +18,11 @@ type subscriptionRequestData struct {
 	ResourceId   uint64 `json:"resourceId"`
 }
 
+type eventData struct {
+	SubscriptionId uint64      `json:"subscriptionId"`
+	Data           interface{} `json:"data"`
+}
+
 type EventsHandler struct {
 	resourcesConnection   *resources.Connection
 	websocketsManager     *websockets.WebsocketsManager

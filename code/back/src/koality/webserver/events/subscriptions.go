@@ -55,12 +55,13 @@ func (eventsHandler *EventsHandler) removeFromSubscriptions(subscriptionType sub
 	return nil
 }
 
-func (eventsHandler *EventsHandler) handleEvent(subscriptionType subscriptionType, resourceId uint64, message interface{}) {
+func (eventsHandler *EventsHandler) handleEvent(subscriptionType subscriptionType, resourceId uint64, data interface{}) {
 	subscriptionIdsToDelete := make([]uint64, 0)
 
 	eventsHandler.subscriptionsRWMutex.RLock()
 	for _, subscription := range eventsHandler.subscriptions[subscriptionType] {
 		if subscription.allResources || subscription.resourceId == resourceId {
+			message := eventData{subscription.id, data}
 			if err := eventsHandler.websocketsManager.SendJson(subscription.websocketId, message); err != nil {
 				subscriptionIdsToDelete = append(subscriptionIdsToDelete, subscription.id)
 			}

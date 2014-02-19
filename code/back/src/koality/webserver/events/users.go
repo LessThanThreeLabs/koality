@@ -130,7 +130,7 @@ func (eventsHandler *EventsHandler) listenForUserEvents() error {
 }
 
 func (eventsHandler *EventsHandler) handleUserCreatedEvent(user *resources.User) {
-	message := userCreatedEventData{
+	data := userCreatedEventData{
 		Id:             user.Id,
 		Email:          user.Email,
 		FirstName:      user.FirstName,
@@ -140,30 +140,30 @@ func (eventsHandler *EventsHandler) handleUserCreatedEvent(user *resources.User)
 		IsDeleted:      user.IsDeleted,
 		HasGitHubOAuth: user.GitHubOAuth != "",
 	}
-	eventsHandler.handleEvent(userCreatedSubscriptions, user.Id, message)
+	eventsHandler.handleEvent(userCreatedSubscriptions, user.Id, data)
 }
 
 func (eventsHandler *EventsHandler) handleUserDeletedEvent(userId uint64) {
-	message := userDeletedEventData{userId}
-	eventsHandler.handleEvent(userDeletedSubscriptions, userId, message)
+	data := userDeletedEventData{userId}
+	eventsHandler.handleEvent(userDeletedSubscriptions, userId, data)
 }
 
 func (eventsHandler *EventsHandler) handleNameUpdatedEvent(userId uint64, firstName, lastName string) {
-	message := userNameUpdatedEventData{userId, firstName, lastName}
-	eventsHandler.handleEvent(userNameUpdatedSubscriptions, userId, message)
+	data := userNameUpdatedEventData{userId, firstName, lastName}
+	eventsHandler.handleEvent(userNameUpdatedSubscriptions, userId, data)
 }
 
 func (eventsHandler *EventsHandler) handleAdminUpdatedEvent(userId uint64, admin bool) {
-	message := userAdminUpdatedEventData{userId, admin}
-	eventsHandler.handleEvent(userAdminUpdatedSubscriptions, userId, message)
+	data := userAdminUpdatedEventData{userId, admin}
+	eventsHandler.handleEvent(userAdminUpdatedSubscriptions, userId, data)
 }
 
 func (eventsHandler *EventsHandler) handleSshKeyAddedEvent(userId, sshKeyId uint64) {
-	message := userSshKeyAddedEventData{userId, sshKeyId}
-	eventsHandler.handleEvent(userSshKeyAddedSubscriptions, userId, message)
+	data := userSshKeyAddedEventData{userId, sshKeyId}
+	eventsHandler.handleEvent(userSshKeyAddedSubscriptions, userId, data)
 }
 
 func (eventsHandler *EventsHandler) handleSshKeyRemovedEvent(userId, sshKeyId uint64) {
-	message := userSshKeyRemovedEventData{userId, sshKeyId}
-	eventsHandler.handleEvent(userSshKeyRemovedSubscriptions, userId, message)
+	data := userSshKeyRemovedEventData{userId, sshKeyId}
+	eventsHandler.handleEvent(userSshKeyRemovedSubscriptions, userId, data)
 }

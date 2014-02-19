@@ -1,6 +1,6 @@
 'use strict'
 
-window.AccountSshKeys = ['$scope', '$location', '$routeParams', '$http', '$timeout', 'events', 'notification', ($scope, $location, $routeParams, $http, $timeout, events, notification) ->
+window.AccountSshKeys = ['$scope', '$window', '$location', '$routeParams', '$http', '$timeout', 'events', 'notification', ($scope, $window, $location, $routeParams, $http, $timeout, events, notification) ->
 	$scope.orderByPredicate = 'alias'
 	$scope.orderByReverse = false
 
@@ -22,19 +22,16 @@ window.AccountSshKeys = ['$scope', '$location', '$routeParams', '$http', '$timeo
 		request.error (data, status, headers, config) =>
 			notification.error data
 
-	# handleAddedKey = (data) ->
-	# 	return if data.resourceId isnt initialState.user.id
-	# 	$scope.keys.push data
+	handleAddedKey = (data) ->
+		getKeys()
 
-	# handleRemovedKey = (data) ->
-	# 	return if data.resourceId isnt initialState.user.id
-	# 	keyToRemoveIndex = (index for key, index in $scope.keys when key.id is data.id)[0]
-	# 	$scope.keys.splice keyToRemoveIndex, 1 if keyToRemoveIndex?
+	handleRemovedKey = (data) ->
+		getKeys()
 
-	# addKeyEvents = events('users', 'ssh pubkey added', initialState.user.id).setCallback(handleAddedKey).subscribe()
-	# removeKeyEvents = events('users', 'ssh pubkey removed', initialState.user.id).setCallback(handleRemovedKey).subscribe()
-	# $scope.$on '$destroy', addKeyEvents.unsubscribe
-	# $scope.$on '$destroy', removeKeyEvents.unsubscribe
+	addKeyEvents = events('users', 'sshKeyAdded', false, $window.userId).setCallback(handleAddedKey).subscribe()
+	removeKeyEvents = events('users', 'sshKeyRemoved', false, $window.userId).setCallback(handleRemovedKey).subscribe()
+	$scope.$on '$destroy', addKeyEvents.unsubscribe
+	$scope.$on '$destroy', removeKeyEvents.unsubscribe
 
 	getKeys()
 

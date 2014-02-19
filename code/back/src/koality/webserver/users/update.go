@@ -167,7 +167,6 @@ func (usersHandler *UsersHandler) addKeysFromGitHub(writer http.ResponseWriter, 
 	}
 
 	var numKeysAdded uint64
-
 	for _, sshKey := range sshKeys {
 		_, err := usersHandler.resourcesConnection.Users.Update.AddKey(userId, "GitHub: "+sshKey.Name, sshKey.PublicKey)
 		if _, ok := err.(resources.KeyAlreadyExistsError); !ok && err != nil {
@@ -179,6 +178,7 @@ func (usersHandler *UsersHandler) addKeysFromGitHub(writer http.ResponseWriter, 
 		}
 	}
 
+	writer.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(writer, fmt.Sprintf(`{"numKeysAdded": %d}`, numKeysAdded))
 }
 
@@ -192,7 +192,6 @@ func (usersHandler *UsersHandler) removeKey(writer http.ResponseWriter, request 
 	}
 
 	userId := context.Get(request, "userId").(uint64)
-	fmt.Println(userId, removeKeyRequestData.Id)
 	err := usersHandler.resourcesConnection.Users.Update.RemoveKey(userId, removeKeyRequestData.Id)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
