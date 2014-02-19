@@ -95,6 +95,23 @@ func (readHandler *ReadHandler) GetRun(stageRunId uint64) (*resources.StageRun, 
 	} else if err != nil {
 		return nil, err
 	}
+
+	var hasConsoleLines, hasXunitResults, hasExports int
+	hasConsoleLinesQuery := "SELECT COUNT(*) FROM (SELECT 1 FROM console_lines WHERE run_id=$1 LIMIT 1) AS _"
+	hasXunitResultsQuery := "SELECT COUNT(*) FROM (SELECT 1 FROM xunit_results WHERE run_id=$1 LIMIT 1) AS _"
+	hasExportsQuery := "SELECT COUNT(*) FROM (SELECT 1 FROM exports WHERE run_id=$1 LIMIT 1) AS _"
+
+	if err := readHandler.database.QueryRow(hasConsoleLinesQuery, stageRunId).Scan(&hasConsoleLines); err != nil {
+		return nil, err
+	} else if err := readHandler.database.QueryRow(hasXunitResultsQuery, stageRunId).Scan(&hasXunitResults); err != nil {
+		return nil, err
+	} else if err := readHandler.database.QueryRow(hasExportsQuery, stageRunId).Scan(&hasExports); err != nil {
+		return nil, err
+	}
+
+	stageRun.HasConsoleLines = hasConsoleLines == 1
+	stageRun.HasXunitResults = hasXunitResults == 1
+	stageRun.HasExports = hasExports == 1
 	return stageRun, nil
 }
 

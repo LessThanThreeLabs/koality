@@ -14,12 +14,15 @@ type Stage struct {
 }
 
 type StageRun struct {
-	Id         uint64
-	StageId    uint64
-	ReturnCode int // ignore if -1
-	Created    *time.Time
-	Started    *time.Time
-	Ended      *time.Time
+	Id              uint64
+	StageId         uint64
+	ReturnCode      int // ignore if -1
+	Created         *time.Time
+	Started         *time.Time
+	Ended           *time.Time
+	HasConsoleLines bool
+	HasXunitResults bool
+	HasExports      bool
 }
 
 type XunitResult struct {

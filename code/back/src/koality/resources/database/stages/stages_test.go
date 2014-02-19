@@ -294,6 +294,73 @@ func TestStageReturnCode(test *testing.T) {
 	} else if stageRun2.ReturnCode != returnCode {
 		test.Fatal("stageRun.ReturnCode mismatch")
 	}
+
+	if stageRun2.HasConsoleLines {
+		test.Fatal("expected no console lines")
+	} else if stageRun2.HasXunitResults {
+		test.Fatal("expected no xunit results")
+	} else if stageRun2.HasExports {
+		test.Fatal("expected no exports")
+	}
+
+	connection.Stages.Update.AddXunitResults(stageRun.Id, []resources.XunitResult{
+		resources.XunitResult{
+			Name:    "anxunitresult",
+			Path:    "an/awesome/path",
+			Seconds: 6.5,
+		},
+	})
+	stageRun3, err := connection.Stages.Read.GetRun(stageRun.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !stageRun3.HasXunitResults {
+		test.Fatal("expected stage run to have xunit results")
+	} else if stageRun3.HasConsoleLines {
+		test.Fatal("expected no console lines")
+	} else if stageRun3.HasExports {
+		test.Fatal("expected no exports")
+	}
+
+	err = connection.Stages.Update.AddConsoleLines(stageRun.Id, map[uint64]string{
+		1: "hi",
+		2: "this",
+		3: "is a",
+		5: "line",
+	})
+	if err != nil {
+		test.Fatal(err)
+	}
+	stageRun4, err := connection.Stages.Read.GetRun(stageRun.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !stageRun4.HasXunitResults {
+		test.Fatal("expected stage run to have xunit results")
+	} else if !stageRun4.HasConsoleLines {
+		test.Fatal("expected stage run to have console lines")
+	} else if stageRun4.HasExports {
+		test.Fatal("expected no exports")
+	}
+
+	err = connection.Stages.Update.AddExports(stageRun.Id, []resources.Export{
+		resources.Export{
+			BucketName: "buckname",
+			Path:       "the/path",
+			Key:        "thekey",
+		},
+	})
+	if err != nil {
+		test.Fatal(err)
+	}
+	stageRun5, err := connection.Stages.Read.GetRun(stageRun.Id)
+	if err != nil {
+		test.Fatal(err)
+	} else if !stageRun5.HasXunitResults {
+		test.Fatal("expected stage run to have xunit results")
+	} else if !stageRun5.HasConsoleLines {
+		test.Fatal("expected stage run to have console lines")
+	} else if !stageRun5.HasExports {
+		test.Fatal("expected stage run to have exports")
+	}
 }
 
 func TestStageTimes(test *testing.T) {
