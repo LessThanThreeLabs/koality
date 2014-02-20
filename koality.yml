@@ -6,6 +6,8 @@ setup:
 - scripts:
   #  pull down missing submodules
   - git submodule update --init --recursive
+  # temporary, remove bad nodejs
+  - apt-get remove -y nodejs
   # run chef
   - |
     echo "file_cache_path \"$(pwd)/chef-cache\"
