@@ -10,12 +10,13 @@ import (
 	"koality/util/pathtranslator"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 )
 
-var requiredLibraries = []string{"curl"}
+var requiredLibraries = []string{"curl", "build-essential", "git-core"}
 
 func main() {
 	if err := installKoality(); err != nil {
@@ -34,6 +35,15 @@ func installKoality() error {
 
 	if constants.Release == constants.DevelopmentRelease {
 		version = fmt.Sprintf("%s-dev-%d", constants.Version, time.Now().Unix())
+	}
+
+	if _, err := user.Lookup("koality"); err != nil {
+		addUserCommand := exec.Command("useradd", "--create-home", "-s", "/bin/bash", "koality")
+		addUserStdout, addUserStderr := new(bytes.Buffer), new(bytes.Buffer)
+		addUserCommand.Stdout, addUserCommand.Stderr = addUserStdout, addUserStderr
+		if err := addUserCommand.Run(); err != nil {
+			return fmt.Errorf("Failed to add user koality\nStdout: %s\nStderr: %s\nError: %v", addUserStdout.String(), addUserStderr.String(), err)
+		}
 	}
 
 	installDirectory := filepath.Join("/", "etc", "koality", "install", version)
@@ -119,6 +129,37 @@ func installKoality() error {
 	installOpenSshCommand.Stdout, installOpenSshCommand.Stderr = installOpenSshStdout, installOpenSshStderr
 	if err := installOpenSshCommand.Run(); err != nil {
 		return fmt.Errorf("Failed to install OpenSSH\nStdout: %s\nStderr: %s\nError: %v", installOpenSshStdout.String(), installOpenSshStderr.String(), err)
+	}
+
+	certificateDirectory := filepath.Join("/", "etc", "koality", "conf", "certificate")
+	certificatePath := filepath.Join(certificateDirectory, "certificate.pem")
+	if err := os.Stat(certificatePath); err != nil {
+		if err := os.MkdirAll(certificateDirectory, 0700); err != nil {
+			return fmt.Errorf("Failed to create the certificate directory at %s\nError: %v", certificateDirectory, err)
+		}
+
+		generateCsrCommand := exec.Command("openssl", "req", "-nodes", "-newkey", "rsa:2048", "-keyout", "privatekey.pem", "-out", "server.csr", "-subj", "/C=US/ST=CA/L=San Francisco/O=Koality/OU=Koality/CN=*.koalitycode.com")
+		generateCsrCommand.Dir = certificateDirectory
+		generateCsrStdout, generateCsrStderr := new(bytes.Buffer), new(bytes.Buffer)
+		generateCsrCommand.Stdout, generateCsrCommand.Stderr = generateCsrStdout, generateCsrStderr
+		if err := generateCsrCommand.Run(); err != nil {
+			return fmt.Errorf("Failed to generate a Certificate Signing Request\nStdout: %s\nStderr: %s\nError: %v", generateCsrStdout.String(), generateCsrStderr.String(), err)
+		}
+
+		generateCertificateCommand := exec.Command("openssl", "x509", "-req", "-days", "365", "-in", "server.csr", "-signkey", "privatekey.pem", "-out", "certificate.pem")
+		generateCertificateCommand.Dir = certificateDirectory
+		generateCertificateStdout, generateCertificateStderr := new(bytes.Buffer), new(bytes.Buffer)
+		generateCertificateCommand.Stdout, generateCertificateCommand.Stderr = generateCertificateStdout, generateCertificateStderr
+		if err := generateCertificateCommand.Run(); err != nil {
+			return fmt.Errorf("Failed to generate an SSL Certificate\nStdout: %s\nStderr: %s\nError: %v", generateCertificateStdout.String(), generateCertificateStderr.String(), err)
+		}
+	}
+
+	chownCommand := exec.Command("chown", "-R", "koality:koality", filepath.Join("/", "etc", "koality"))
+	chownStdout, chownStderr := new(bytes.Buffer), new(bytes.Buffer)
+	chownCommand.Stdout, chownCommand.Stderr = chownStdout, chownStderr
+	if err := chownCommand.Run(); err != nil {
+		return fmt.Errorf("Failed to grant koality user permissions to the Koality install\nStdout: %s\nStderr: %s\nError: %v", chownStdout.String(), chownStderr.String(), err)
 	}
 
 	serviceFilePath := filepath.Join("/", "etc", "init.d", "koality")

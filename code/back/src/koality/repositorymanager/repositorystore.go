@@ -17,7 +17,7 @@ type PrePushRepository interface {
 	StoredRepository
 
 	mergeChangeset(headRef, baseRef, refToMergeInto string) error
-	storePending(ref, remoteUri string, args ...string) error
+	storePending(ref, remoteUri string) error
 }
 
 type StoredRepository interface {

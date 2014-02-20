@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"koality/resources"
 	"koality/shell"
+	"koality/util/pathtranslator"
 	"os"
 	"regexp"
 	"strings"
@@ -55,13 +56,19 @@ func (repositoryManager *repositoryManager) openGitRepository(repository *resour
 func (repository *gitSubRepository) getSshEnvironment() []string {
 	keyPair, err := repository.resourcesConnection.Settings.Read.GetRepositoryKeyPair()
 	if err != nil {
-		return []string{}
+		return nil
+	}
+
+	// TODO (bbland): use the commented version here
+	// sshScript, err := pathtranslator.TranslatePathWithCheckFunc(pathtranslator.BinaryPath("sshwrapper"), pathtranslator.CheckExecutable)
+	sshScript, err := pathtranslator.TranslatePath(pathtranslator.BinaryPath("sshwrapper"))
+	if err != nil {
+		return nil
 	}
 
 	return []string{
-		fmt.Sprintf("GIT_SSH=%s", defaultSshScript),
+		fmt.Sprintf("GIT_SSH=%s", sshScript),
 		fmt.Sprintf("PRIVATE_KEY=%s", keyPair.PrivateKey),
-		fmt.Sprintf("SSH_TIMEOUT=%s", defaultTimeout),
 	}
 }
 
@@ -90,7 +97,7 @@ func (repository *gitSubRepository) pruneExcessBranches(remoteUri string) (err e
 		}
 	}
 
-	command = Command(repository, nil, "ls-remote", "-h", remoteUri)
+	command = Command(repository, env, "ls-remote", "-h", remoteUri)
 	if err := RunCommand(command); err != nil {
 		return err
 	}
@@ -173,7 +180,7 @@ func (repository *gitSubRepository) fetchAllRefsExceptFor(remoteUri string) (err
 	return
 }
 
-func (repository *gitRepository) storePending(ref, remoteUri string, args ...string) (err error) {
+func (repository *gitRepository) storePending(ref, remoteUri string) (err error) {
 	if err = checkRepositoryExists(repository.bare.path); err != nil {
 		return
 	}
