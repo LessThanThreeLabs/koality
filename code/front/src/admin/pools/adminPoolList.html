@@ -1,0 +1,80 @@
+<panel-header>
+	<div class="left">
+		Pools
+	</div>
+	<div class="right">
+		<button ng-click="navigateNew()">Add a New Repository</button>
+	</div>
+</panel-header>
+
+<panel-body no-padding open-drawer="currentlyOpenDrawer">
+	<div id="poolsList" fading-content>
+		<table class="delineated">
+			<tr>
+				<th class="nameColumn sortableColumn unselectable" ng-click="orderByPredicate = 'name'; orderByReverse = !orderByReverse">
+					<div class="triangle gray" ng-class="{right: orderByPredicate != 'name', up: orderByPredicate == 'name' && !orderByReverse, down: orderByPredicate == 'name' && orderByReverse}"></div>
+					Name
+				</th>
+				<th class="baseAmiColumn sortableColumn unselectable" ng-click="orderByPredicate = 'baseAmi'; orderByReverse = !orderByReverse">
+					<div class="triangle gray" ng-class="{right: orderByPredicate != 'baseAmi', up: orderByPredicate == 'baseAmi' && !orderByReverse, down: orderByPredicate == 'baseAmi' && orderByReverse}"></div>
+					Base Ami
+				</th>
+				<th class="instanceTypeColumn sortableColumn unselectable" ng-click="orderByPredicate = 'instanceType'; orderByReverse = !orderByReverse">
+					<div class="triangle gray" ng-class="{right: orderByPredicate != 'instanceType', up: orderByPredicate == 'instanceType' && !orderByReverse, down: orderByPredicate == 'instanceType' && orderByReverse}"></div>
+					Instance Type
+				</th>
+				<th class="numReadyInstancesColumn sortableColumn unselectable" ng-click="orderByPredicate = 'numReadyInstances'; orderByReverse = !orderByReverse">
+					<div class="triangle gray" ng-class="{right: orderByPredicate != 'numReadyInstances', up: orderByPredicate == 'numReadyInstances' && !orderByReverse, down: orderByPredicate == 'numReadyInstances' && orderByReverse}"></div>
+					Min Ready
+				</th>
+				<th class="maxRunningInstancesColumn unselectable">Max Running</th>
+				<th class="driveSizeColumn unselectable">Root Drive Size</th>
+				<th class="editColumn unselectable">Actions</th>
+			</tr>
+
+			<tr ng-show="pools.length == 0">
+				<td class="nameColumn" colspan="4">There are no pools</td>
+			</tr>
+
+			<tr ng-repeat="pool in pools | orderBy:orderByPredicate:orderByReverse" ng-class="">
+				<td class="nameColumn">
+					<span>{{pool.name}}</span>
+				</td>
+
+				<td class="baseAmiColumn">
+					<span>{{pool.baseAmi}}</span>
+				</td>
+
+				<td class="instanceTypeColumn">
+					<span>{{pool.instanceType}}</span>
+				</td>
+
+				<td class="numReadyInstancesColumn">
+					<span>{{pool.numReadyInstances}}</span>
+				</td>
+
+				<td class="maxRunningInstancesColumn">
+					<span>{{pool.maxRunningInstances}}</span>
+				</td>
+
+				<td class="driveSizeColumn">
+					<span>{{pool.rootDriveSize}}</span>
+				</td>
+
+				<td class="editColumn" ng-show="!pool.deleting">
+					<a ng-click="navigateEdit(pool)">Edit</a>
+					<a class="red" ng-click="pool.deleting = true">Delete</a>
+				</td>
+
+				<td class="deleteColumn" colspan="2" ng-show="pool.deleting">
+					<label class="red">Are you sure? Enter the pool name to continue</label>
+					<div class="deletePoolActions">
+						<input type="text" ng-model="pool.deleteName">
+						<a class="red" ng-click="deletePool(pool)">Delete</a>
+						<a ng-click="pool.deleting = false">Cancel</a>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+</panel-body>

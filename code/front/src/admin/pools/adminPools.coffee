@@ -1,29 +1,46 @@
 'use strict'
 
-window.AdminPools = ['$scope', '$http', 'events', 'notification', ($scope, $http, events, notification) ->
-	$scope.allowedAmis = null
-	$scope.allowedInstanceSizes = null
-	$scope.allowedSecurityGroups = null
-	$scope.pool = {
-		id: 1, # TODO(dhuang) make this not hardcoded
-		name: null,
-		awsKeys: {
-			accessKey: null,
-			secretKey: null
-		},
-		username: null,
-		baseAmi: null,
-		securityGroupId: null,
-		vpcSubnetId: null
-		instanceType: null,
-		numReadyInstances: null,
-		maxRunningInstances: null,
-		rootDriveSize: null,
-		userData: null
-	}
-	$scope.oldAwsKeys = angular.copy $scope.pool.awsKeys
+window.AdminPools = ['$scope', '$http', '$location', 'events', 'notification', ($scope, $http, $location, events, notification) ->
 	$scope.needAWSCredentials = "You must enter your AWS credentials before filling out this field."
-	$scope.awsCredentialState = "Unset"
+
+	getPoolFromServerResponse = (resp) ->
+		{
+			id: resp.id,
+			name: resp.name,
+			awsKeys: {
+				accessKey: resp.accessKey,
+				secretKey: resp.secretKey
+			},
+			username: resp.username,
+			baseAmi: resp.baseAmiId,
+			securityGroupId: resp.securityGroupId,
+			vpcSubnetId: resp.vpcSubnetId,
+			instanceType: resp.instanceType,
+			numReadyInstances: resp.numReadyInstances,
+			maxRunningInstances: resp.numMaxInstances,
+			rootDriveSize: resp.rootDriveSize,
+			userData: resp.userData
+		}
+
+	$scope.resetPool = () ->
+		$scope.pool = {
+			id: null,
+			name: null,
+			awsKeys: {
+				accessKey: "",
+				secretKey: ""
+			},
+			username: null,
+			baseAmi: null,
+			securityGroupId: null,
+			vpcSubnetId: null
+			instanceType: null,
+			numReadyInstances: null,
+			maxRunningInstances: null,
+			rootDriveSize: null,
+			userData: null
+		}
+
 	$scope.updateAwsCredentials = () ->
 		if angular.equals($scope.pool.awsKeys, $scope.oldAwsKeys) || $scope.pool.awsKeys.accessKey.length is 0 || $scope.pool.awsKeys.secretKey.length is 0
 			return
@@ -48,62 +65,127 @@ window.AdminPools = ['$scope', '$http', 'events', 'notification', ($scope, $http
 		request.finally () ->
 			$scope.makingRequest = false
 		$scope.oldAwsKeys = angular.copy $scope.pool.awsKeys
+
 	$scope.awsCredentialsSet = () ->
 		$scope.awsCredentialState is "Set"
+
 	$scope.awsCredentialsNotSet = () ->
 		$scope.awsCredentialState isnt "Set"
+
 	$scope.loadPool = () ->
 		$scope.makingRequest = true
-		request = $http.get "/app/pools/#{$scope.pool.id}"
+		request = $http.get "/app/pools/#{parseInt($location.search().poolId)}"
 		request.success (data, status, headers, config) ->
-			$scope.pool.name = data.name
-			$scope.pool.awsKeys = {
-				accessKey: data.accessKey,
-				secretKey: data.secretKey
-			}
-			$scope.pool.username = data.username
-			$scope.pool.baseAmi = data.baseAmiId
-			$scope.pool.securityGroupId = data.securityGroupId
-			$scope.pool.vpcSubnetId = data.vpcSubnetId
-			$scope.pool.instanceType = data.instanceType
-			$scope.pool.numReadyInstances = data.numReadyInstances
-			$scope.pool.maxRunningInstances = data.numMaxInstances
-			$scope.pool.rootDriveSize = data.rootDriveSize
-			$scope.pool.userData = data.userData
+			$scope.pool = getPoolFromServerResponse data
 		request.error (data, status, headers, config) ->
 			notification.error data
 		request.finally () ->
 			$scope.makingRequest = false
 			$scope.updateAwsCredentials()
+
 	$scope.submit = () ->
 		$scope.makingRequest = true
 		baseAmi = $scope.pool.baseAmi
 		afterIdIndex = baseAmi.indexOf " ("
 		if afterIdIndex >= 0
-			baseAmiId = baseAmi.substr 0, afterIdIndex
-		request = $http.put "/app/pools/#{$scope.pool.id}", {
+			baseAmi = baseAmi.substr 0, afterIdIndex
+		params = {
 			name: $scope.pool.name,
 			accessKey: $scope.pool.awsKeys.accessKey,
 			secretKey: $scope.pool.awsKeys.secretKey,
 			username: $scope.pool.username,
-			baseAmiId: baseAmiId,
-			securityGroupId: $scope.pool.secretKey,
-			vpcSubnetId: $scope.pool.secretKey,
+			baseAmiId: baseAmi,
+			securityGroupId: $scope.pool.securityGroupId,
+			vpcSubnetId: $scope.pool.vpcSubnetId,
 			instanceType: $scope.pool.instanceType,
 			numReadyInstances: $scope.pool.numReadyInstances,
 			maxRunningInstances: $scope.pool.maxRunningInstances,
 			rootDriveSize: $scope.pool.rootDriveSize,
 			userData: $scope.pool.userData
 		}
-		request.success (data, status, headers, config) ->
-			notification.success "Successfully updated pool"
-		request.error (data, status, headers, config) ->
-			notification.error data
-		request.finally () ->
-			$scope.makingRequest = false
+		switch $scope.action()
+			when "update"
+				request = $http.put "/app/pools/#{$scope.pool.id}", params
+				request.success (data, status, headers, config) ->
+					notification.success "Successfully updated pool"
+				request.error (data, status, headers, config) ->
+					notification.error data
+				request.finally () ->
+					$scope.makingRequest = false
+			when "create"
+				request = $http.post "/app/pools/", params
+				request.success (data, status, headers, config) ->
+					notification.success "Successfully created pool"
+					$scope.navigateList()
+				request.error (data, status, headers, config) ->
+					notification.error data
+				request.finally () ->
+					$scope.makingRequest = false
+
 	$scope.updateAwsCredentialsIfEnter = (event) ->
 		if event.keyCode is 13 # enter
 			$scope.updateAwsCredentials()
 			event.preventDefault()
-	$scope.loadPool()
+
+	$scope.deletePool = (pool) ->
+		pool.deleting = true
+		if pool.deleteName isnt pool.name
+			return
+		request = $http.delete "/app/pools/#{pool.id}"
+		request.success (data, status, headers, config) ->
+			notification.success "Successfully deleted pool"
+			$scope.loadPools()
+		request.error (data, status, headers, config) ->
+			notification.error data
+		request.finally () ->
+			pool.deleting = false
+	$scope.action = () ->
+		action = $location.search().action
+		if action in ["update", "create", "list"] then action else "list"
+
+	$scope.navigateNew = () ->
+		$location.url "/admin?view=pools&action=create"
+		$scope.loadNew()
+	$scope.loadNew = () ->
+		$scope.awsCredentialState = "Unset"
+		$scope.allowedAmis = null
+		$scope.allowedInstanceSizes = null
+		$scope.allowedSecurityGroups = null
+		$scope.oldAwsKeys = angular.copy $scope.pool.awsKeys
+		$scope.resetPool()
+
+	$scope.navigateList = () ->
+		$location.url "/admin?view=pools&action=list"
+		$scope.loadPools()
+	$scope.loadPools = () ->
+		$scope.pool = {}
+		$scope.makingRequest = true
+		request = $http.get "/app/pools/"
+		request.success (data, status, headers, config) ->
+			$scope.pools = data.map getPoolFromServerResponse
+		request.error (data, status, headers, config) ->
+			notification.error data
+		request.finally () ->
+			$scope.makingRequest = false
+
+
+	$scope.navigateEdit = (pool) ->
+		$location.url "/admin?view=pools&action=update&poolId=#{pool.id}"
+		$scope.loadEdit()
+	$scope.loadEdit = () ->
+		$scope.awsCredentialState = "Unset"
+		$scope.allowedAmis = null
+		$scope.allowedInstanceSizes = null
+		$scope.allowedSecurityGroups = null
+		$scope.resetPool()
+		$scope.oldAwsKeys = angular.copy $scope.pool.awsKeys
+		$scope.loadPool()
+
+	switch $scope.action()
+		when "update"
+			$scope.loadEdit()
+		when "create"
+			$scope.loadNew()
+		when "list"
+			$scope.loadPools()
 ]

@@ -58,6 +58,9 @@ func New(resourcesConnection *resources.Connection) (*PoolsHandler, error) {
 }
 
 func (poolsHandler *PoolsHandler) WirePoolsAppSubroutes(subrouter *mux.Router) {
+	subrouter.HandleFunc("/",
+		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.getAll)).
+		Methods("GET")
 	subrouter.HandleFunc("/{poolId:[0-9]+}",
 		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.get)).
 		Methods("GET")
@@ -72,12 +75,18 @@ func (poolsHandler *PoolsHandler) WirePoolsAppSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{poolId:[0-9]+}",
 		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.update)).
 		Methods("PUT")
+
+	subrouter.HandleFunc("/{poolId:[0-9]+}",
+		middleware.IsAdminWrapper(poolsHandler.resourcesConnection, poolsHandler.delete)).
+		Methods("DELETE")
 }
 
 func (poolsHandler *PoolsHandler) WirePoolsApiSubroutes(subrouter *mux.Router) {
 	subrouter.HandleFunc("/{poolId:[0-9]+}", poolsHandler.get).Methods("GET")
+	subrouter.HandleFunc("/", poolsHandler.getAll).Methods("GET")
 	subrouter.HandleFunc("/{poolId:[0-9]+}", poolsHandler.update).Methods("PUT")
 	subrouter.HandleFunc("/", poolsHandler.create).Methods("POST")
+	subrouter.HandleFunc("/{poolId:[0-9]+}", poolsHandler.delete).Methods("DELETE")
 }
 
 func getSanitizedPool(pool *resources.Ec2Pool) *sanitizedPool {

@@ -2,48 +2,88 @@
 
 
 #adminPools {
-	td {
-		padding-right: 30px;
-		vertical-align: middle;
+	form[name=poolForm] {
+		td {
+			padding-right: 30px;
+			vertical-align: middle;
 
-		&.fieldName {
-			width: 120px;
-		}
-
-		&.inputField {
-			width: 340px;
-		}
-
-		select, input {
-			margin-bottom: 0;
-			margin-top: 0;
-		}
-
-		label {
-			padding-bottom: 0;
-		}
-
-		padding-bottom: 20px;
-	}
-
-	.formContainer {
-		width: 750px;
-	}
-
-	tr {
-
-		&:last-child {
-			textarea, label, input {
-				margin-bottom: 0;
+			&.fieldName {
+				width: 120px;
 			}
 
-			td {
+			&.inputField {
+				width: 340px;
+			}
+
+			select, input {
+				margin-bottom: 0;
+				margin-top: 0;
+			}
+
+			label {
 				padding-bottom: 0;
 			}
+
+			padding-bottom: 20px;
+		}
+
+		.formContainer {
+			width: 750px;
+		}
+
+		tr {
+
+			&:last-child {
+				textarea, label, input {
+					margin-bottom: 0;
+				}
+
+				td {
+					padding-bottom: 0;
+				}
+			}
+		}
+
+		div.formDivider {
+			margin: 25px 0;
 		}
 	}
 
-	div.formDivider {
-		margin: 25px 0;
+	#poolsList {
+		.nameColumn {
+			padding-left: 15px;
+			padding-right: 15px;
+			width: 150px;
+		}
+
+		.baseAmiColumn {
+			padding-right: 15px;
+			width: 40px;
+		}
+
+		.instanceTypeColumn {
+			padding-right: 15px;
+			width: 30px;
+		}
+
+		.numReadyInstancesColumn {
+			padding-right: 15px;
+			width: 30px;
+		}
+
+		.maxRunningInstancesColumn {
+			padding-right: 15px;
+			width: 30px;
+		}
+
+		.driveSizeColumn {
+			padding-right: 15px;
+			width: 30px;
+		}
+
+		.editColumn {
+			padding-right: 15px;
+			width: 50px;
+		}
 	}
 }

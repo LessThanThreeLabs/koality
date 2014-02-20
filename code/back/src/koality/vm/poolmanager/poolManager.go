@@ -90,6 +90,7 @@ func (poolManager *PoolManager) SubscribeToEvents(resourcesConnection *resources
 			stacktrace := make([]byte, 4096)
 			stacktrace = stacktrace[:runtime.Stack(stacktrace, false)]
 			log.Errorf("Pool with id: %d is not an EC2 pool\n%s", ec2PoolId, stacktrace)
+			return // TODO(dhuang) remove this - this is only to help with development
 		}
 
 		ec2Pool := ec2VmPool.Ec2VirtualMachineManager.Ec2Pool

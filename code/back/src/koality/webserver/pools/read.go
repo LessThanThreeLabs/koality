@@ -39,6 +39,29 @@ func (poolsHandler *PoolsHandler) get(writer http.ResponseWriter, request *http.
 	fmt.Fprintf(writer, "%s", jsonedPool)
 }
 
+func (poolsHandler *PoolsHandler) getAll(writer http.ResponseWriter, request *http.Request) {
+	pools, err := poolsHandler.resourcesConnection.Pools.Read.GetAllEc2Pools()
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, err)
+		return
+	}
+
+	sanitizedPools := make([]*sanitizedPool, len(pools))
+	for i, pool := range pools {
+		sanitizedPools[i] = getSanitizedPool(&pool)
+	}
+	jsonedPools, err := json.Marshal(sanitizedPools)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(writer, "Unable to stringify:", err)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(writer, "%s", jsonedPools)
+}
+
 func (poolsHandler *PoolsHandler) getAwsSettings(writer http.ResponseWriter, request *http.Request) {
 	auth := aws.Auth{
 		AccessKey: request.FormValue("accessKey"),
