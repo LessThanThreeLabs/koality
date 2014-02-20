@@ -355,7 +355,7 @@ func convertParameters(config interface{}) (provisionCommand *shell.Command, par
 						return
 					}
 
-					params.Environment[variableName] = fmt.Sprintf("%v", value)
+					params.Environment[variableName] = fmt.Sprint(value)
 				}
 
 			case "recursiveClone":

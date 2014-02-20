@@ -3,6 +3,7 @@ package testrunner
 import (
 	"github.com/dchest/goyaml"
 	"io/ioutil"
+	"koality/notify"
 	"koality/repositorymanager"
 	"koality/resources/database"
 	"koality/shell"
@@ -91,7 +92,7 @@ func testBuild(test *testing.T, ymlBytes []byte, expectSuccess bool) {
 	vmPool := vm.NewPool(1, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	testRunner := New(resourcesConnection, poolManager, repositoryManager)
+	testRunner := New(resourcesConnection, poolManager, repositoryManager, notify.NewCompoundNotifier(nil, nil))
 	build, err := resourcesConnection.Builds.Create.Create(repository.Id, sha, "1234567890123456789012345678901234567890",
 		"headMessage", "headUsername", "head@Ema.il", nil, "a@b.com", "refs/heads/master", false, true)
 	if err != nil {
