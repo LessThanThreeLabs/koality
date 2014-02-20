@@ -69,19 +69,19 @@ func (eventsHandler *EventsHandler) wireUserAppSubroutes(subrouter *mux.Router) 
 			eventsHandler.createSubscription(userSshKeyRemovedSubscriptions, false, false))).
 		Methods("POST")
 
-	subrouter.HandleFunc("/created/#{subscriptionId:[0-9]+}",
+	subrouter.HandleFunc("/created/{subscriptionId:[0-9]+}",
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userCreatedSubscriptions))).
 		Methods("DELETE")
-	subrouter.HandleFunc("/deleted/#{subscriptionId:[0-9]+}",
+	subrouter.HandleFunc("/deleted/{subscriptionId:[0-9]+}",
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userDeletedSubscriptions))).
 		Methods("DELETE")
-	subrouter.HandleFunc("/name/#{subscriptionId:[0-9]+}",
+	subrouter.HandleFunc("/name/{subscriptionId:[0-9]+}",
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userNameUpdatedSubscriptions))).
 		Methods("DELETE")
-	subrouter.HandleFunc("/admin/#{subscriptionId:[0-9]+}",
+	subrouter.HandleFunc("/admin/{subscriptionId:[0-9]+}",
 		middleware.IsLoggedInWrapper(
 			eventsHandler.deleteSubscription(userAdminUpdatedSubscriptions))).
 		Methods("DELETE")

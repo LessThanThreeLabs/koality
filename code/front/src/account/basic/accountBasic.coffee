@@ -28,29 +28,31 @@ window.AccountBasic = ['$scope', '$window', '$http', 'events', 'notification', (
 		if not $scope.account.lastName?
 			$scope.account.lastName = userInformation.lastName
 
-	# handleNameUpdated = (data) ->
-	# 	return if data.resourceId isnt initialState.user.id
-	# 	processName data
+	handleNameUpdated = (data) ->
+		if $scope.account.oldFirstName is $scope.account.firstName
+			$scope.account.oldFirstName = $scope.account.firstName = data.firstName
+		if $scope.account.oldLastName is $scope.account.lastName
+			$scope.account.oldLastName = $scope.account.lastName = data.lastName
 
 	getUser()
 
-	# nameUpdatedEvents = events('users', 'user name updated', initialState.user.id).setCallback(handleNameUpdated).subscribe()
-	# $scope.$on '$destroy', nameUpdatedEvents.unsubscribe
+	nameUpdatedEvents = events('users', 'name', false, $window.userId).setCallback(handleNameUpdated).subscribe()
+	$scope.$on '$destroy', nameUpdatedEvents.unsubscribe
 
 	$scope.submit = () ->
 		return if $scope.makingRequest
 		$scope.makingRequest = true
 
-		# in case they change in the UI while waiting for request to come back
+		# In case they change in the UI while waiting for request to come back
 		firstName = $scope.account.firstName
 		lastName = $scope.account.lastName
 
 		request = $http.post("/app/users/name", $scope.account)
 		request.success (data, status, headers, config) =>
 			$scope.makingRequest = false
-			notification.success 'Updated account information'
 			$scope.account.oldFirstName = firstName
 			$scope.account.oldLastName = lastName
+			notification.success 'Updated account information'
 		request.error (data, status, headers, config) =>
 			$scope.makingRequest = false
 			notification.error data

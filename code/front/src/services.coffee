@@ -36,7 +36,7 @@ angular.module('koality.service', []).
 			hash += text.charCodeAt index for index in [0...text.length]
 			return hash
 	]).
-	factory('events', ['$window', '$http', 'integerConverter', 'notification', ($window, $http, integerConverter, notification) ->
+	factory('events', ['$rootScope', '$window', '$http', 'integerConverter', 'notification', ($rootScope, $window, $http, integerConverter, notification) ->
 		connectionId = Math.floor Math.random() * 1000000
 		subscriptionCallbacks = {}
 
@@ -47,7 +47,7 @@ angular.module('koality.service', []).
 			websocket.onmessage = (event) ->
 				message = JSON.parse(event.data)
 				callback = subscriptionCallbacks[message.subscriptionId]
-				if callback? then callback message.data
+				if callback? then $rootScope.$apply () => callback message.data
 				else console.warn 'Unexpected event', message
 			websocket.onerror = (error) ->
 				console.error error

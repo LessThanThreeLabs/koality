@@ -13,7 +13,6 @@ window.AccountPassword = ['$scope', '$http', 'notification', ($scope, $http, not
 			return if $scope.makingRequest
 			$scope.makingRequest = true
 
-			console.log $scope.password
 			request = $http.post "/app/users/password", $scope.password
 			request.success (data, status, headers, config) =>
 				$scope.makingRequest = false
