@@ -164,7 +164,7 @@ func (settingsHandler *SettingsHandler) getGitHubEnterpriseSettings(writer http.
 	fmt.Fprintf(writer, "%s", jsonedGitHubEnterpriseSettings)
 }
 
-func (settingsHandler *SettingsHandler) getLicense(writer http.ResponseWriter, request *http.Request) {
+func (settingsHandler *SettingsHandler) getLicenseSettings(writer http.ResponseWriter, request *http.Request) {
 	licenseSettings, err := settingsHandler.resourcesConnection.Settings.Read.GetLicenseSettings()
 	if _, ok := err.(resources.NoSuchSettingError); ok {
 		licenseSettings = &resources.LicenseSettings{

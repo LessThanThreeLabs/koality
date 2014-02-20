@@ -40,6 +40,7 @@ func New(resourcesConnection *resources.Connection, websocketsManager *websocket
 	}
 
 	eventsHandler.listenForUserEvents()
+	eventsHandler.listenForSettingsEvents()
 
 	return &eventsHandler, nil
 }
@@ -47,6 +48,9 @@ func New(resourcesConnection *resources.Connection, websocketsManager *websocket
 func (eventsHandler *EventsHandler) WireAppSubroutes(subrouter *mux.Router) {
 	usersSubrouter := subrouter.PathPrefix("/users").Subrouter()
 	eventsHandler.wireUserAppSubroutes(usersSubrouter)
+
+	settingsSubrouter := subrouter.PathPrefix("/settings").Subrouter()
+	eventsHandler.wireSettingsAppSubroutes(settingsSubrouter)
 }
 
 func (eventsHandler *EventsHandler) getNextSubscriptionId() uint64 {
@@ -56,7 +60,7 @@ func (eventsHandler *EventsHandler) getNextSubscriptionId() uint64 {
 	return eventsHandler.subscriptionIdCounter
 }
 
-func (eventsHandler *EventsHandler) createSubscription(subscriptionType subscriptionType, mustBeAdmin bool, mustBeSelf bool) http.HandlerFunc {
+func (eventsHandler *EventsHandler) createSubscription(subscriptionType subscriptionType, mustBeAll, mustBeSelf bool) http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		userId := context.Get(request, "userId").(uint64)
 
@@ -67,27 +71,28 @@ func (eventsHandler *EventsHandler) createSubscription(subscriptionType subscrip
 			return
 		}
 
+		if subscriptionRequestData.AllResources {
+			subscriptionRequestData.ResourceId = 0
+		}
+
+		if subscriptionRequestData.ResourceId < 0 {
+			http.Error(writer, "Forbidden request, must specify valid resource id", http.StatusForbidden)
+			return
+		}
+
+		if mustBeAll && !subscriptionRequestData.AllResources {
+			http.Error(writer, "Forbidden request, must subscribe to all events for resource", http.StatusForbidden)
+			return
+		}
+
+		if mustBeSelf && (subscriptionRequestData.AllResources || userId != subscriptionRequestData.ResourceId) {
+			http.Error(writer, "Forbidden request, can only subscribe to events for self", http.StatusForbidden)
+			return
+		}
+
 		websocketId := eventsHandler.websocketsManager.GetId(userId, subscriptionRequestData.ConnectionId)
 		subscription := subscription{eventsHandler.getNextSubscriptionId(), userId, websocketId,
 			subscriptionRequestData.AllResources, subscriptionRequestData.ResourceId}
-
-		if mustBeAdmin {
-			user, err := eventsHandler.resourcesConnection.Users.Read.Get(userId)
-			if err != nil {
-				http.Error(writer, err.Error(), http.StatusInternalServerError)
-				return
-			} else if !user.IsAdmin {
-				http.Error(writer, "Forbidden request, must be an admin", http.StatusForbidden)
-				return
-			}
-		}
-
-		if mustBeSelf {
-			if userId != subscriptionRequestData.ResourceId || subscriptionRequestData.AllResources {
-				http.Error(writer, "Forbidden request, can only subscribe to events for self", http.StatusForbidden)
-				return
-			}
-		}
 
 		err := eventsHandler.addToSubscriptions(subscriptionType, subscription)
 		if err != nil {

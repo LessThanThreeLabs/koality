@@ -1,4 +1,4 @@
-package licenseclient
+package client
 
 import (
 	"crypto/sha1"

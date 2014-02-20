@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	githubconnection "koality/github"
-	"koality/license/client"
+	licenseclient "koality/license/client"
 	"koality/mail"
 	"koality/repositorymanager"
 	"koality/resources"

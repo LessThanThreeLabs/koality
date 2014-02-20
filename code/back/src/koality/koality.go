@@ -8,7 +8,7 @@ import (
 	"koality/build/testrunner"
 	"koality/github"
 	"koality/internalapi"
-	"koality/license/client"
+	licenseclient "koality/license/client"
 	"koality/mail"
 	"koality/notify"
 	"koality/repositorymanager"

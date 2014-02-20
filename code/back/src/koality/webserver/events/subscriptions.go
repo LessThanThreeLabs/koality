@@ -11,6 +11,15 @@ const (
 	userAdminUpdatedSubscriptions
 	userSshKeyAddedSubscriptions
 	userSshKeyRemovedSubscriptions
+
+	domainNameUpdatedSubscriptions
+	authenticationSettingsUpdatedSubscriptions
+	repositoryKeyPairUpdatedSubscriptions
+	s3ExporterSettingsUpdatedSubscriptions
+	smtpServerSettingsUpdatedSubscriptions
+	hipChatSettingsUpdatedSubscriptions
+	gitHubEnterpriseSettingsUpdatedSubscriptions
+	licenseSettingsUpdatedSubscriptions
 )
 
 type subscriptionType int

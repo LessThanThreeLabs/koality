@@ -62,11 +62,11 @@ func (eventsHandler *EventsHandler) wireUserAppSubroutes(subrouter *mux.Router) 
 		Methods("POST")
 	subrouter.HandleFunc("/sshKeyAdded/subscribe",
 		middleware.IsLoggedInWrapper(
-			eventsHandler.createSubscription(userSshKeyAddedSubscriptions, false, false))).
+			eventsHandler.createSubscription(userSshKeyAddedSubscriptions, false, true))).
 		Methods("POST")
 	subrouter.HandleFunc("/sshKeyRemoved/subscribe",
 		middleware.IsLoggedInWrapper(
-			eventsHandler.createSubscription(userSshKeyRemovedSubscriptions, false, false))).
+			eventsHandler.createSubscription(userSshKeyRemovedSubscriptions, false, true))).
 		Methods("POST")
 
 	subrouter.HandleFunc("/created/{subscriptionId:[0-9]+}",

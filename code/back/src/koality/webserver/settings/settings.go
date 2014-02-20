@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/sessions"
 	"koality/constants"
 	"koality/license"
-	"koality/license/client"
+	licenseclient "koality/license/client"
 	"koality/resources"
 	"koality/webserver/middleware"
 )
@@ -136,7 +136,7 @@ func (settingsHandler *SettingsHandler) WireAppSubroutes(subrouter *mux.Router) 
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getGitHubEnterpriseSettings)).
 		Methods("GET")
 	subrouter.HandleFunc("/license",
-		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getLicense)).
+		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getLicenseSettings)).
 		Methods("GET")
 	subrouter.HandleFunc("/upgradeStatus",
 		middleware.IsAdminWrapper(settingsHandler.resourcesConnection, settingsHandler.getUpgradeStatus)).
@@ -193,7 +193,7 @@ func (settingsHandler *SettingsHandler) WireApiSubroutes(subrouter *mux.Router) 
 	subrouter.HandleFunc("/s3Exporter", settingsHandler.getS3ExporterSettings).Methods("GET")
 	subrouter.HandleFunc("/hipChat", settingsHandler.getHipChatSettings).Methods("GET")
 	subrouter.HandleFunc("/gitHubEnterprise", settingsHandler.getGitHubEnterpriseSettings).Methods("GET")
-	subrouter.HandleFunc("/license", settingsHandler.getLicense).Methods("GET")
+	subrouter.HandleFunc("/license", settingsHandler.getLicenseSettings).Methods("GET")
 	subrouter.HandleFunc("/upgradeStatus", settingsHandler.getUpgradeStatus).Methods("GET")
 
 	subrouter.HandleFunc("/apiKey/reset", settingsHandler.resetApiKey).Methods("POST")
