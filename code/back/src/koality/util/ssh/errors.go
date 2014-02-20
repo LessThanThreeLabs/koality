@@ -27,6 +27,14 @@ func (err RepositoryNotFoundError) Error() string {
 	return "Repository not found. Please check your VCS' configuration."
 }
 
+type UserNotFoundError struct {
+	userId uint64
+}
+
+func (err UserNotFoundError) Error() string {
+	return fmt.Sprintf("No user exists with id %d.", err.userId)
+}
+
 type NoShellAccessError struct {
 	userEmail string
 }

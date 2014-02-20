@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"fmt"
 	"koality/internalapi"
 	"koality/resources"
 	"koality/vm"
@@ -14,7 +15,7 @@ type shell interface {
 }
 
 func HandleSSHCommand(userId uint64, origCommand string) error {
-	command := strings.Split(origCommand, " ")
+	command := strings.Fields(origCommand)
 	client, err := rpc.Dial("unix", internalapi.RpcSocket)
 	if err != nil {
 		return err
@@ -25,9 +26,11 @@ func HandleSSHCommand(userId uint64, origCommand string) error {
 		user := new(resources.User)
 		if err := client.Call("UserInfoReader.GetUser", &userId, user); err != nil {
 			return err
+		} else if user.Id == 0 {
+			return UserNotFoundError{userId}
+		} else {
+			return NoShellAccessError{user.Email}
 		}
-
-		return NoShellAccessError{user.Email}
 	}
 
 	var shellCommand vm.Command

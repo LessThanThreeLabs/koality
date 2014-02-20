@@ -18,12 +18,12 @@ import (
 var compressFlag = flag.Bool("compress", true, "compress the Koality package")
 var upxFlag = flag.Bool("upx", false, "compress Koality go binaries with upx (not suggested)")
 
-var requiredLibraries = []string{"curl", "libpcre3-dev", "upx"}
+var requiredLibraries = []string{"curl", "libpcre3-dev", "libcurl4-gnutls-dev", "libexpat1-dev", "gettext", "upx"}
 
 var expectedArtifacts = []string{"koality", "koalityRunner", "getXunitResults", "exportPaths", "sshwrapper",
-	"installer", "authorizedKeys", "restrictedShell"}
+	"installer", "authorizedKeys", "restrictedShell", "notifyRefUpdate"}
 
-var expectedFiles = []string{"code", "postgres", "nginx", "dependencies", "misc"}
+var expectedFiles = []string{"code", "postgres", "nginx", "git", "dependencies", "misc"}
 
 func main() {
 	flag.Parse()
@@ -95,6 +95,41 @@ func packageKoality(outputDirectory string) error {
 		return fmt.Errorf("Failed to copy the repository from %s to %s\nStdout: %s\nStderr: %s\nError: %v", ownDirectory, outputDirectory, copyStdout.String(), copyStderr.String(), err)
 	}
 	fmt.Printf("Copied repository from %s to %s\n", ownDirectory, outputDirectory)
+
+	tmpGitDir := filepath.Join(outputDirectory, "tmpGit")
+	cloneCommand := exec.Command("git", "clone", "--depth", "1", "git://github.com/LessThanThreeLabs/git.git", tmpGitDir)
+	cloneCommand.Dir = outputDirectory
+	cloneStdout, cloneStderr := new(bytes.Buffer), new(bytes.Buffer)
+	cloneCommand.Stdout, cloneCommand.Stderr = cloneStdout, cloneStderr
+	fmt.Println("Downloading our git fork...")
+	if err = cloneCommand.Run(); err != nil {
+		return fmt.Errorf("Failed to download our git fork\nStdout: %s\nStderr: %s\nError: %v", cloneStdout.String(), cloneStderr.String(), err)
+	}
+	fmt.Println("Git fork downloaded")
+
+	gitReceivePack := "git-receive-pack"
+	makeCommand := exec.Command("make", "prefix=/etc/koality/current/git", gitReceivePack)
+	makeCommand.Dir = tmpGitDir
+	makeStdout, makeStderr := new(bytes.Buffer), new(bytes.Buffer)
+	makeCommand.Stdout, makeCommand.Stderr = makeStdout, makeStderr
+	fmt.Println("Compiling git...")
+	if err = makeCommand.Run(); err != nil {
+		return fmt.Errorf("Failed to compile git\nStdout: %s\nStderr: %s\nError: %v", makeStdout.String(), makeStderr.String(), err)
+	}
+	fmt.Println("Git compiled")
+
+	gitDir := filepath.Join(outputDirectory, "git")
+	if err = os.Mkdir(gitDir, 0755); err != nil {
+		return fmt.Errorf("Failed to create git directory\nError: %v", err)
+	}
+
+	if err = os.Rename(filepath.Join(tmpGitDir, gitReceivePack), filepath.Join(gitDir, gitReceivePack)); err != nil {
+		return fmt.Errorf("Failed to copy over git-receive-pack binary\nError: %v", err)
+	}
+
+	if err = os.RemoveAll(tmpGitDir); err != nil {
+		return fmt.Errorf("Failed to remove temporary git directory\nError: %v", err)
+	}
 
 	for _, artifact := range expectedArtifacts {
 		artifactPath := filepath.Join(outputDirectory, pathtranslator.BinaryPath(artifact))
@@ -173,9 +208,9 @@ func packageKoality(outputDirectory string) error {
 	}
 	fmt.Println("Nginx configured")
 
-	makeCommand := exec.Command("make")
+	makeCommand = exec.Command("make")
 	makeCommand.Dir = filepath.Join(dependenciesDirectory, "nginx-1.4.4")
-	makeStdout, makeStderr := new(bytes.Buffer), new(bytes.Buffer)
+	makeStdout, makeStderr = new(bytes.Buffer), new(bytes.Buffer)
 	makeCommand.Stdout, makeCommand.Stderr = makeStdout, makeStderr
 	fmt.Println("Compiling nginx...")
 	if err = makeCommand.Run(); err != nil {
@@ -233,9 +268,9 @@ func packageKoality(outputDirectory string) error {
 	}
 	fmt.Println("OpenSSH downloaded")
 
-	cloneCommand := exec.Command("git", "clone", "--depth", "1", "git://github.com/LessThanThreeLabs/openssh-for-git.git")
+	cloneCommand = exec.Command("git", "clone", "--depth", "1", "git://github.com/LessThanThreeLabs/openssh-for-git.git")
 	cloneCommand.Dir = dependenciesDirectory
-	cloneStdout, cloneStderr := new(bytes.Buffer), new(bytes.Buffer)
+	cloneStdout, cloneStderr = new(bytes.Buffer), new(bytes.Buffer)
 	cloneCommand.Stdout, cloneCommand.Stderr = cloneStdout, cloneStderr
 	fmt.Println("Downloading the OpenSSH patch...")
 	if err = cloneCommand.Run(); err != nil {

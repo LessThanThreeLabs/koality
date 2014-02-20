@@ -17,11 +17,6 @@ import (
 
 var requiredLibraries = []string{"curl"}
 
-type koalityMetadata struct {
-	Version string `json:"version"`
-	Release string `json:"release"`
-}
-
 func main() {
 	if err := installKoality(); err != nil {
 		panic(err)

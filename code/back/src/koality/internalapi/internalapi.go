@@ -1,6 +1,7 @@
 package internalapi
 
 import (
+	"koality/repositorymanager"
 	"koality/resources"
 	"koality/vm/poolmanager"
 	"net"
@@ -12,13 +13,14 @@ const (
 	RpcSocket = "/tmp/koality-rpc.sock"
 )
 
-func Start(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoriesPath string, rpcSocket string) error {
+func Start(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager, repositoriesPath string, rpcSocket string) error {
 	server := rpc.NewServer()
 	services := []interface{}{
 		&PublicKeyVerifier{resourcesConnection},
 		&RepositoryReader{resourcesConnection, repositoriesPath},
 		&UserInfoReader{resourcesConnection},
 		&VmReader{resourcesConnection, poolManager},
+		&BuildCreator{resourcesConnection, repositoryManager},
 	}
 	for _, service := range services {
 		if err := server.Register(service); err != nil {
