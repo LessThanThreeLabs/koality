@@ -10,19 +10,33 @@ import (
 )
 
 func (gitHubHandler *GitHubHandler) verifyChange(writer http.ResponseWriter, request *http.Request) {
+	eventType := request.Header.Get("X-GitHub-Event")
 	payload := []byte(request.PostFormValue("payload"))
 
-	var pullRequestPayload PullRequestHookPayload
-	var pushPayload PushHookPayload
-
-	if err := json.Unmarshal(payload, &pullRequestPayload); err == nil && pullRequestPayload.Action != "" {
-		gitHubHandler.handlePullRequest(pullRequestPayload, writer, request)
-	} else if err := json.Unmarshal(payload, &pushPayload); err == nil && pushPayload.Ref != "" {
-		gitHubHandler.handlePush(pushPayload, writer, request)
-	} else {
+	switch eventType {
+	case "push":
+		var pushPayload PushHookPayload
+		if err := json.Unmarshal(payload, &pushPayload); err == nil && pushPayload.Ref != "" {
+			gitHubHandler.handlePush(pushPayload, writer, request)
+			return
+		}
+	case "pull_request":
+		var pullRequestPayload PullRequestHookPayload
+		if err := json.Unmarshal(payload, &pullRequestPayload); err == nil && pullRequestPayload.Action != "" {
+			gitHubHandler.handlePullRequest(pullRequestPayload, writer, request)
+			return
+		}
+	case "ping":
+		fmt.Fprint(writer, "pong")
+		return
+	default:
 		writer.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(writer, "Unexpected hook received")
+		fmt.Fprintf(writer, "Unexpected hook type received: %s", eventType)
+		return
 	}
+
+	writer.WriteHeader(http.StatusBadRequest)
+	fmt.Fprintf(writer, "Malformed %s hook payload received", eventType)
 }
 
 func (gitHubHandler *GitHubHandler) handlePullRequest(pullRequestPayload PullRequestHookPayload, writer http.ResponseWriter, request *http.Request) {
