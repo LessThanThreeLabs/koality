@@ -130,7 +130,7 @@ func ParseLanguages(languageConfig map[interface{}]interface{}) (*shell.Command,
 			return nil, UnexpectedLanguageError{fmt.Sprintf("The language specifying variable %v is not a string.", language)}
 		}
 
-		versionString := fmt.Sprintf("%v", version)
+		versionString := fmt.Sprint(version)
 
 		if parser, ok := languageDispatcher[languageString]; ok {
 			languageCommand, versionCommand := parser(versionString)

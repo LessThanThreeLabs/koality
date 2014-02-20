@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"koality/build/runner"
 	"koality/build/stagerunner"
+	"koality/notify"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/util/log"
@@ -17,14 +18,16 @@ type TestRunner struct {
 	repositoryManager              repositorymanager.RepositoryManager
 	testBuildCreatedSubscriptionId resources.SubscriptionId
 	buildRunner                    *runner.BuildRunner
+	notifier                       notify.BuildStatusNotifier
 }
 
-func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager) *TestRunner {
+func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager, notifier notify.BuildStatusNotifier) *TestRunner {
 	return &TestRunner{
 		resourcesConnection: resourcesConnection,
 		poolManager:         poolManager,
 		repositoryManager:   repositoryManager,
 		buildRunner:         runner.New(resourcesConnection, poolManager, repositoryManager),
+		notifier:            notifier,
 	}
 }
 
@@ -76,5 +79,9 @@ func (testRunner *TestRunner) RunBuild(currentBuild *resources.Build) (bool, err
 
 	testRunner.buildRunner.RunStagesOnNewMachines(
 		numNodes, buildData, currentBuild, newStageRunnersChan, emptyFinishFunc)
-	return testRunner.buildRunner.ProcessResults(currentBuild, newStageRunnersChan, buildData)
+	success, err := testRunner.buildRunner.ProcessResults(currentBuild, newStageRunnersChan, buildData)
+	notifyErr := testRunner.notifier.NotifyBuildStatus(currentBuild)
+	// TODO (bbland): do something with the notifyErr
+	notifyErr = notifyErr
+	return success, err
 }
