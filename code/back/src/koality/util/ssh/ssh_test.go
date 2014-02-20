@@ -88,12 +88,15 @@ func (suite *SshSuite) TestGitShell(check *gocheck.C) {
 
 	command := []string{"git-receive-pack", localUri}
 	shell := restrictedGitShell{userId, command, suite.client}
+	executablePath, err := pathtranslator.TranslatePath(path.Join("git", "git-receive-pack"))
+	check.Assert(err, gocheck.IsNil)
+
 	commandToExec, err := shell.GetCommand()
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(commandToExec, gocheck.DeepEquals, vm.Command{
-		Argv: []string{"jgit", "receive-pack",
-			repositoryManager.ToPath(&test.Repository),
-			fmt.Sprint(userId)},
+		Argv: []string{executablePath,
+			repositoryManager.ToPath(&test.Repository)},
+		Envv: []string{fmt.Sprintf("KOALITY_USER_ID=%d", userId)},
 	})
 
 	shell.command = []string{"git-upload-pack", localUri}
@@ -103,7 +106,7 @@ func (suite *SshSuite) TestGitShell(check *gocheck.C) {
 	check.Assert(err, gocheck.IsNil)
 	check.Assert(commandToExec, gocheck.DeepEquals, vm.Command{
 		Argv: []string{sshwrapperPath, "git@github.com", "git-upload-pack KoalityCode/koality-v1.git"},
-		Envv: append([]string{"PRIVATE_KEY=" + test.PrivateKey}),
+		Envv: []string{"PRIVATE_KEY=" + test.PrivateKey},
 	})
 }
 

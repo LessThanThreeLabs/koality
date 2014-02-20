@@ -2,6 +2,7 @@ package internalapi
 
 import (
 	"github.com/LessThanThreeLabs/gocheck"
+	"koality/repositorymanager"
 	"koality/resources"
 	"koality/resources/database"
 	"koality/vm"
@@ -32,8 +33,9 @@ func (suite *InternalAPISuite) SetUpTest(check *gocheck.C) {
 	virtualMachinePool := vm.NewPool(0, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{virtualMachinePool})
 	repositoriesPath := "/etc/koality/repositories"
+	repositoryManager := repositorymanager.New(repositoriesPath, suite.resourcesConnection)
 
-	err = Start(suite.resourcesConnection, poolManager, repositoriesPath, RpcSocket)
+	err = Start(suite.resourcesConnection, poolManager, repositoryManager, repositoriesPath, RpcSocket)
 	check.Assert(err, gocheck.IsNil)
 
 	// REVIEW(dhuang) is there a better way to do this?

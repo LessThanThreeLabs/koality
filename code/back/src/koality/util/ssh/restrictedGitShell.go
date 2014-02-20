@@ -8,6 +8,7 @@ import (
 	"koality/util/pathtranslator"
 	"koality/vm"
 	"net/rpc"
+	"path"
 	"strings"
 )
 
@@ -61,9 +62,16 @@ func (shell *restrictedGitShell) GetCommand() (command vm.Command, err error) {
 			return
 		}
 
+		var gitReceivePack string
+		gitReceivePack, err = pathtranslator.TranslatePath(path.Join("git", "git-receive-pack"))
+		if err != nil {
+			return
+		}
+
 		repositoryManager := repositorymanager.New(repositoryInfo.RepositoriesPath, nil)
 		repoPath := repositoryManager.ToPath(repository)
-		command.Argv = []string{"jgit", "receive-pack", repoPath, fmt.Sprint(shell.userId)}
+		command.Argv = []string{gitReceivePack, repoPath}
+		command.Envv = []string{fmt.Sprintf("KOALITY_USER_ID=%d", shell.userId)}
 	case "git-upload-pack":
 		var privateKey string
 		var emptyInput interface{}

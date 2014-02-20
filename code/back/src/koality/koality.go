@@ -68,7 +68,7 @@ func main() {
 		panic(err)
 	}
 
-	internalapi.Start(resourcesConnection, poolManager, koalityRoot, internalapi.RpcSocket)
+	internalapi.Start(resourcesConnection, poolManager, repositoryManager, koalityRoot, internalapi.RpcSocket)
 
 	fmt.Println("Koality successfully started!")
 	startWebserverAndBlock(resourcesConnection, repositoryManager, mailer, licenseManager)
