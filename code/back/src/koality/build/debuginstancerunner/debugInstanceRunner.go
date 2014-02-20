@@ -17,11 +17,11 @@ type DebugInstanceRunner struct {
 	poolManager                        *poolmanager.PoolManager
 	repositoryManager                  repositorymanager.RepositoryManager
 	debugInstanceCreatedSubscriptionId resources.SubscriptionId
-	notifier                           notify.Notifier
+	notifier                           notify.DebugInstanceNotifier
 	buildRunner                        *runner.BuildRunner
 }
 
-func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager, notifier notify.Notifier) *DebugInstanceRunner {
+func New(resourcesConnection *resources.Connection, poolManager *poolmanager.PoolManager, repositoryManager repositorymanager.RepositoryManager, notifier notify.DebugInstanceNotifier) *DebugInstanceRunner {
 	return &DebugInstanceRunner{
 		resourcesConnection: resourcesConnection,
 		poolManager:         poolManager,
@@ -77,7 +77,7 @@ func (debugInstanceRunner *DebugInstanceRunner) RunDebugInstance(debugInstance *
 	}
 
 	finishFunc := func(vm vm.VirtualMachine) {
-		err := debugInstanceRunner.notifier.Notify(vm, build, buildData)
+		err := debugInstanceRunner.notifier.NotifyDebugInstance(vm, build, debugInstance)
 		if err != nil {
 			// TODO(dhuang) what do...
 		}

@@ -4,7 +4,6 @@ import (
 	"github.com/LessThanThreeLabs/gocheck"
 	"github.com/dchest/goyaml"
 	"io/ioutil"
-	"koality/build/runner"
 	"koality/repositorymanager"
 	"koality/resources"
 	"koality/resources/database"
@@ -29,7 +28,7 @@ type DebugInstanceRunnerSuite struct {
 	debugInstance       *resources.DebugInstance
 	debugInstanceRunner *DebugInstanceRunner
 	repositoryManager   repositorymanager.RepositoryManager
-	notifier            MockNotifier
+	notifier            mockNotifier
 	tmpDir              string
 	repoPath            string
 	instanceId          string
@@ -83,12 +82,12 @@ var (
 	}
 )
 
-type MockNotifier struct {
+type mockNotifier struct {
 	sendCount int
 	check     *gocheck.C
 }
 
-func (mockNotifier *MockNotifier) Notify(vm vm.VirtualMachine, build *resources.Build, buildData *runner.BuildData) error {
+func (mockNotifier *mockNotifier) NotifyDebugInstance(vm vm.VirtualMachine, build *resources.Build, debugInstance *resources.DebugInstance) error {
 	mockNotifier.sendCount += 1
 
 	shellCommand := vm.GetStartShellCommand()
@@ -175,7 +174,7 @@ func (suite *DebugInstanceRunnerSuite) runDebugInstanceWithYaml(check *gocheck.C
 	vmPool := vm.NewPool(1, localmachine.Manager, 0, 3)
 	poolManager := poolmanager.New([]vm.VirtualMachinePool{vmPool})
 
-	suite.notifier = MockNotifier{check: check}
+	suite.notifier = mockNotifier{check: check}
 	debugInstanceRunner := New(suite.resourcesConnection, poolManager, suite.repositoryManager, &suite.notifier)
 	expires := time.Now().Add(4 * time.Second) // run the debug instance for like 2 seconds
 	suite.debugInstance, err = suite.resourcesConnection.DebugInstances.Create.Create(

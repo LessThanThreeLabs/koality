@@ -51,12 +51,14 @@ func main() {
 
 	repositoryManager := repositorymanager.New(koalityRoot, resourcesConnection)
 
-	testRunner := testrunner.New(resourcesConnection, poolManager, repositoryManager)
+	notifier := getNotifier(resourcesConnection, mailer)
+
+	testRunner := testrunner.New(resourcesConnection, poolManager, repositoryManager, notifier)
 	if err := testRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
 
-	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, notify.New(resourcesConnection, mailer))
+	debugInstanceRunner := debuginstancerunner.New(resourcesConnection, poolManager, repositoryManager, notifier)
 	if err := debugInstanceRunner.SubscribeToEvents(); err != nil {
 		panic(err)
 	}
@@ -126,6 +128,12 @@ func getVirtualMachinePools(resourcesConnection *resources.Connection, ec2Broker
 	} else {
 		return []vm.VirtualMachinePool{vm.NewPool(0, localmachine.Manager, 0, 3)}
 	}
+}
+
+func getNotifier(resourcesConnection *resources.Connection, mailer mail.Mailer) notify.Notifier {
+	emailNotifer := notify.NewEmailNotifier(resourcesConnection, mailer)
+	hipChatNotifier := notify.NewHipChatNotifier(resourcesConnection)
+	return notify.NewCompoundNotifier([]notify.BuildStatusNotifier{emailNotifer, hipChatNotifier}, []notify.DebugInstanceNotifier{emailNotifer})
 }
 
 func startWebserverAndBlock(resourcesConnection *resources.Connection, repositoryManager repositorymanager.RepositoryManager, mailer mail.Mailer, licenseManager *licenseclient.LicenseManager) {
