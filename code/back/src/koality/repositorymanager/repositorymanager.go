@@ -17,7 +17,7 @@ type RepositoryManager interface {
 	GetCommitAttributes(repository *resources.Repository, ref string) (headSha, message, username, email string, err error)
 	CreateRepository(repository *resources.Repository) (err error)
 	DeleteRepository(repository *resources.Repository) (err error)
-	StorePending(repository *resources.Repository, ref string, args ...string) (err error)
+	StorePending(repository *resources.Repository, ref string) (err error)
 	MergeChangeset(repository *resources.Repository, headRef, baseRef, refToMergeInto string) (err error)
 	GetCloneCommand(repository *resources.Repository) (cloneCommand shell.Command, err error)
 	GetCheckoutCommand(repository *resources.Repository, ref, baseRef string) (checkoutCommand shell.Command, err error)
@@ -109,13 +109,13 @@ func (repositoryManager *repositoryManager) GetTopSha(repository *resources.Repo
 	return openedRepository.getTopSha(ref)
 }
 
-func (repositoryManager *repositoryManager) StorePending(repository *resources.Repository, ref string, args ...string) (err error) {
+func (repositoryManager *repositoryManager) StorePending(repository *resources.Repository, ref string) (err error) {
 	openedRepository, err := repositoryManager.openPrePushRepository(repository)
 	if err != nil {
 		return
 	}
 
-	return openedRepository.storePending(ref, repository.RemoteUri, args...)
+	return openedRepository.storePending(ref, repository.RemoteUri)
 }
 
 func (repositoryManager *repositoryManager) MergeChangeset(repository *resources.Repository, headRef, baseRef, refToMergeInto string) (err error) {
