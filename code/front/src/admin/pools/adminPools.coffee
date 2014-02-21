@@ -2,6 +2,7 @@
 
 window.AdminPools = ['$scope', '$http', '$location', 'events', 'notification', ($scope, $http, $location, events, notification) ->
 	$scope.needAWSCredentials = "You must enter your AWS credentials before filling out this field."
+	$scope.returning = false
 
 	getPoolFromServerResponse = (resp) ->
 		{
@@ -22,9 +23,9 @@ window.AdminPools = ['$scope', '$http', '$location', 'events', 'notification', (
 			userData: resp.userData
 		}
 
-	$scope.resetPool = () ->
+	$scope.resetPoolWithId = (id) ->
 		$scope.pool = {
-			id: null,
+			id: id,
 			name: null,
 			awsKeys: {
 				accessKey: "",
@@ -151,10 +152,16 @@ window.AdminPools = ['$scope', '$http', '$location', 'events', 'notification', (
 		$scope.allowedAmis = null
 		$scope.allowedInstanceSizes = null
 		$scope.allowedSecurityGroups = null
+		$scope.resetPoolWithId null
 		$scope.oldAwsKeys = angular.copy $scope.pool.awsKeys
-		$scope.resetPool()
 
+	$scope.returnToList = (pristine) ->
+		return $scope.navigateList() if pristine
+		$scope.returning = true
+	$scope.stopReturning = () ->
+		$scope.returning = false
 	$scope.navigateList = () ->
+		$scope.returning = false
 		$location.url "/admin?view=pools&action=list"
 		$scope.loadPools()
 	$scope.loadPools = () ->
@@ -168,7 +175,6 @@ window.AdminPools = ['$scope', '$http', '$location', 'events', 'notification', (
 		request.finally () ->
 			$scope.makingRequest = false
 
-
 	$scope.navigateEdit = (pool) ->
 		$location.url "/admin?view=pools&action=update&poolId=#{pool.id}"
 		$scope.loadEdit()
@@ -177,7 +183,7 @@ window.AdminPools = ['$scope', '$http', '$location', 'events', 'notification', (
 		$scope.allowedAmis = null
 		$scope.allowedInstanceSizes = null
 		$scope.allowedSecurityGroups = null
-		$scope.resetPool()
+		$scope.resetPoolWithId parseInt($location.search().poolId)
 		$scope.oldAwsKeys = angular.copy $scope.pool.awsKeys
 		$scope.loadPool()
 

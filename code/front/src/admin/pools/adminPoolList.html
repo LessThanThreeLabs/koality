@@ -3,7 +3,7 @@
 		Pools
 	</div>
 	<div class="right">
-		<button ng-click="navigateNew()">Add a New Repository</button>
+		<button ng-click="navigateNew()">Add a New Pool</button>
 	</div>
 </panel-header>
 
@@ -70,8 +70,10 @@
 					<label class="red">Are you sure? Enter the pool name to continue</label>
 					<div class="deletePoolActions">
 						<input type="text" ng-model="pool.deleteName">
-						<a class="red" ng-click="deletePool(pool)">Delete</a>
-						<a ng-click="pool.deleting = false">Cancel</a>
+						<div>
+							<a class="red" ng-click="deletePool(pool)">Delete</a>
+							<a ng-click="pool.deleting = false">Cancel</a>
+						</div>
 					</div>
 				</td>
 			</tr>

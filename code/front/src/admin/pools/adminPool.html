@@ -1,14 +1,19 @@
-<panel-header>
-	<div class="left">
-		Pools
-	</div>
-	<div class="right">
-		<button ng-click="navigateList()">Return to List</button>
-	</div>
-</panel-header>
+<form name="poolForm" novalidate>
+	<panel-header>
+		<div class="left">
+			Pools
+		</div>
+		<div class="right">
+			<button ng-click="returnToList(poolForm.$pristine)" ng-if="!returning">Return to List</button>
+			<span ng-show="returning">
+				<span class="red">Are you sure? Your changes will be lost.</span>
+				<a class="red" ng-click="navigateList()">Return</a>
+				<a ng-click="stopReturning()">Cancel</a>
+			</span>
+		</div>
+	</panel-header>
 
-<panel-body>
-	<form name="poolForm" novalidate>
+	<panel-body>
 		<input type="hidden" name="id" value="{{pool.id}}">
 		<div class="formContainer centered"><table>
 			<tr>
@@ -91,5 +96,5 @@
 			<div class="formDivider"></div>
 			<busy-button centered busy="makingRequest" click="poolForm.$valid && submit()" disabled="poolForm.$invalid || makingRequest">Save Changes</busy-button>
 		</div>
-	</form>
-</panel-body>
+	</panel-body>
+</form>
