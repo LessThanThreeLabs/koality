@@ -3,9 +3,9 @@ package pools
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/LessThanThreeLabs/goamz/aws"
-	"github.com/LessThanThreeLabs/goamz/ec2"
 	"github.com/gorilla/mux"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/ec2"
 	"koality/resources/database/pools"
 	"net/http"
 	"strconv"
@@ -76,7 +76,7 @@ func (poolsHandler *PoolsHandler) getAwsSettings(writer http.ResponseWriter, req
 		return
 	}
 
-	imagesResp, err := ec2Conn.Images(nil, []string{"self"}, nil)
+	imagesResp, err := ec2Conn.ImagesByOwners(nil, []string{"self"}, nil)
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(writer, err)

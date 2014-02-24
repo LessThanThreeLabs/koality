@@ -1,8 +1,8 @@
 package pools
 
 import (
-	"github.com/LessThanThreeLabs/goamz/ec2"
 	"github.com/gorilla/mux"
+	"github.com/mitchellh/goamz/ec2"
 	"koality/resources"
 	"koality/webserver/middleware"
 )

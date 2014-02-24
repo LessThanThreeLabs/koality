@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/LessThanThreeLabs/goamz/aws"
-	"github.com/LessThanThreeLabs/goamz/s3"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/s3"
 	"io/ioutil"
 	"koality/license/server"
 	"koality/util/pathtranslator"

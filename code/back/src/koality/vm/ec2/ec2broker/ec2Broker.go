@@ -1,8 +1,8 @@
 package ec2broker
 
 import (
-	"github.com/LessThanThreeLabs/goamz/aws"
-	"github.com/LessThanThreeLabs/goamz/ec2"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/ec2"
 	"net"
 	"os"
 	"os/exec"

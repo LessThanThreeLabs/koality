@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/LessThanThreeLabs/goamz/aws"
-	"github.com/LessThanThreeLabs/goamz/ec2"
+	"github.com/mitchellh/goamz/aws"
+	"github.com/mitchellh/goamz/ec2"
 	"koality/resources"
 	"koality/shell"
 	"koality/util/log"
@@ -253,7 +253,7 @@ func (manager *Ec2VirtualMachineManager) getSnapshotVersion(snapshot ec2.Image) 
 
 func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
 	if manager.Ec2Pool.BaseAmiId != "" {
-		imagesResponse, err := manager.ec2Cache.EC2.Images([]string{manager.Ec2Pool.BaseAmiId}, nil, nil)
+		imagesResponse, err := manager.ec2Cache.EC2.Images([]string{manager.Ec2Pool.BaseAmiId}, nil)
 		if err != nil {
 			return ec2.Image{}, err
 		}
@@ -266,7 +266,7 @@ func (manager *Ec2VirtualMachineManager) getBaseImage() (ec2.Image, error) {
 	imageFilter.Add("owner-id", getOwnerId())
 	imageFilter.Add("name", "koality_verification_precise_0.4")
 	imageFilter.Add("state", "available")
-	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, nil, imageFilter)
+	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {
 		return ec2.Image{}, err
 	}
@@ -282,7 +282,7 @@ func (manager *Ec2VirtualMachineManager) getSnapshotsForImage(baseImage ec2.Imag
 	}
 	imageFilter.Add("name", snapshotName)
 	imageFilter.Add("state", "available")
-	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, nil, imageFilter)
+	imagesResponse, err := manager.ec2Cache.EC2.Images(nil, imageFilter)
 	if err != nil {
 		return nil, err
 	}
